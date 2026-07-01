@@ -419,10 +419,23 @@ def pantalla_login():
     header()
     st.markdown('<div class="lbox">', unsafe_allow_html=True)
     st.markdown("### 🔐 Acceder")
-    cedula = st.text_input("Cedula / DNI", placeholder="Tu numero de cedula")
+    cedula = st.text_input("Cedula / DNI", placeholder="Tu numero de cedula o 'admin'")
+    es_admin = cedula.strip().lower() == "admin"
+    password = ""
+    if es_admin:
+        password = st.text_input("Contrasena admin", type="password", placeholder="........")
     if st.button("Entrar →"):
         if not cedula.strip():
             st.error("Ingresa tu cedula.")
+        elif es_admin:
+            if password.strip() == ADMIN_PASSWORD:
+                u = get_usuario("admin")
+                st.session_state.cedula_actual = "admin"
+                st.session_state.usuario_actual = u
+                st.session_state.logged_in = True
+                st.rerun()
+            else:
+                st.error("Contrasena de administrador incorrecta.")
         else:
             u = get_usuario(cedula.strip())
             if u is None:
