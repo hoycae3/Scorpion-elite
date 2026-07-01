@@ -1,116 +1,200 @@
 import streamlit as st
-import os, json, time, math, re, warnings, requests
+import os, json, time, math, re, warnings, requests, io
 from bs4 import BeautifulSoup
-from datetime import datetime, time as dtime
-import openpyxl
+from datetime import datetime, timedelta, date, time as dtime
+from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
-import io
 warnings.filterwarnings("ignore")
 
-# ── USUARIOS — agrega/quita clientes aqui, luego commit en GitHub ──────────
-USUARIOS = {
-    "admin":    {"password": "scorpion2025", "nombre": "Administrador"},
-    "cliente1": {"password": "clave001",     "nombre": "Cliente 1"},
-    "cliente2": {"password": "clave002",     "nombre": "Cliente 2"},
+# ═══════════════════════════════════════════════════════════
+# CONFIGURACION
+# ═══════════════════════════════════════════════════════════
+API_FOOTBALL_KEY  = os.getenv("API_FOOTBALL_KEY",  "124c9519df145caf883cd82f0b2a4671")
+ODDS_API_KEY      = os.getenv("ODDS_API_KEY",      "")
+FOOTBALL_DATA_KEY = os.getenv("FOOTBALL_DATA_KEY", "")
+TELEGRAM_TOKEN    = os.getenv("TELEGRAM_TOKEN",    "")
+TELEGRAM_CHAT_ID  = os.getenv("TELEGRAM_CHAT_ID",  "")
+ADMIN_PASSWORD    = os.getenv("ADMIN_PASSWORD",    "scorpion_admin_2025")
+
+# IDs de ligas en API-Football
+LIGAS = {
+    "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League":     {"id": 39,  "pais": "England"},
+    "🇪🇸 La Liga":              {"id": 140, "pais": "Spain"},
+    "🇩🇪 Bundesliga":           {"id": 78,  "pais": "Germany"},
+    "🇮🇹 Serie A":              {"id": 135, "pais": "Italy"},
+    "🇫🇷 Ligue 1":              {"id": 61,  "pais": "France"},
+    "🇳🇱 Eredivisie":           {"id": 88,  "pais": "Netherlands"},
+    "🇵🇹 Primeira Liga":        {"id": 94,  "pais": "Portugal"},
+    "🌍 Champions League":      {"id": 2,   "pais": "World"},
+    "🌍 Europa League":         {"id": 3,   "pais": "World"},
+    "🌍 Conference League":     {"id": 848, "pais": "World"},
+    "🌎 Libertadores":          {"id": 13,  "pais": "World"},
+    "🌎 Sudamericana":          {"id": 11,  "pais": "World"},
+    "🌎 Copa America":          {"id": 9,   "pais": "World"},
+    "🌍 Mundial FIFA":          {"id": 1,   "pais": "World"},
+    "🇺🇸 MLS":                  {"id": 253, "pais": "USA"},
+    "🇲🇽 Liga MX":              {"id": 262, "pais": "Mexico"},
+    "🇨🇴 Liga BetPlay":         {"id": 239, "pais": "Colombia"},
+    "🇦🇷 Primera Division":     {"id": 128, "pais": "Argentina"},
+    "🇧🇷 Brasileirao":          {"id": 71,  "pais": "Brazil"},
+    "🏴󠁧󠁢󠁳󠁣󠁴󠁿 Scottish Premier":   {"id": 179, "pais": "Scotland"},
+    "🇹🇷 Super Lig":            {"id": 203, "pais": "Turkey"},
+    "🇸🇦 Saudi Pro League":     {"id": 307, "pais": "Saudi-Arabia"},
 }
 
-ODDS_API_KEY      = os.getenv("ODDS_API_KEY", "")
-FOOTBALL_DATA_KEY = os.getenv("FOOTBALL_DATA_KEY", "")
+TEMPORADA = 2024
 
+# ═══════════════════════════════════════════════════════════
+# BASE DE DATOS EN MEMORIA (session state)
+# Para produccion real usar Supabase o similar
+# ═══════════════════════════════════════════════════════════
+def init_db():
+    if "usuarios_db" not in st.session_state:
+        st.session_state.usuarios_db = {
+            "admin": {
+                "nombre": "Administrador",
+                "cedula": "admin",
+                "plan": "admin",
+                "fecha_inicio": str(date.today()),
+                "dias": 9999,
+                "activo": True,
+                "password": ADMIN_PASSWORD,
+            }
+        }
+
+def get_usuario(cedula):
+    db = st.session_state.get("usuarios_db", {})
+    for u in db.values():
+        if u.get("cedula") == cedula:
+            return u
+    return None
+
+def verificar_acceso(usuario):
+    if not usuario: return False, "no_existe"
+    if usuario["plan"] == "admin": return True, "admin"
+    if not usuario.get("activo"): return False, "inactivo"
+    inicio = date.fromisoformat(usuario["fecha_inicio"])
+    vence  = inicio + timedelta(days=usuario["dias"])
+    if date.today() > vence:
+        return False, "vencido"
+    return True, usuario["plan"]
+
+def dias_restantes(usuario):
+    inicio = date.fromisoformat(usuario["fecha_inicio"])
+    vence  = inicio + timedelta(days=usuario["dias"])
+    return max(0, (vence - date.today()).days)
+
+# ═══════════════════════════════════════════════════════════
+# PAGE CONFIG Y CSS
+# ═══════════════════════════════════════════════════════════
 st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
 st.markdown("""<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 html,body,[class*="css"]{font-family:'Inter',sans-serif}
-.stApp{background:#0a0a14}
-.hdr{background:linear-gradient(135deg,#0d1b2a,#1a1a2e,#16213e);border:1px solid #ffd700;
-  border-radius:16px;padding:2rem;text-align:center;margin-bottom:2rem}
-.hdr h1{color:#ffd700;font-size:2.4rem;margin:0;letter-spacing:2px}
-.hdr p{color:#aaa;margin:.4rem 0 0}
-.lbox{background:#16213e;border:1px solid #ffd700;border-radius:16px;padding:2.5rem;max-width:420px;margin:2rem auto}
-.mc{background:#16213e;border:1px solid #334466;border-radius:12px;padding:1.2rem;text-align:center;margin-bottom:.5rem}
-.mc .v{color:#ffd700;font-size:2rem;font-weight:700}
-.mc .l{color:#888;font-size:.8rem;margin-top:4px}
-.sb{background:#1a1a2e;border-left:3px solid #ffd700;border-radius:8px;padding:1rem 1.2rem;margin-bottom:.8rem}
-.sb .n{color:#ffd700;font-weight:700}
-.sb .t{color:#ccc;font-size:.85rem;margin-top:4px}
-.ft{text-align:center;color:#444;font-size:.75rem;margin-top:3rem;padding-top:1rem;border-top:1px solid #222}
-div[data-testid="stButton"] button{background:linear-gradient(135deg,#ffd700,#ff8c00)!important;
-  color:#000!important;font-weight:700!important;border:none!important;border-radius:8px!important;width:100%}
+.stApp{background:#080810}
+.hdr{background:linear-gradient(135deg,#0d1b2a,#1a1a2e,#16213e);
+  border:1px solid #ffd700;border-radius:16px;padding:1.5rem 2rem;
+  text-align:center;margin-bottom:1.5rem}
+.hdr h1{color:#ffd700;font-size:2.2rem;margin:0;letter-spacing:3px}
+.hdr p{color:#aaa;margin:.3rem 0 0;font-size:.95rem}
+.lbox{background:#12122a;border:1px solid #ffd700;border-radius:16px;
+  padding:2.5rem;max-width:440px;margin:1.5rem auto}
+.plan-card{border-radius:12px;padding:1.2rem;margin-bottom:.8rem;
+  border:1px solid #334466;cursor:pointer;transition:all .2s}
+.plan-free{background:#111122;border-color:#444}
+.plan-dia{background:#0d1a0d;border-color:#00aa44}
+.plan-semana{background:#0d0d1a;border-color:#4488ff}
+.plan-mes{background:#1a0d00;border-color:#ffd700}
+.plan-card h3{margin:0 0 4px;font-size:1rem}
+.plan-card p{margin:0;font-size:.8rem;color:#aaa}
+.mc{background:#12122a;border:1px solid #334466;border-radius:10px;
+  padding:1rem;text-align:center}
+.mc .v{color:#ffd700;font-size:1.8rem;font-weight:700}
+.mc .l{color:#888;font-size:.75rem;margin-top:3px}
+.badge-ap{background:#0d3b0d;color:#00ff7f;border:1px solid #00ff7f;
+  padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-b{background:#0f3460;color:#5bc8ff;border:1px solid #5bc8ff;
+  padding:2px 10px;border-radius:20px;font-size:11px}
+.badge-c{background:#2a1a0a;color:#ffa500;border:1px solid #ffa500;
+  padding:2px 10px;border-radius:20px;font-size:11px}
+.pill-activo{background:#0d3b0d;color:#00ff7f;padding:3px 12px;border-radius:20px;font-size:12px}
+.pill-vencido{background:#3b0d0d;color:#ff4444;padding:3px 12px;border-radius:20px;font-size:12px}
+.pill-gratis{background:#1a1a0d;color:#ffd700;padding:3px 12px;border-radius:20px;font-size:12px}
+.ft{text-align:center;color:#333;font-size:.7rem;margin-top:2rem;
+  padding-top:1rem;border-top:1px solid #1a1a2e}
+div[data-testid="stButton"] button{
+  background:linear-gradient(135deg,#ffd700,#ff8c00)!important;
+  color:#000!important;font-weight:700!important;border:none!important;
+  border-radius:8px!important;width:100%}
 </style>""", unsafe_allow_html=True)
 
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-    st.session_state.usuario   = ""
-    st.session_state.nombre    = ""
+# ═══════════════════════════════════════════════════════════
+# API-FOOTBALL: OBTENER FIXTURES
+# ═══════════════════════════════════════════════════════════
+@st.cache_data(ttl=1800)
+def get_fixtures_dia(liga_id, fecha_str):
+    url = "https://v3.football.api-sports.io/fixtures"
+    headers = {"x-apisports-key": API_FOOTBALL_KEY}
+    params  = {"league": liga_id, "season": TEMPORADA, "date": fecha_str}
+    try:
+        r = requests.get(url, headers=headers, params=params, timeout=12)
+        data = r.json()
+        return data.get("response", [])
+    except:
+        return []
 
-def pantalla_login():
-    st.markdown('<div class="hdr"><h1>🦂 SCORPION ELITE</h1><p>Motor de Analisis Deportivo con Datos Reales</p></div>', unsafe_allow_html=True)
-    st.markdown('<div class="lbox">', unsafe_allow_html=True)
-    st.markdown("### Iniciar Sesion")
-    usuario  = st.text_input("Usuario", placeholder="tu_usuario")
-    password = st.text_input("Contrasena", type="password", placeholder="........")
-    if st.button("Entrar"):
-        u = USUARIOS.get(usuario.strip())
-        if u and u["password"] == password.strip():
-            st.session_state.logged_in = True
-            st.session_state.usuario   = usuario
-            st.session_state.nombre    = u["nombre"]
-            st.rerun()
-        else:
-            st.error("Usuario o contrasena incorrectos.")
-    st.markdown('</div>', unsafe_allow_html=True)
+@st.cache_data(ttl=1800)
+def get_fixtures_semana(liga_id, desde_str, hasta_str):
+    url = "https://v3.football.api-sports.io/fixtures"
+    headers = {"x-apisports-key": API_FOOTBALL_KEY}
+    params  = {"league": liga_id, "season": TEMPORADA, "from": desde_str, "to": hasta_str}
+    try:
+        r = requests.get(url, headers=headers, params=params, timeout=12)
+        data = r.json()
+        return data.get("response", [])
+    except:
+        return []
 
-# ── FUENTES DE DATOS ────────────────────────────────────────────────────────
-SH = requests.Session()
-SH.headers.update({"User-Agent": "Mozilla/5.0", "Accept": "application/json,text/html,*/*"})
+@st.cache_data(ttl=3600)
+def get_stats_equipo_api(team_id):
+    url = "https://v3.football.api-sports.io/teams/statistics"
+    headers = {"x-apisports-key": API_FOOTBALL_KEY}
+    params  = {"team": team_id, "season": TEMPORADA, "league": 39}
+    try:
+        r = requests.get(url, headers=headers, params=params, timeout=12)
+        data = r.json().get("response", {})
+        gf = data.get("goals", {}).get("for", {}).get("average", {}).get("total")
+        ga = data.get("goals", {}).get("against", {}).get("average", {}).get("total")
+        return (float(gf) if gf else None, float(ga) if ga else None)
+    except:
+        return None, None
 
-SPORTS_MAP = {
-    "premier": "soccer_epl", "laliga": "soccer_spain_la_liga", "la liga": "soccer_spain_la_liga",
-    "bundesliga": "soccer_germany_bundesliga", "serie a": "soccer_italy_serie_a",
-    "ligue": "soccer_france_ligue_one", "eredivisie": "soccer_netherlands_eredivisie",
-    "champions": "soccer_uefa_champs_league", "europa": "soccer_uefa_europa_league",
-    "libertadores": "soccer_conmebol_libertadores", "sudamericana": "soccer_conmebol_sudamericana",
-    "mls": "soccer_usa_mls", "colombia": "soccer_colombia_primera_a",
-    "argentina": "soccer_argentina_primera_division", "mexico": "soccer_mexico_ligamx",
-    "mundial": "soccer_fifa_world_cup", "world cup": "soccer_fifa_world_cup",
-    "fifa world cup": "soccer_fifa_world_cup", "copa del mundo": "soccer_fifa_world_cup",
-    "eurocopa": "soccer_uefa_european_championship", "euro": "soccer_uefa_european_championship",
-    "nations league": "soccer_uefa_nations_league", "copa america": "soccer_conmebol_copa_america",
-}
+def fixture_a_partido(f):
+    return {
+        "dia":       f["fixture"]["date"][:10],
+        "hora":      f["fixture"]["date"][11:16],
+        "hora_sort": int(f["fixture"]["date"][11:13]) * 60 + int(f["fixture"]["date"][14:16]),
+        "liga":      f["league"]["name"],
+        "local":     f["teams"]["home"]["name"],
+        "visitante": f["teams"]["away"]["name"],
+        "team_id_local":  f["teams"]["home"]["id"],
+        "team_id_visit":  f["teams"]["away"]["id"],
+    }
 
-UNDERSTAT_L = {
-    "premier": "EPL", "laliga": "La_liga", "la liga": "La_liga",
-    "bundesliga": "Bundesliga", "serie a": "Serie_A", "ligue": "Ligue_1",
-}
-
-FDORG_C = {
-    "premier": "PL", "laliga": "PD", "la liga": "PD", "bundesliga": "BL1",
-    "serie a": "SA", "ligue": "FL1", "eredivisie": "DED", "champions": "CL",
-}
-
+# ═══════════════════════════════════════════════════════════
+# MOTOR MATEMATICO
+# ═══════════════════════════════════════════════════════════
 PROM = {
-    "premier":      {"gm": 1.54, "gc": 1.11},
-    "laliga":       {"gm": 1.62, "gc": 1.08},
-    "bundesliga":   {"gm": 1.82, "gc": 1.28},
-    "serie a":      {"gm": 1.48, "gc": 1.07},
-    "ligue":        {"gm": 1.51, "gc": 1.07},
-    "libertadores": {"gm": 1.32, "gc": 1.08},
-    "sudamericana": {"gm": 1.28, "gc": 1.07},
-    "eredivisie":   {"gm": 1.88, "gc": 1.32},
-    "mls":          {"gm": 1.45, "gc": 1.20},
-    "colombia":     {"gm": 1.25, "gc": 1.10},
-    "mundial":      {"gm": 1.35, "gc": 1.05},
-    "world cup":    {"gm": 1.35, "gc": 1.05},
-    "copa del mundo": {"gm": 1.35, "gc": 1.05},
-    "copa america": {"gm": 1.28, "gc": 1.08},
-    "eurocopa":     {"gm": 1.42, "gc": 1.10},
-    "euro":         {"gm": 1.42, "gc": 1.10},
-    "nations":      {"gm": 1.38, "gc": 1.08},
-    "default":      {"gm": 1.40, "gc": 1.15},
+    "premier":{"gm":1.54,"gc":1.11},"laliga":{"gm":1.62,"gc":1.08},
+    "bundesliga":{"gm":1.82,"gc":1.28},"serie a":{"gm":1.48,"gc":1.07},
+    "ligue":{"gm":1.51,"gc":1.07},"libertadores":{"gm":1.32,"gc":1.08},
+    "sudamericana":{"gm":1.28,"gc":1.07},"eredivisie":{"gm":1.88,"gc":1.32},
+    "mls":{"gm":1.45,"gc":1.20},"colombia":{"gm":1.25,"gc":1.10},
+    "mundial":{"gm":1.35,"gc":1.05},"copa america":{"gm":1.28,"gc":1.08},
+    "champions":{"gm":1.45,"gc":1.05},"europa":{"gm":1.42,"gc":1.08},
+    "default":{"gm":1.40,"gc":1.15},
 }
-
-_fdc = {}
 
 def gp(liga):
     l = liga.lower()
@@ -118,515 +202,511 @@ def gp(liga):
         if k in l: return PROM[k]
     return PROM["default"]
 
-def es_torneo_fifa(liga):
-    kw = ["mundial", "world cup", "fifa", "copa del mundo", "nations league",
-          "eurocopa", "euro 20", "copa america", "gold cup", "african cup", "afcon"]
-    return any(k in liga.lower() for k in kw)
-
-def es_seleccion(nombre):
-    sel = ["argentina", "brasil", "brazil", "francia", "france", "alemania", "germany",
-           "espana", "spain", "portugal", "inglaterra", "england", "italia", "italy",
-           "belgica", "belgium", "croacia", "croatia", "holanda", "netherlands", "uruguay",
-           "colombia", "chile", "mexico", "estados unidos", "usa", "japon", "japan",
-           "marruecos", "morocco", "senegal", "australia", "corea", "korea", "suiza",
-           "switzerland", "dinamarca", "denmark", "polonia", "poland", "austria",
-           "turquia", "turkey", "rumania", "romania", "eslovaquia", "slovakia",
-           "serbia", "albania", "chequia", "czech", "ecuador", "peru", "bolivia",
-           "venezuela", "panama", "canada", "ghana", "nigeria", "camerun", "cameroon",
-           "sudafrica", "south africa", "arabia saudita", "saudi", "iran", "qatar",
-           "nueva zelanda", "new zealand", "gales", "wales", "escocia", "scotland",
-           "hungria", "hungary", "georgia", "eslovenia", "slovenia"]
-    n = nombre.lower()
-    return any(s in n for s in sel)
-
-def buscar_cuotas(local, visitante, liga):
-    if not ODDS_API_KEY: return None
-    sk = next((v for k, v in SPORTS_MAP.items() if k in liga.lower()), None)
-    if not sk: return None
-    try:
-        r = SH.get(f"https://api.the-odds-api.com/v4/sports/{sk}/odds/?regions=eu&markets=h2h&apiKey={ODDS_API_KEY}", timeout=10)
-        if r.status_code != 200: return None
-        for game in r.json():
-            ht = game.get("home_team", "").lower()
-            at = game.get("away_team", "").lower()
-            if not (any(p in ht for p in local.lower().split()[:2]) and
-                    any(p in at for p in visitante.lower().split()[:2])): continue
-            for bm in game.get("bookmakers", []):
-                cl = ce = cv = None
-                for o in (bm.get("markets") or [{}])[0].get("outcomes", []):
-                    n = o["name"].lower()
-                    if n == game["home_team"].lower(): cl = o["price"]
-                    elif n == game["away_team"].lower(): cv = o["price"]
-                    elif o["name"] == "Draw": ce = o["price"]
-                if all([cl, ce, cv]):
-                    return {"cuota_local": round(cl, 2), "cuota_empate": round(ce, 2),
-                            "cuota_visita": round(cv, 2), "fuente": bm.get("title", "")}
-    except: pass
-    return None
-
-def buscar_understat(equipo, liga, temporada=2024):
-    lu = next((v for k, v in UNDERSTAT_L.items() if k in liga.lower()), None)
-    if not lu: return None, None, None, None
-    try:
-        r = SH.get(f"https://understat.com/league/{lu}/{temporada}", timeout=12)
-        for sc2 in BeautifulSoup(r.text, "lxml").find_all("script"):
-            if "teamsData" in str(sc2):
-                m = re.search(r"JSON\.parse\(.(.*?)\.replace", str(sc2))
-                if m:
-                    data = json.loads(m.group(1).encode().decode("unicode_escape"))
-                    el = equipo.lower()
-                    for tn, stats in data.items():
-                        if any(p in tn.lower() for p in el.split()[:2]):
-                            h = stats.get("history", [])[-10:]
-                            if h:
-                                return (round(sum(x.get("xG", 0) for x in h) / len(h), 2),
-                                        round(sum(x.get("xGA", 0) for x in h) / len(h), 2),
-                                        round(sum(x.get("scored", 0) for x in h) / len(h), 2),
-                                        round(sum(x.get("missed", 0) for x in h) / len(h), 2))
-    except: pass
-    return None, None, None, None
-
-def buscar_fdorg(nombre, liga):
-    if not FOOTBALL_DATA_KEY: return None
-    comp = next((v for k, v in FDORG_C.items() if k in liga.lower()), None)
-    if not comp: return None
-    if comp not in _fdc:
-        try:
-            r = requests.get(f"https://api.football-data.org/v4/competitions/{comp}/standings",
-                             headers={"X-Auth-Token": FOOTBALL_DATA_KEY}, timeout=10)
-            t = {}
-            for x in r.json()["standings"][0]["table"]:
-                j = x["playedGames"] or 1
-                t[x["team"]["name"]] = {"gf_pg": round(x["goalsFor"] / j, 2), "gc_pg": round(x["goalsAgainst"] / j, 2)}
-            _fdc[comp] = t
-        except: _fdc[comp] = {}
-    nl = nombre.lower()
-    return next((v for k, v in _fdc.get(comp, {}).items() if any(p in k.lower() for p in nl.split()[:2])), None)
-
-def buscar_tsdb(nombre):
-    try:
-        r = SH.get(f"https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t={requests.utils.quote(nombre)}", timeout=8)
-        d = r.json()
-        if d and d.get("teams"): return d["teams"][0]
-    except: pass
-    return None
-
-def stats_tsdb(tid):
-    try:
-        r = SH.get(f"https://www.thesportsdb.com/api/v1/json/3/eventslast.php?id={tid}", timeout=8)
-        d = r.json()
-        if d and d.get("results"):
-            raw = d["results"][-10:]
-            gml = []; gcl = []
-            for x in raw:
-                try:
-                    sh = int(x.get("intHomeScore") or 0)
-                    sa = int(x.get("intAwayScore") or 0)
-                    if str(x.get("idHomeTeam", "")) == str(tid): gml.append(sh); gcl.append(sa)
-                    else: gml.append(sa); gcl.append(sh)
-                except: pass
-            if gml: return round(sum(gml) / len(gml), 2), round(sum(gcl) / len(gcl), 2)
-    except: pass
-    return None, None
-
-def buscar_elo(equipo):
-    try:
-        r = SH.get(f"http://api.clubelo.com/{equipo.replace(' ', '-').replace('.', '')}", timeout=8)
-        if r.status_code == 200 and len(r.text) > 50:
-            ul = r.text.strip().split("\n")[-1].split(",")
-            if len(ul) >= 4: return float(ul[3])
-    except: pass
-    return None
-
-def obtener_stats(nombre, liga):
-    s = {"goles_marcados": None, "goles_concedidos": None, "xg": None, "xga": None,
-         "elo": None, "fuente": "Sin datos", "encontrado": False}
-    # Para selecciones y torneos FIFA: saltar Understat (no las cubre) e ir directo a TheSportsDB
-    torneo_fifa = es_torneo_fifa(liga)
-    seleccion   = es_seleccion(nombre)
-    if not torneo_fifa and not seleccion:
-        xg, xga, gm, gc = buscar_understat(nombre, liga)
-        if xg is not None:
-            s.update({"xg": xg, "xga": xga, "goles_marcados": gm, "goles_concedidos": gc,
-                      "fuente": "Understat", "encontrado": True})
-        time.sleep(0.2)
-        fd = buscar_fdorg(nombre, liga)
-        if fd:
-            if s["goles_marcados"] is None:
-                s.update({"goles_marcados": fd["gf_pg"], "goles_concedidos": fd["gc_pg"],
-                          "fuente": "FD.org", "encontrado": True})
-            else: s["fuente"] += " +FD"
-    # TheSportsDB: funciona para selecciones nacionales y clubes
-    if not s["encontrado"]:
-        td = buscar_tsdb(nombre)
-        if td:
-            gm2, gc2 = stats_tsdb(td.get("idTeam"))
-            if gm2:
-                tipo = "Seleccion" if seleccion else "TheSportsDB"
-                s.update({"goles_marcados": gm2, "goles_concedidos": gc2,
-                          "fuente": tipo, "encontrado": True})
-        time.sleep(0.3)
-    elo = buscar_elo(nombre)
-    if elo: s["elo"] = elo
-    return s
-
-# ── MOTOR MATEMATICO ────────────────────────────────────────────────────────
 def pp(lam, k):
     if lam <= 0: return 0
-    return (math.exp(-lam) * (lam ** k)) / math.factorial(min(k, 20))
+    return (math.exp(-lam) * (lam**k)) / math.factorial(min(k, 20))
 
-def calcular(stl, stv, liga, cuotas=None):
+def calcular(gml, gcl, gmv, gcv, liga, elo_l=None, elo_v=None):
     pr = gp(liga)
-    gml = stl.get("goles_marcados"); gcl = stl.get("goles_concedidos")
-    xgl = stl.get("xg");            xgal = stl.get("xga")
-    gmv = stv.get("goles_marcados"); gcv = stv.get("goles_concedidos")
-    xgv = stv.get("xg");            xgav = stv.get("xga")
-    if xgl and xgav:     xl = round((xgl + xgav) / 2 * 1.08, 2)
-    elif gml and gcv:    xl = round(gml * (gcv / pr["gc"]) * 1.08, 2)
-    elif gml:            xl = round(gml * 1.08, 2)
-    else:                xl = round(pr["gm"] * 1.08, 2)
-    if xgv and xgal:     xv = round((xgv + xgal) / 2, 2)
-    elif gmv and gcl:    xv = round(gmv * (gcl / pr["gc"]), 2)
-    elif gmv:            xv = round(gmv, 2)
-    else:                xv = round(pr["gm"] * 0.78, 2)
-    el2 = stl.get("elo"); ev2 = stv.get("elo")
-    if el2 and ev2:
-        f = 1 + (el2 - ev2) / 4000
+    if gml and gcv:   xl = round(gml * (gcv / pr["gc"]) * 1.08, 2)
+    elif gml:         xl = round(gml * 1.08, 2)
+    else:             xl = round(pr["gm"] * 1.08, 2)
+    if gmv and gcl:   xv = round(gmv * (gcl / pr["gc"]), 2)
+    elif gmv:         xv = round(gmv, 2)
+    else:             xv = round(pr["gm"] * 0.78, 2)
+    if elo_l and elo_v:
+        f = 1 + (elo_l - elo_v) / 4000
         xl = round(xl * min(max(f, 0.75), 1.35), 2)
-        xv = round(xv * min(max(1 / f, 0.75), 1.35), 2)
+        xv = round(xv * min(max(1/f, 0.75), 1.35), 2)
     xl = max(0.15, xl); xv = max(0.10, xv); xt = round(xl + xv, 2)
     p1 = px = p2 = 0.0
     for i in range(9):
         for j in range(9):
             pij = pp(xl, i) * pp(xv, j)
-            if i > j: p1 += pij
+            if i > j:    p1 += pij
             elif i == j: px += pij
-            else: p2 += pij
-    p1 = round(p1 * 100); px = round(px * 100); p2 = max(0, 100 - p1 - px)
-    p0_ = pp(xt, 0); p1_ = pp(xt, 1); p2_ = pp(xt, 2); p3_ = pp(xt, 3)
-    o15 = round((1 - p0_ - p1_) * 100)
-    o25 = round((1 - p0_ - p1_ - p2_) * 100)
-    o35 = round((1 - p0_ - p1_ - p2_ - p3_) * 100)
-    btts = round((1 - pp(xl, 0)) * (1 - pp(xv, 0)) * 100)
-    cmu = round(xt * 2.1 + 4.5, 1); sc2 = 2.5
+            else:        p2 += pij
+    p1 = round(p1*100); px = round(px*100); p2 = max(0, 100-p1-px)
+    p0_=pp(xt,0);p1_=pp(xt,1);p2_=pp(xt,2);p3_=pp(xt,3)
+    o15=round((1-p0_-p1_)*100); o25=round((1-p0_-p1_-p2_)*100); o35=round((1-p0_-p1_-p2_-p3_)*100)
+    btts=round((1-pp(xl,0))*(1-pp(xv,0))*100)
+    cmu=round(xt*2.1+4.5,1); sc2=2.5
     def poc(l):
-        z = (l - cmu) / sc2
-        return max(5, min(95, round((1 - 0.5 * (1 + math.erf(z / math.sqrt(2)))) * 100)))
-    c75 = poc(7.5); c85 = poc(8.5); c95 = poc(9.5); c105 = poc(10.5)
-    tmu = round(3.5 + (1 - abs(p1 - p2) / 60) * 1.8, 1)
-    el_ = ee = ev_ = None
-    if cuotas:
-        el_ = round((p1 / 100 * cuotas["cuota_local"]  - 1) * 100, 1)
-        ee  = round((px / 100 * cuotas["cuota_empate"] - 1) * 100, 1)
-        ev_ = round((p2 / 100 * cuotas["cuota_visita"] - 1) * 100, 1)
-    return {"xg_local": xl, "xg_visit": xv, "xg_total": xt, "p1": p1, "px": px, "p2": p2,
-            "over15": o15, "over25": o25, "over35": o35, "btts": btts, "cmu": cmu,
-            "c75": c75, "c85": c85, "c95": c95, "c105": c105,
-            "corners_str": f"~{int(cmu)} (+9.5:{c95}% | +8.5:{c85}%)",
-            "tar_str": f"~{max(2, int(tmu)-1)}-{int(tmu)+1} tarjetas",
-            "edge_local": el_, "edge_empate": ee, "edge_visita": ev_}
+        z=(l-cmu)/sc2; return max(5,min(95,round((1-0.5*(1+math.erf(z/math.sqrt(2))))*100)))
+    c85=poc(8.5); c95=poc(9.5); c105=poc(10.5)
+    tmu=round(3.5+(1-abs(p1-p2)/60)*1.8,1)
+    g=None
+    if p1>p2 and p1>px: mk="1"
+    elif px>=p1 and px>=p2: mk="X"
+    else: mk="2"
+    if p1>p2 and p1>px and o25>=55: mk2="Gana Local + Over 1.5"
+    elif p2>p1 and p2>px and o25>=55: mk2="Gana Visita + Over 1.5"
+    elif o25>=65: mk2="Over 2.5 Goles"
+    elif btts>=62: mk2="BTTS Ambos Marcan"
+    elif c95>=65: mk2="Corners Over 9.5"
+    else: mk2=f"1X2: {mk}"
+    return {"xl":xl,"xv":xv,"xt":xt,"p1":p1,"px":px,"p2":p2,
+            "o15":o15,"o25":o25,"o35":o35,"btts":btts,
+            "cmu":cmu,"c85":c85,"c95":c95,"c105":c105,
+            "tar":f"~{max(2,int(tmu)-1)}-{int(tmu)+1}",
+            "corners":f"~{int(cmu)} (+9.5:{c95}% +8.5:{c85}%)",
+            "mk":mk,"mk2":mk2}
 
-def value_bets(calc, local, visitante, cuotas=None):
-    p1, px, p2 = calc["p1"], calc["px"], calc["p2"]
-    g = local if p1 >= p2 else visitante
-    cg = cuotas["cuota_local"] if cuotas and p1 >= p2 else (cuotas["cuota_visita"] if cuotas else None)
-    mds = [(f"{g} Gana", max(p1, p2), cg),
-           ("Empate", px, cuotas["cuota_empate"] if cuotas else None),
-           ("Over 1.5", calc["over15"], 1.25), ("Over 2.5", calc["over25"], 1.85),
-           ("Over 3.5", calc["over35"], 3.20), ("BTTS Si", calc["btts"], 1.80),
-           ("BTTS No", 100 - calc["btts"], 1.98), ("Corners +7.5", calc["c75"], 1.40),
-           ("Corners +8.5", calc["c85"], 1.58), ("Corners +9.5", calc["c95"], 1.88),
-           ("Corners +10.5", calc["c105"], 2.35)]
-    vbs = []
-    for nm, prob, cuota in mds:
-        if prob <= 0 or cuota is None: continue
-        e = round((prob / 100 * cuota - 1) * 100, 1)
-        cj = round(100 / max(prob, 1), 2)
-        pb = prob / 100; b = cuota - 1
-        kl = round(max(0, (pb * b - (1 - pb)) / b if b > 0 else 0) * 0.25 * 100, 1)
-        con = cuotas is not None and nm in (f"{g} Gana", "Empate")
-        label = "VALOR ALTO" if e >= 5 else ("VALOR" if e >= 2 else ("neutro" if e >= 0 else "negativo"))
-        vbs.append({"mercado": nm, "prob": prob, "cuota_justa": cj, "cuota_ref": cuota,
-                    "edge": e, "kelly": kl, "label": label, "con_odds": con})
-    return sorted(vbs, key=lambda x: x["edge"], reverse=True)
+def analizar_partidos(partidos, usar_api=True):
+    resultados = []
+    for p in partidos:
+        gml = gcl = gmv = gcv = None
+        fuente_l = fuente_v = "Prom.liga"
+        if usar_api and p.get("team_id_local"):
+            gml2, gcl2 = get_stats_equipo_api(p["team_id_local"])
+            gmv2, gcv2 = get_stats_equipo_api(p["team_id_visit"])
+            if gml2: gml=gml2; gcl=gcl2; fuente_l="API-Football"
+            if gmv2: gmv=gmv2; gcv=gcv2; fuente_v="API-Football"
+        calc = calcular(gml, gcl, gmv, gcv, p["liga"])
+        p1,px,p2 = calc["p1"],calc["px"],calc["p2"]
+        score = sum([
+            (fuente_l!="Prom.liga")*25,
+            (fuente_v!="Prom.liga")*25,
+            25 if max(p1,p2)>=60 else (12 if max(p1,p2)>=50 else 0),
+            20 if any(k in p["liga"].lower() for k in ["premier","liga","bundesliga","serie","ligue","libertadores","champions","mundial"]) else 0
+        ])
+        rango = "A+" if score>=75 else ("B" if score>=40 else "C")
+        resultados.append({**p, **calc, "rango":rango,
+                           "fuente_l":fuente_l, "fuente_v":fuente_v})
+    return resultados
 
-def leer_partidos(file_bytes):
-    wb_in = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
-    ws_in = wb_in.active
-    partidos = []; cur_dia = "Partidos"; cur_liga = ""
-    TORN = ["copa", "liga", "premier", "bundesliga", "serie", "ligue", "championship",
-            "apertura", "clausura", "europa", "champions", "sudamericana", "libertadores",
-            "mls", "eredivisie", "primera", "superliga", "mundial", "world cup", "fifa",
-            "copa del mundo", "nations league", "eurocopa", "euro 2", "copa america",
-            "gold cup", "african", "afcon", "olimpic", "olimpico"]
-    def fix(s):
-        s = str(s).strip().replace("\xa0", "")
-        for n in range(3, len(s) // 2 + 1):
-            if s[:n] == s[n:n * 2]: return s[:n]
-        return s
-    for ri in range(1, ws_in.max_row + 1):
-        val = ws_in.cell(row=ri, column=1).value
-        if val is None: continue
-        if isinstance(val, dtime):
-            try:
-                l = fix(ws_in.cell(row=ri + 1, column=1).value or "")
-                v = fix(ws_in.cell(row=ri + 2, column=1).value or "")
-                if l not in ("", "--") and v not in ("", "--"):
-                    partidos.append({"dia": cur_dia, "hora": f"{val.hour:02d}:{val.minute:02d}",
-                                     "hora_sort": val.hour * 60 + val.minute,
-                                     "liga": cur_liga or "Sin Liga", "local": l, "visitante": v})
-            except: pass
-            continue
-        vs = str(val).strip().replace("\xa0", "")
-        if vs in ["Lunes", "Martes", "Miercoles", "Miércoles", "Jueves", "Viernes", "Sabado", "Sábado", "Domingo"]:
-            cur_dia = vs; continue
-        if any(k in vs.lower() for k in TORN) and len(vs) < 80:
-            cur_liga = vs; continue
-    return partidos
-
-# ── EXPORTAR EXCEL ──────────────────────────────────────────────────────────
-def generar_excel(resultados):
-    def fill(c): return PatternFill("solid", fgColor=c)
+# ═══════════════════════════════════════════════════════════
+# EXPORTAR EXCEL
+# ═══════════════════════════════════════════════════════════
+def generar_excel(resultados, titulo="Scorpion Elite"):
+    def fill(c): return PatternFill("solid",fgColor=c)
     def brd():
-        s = Side(border_style="thin", color="334466")
-        return Border(left=s, right=s, top=s, bottom=s)
-    def al(h="center"): return Alignment(horizontal=h, vertical="center", wrap_text=True)
-    def sc(cell, bg=None, fg="FFFFFF", bold=False, sz=9, h="center"):
-        if bg: cell.fill = fill(bg)
-        cell.font = Font(color=fg, bold=bold, size=sz, name="Arial")
-        cell.alignment = al(h); cell.border = brd()
-    def hrow(ws, row, vals, bg="1A1A2E", fg="FFD700", sz=9):
-        for c, v in enumerate(vals, 1):
-            cl = ws.cell(row=row, column=c, value=v); sc(cl, bg=bg, fg=fg, bold=True, sz=sz)
-    def title(ws, row, text, ncols, bg="1A1A2E", fg="FFD700", sz=13):
-        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=ncols)
-        c = ws.cell(row=row, column=1, value=text); sc(c, bg=bg, fg=fg, bold=True, sz=sz)
-    def set_w(ws, wl):
-        for i, w in enumerate(wl, 1): ws.column_dimensions[get_column_letter(i)].width = w
+        s=Side(border_style="thin",color="334466"); return Border(left=s,right=s,top=s,bottom=s)
+    def al(h="center"): return Alignment(horizontal=h,vertical="center",wrap_text=True)
+    def sc(cell,bg=None,fg="FFFFFF",bold=False,sz=9,h="center"):
+        if bg: cell.fill=fill(bg)
+        cell.font=Font(color=fg,bold=bold,size=sz,name="Arial")
+        cell.alignment=al(h); cell.border=brd()
+    def hrow(ws,row,vals,bg="1A1A2E",fg="FFD700",sz=9):
+        for c,v in enumerate(vals,1): cl=ws.cell(row=row,column=c,value=v); sc(cl,bg=bg,fg=fg,bold=True,sz=sz)
+    def title_row(ws,row,text,ncols,bg="1A1A2E",fg="FFD700",sz=13):
+        ws.merge_cells(start_row=row,start_column=1,end_row=row,end_column=ncols)
+        c=ws.cell(row=row,column=1,value=text); sc(c,bg=bg,fg=fg,bold=True,sz=sz)
+    def set_w(ws,wl):
+        for i,w in enumerate(wl,1): ws.column_dimensions[get_column_letter(i)].width=w
 
-    wb = openpyxl.Workbook()
-    ws1 = wb.active; ws1.title = "LEER ANTES"
-    ws1.sheet_view.showGridLines = False; set_w(ws1, [30, 85])
-    title(ws1, 1, "SCORPION ELITE -- GLOSARIO Y DESCARGO", 2, sz=14)
-    glos = [("TERMINO", "DEFINICION"),
-            ("Rango A+", "Datos reales de AMBOS equipos. Maxima fiabilidad."),
-            ("Rango B",  "Datos reales de al menos UN equipo."),
-            ("Rango C",  "Solo promedios de liga o torneo."),
-            ("Fuentes",  "Understat / FD.org / TheSportsDB / ClubElo"),
-            ("xG",       "Expected Goals: ataque real x debilidad real del rival."),
-            ("BTTS",     "Ambos Marcan. Calculado con Poisson por equipo."),
-            ("Corners",  "Calculados desde xG total real del partido."),
-            ("Edge%",    "(Prob x Cuota - 1) x 100. Positivo = ventaja estadistica."),
-            ("Kelly%",   "Fraccion optima del bankroll (Kelly/4)."),
-            ("", ""), ("DESCARGO", ""),
-            ("", "Solo informativo. Las apuestas implican riesgo real de perdida."),
-            ("", f"Scorpion Elite | {datetime.now().strftime('%d/%m/%Y %H:%M')}")]
-    for i, (term, defi) in enumerate(glos, 3):
-        bg = "0D4F2E" if term in ("TERMINO", "DESCARGO") else ("0F3460" if i % 2 == 0 else "16213E")
-        c1 = ws1.cell(row=i, column=1, value=term)
-        sc(c1, bg=bg, fg="FFD700" if term.strip() else "888888", bold=bool(term.strip()), h="left")
-        c2 = ws1.cell(row=i, column=2, value=defi); sc(c2, bg=bg, fg="FFFFFF", h="left")
-
-    COLS = ["HORA", "LIGA", "PARTIDO", "1X2", "P1%", "PX%", "P2%", "xG LOC", "xG VIS", "xG TOT",
-            "OVER 1.5", "OVER 2.5", "BTTS%", "CORNERS", "C.9.5%", "TARJETAS",
-            "MERCADO CLAVE", "RANGO", "C.LOC", "C.EMP", "C.VIS", "EDGE", "FUENTE", "TRACKING"]
-    WW = [9, 22, 30, 7, 7, 7, 7, 7, 7, 7, 9, 9, 8, 18, 9, 12, 24, 7, 8, 8, 8, 10, 20, 14]
+    wb = Workbook()
+    COLS = ["HORA","LIGA","PARTIDO","1X2","P1%","PX%","P2%",
+            "xG LOC","xG VIS","xG TOT","OVER 1.5","OVER 2.5","BTTS%",
+            "CORNERS","C.9.5%","TARJETAS","MERCADO CLAVE","RANGO","FUENTE"]
+    WW   = [9,22,32,7,7,7,7,8,8,8,9,9,8,18,9,12,26,7,18]
 
     for dia in list(dict.fromkeys(r["dia"] for r in resultados)):
-        wsd = wb.create_sheet(title=str(dia)[:20])
-        wsd.sheet_view.showGridLines = False; set_w(wsd, WW)
-        title(wsd, 1, f"SCORPION ELITE | {str(dia).upper()}", len(COLS), sz=13)
-        wsd.row_dimensions[1].height = 24
-        hrow(wsd, 2, COLS, sz=8); wsd.row_dimensions[2].height = 36
-        fila = 3
-        for p in [x for x in resultados if x["dia"] == dia]:
-            p1, px, p2 = p["p1"], p["px"], p["p2"]
-            r1x2 = "1" if p1 > p2 and p1 > px else ("X" if px >= p1 and px >= p2 else "2")
-            cl = p["cuotas"]["cuota_local"]  if p["cuotas"] else ""
-            ce = p["cuotas"]["cuota_empate"] if p["cuotas"] else ""
-            cv = p["cuotas"]["cuota_visita"] if p["cuotas"] else ""
-            if p["edge_local"] is not None:
-                me = max([p["edge_local"] or -99, p["edge_empate"] or -99, p["edge_visita"] or -99])
-                edge_str = f"+{me:.1f}%" if me > 0 else f"{me:.1f}%"
-            else: edge_str = ""
-            ft = f'L:{p["fuente_local"][:8]} V:{p["fuente_visit"][:8]}'
-            g = p["local"] if p1 >= p2 else p["visitante"]
-            if p1 > p2 and p1 > px:        mk = f"{g} Gana"
-            elif p["over25"] >= 65:         mk = "Over 2.5 Goles"
-            elif p["btts"] >= 62:           mk = "BTTS Ambos Marcan"
-            elif p["c95"] >= 65:            mk = "Corners Over 9.5"
-            else:                           mk = f"{g} Gana / Over 1.5"
-            rv = [p["hora"], p["liga"][:20], f'{p["local"]} vs {p["visitante"]}',
-                  r1x2, f"{p1}%", f"{px}%", f"{p2}%", p["xg_local"], p["xg_visit"], p["xg_total"],
-                  f'{p["over15"]}%', f'{p["over25"]}%', f'{p["btts"]}%',
-                  p["corners_str"][:18], f'{p["c95"]}%', p["tar_str"],
-                  mk, p["rango"], cl, ce, cv, edge_str, ft, "PENDIENTE"]
-            bg = "0D3B0D" if p["rango"] == "A+" else ("0F3460" if fila % 2 == 0 else "16213E")
-            for col, val in enumerate(rv, 1):
-                c = wsd.cell(row=fila, column=col, value=val); fg = "FFFFFF"
-                if col == 18:   fg = "FFD700" if p["rango"] == "A+" else ("00FF7F" if p["rango"] == "B" else "AAAAAA")
-                elif col in (8, 9, 10): fg = "00FFFF"
-                elif col == 22: fg = "00FF7F" if "+" in str(edge_str) else ("FF6666" if edge_str else "AAAAAA")
-                elif col == 23:
-                    ambos = p["datos_local"] and p["datos_visit"]
-                    uno   = p["datos_local"] or  p["datos_visit"]
-                    fg = "00FF7F" if ambos else ("FFA500" if uno else "FF6666")
-                sc(c, bg=bg, fg=fg, sz=9, bold=(p["rango"] == "A+" and col in (3, 17, 18)))
-            wsd.row_dimensions[fila].height = 22; fila += 1
+        ws = wb.active if dia == list(dict.fromkeys(r["dia"] for r in resultados))[0] else wb.create_sheet()
+        ws.title = str(dia)[:20]; ws.sheet_view.showGridLines=False; set_w(ws,WW)
+        title_row(ws,1,f"🦂 {titulo} | {dia}",len(COLS),sz=13)
+        ws.row_dimensions[1].height=24; hrow(ws,2,COLS,sz=8); ws.row_dimensions[2].height=36
+        fila=3
+        for p in [x for x in resultados if x["dia"]==dia]:
+            r1x2=p["mk"]
+            rv=[p["hora"],p["liga"][:20],f'{p["local"]} vs {p["visitante"]}',
+                r1x2,f'{p["p1"]}%',f'{p["px"]}%',f'{p["p2"]}%',
+                p["xl"],p["xv"],p["xt"],
+                f'{p["o15"]}%',f'{p["o25"]}%',f'{p["btts"]}%',
+                p["corners"][:18],f'{p["c95"]}%',p["tar"],
+                p["mk2"],p["rango"],f'L:{p["fuente_l"][:8]} V:{p["fuente_v"][:8]}']
+            bg="0D3B0D" if p["rango"]=="A+" else ("0F3460" if fila%2==0 else "16213E")
+            for col,val in enumerate(rv,1):
+                c=ws.cell(row=fila,column=col,value=val); fg="FFFFFF"
+                if col==18: fg="FFD700" if p["rango"]=="A+" else ("00FF7F" if p["rango"]=="B" else "AAAAAA")
+                elif col in (8,9,10): fg="00FFFF"
+                elif col==19:
+                    fg="00FF7F" if "API" in str(val) else "FFA500"
+                sc(c,bg=bg,fg=fg,sz=9,bold=(p["rango"]=="A+" and col in (3,17,18)))
+            ws.row_dimensions[fila].height=22; fila+=1
 
-    wsv = wb.create_sheet(title="VALUE BETS"); wsv.sheet_view.showGridLines = False
-    vc = ["HORA", "PARTIDO", "LIGA", "MERCADO", "PROB%", "C.JUSTA", "C.REF", "EDGE%", "KELLY%", "ETIQUETA", "TIPO", "TRACKING"]
-    set_w(wsv, [9, 30, 20, 18, 7, 9, 9, 9, 9, 16, 12, 13])
-    title(wsv, 1, "VALUE BETTING -- Edge Real + Kelly Criterion", len(vc), bg="0A1A0A", fg="FFD700", sz=13)
-    hrow(wsv, 2, vc, bg="0A2E0A", fg="00FF7F", sz=8); fv = 3
-    for p in resultados:
-        for vb in [v for v in p["value_bets"] if v["edge"] >= 2][:5]:
-            e = vb["edge"]; bg = "0D3B0D" if e >= 5 else ("0F3460" if e >= 2 else "2A1A0A")
-            rv = [p["hora"], f'{p["local"]} vs {p["visitante"]}', p["liga"][:18],
-                  vb["mercado"], f'{vb["prob"]}%', str(vb["cuota_justa"]), str(vb["cuota_ref"]),
-                  f'{vb["edge"]:+.1f}%', f'{vb["kelly"]}%', vb["label"],
-                  "Odds reales" if vb.get("con_odds") else "Modelo", "PENDIENTE"]
-            for col, val in enumerate(rv, 1):
-                c = wsv.cell(row=fv, column=col, value=val); fg = "FFFFFF"
-                if col == 8:  fg = "00FF7F" if e >= 5 else ("AAFFAA" if e >= 2 else "FFA500")
-                elif col == 10: fg = "FFD700" if "ALTO" in str(val) else ("00FF7F" if "VALOR" in str(val) else "888888")
-                elif col == 11: fg = "00FF7F" if "reales" in str(val) else "AAAAAA"
-                sc(c, bg=bg, fg=fg, sz=9)
-            wsv.row_dimensions[fv].height = 20; fv += 1
+    # VALUE BETS sheet
+    wsv=wb.create_sheet(title="VALUE BETS"); wsv.sheet_view.showGridLines=False
+    vc=["HORA","PARTIDO","LIGA","PICK RECOMENDADO","P1%","PX%","P2%","xG TOT","OVER 2.5","BTTS","RANGO"]
+    set_w(wsv,[9,32,20,28,7,7,7,8,9,8,7])
+    title_row(wsv,1,"💰 PICKS RECOMENDADOS — Partidos con mayor ventaja estadistica",len(vc),bg="0A1A0A",fg="FFD700",sz=13)
+    hrow(wsv,2,vc,bg="0A2E0A",fg="00FF7F",sz=8); fv=3
+    top = sorted([r for r in resultados if r["rango"] in ("A+","B")],
+                 key=lambda x: max(x["p1"],x["p2"]), reverse=True)[:15]
+    for p in top:
+        e=max(p["p1"],p["p2"]); bg="0D3B0D" if p["rango"]=="A+" else "0F3460"
+        rv=[p["hora"],f'{p["local"]} vs {p["visitante"]}',p["liga"][:18],
+            p["mk2"],f'{p["p1"]}%',f'{p["px"]}%',f'{p["p2"]}%',
+            p["xt"],f'{p["o25"]}%',f'{p["btts"]}%',p["rango"]]
+        for col,val in enumerate(rv,1):
+            c=wsv.cell(row=fv,column=col,value=val); fg="FFFFFF"
+            if col==4: fg="FFD700"
+            elif col==11: fg="00FF7F" if p["rango"]=="A+" else "5bc8ff"
+            sc(c,bg=bg,fg=fg,sz=9,bold=(col in (4,11)))
+        wsv.row_dimensions[fv].height=20; fv+=1
 
-    wsvip = wb.create_sheet(title="VIP A+"); wsvip.sheet_view.showGridLines = False
-    vipc = ["HORA", "ENCUENTRO", "CAT", "MERCADO 1", "P%", "EDGE", "MERCADO 2", "P%", "EDGE",
-            "xG LOC", "xG VIS", "xG TOT", "CORNERS", "TARJ.", "CUOTAS", "FUENTE", "TRACKING"]
-    set_w(wsvip, [9, 30, 5, 22, 7, 9, 22, 7, 9, 8, 8, 8, 16, 12, 22, 22, 13])
-    title(wsvip, 1, "VIP A+ -- Analisis Profundo por Partido", len(vipc), bg="0D0D0D", fg="FFD700", sz=13)
-    hrow(wsvip, 2, vipc, bg="0A0A0A", fg="FFD700", sz=8)
-    for i, p in enumerate([r for r in resultados if r["rango"] == "A+"], 3):
-        bg = "0D2E0D" if i % 2 == 0 else "091F09"
-        vbs = p["value_bets"]
-        def gvb(n): return (vbs[n]["mercado"], f'{vbs[n]["prob"]}%', f'{vbs[n]["edge"]:+.1f}%') if len(vbs) > n else ("--", "--", "--")
-        m1, pr1, e1 = gvb(0); m2, pr2, e2 = gvb(1)
-        ct = f'{p["cuotas"]["cuota_local"]}/{p["cuotas"]["cuota_empate"]}/{p["cuotas"]["cuota_visita"]}' if p["cuotas"] else "Sin cuotas"
-        rv = [p["hora"], f'{p["local"]} vs {p["visitante"]}', "A+", m1, pr1, e1, m2, pr2, e2,
-              p["xg_local"], p["xg_visit"], p["xg_total"], p["corners_str"][:14], p["tar_str"],
-              ct, f'L:{p["fuente_local"][:9]}/V:{p["fuente_visit"][:9]}', "PENDIENTE"]
-        for col, val in enumerate(rv, 1):
-            c = wsvip.cell(row=i, column=col, value=val); fg = "FFFFFF"
-            if col == 3: fg = "FFD700"
-            elif col in (6, 9): fg = "00FF7F" if "+" in str(val) and val != "--" else ("FF4444" if "-" in str(val) else "888888")
-            elif col in (10, 11, 12): fg = "00FFFF"
-            elif col == 15: fg = "00FF7F" if p["cuotas"] else "AAAAAA"
-            elif col == 16: fg = "00FF7F" if p["datos_local"] and p["datos_visit"] else ("FFA500" if p["datos_local"] or p["datos_visit"] else "FF6666")
-            sc(c, bg=bg, fg=fg, sz=9, bold=(col <= 3))
-        wsvip.row_dimensions[i].height = 26
+    for ws_tab in wb.worksheets: ws_tab.freeze_panes="A3"
+    buf=io.BytesIO(); wb.save(buf); buf.seek(0); return buf.getvalue()
 
-    for ws_tab in wb.worksheets: ws_tab.freeze_panes = "A3"
-    tab_c = {"LEER ANTES": "FFD700", "VALUE BETS": "00CC44", "VIP A+": "FFD700"}
-    for ws_tab in wb.worksheets:
-        ws_tab.sheet_properties.tabColor = tab_c.get(ws_tab.title, "1E90FF")
-    buf = io.BytesIO(); wb.save(buf); buf.seek(0); return buf.getvalue()
+# ═══════════════════════════════════════════════════════════
+# LEER EXCEL/IMAGEN SUBIDA (plan gratis, max 5 partidos)
+# ═══════════════════════════════════════════════════════════
+def leer_excel_subido(file_bytes):
+    import openpyxl
+    wb_in=openpyxl.load_workbook(io.BytesIO(file_bytes),data_only=True); ws_in=wb_in.active
+    partidos=[]; cur_liga=""
+    TORN=["copa","liga","premier","bundesliga","serie","ligue","championship","apertura","clausura",
+          "europa","champions","sudamericana","libertadores","mls","eredivisie","primera","superliga",
+          "mundial","world cup","fifa","copa del mundo","nations","eurocopa","copa america"]
+    def fix(s):
+        s=str(s).strip().replace("\xa0","")
+        for n in range(3,len(s)//2+1):
+            if s[:n]==s[n:n*2]: return s[:n]
+        return s
+    for ri in range(1,ws_in.max_row+1):
+        val=ws_in.cell(row=ri,column=1).value
+        if val is None: continue
+        if isinstance(val,dtime):
+            try:
+                l=fix(ws_in.cell(row=ri+1,column=1).value or "")
+                v=fix(ws_in.cell(row=ri+2,column=1).value or "")
+                if l not in ("","--") and v not in ("","--"):
+                    partidos.append({"dia":str(date.today()),"hora":f"{val.hour:02d}:{val.minute:02d}",
+                                     "hora_sort":val.hour*60+val.minute,
+                                     "liga":cur_liga or "Sin Liga","local":l,"visitante":v,
+                                     "team_id_local":None,"team_id_visit":None})
+            except: pass
+            continue
+        vs=str(val).strip().replace("\xa0","")
+        if any(k in vs.lower() for k in TORN) and len(vs)<80: cur_liga=vs
+    return partidos
 
-# ── APP PRINCIPAL ────────────────────────────────────────────────────────────
-def app_principal():
-    nombre = st.session_state.nombre
-    c1, c2 = st.columns([8, 1])
+# ═══════════════════════════════════════════════════════════
+# TELEGRAM
+# ═══════════════════════════════════════════════════════════
+def enviar_telegram(mensaje):
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID: return False
+    try:
+        url=f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        requests.post(url,json={"chat_id":TELEGRAM_CHAT_ID,"text":mensaje,"parse_mode":"HTML"},timeout=10)
+        return True
+    except: return False
+
+def generar_picks_telegram(resultados):
+    top3 = sorted([r for r in resultados if r["rango"]=="A+"],
+                  key=lambda x: max(x["p1"],x["p2"]), reverse=True)[:3]
+    if not top3:
+        top3 = sorted(resultados, key=lambda x: max(x["p1"],x["p2"]), reverse=True)[:3]
+    msg = "🦂 <b>SCORPION ELITE — PICKS DEL DIA</b>\n"
+    msg += f"📅 {date.today().strftime('%d/%m/%Y')}\n\n"
+    for i, p in enumerate(top3, 1):
+        g = p["local"] if p["p1"] >= p["p2"] else p["visitante"]
+        msg += f"<b>PICK {i}: {p['liga']}</b>\n"
+        msg += f"⚽ {p['local']} vs {p['visitante']}\n"
+        msg += f"🕐 {p['hora']} | 🎯 {p['mk2']}\n"
+        msg += f"📊 xG: {p['xl']}-{p['xv']} | Over 2.5: {p['o25']}%\n"
+        msg += f"🏆 Rango: {p['rango']}\n\n"
+    msg += "⚠️ Solo informativo. Apuesta con responsabilidad."
+    return msg
+
+# ═══════════════════════════════════════════════════════════
+# PANTALLAS
+# ═══════════════════════════════════════════════════════════
+def header():
+    st.markdown('<div class="hdr"><h1>🦂 SCORPION ELITE</h1><p>Motor de Analisis Deportivo con Datos Reales · API-Football</p></div>', unsafe_allow_html=True)
+
+def pantalla_login():
+    header()
+    st.markdown('<div class="lbox">', unsafe_allow_html=True)
+    st.markdown("### 🔐 Acceder")
+    cedula = st.text_input("Cedula / DNI", placeholder="Tu numero de cedula")
+    if st.button("Entrar →"):
+        if not cedula.strip():
+            st.error("Ingresa tu cedula.")
+        else:
+            u = get_usuario(cedula.strip())
+            if u is None:
+                # Crear usuario gratis automaticamente
+                st.session_state.usuarios_db[cedula.strip()] = {
+                    "nombre": f"Usuario {cedula.strip()[:6]}",
+                    "cedula": cedula.strip(),
+                    "plan": "gratis",
+                    "fecha_inicio": str(date.today()),
+                    "dias": 9999,
+                    "activo": True,
+                    "password": "",
+                }
+                u = get_usuario(cedula.strip())
+            ok, estado = verificar_acceso(u)
+            if estado == "vencido":
+                st.error("Tu acceso ha vencido. Contacta al administrador para renovar.")
+            elif estado == "inactivo":
+                st.error("Tu cuenta esta inactiva. Contacta al administrador.")
+            else:
+                st.session_state.cedula_actual = cedula.strip()
+                st.session_state.usuario_actual = u
+                st.session_state.logged_in = True
+                st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+    # Info de planes
+    st.markdown("---")
+    st.markdown("### 📋 Planes disponibles")
+    c1,c2,c3,c4 = st.columns(4)
     with c1:
-        st.markdown(f'<div class="hdr"><h1>🦂 SCORPION ELITE</h1><p>Bienvenido, {nombre} — Motor de Analisis Deportivo con Datos Reales</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="plan-card plan-free"><h3>🆓 Gratis</h3><p>Sube Excel o imagen<br>Max 5 partidos/dia<br>Sin costo</p></div>', unsafe_allow_html=True)
     with c2:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        if st.button("Salir"): st.session_state.logged_in = False; st.rerun()
+        st.markdown('<div class="plan-card plan-dia"><h3>📅 Plan Dia</h3><p>Selecciona liga<br>Partidos del dia<br>Descarga Excel</p></div>', unsafe_allow_html=True)
+    with c3:
+        st.markdown('<div class="plan-card plan-semana"><h3>📆 Plan Semana</h3><p>Partidos de la semana<br>1 o mas ligas<br>Elige los dias</p></div>', unsafe_allow_html=True)
+    with c4:
+        st.markdown('<div class="plan-card plan-mes"><h3>👑 Plan Mes</h3><p>Todo ilimitado<br>Todas las ligas<br>Multiple semanas</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="ft">🦂 Scorpion Elite 2025 · Solo uso informativo · Las apuestas implican riesgo</div>', unsafe_allow_html=True)
 
-    st.markdown("### Como usar")
-    cols = st.columns(4)
-    pasos = [("1", "Sube tu Excel", "Con los partidos en el formato habitual"),
-             ("2", "Clic en Analizar", "El motor busca stats reales de cada equipo"),
-             ("3", "Espera", "3-5 seg por partido. Progreso en pantalla"),
-             ("4", "Descarga el Excel", "Hojas: dias, value bets, VIP A+")]
-    for col, (n, t, d) in zip(cols, pasos):
-        with col:
-            st.markdown(f'<div class="sb"><div class="n">Paso {n} — {t}</div><div class="t">{d}</div></div>', unsafe_allow_html=True)
+def pantalla_admin():
+    header()
+    st.markdown("## ⚙️ Panel de Administrador")
+    db = st.session_state.usuarios_db
 
-    st.divider()
-    uploaded = st.file_uploader("Sube tu Excel de partidos", type=["xlsx"])
+    col1, col2 = st.columns([1,1])
+
+    with col1:
+        st.markdown("### ➕ Registrar / Actualizar Cliente")
+        cedula_n = st.text_input("Cedula / DNI del cliente")
+        nombre_n = st.text_input("Nombre del cliente")
+        plan_n   = st.selectbox("Plan", ["gratis","dia","semana","mes"])
+        dias_map = {"gratis": 9999, "dia": 1, "semana": 7, "mes": 30}
+        dias_extra = st.number_input("Dias de acceso (personalizado)", min_value=1, max_value=365, value=dias_map[plan_n])
+        fecha_ini = st.date_input("Fecha de inicio", value=date.today())
+        if st.button("💾 Guardar cliente"):
+            if cedula_n.strip():
+                db[cedula_n.strip()] = {
+                    "nombre":      nombre_n or f"Cliente {cedula_n[:6]}",
+                    "cedula":      cedula_n.strip(),
+                    "plan":        plan_n,
+                    "fecha_inicio":str(fecha_ini),
+                    "dias":        int(dias_extra),
+                    "activo":      True,
+                    "password":    "",
+                }
+                st.success(f"✅ Cliente {cedula_n} guardado con plan {plan_n} por {dias_extra} dias.")
+            else:
+                st.error("Ingresa la cedula.")
+
+    with col2:
+        st.markdown("### 📊 Clientes Activos")
+        for ced, u in db.items():
+            if u["plan"] == "admin": continue
+            ok, estado = verificar_acceso(u)
+            dr = dias_restantes(u) if u["plan"] != "gratis" else "∞"
+            pill = f'<span class="pill-activo">Activo</span>' if ok else f'<span class="pill-vencido">Vencido</span>'
+            if u["plan"] == "gratis": pill = f'<span class="pill-gratis">Gratis</span>'
+            st.markdown(f"**{u['nombre']}** `{ced}` · {u['plan'].upper()} · {dr} dias restantes {pill}", unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("### 📡 Enviar Picks a Telegram")
+    st.info("Primero analiza partidos en la pestaña principal, luego vuelve aqui a enviar los picks del dia.")
+    liga_tg = st.selectbox("Liga para picks del dia", list(LIGAS.keys()))
+    if st.button("🚀 Analizar y Enviar a Telegram"):
+        hoy = str(date.today())
+        with st.spinner("Obteniendo partidos..."):
+            fixtures = get_fixtures_dia(LIGAS[liga_tg]["id"], hoy)
+        if fixtures:
+            partidos = [fixture_a_partido(f) for f in fixtures]
+            resultados = analizar_partidos(partidos)
+            msg = generar_picks_telegram(resultados)
+            if enviar_telegram(msg):
+                st.success("✅ Picks enviados a Telegram!")
+                st.code(msg)
+            else:
+                st.warning("⚠️ No se pudo enviar. Verifica TELEGRAM_TOKEN y TELEGRAM_CHAT_ID en Secrets.")
+                st.code(msg)
+        else:
+            st.warning("No hay partidos hoy en esa liga.")
+
+    if st.button("🚪 Cerrar sesion admin"):
+        st.session_state.logged_in = False; st.rerun()
+
+def pantalla_gratis(usuario):
+    header()
+    dr = f'<span class="pill-gratis">Plan Gratuito</span>'
+    st.markdown(f"👋 Hola **{usuario['nombre']}** {dr} · Max 5 partidos/dia", unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown("### 📁 Sube tu Excel o imagen con los partidos")
+    st.info("Plan gratuito: se analizan los primeros 5 partidos. Actualiza a un plan de pago para acceso completo.")
+    uploaded = st.file_uploader("Sube tu archivo", type=["xlsx","xls","png","jpg","jpeg"])
     if uploaded:
         fb = uploaded.read()
-        try: partidos = leer_partidos(fb)
-        except Exception as e: st.error(f"Error leyendo el archivo: {e}"); return
-        if not partidos: st.warning("No se encontraron partidos. Verifica el formato."); return
-
-        dias_u  = list(dict.fromkeys(p["dia"]  for p in partidos))
-        ligas_u = list(dict.fromkeys(p["liga"] for p in partidos))
-        c1, c2, c3 = st.columns(3)
-        with c1: st.markdown(f'<div class="mc"><div class="v">{len(partidos)}</div><div class="l">Partidos</div></div>', unsafe_allow_html=True)
-        with c2: st.markdown(f'<div class="mc"><div class="v">{len(dias_u)}</div><div class="l">Dias</div></div>', unsafe_allow_html=True)
-        with c3: st.markdown(f'<div class="mc"><div class="v">{len(ligas_u)}</div><div class="l">Ligas</div></div>', unsafe_allow_html=True)
-
-        prev = [[p["dia"], p["hora"], p["liga"][:25], p["local"], p["visitante"]] for p in partidos[:6]]
-        st.table({"Dia": [r[0] for r in prev], "Hora": [r[1] for r in prev], "Liga": [r[2] for r in prev],
-                  "Local": [r[3] for r in prev], "Visitante": [r[4] for r in prev]})
-        if len(partidos) > 6: st.caption(f"... y {len(partidos)-6} partidos mas")
-
+        if uploaded.name.endswith((".xlsx",".xls")):
+            try:
+                partidos = leer_excel_subido(fb)[:5]
+            except Exception as e:
+                st.error(f"Error leyendo Excel: {e}"); return
+        else:
+            st.warning("Lectura de imagen en desarrollo. Por ahora usa Excel.")
+            return
+        if not partidos:
+            st.warning("No se encontraron partidos."); return
+        st.success(f"✅ {len(partidos)} partidos encontrados (max 5 en plan gratis)")
         if st.button(f"🦂 Analizar {len(partidos)} partidos"):
-            resultados = []; prog = st.progress(0, "Iniciando..."); status = st.empty()
-            SIN_WEB = ["argelia", "jamaica", "bosnia", "amapaense", "bahrein", "faroe"]
-            for idx, p in enumerate(partidos):
-                local = p["local"]; visitante = p["visitante"]; liga = p["liga"]
-                status.markdown(f"🔍 **[{idx+1}/{len(partidos)}]** {local} vs {visitante}")
-                prog.progress((idx + 1) / len(partidos), text=f"{idx+1}/{len(partidos)}")
-                sin_cob = any(s in liga.lower() for s in SIN_WEB)
-                if sin_cob:
-                    pm = gp(liga)
-                    stl = {"goles_marcados": pm["gm"], "goles_concedidos": pm["gc"], "xg": None, "xga": None, "elo": None, "fuente": "Prom.liga", "encontrado": False}
-                    stv = {"goles_marcados": pm["gm"] * 0.78, "goles_concedidos": pm["gc"], "xg": None, "xga": None, "elo": None, "fuente": "Prom.liga", "encontrado": False}
-                    cuotas = None
+            with st.spinner("Analizando..."):
+                resultados = analizar_partidos(partidos, usar_api=False)
+            st.success("✅ Listo")
+            for r in resultados:
+                g = r["local"] if r["p1"]>=r["p2"] else r["visitante"]
+                badge = f'<span class="badge-{r["rango"].lower().replace("+","ap")}">{r["rango"]}</span>'
+                st.markdown(f"{badge} **{r['local']} vs {r['visitante']}** · 1X2: {r['mk']} · xG: {r['xl']}-{r['xv']} · Over2.5: {r['o25']}% · Pick: {r['mk2']}", unsafe_allow_html=True)
+            excel = generar_excel(resultados, "Scorpion Elite — Plan Gratis")
+            st.download_button("⬇️ Descargar Excel", data=excel,
+                file_name=f"ScorpionElite_gratis_{date.today()}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    if st.button("🚪 Cerrar sesion"): st.session_state.logged_in=False; st.rerun()
+    st.markdown('<div class="ft">🦂 Scorpion Elite 2025 · Solo uso informativo</div>', unsafe_allow_html=True)
+
+def pantalla_pago(usuario, plan):
+    header()
+    dr = dias_restantes(usuario)
+    plan_label = {"dia":"📅 Plan Dia","semana":"📆 Plan Semana","mes":"👑 Plan Mes"}.get(plan, plan)
+    pill_color = {"dia":"pill-activo","semana":"pill-activo","mes":"pill-gratis"}.get(plan,"pill-activo")
+    st.markdown(f'👋 Hola **{usuario["nombre"]}** <span class="{pill_color}">{plan_label}</span> · **{dr} dias restantes**', unsafe_allow_html=True)
+    st.markdown("---")
+
+    tab1, tab2 = st.tabs(["🏟️ Analizar por Liga", "📁 Subir Excel/Imagen"])
+
+    with tab1:
+        st.markdown("### Selecciona liga y periodo")
+        c1, c2 = st.columns([2,1])
+        with c1:
+            if plan == "mes":
+                ligas_sel = st.multiselect("Selecciona una o mas ligas", list(LIGAS.keys()), default=[list(LIGAS.keys())[0]])
+            else:
+                liga_sel = st.selectbox("Selecciona una liga", list(LIGAS.keys()))
+                ligas_sel = [liga_sel]
+        with c2:
+            if plan == "dia":
+                fecha_sel = st.date_input("Fecha", value=date.today())
+                modo = "dia"
+            elif plan == "semana":
+                modo = st.radio("Periodo", ["Dia especifico", "Semana completa", "Dias especificos"])
+                if modo == "Dia especifico":
+                    fecha_sel = st.date_input("Fecha", value=date.today())
+                    modo = "dia"
+                elif modo == "Semana completa":
+                    # Lunes de esta semana
+                    hoy = date.today()
+                    lunes = hoy - timedelta(days=hoy.weekday())
+                    fecha_desde = st.date_input("Desde", value=lunes)
+                    fecha_hasta = st.date_input("Hasta", value=lunes+timedelta(days=6))
+                    modo = "semana"
                 else:
-                    stl    = obtener_stats(local, liga)
-                    stv    = obtener_stats(visitante, liga)
-                    cuotas = buscar_cuotas(local, visitante, liga)
-                calc  = calcular(stl, stv, liga, cuotas)
-                vbets = value_bets(calc, local, visitante, cuotas)
-                p1, px, p2 = calc["p1"], calc["px"], calc["p2"]
-                score = sum([stl["encontrado"] * 25, stv["encontrado"] * 25,
-                             25 if max(p1, p2) >= 60 else (12 if max(p1, p2) >= 50 else 0),
-                             20 if any(k in liga.lower() for k in ["premier", "laliga", "la liga", "bundesliga", "serie a", "ligue", "libertadores", "champions", "mundial", "world cup", "eurocopa", "copa america"]) else 0])
-                rango = "A+" if score >= 75 else ("B" if score >= 40 else "C")
-                resultados.append({**p, "p1": p1, "px": px, "p2": p2,
-                    "xg_local": calc["xg_local"], "xg_visit": calc["xg_visit"], "xg_total": calc["xg_total"],
-                    "over15": calc["over15"], "over25": calc["over25"], "btts": calc["btts"],
-                    "corners_str": calc["corners_str"], "c95": calc["c95"], "tar_str": calc["tar_str"],
-                    "rango": rango, "value_bets": vbets, "cuotas": cuotas,
-                    "edge_local": calc["edge_local"], "edge_empate": calc["edge_empate"], "edge_visita": calc["edge_visita"],
-                    "fuente_local": stl["fuente"], "fuente_visit": stv["fuente"],
-                    "datos_local": stl["encontrado"], "datos_visit": stv["encontrado"]})
+                    dias_check = st.multiselect("Selecciona dias", ["Lunes","Martes","Miercoles","Jueves","Viernes","Sabado","Domingo"])
+                    modo = "dias"
+            else:  # mes
+                modo = st.radio("Periodo", ["Hoy","Esta semana","Semana personalizada"])
+                if modo == "Hoy":
+                    fecha_sel = date.today(); modo="dia"
+                elif modo == "Esta semana":
+                    hoy=date.today(); lunes=hoy-timedelta(days=hoy.weekday())
+                    fecha_desde=lunes; fecha_hasta=lunes+timedelta(days=6); modo="semana"
+                else:
+                    fecha_desde = st.date_input("Desde", value=date.today())
+                    fecha_hasta = st.date_input("Hasta", value=date.today()+timedelta(days=6))
+                    modo="semana"
 
-            prog.progress(1.0, "Listo ✅"); status.empty()
-            st.success(f"✅ {len(resultados)} partidos analizados")
-            ap        = sum(1 for r in resultados if r["rango"] == "A+")
-            ambos     = sum(1 for r in resultados if r["datos_local"] and r["datos_visit"])
-            vb_tot    = sum(len([v for v in r["value_bets"] if v["edge"] >= 2]) for r in resultados)
-            with_odds = sum(1 for r in resultados if r["cuotas"])
-            c1, c2, c3, c4 = st.columns(4)
-            for col, (val, lbl) in zip([c1, c2, c3, c4], [(ap, "VIP A+"), (ambos, "Datos reales"), (vb_tot, "Value bets"), (with_odds, "Cuotas reales")]):
-                with col: st.markdown(f'<div class="mc"><div class="v">{val}</div><div class="l">{lbl}</div></div>', unsafe_allow_html=True)
+        if st.button("🦂 Obtener y Analizar Partidos"):
+            todos_partidos = []
+            with st.spinner("Obteniendo partidos de API-Football..."):
+                for liga_nombre in ligas_sel:
+                    liga_id = LIGAS[liga_nombre]["id"]
+                    if modo == "dia":
+                        fixtures = get_fixtures_dia(liga_id, str(fecha_sel))
+                    elif modo == "semana":
+                        fixtures = get_fixtures_semana(liga_id, str(fecha_desde), str(fecha_hasta))
+                    elif modo == "dias":
+                        fixtures = []
+                        hoy=date.today(); lunes=hoy-timedelta(days=hoy.weekday())
+                        map_dias={"Lunes":0,"Martes":1,"Miercoles":2,"Jueves":3,"Viernes":4,"Sabado":5,"Domingo":6}
+                        for d in dias_check:
+                            fd=lunes+timedelta(days=map_dias.get(d,0))
+                            fixtures+=get_fixtures_dia(liga_id, str(fd))
+                    todos_partidos += [fixture_a_partido(f) for f in fixtures]
+                    time.sleep(0.3)
 
-            ap_list = [r for r in resultados if r["rango"] == "A+"]
-            if ap_list:
-                st.markdown("### Top picks A+")
-                for r in ap_list[:5]:
-                    vb0 = r["value_bets"][0] if r["value_bets"] else None
-                    mk  = vb0["mercado"] if vb0 else "Ver analisis"
-                    et  = f" — Edge:{vb0['edge']:+.1f}%" if vb0 else ""
-                    st.markdown(f"🟢 **{r['local']} vs {r['visitante']}** ({r['liga'][:20]}) · {mk}{et}")
+            if not todos_partidos:
+                st.warning("No se encontraron partidos para ese periodo y liga. Puede que la liga este en receso o la temporada no haya comenzado.")
+                return
 
-            excel_bytes = generar_excel(resultados)
-            fecha = datetime.now().strftime("%Y%m%d_%H%M")
-            st.download_button("⬇️ Descargar Excel completo", data=excel_bytes,
-                file_name=f"ScorpionElite_{fecha}.xlsx",
+            st.info(f"🔍 Analizando {len(todos_partidos)} partidos con datos reales...")
+            with st.spinner("Analizando..."):
+                resultados = analizar_partidos(todos_partidos)
+
+            # Metricas
+            ap=sum(1 for r in resultados if r["rango"]=="A+")
+            b=sum(1 for r in resultados if r["rango"]=="B")
+            api_ok=sum(1 for r in resultados if "API" in r["fuente_l"])
+            c1,c2,c3,c4=st.columns(4)
+            with c1: st.markdown(f'<div class="mc"><div class="v">{len(resultados)}</div><div class="l">Partidos</div></div>',unsafe_allow_html=True)
+            with c2: st.markdown(f'<div class="mc"><div class="v">{ap}</div><div class="l">Rango A+</div></div>',unsafe_allow_html=True)
+            with c3: st.markdown(f'<div class="mc"><div class="v">{b}</div><div class="l">Rango B</div></div>',unsafe_allow_html=True)
+            with c4: st.markdown(f'<div class="mc"><div class="v">{api_ok}</div><div class="l">Datos reales</div></div>',unsafe_allow_html=True)
+
+            # Top picks
+            st.markdown("### 🏆 Top Picks")
+            top = sorted([r for r in resultados if r["rango"] in ("A+","B")],
+                         key=lambda x: max(x["p1"],x["p2"]),reverse=True)[:8]
+            for r in top:
+                badge_cls = "badge-ap" if r["rango"]=="A+" else "badge-b"
+                st.markdown(f'<span class="{badge_cls}">{r["rango"]}</span> **{r["local"]} vs {r["visitante"]}** ({r["liga"][:20]}) · {r["hora"]} · Pick: **{r["mk2"]}** · xG: {r["xl"]}-{r["xv"]} · Over2.5: {r["o25"]}%', unsafe_allow_html=True)
+
+            # Descargar
+            st.markdown("### 📥 Descargar")
+            excel = generar_excel(resultados, f"Scorpion Elite — {plan_label}")
+            fecha_label = str(fecha_sel) if modo=="dia" else f"{fecha_desde}_al_{fecha_hasta}"
+            st.download_button("⬇️ Descargar Excel completo", data=excel,
+                file_name=f"ScorpionElite_{fecha_label}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-    st.markdown('<div class="ft">🦂 Scorpion Elite 2025 — Solo uso informativo</div>', unsafe_allow_html=True)
+    with tab2:
+        st.markdown("### 📁 Sube tu propio Excel o imagen")
+        uploaded = st.file_uploader("Sube tu archivo", type=["xlsx","xls","png","jpg","jpeg"])
+        if uploaded:
+            fb = uploaded.read()
+            if uploaded.name.endswith((".xlsx",".xls")):
+                try: partidos = leer_excel_subido(fb)
+                except Exception as e: st.error(f"Error: {e}"); return
+            else:
+                st.warning("Lectura de imagen en desarrollo. Usa Excel por ahora."); return
+            if not partidos: st.warning("No se encontraron partidos."); return
+            st.success(f"✅ {len(partidos)} partidos")
+            if st.button("🦂 Analizar archivo"):
+                with st.spinner("Analizando..."):
+                    resultados = analizar_partidos(partidos)
+                excel = generar_excel(resultados, "Scorpion Elite — Archivo Propio")
+                st.download_button("⬇️ Descargar Excel", data=excel,
+                    file_name=f"ScorpionElite_custom_{date.today()}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-# ── ROUTER ───────────────────────────────────────────────────────────────────
+    if st.button("🚪 Cerrar sesion"): st.session_state.logged_in=False; st.rerun()
+    st.markdown('<div class="ft">🦂 Scorpion Elite 2025 · Solo uso informativo</div>', unsafe_allow_html=True)
+
+# ═══════════════════════════════════════════════════════════
+# ROUTER PRINCIPAL
+# ═══════════════════════════════════════════════════════════
+init_db()
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
 if not st.session_state.logged_in:
     pantalla_login()
 else:
-    app_principal()
+    usuario = st.session_state.get("usuario_actual", {})
+    ok, plan = verificar_acceso(usuario)
+    if plan == "admin":
+        pantalla_admin()
+    elif plan == "gratis":
+        pantalla_gratis(usuario)
+    elif plan in ("dia","semana","mes"):
+        pantalla_pago(usuario, plan)
+    else:
+        st.error("Acceso vencido o inactivo. Contacta al administrador.")
+        if st.button("Volver al inicio"): st.session_state.logged_in=False; st.rerun()
