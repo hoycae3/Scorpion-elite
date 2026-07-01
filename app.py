@@ -57,10 +57,19 @@ def init_db():
                 "cedula": "admin",
                 "plan": "admin",
                 "fecha_inicio": str(date.today()),
-                "dias": 9999,
+                "dias": 36500,
                 "activo": True,
                 "password": ADMIN_PASSWORD,
-            }
+            },
+            "owner": {
+                "nombre": "Propietario (Prueba)",
+                "cedula": "owner",
+                "plan": "mes",
+                "fecha_inicio": str(date.today()),
+                "dias": 36500,
+                "activo": True,
+                "password": "",
+            },
         }
 
 def get_usuario(cedula):
@@ -445,7 +454,7 @@ def pantalla_login():
                     "cedula": cedula.strip(),
                     "plan": "gratis",
                     "fecha_inicio": str(date.today()),
-                    "dias": 9999,
+                    "dias": 36500,
                     "activo": True,
                     "password": "",
                 }
@@ -487,8 +496,8 @@ def pantalla_admin():
         cedula_n = st.text_input("Cedula / DNI del cliente")
         nombre_n = st.text_input("Nombre del cliente")
         plan_n   = st.selectbox("Plan", ["gratis","dia","semana","mes"])
-        dias_map = {"gratis": 9999, "dia": 1, "semana": 7, "mes": 30}
-        dias_extra = st.number_input("Dias de acceso (personalizado)", min_value=1, max_value=365, value=dias_map[plan_n])
+        dias_map = {"gratis": 30, "dia": 1, "semana": 7, "mes": 30}
+        dias_extra = st.number_input("Dias de acceso (personalizado)", min_value=1, max_value=3650, value=int(dias_map[plan_n]))
         fecha_ini = st.date_input("Fecha de inicio", value=date.today())
         if st.button("💾 Guardar cliente"):
             if cedula_n.strip():
