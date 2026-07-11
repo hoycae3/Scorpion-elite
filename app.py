@@ -1,7 +1,6 @@
 """SCORPION ENGINE V4 PRO — Sistema completo"""
 import streamlit as st
 import os, json, re, time, math, io, base64, sqlite3, hashlib, warnings, requests, random
-import pandas as pd
 from bs4 import BeautifulSoup
 from datetime import date, timedelta, time as dtime
 from openpyxl import Workbook
@@ -1047,7 +1046,7 @@ def pantalla_admin():
                 "Empate (PX)%":              [r["px_po"], r["px_dc"], r["px_mc"], r["px_el"], r["px"]],
                 f"{r['visitante'][:12]} (P2)%": [r["p2_po"], r["p2_dc"], r["p2_mc"], r["p2_el"], r["p2"]],
             })
-            st.dataframe(df_mod, use_container_width=True, hide_index=True)
+            st.markdown(tabla_html, unsafe_allow_html=True)
 
             col_a, col_b = st.columns(2)
             with col_a:
