@@ -1,6 +1,7 @@
 """SCORPION ENGINE V4 PRO — Sistema completo"""
 import streamlit as st
 import os, json, re, time, math, io, base64, sqlite3, hashlib, warnings, requests, random
+import pandas as pd
 from bs4 import BeautifulSoup
 from datetime import date, timedelta, time as dtime
 from openpyxl import Workbook
@@ -1040,7 +1041,6 @@ def pantalla_admin():
             with mc6: st.markdown(f'<div class="mc"><div class="v">{r["rango"]}</div><div class="l">Rango</div></div>',unsafe_allow_html=True)
 
             # Tabla modelos
-            import pandas as pd
             df_mod = pd.DataFrame({
                 "Modelo":   ["Poisson", "Dixon-Coles", "Monte Carlo", "Elo", "⭐ FINAL (SS)"],
                 f"{r['local'][:12]} (P1)%": [r["p1_po"], r["p1_dc"], r["p1_mc"], r["p1_el"], r["p1"]],
