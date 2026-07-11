@@ -1047,7 +1047,7 @@ def pantalla_admin():
                 "Empate (PX)%":              [r["px_po"], r["px_dc"], r["px_mc"], r["px_el"], r["px"]],
                 f"{r['visitante'][:12]} (P2)%": [r["p2_po"], r["p2_dc"], r["p2_mc"], r["p2_el"], r["p2"]],
             })
-            st.dataframe(df_mod.style.highlight_max(axis=1, color="#0a2810").format("{:.1f}"), use_container_width=True, hide_index=True)
+            st.dataframe(df_mod, use_container_width=True, hide_index=True)
 
             col_a, col_b = st.columns(2)
             with col_a:
