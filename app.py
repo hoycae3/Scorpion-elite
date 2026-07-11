@@ -780,34 +780,97 @@ def widget_archivo(max_p=None,key="up"):
     st.success(f"✅ {len(p)} partidos detectados"); return p
 
 def mostrar_mercados_con_publicar(calc, partido):
-    """Muestra mercados con botones de publicar para el admin."""
+    """Muestra mercados organizados por categoria con botones de publicar."""
     mercados=calc.get("mercados_picks",[])
     if not mercados: return
     picks_sel=st.session_state.get("picks_sel",[])
-    for i,(nombre,prob,cuota) in enumerate(mercados[:14]):
-        edge=round((prob/100*cuota-1)*100,1) if cuota else 0
-        sel=any(p.get("mercado")==nombre and p.get("local")==partido["local"] for p in picks_sel)
-        c1,c2,c3,c4,c5=st.columns([4,2,2,2,2])
-        with c1: st.markdown(f'<div class="mkt-name">{nombre}</div>',unsafe_allow_html=True)
-        with c2: st.markdown(f'<div class="mkt-prob">{prob:.0f}%</div>',unsafe_allow_html=True)
-        with c3: st.markdown(f'<span style="color:#aaa;font-size:.8rem">C.Ref: {cuota}</span>',unsafe_allow_html=True)
-        with c4:
-            cls="mkt-edge-pos" if edge>=0 else "mkt-edge-neg"
-            st.markdown(f'<div class="{cls}">Edge: {edge:+.1f}%</div>',unsafe_allow_html=True)
-        with c5:
-            key_btn=f"pub_{partido['local']}_{partido['visitante']}_{i}"
-            if st.button("✅ Seleccionar" if not sel else "✔ Seleccionado",key=key_btn):
-                pick_data={"local":partido["local"],"visitante":partido["visitante"],
-                           "liga":partido.get("liga",""),"hora":partido.get("hora",""),
-                           "mercado":nombre,"prob":prob,"cuota":cuota,"edge":edge,
-                           "confianza":calc.get("confianza",0),"rango":calc.get("rango","C")}
-                if not sel:
-                    if "picks_sel" not in st.session_state: st.session_state.picks_sel=[]
-                    st.session_state.picks_sel.append(pick_data)
-                else:
-                    st.session_state.picks_sel=[p for p in st.session_state.picks_sel
-                                                if not(p.get("mercado")==nombre and p.get("local")==partido["local"])]
-                st.rerun()
+
+    # Organizar por categorias
+    cats = {
+        "⚽ Resultado 1X2":   [],
+        "🎯 Goles Over/Under":[],
+        "🤝 BTTS":            [],
+        "📐 Corners":         [],
+        "🎽 Tarjetas":        [],
+        "🔫 Tiros":           [],
+    }
+    for item in mercados[:16]:
+        nombre,prob,cuota = item
+        n=nombre.lower()
+        if any(x in n for x in ["victoria","empate","local","visita","(1)","(2)","(x)"]):
+            cats["⚽ Resultado 1X2"].append(item)
+        elif "btts" in n or "ambos" in n:
+            cats["🤝 BTTS"].append(item)
+        elif "corner" in n or "esquina" in n:
+            cats["📐 Corners"].append(item)
+        elif "tarjet" in n or "amarill" in n:
+            cats["🎽 Tarjetas"].append(item)
+        elif "tiro" in n or "shot" in n:
+            cats["🔫 Tiros"].append(item)
+        elif "over" in n or "under" in n or "gol" in n:
+            cats["🎯 Goles Over/Under"].append(item)
+
+    st.markdown("""
+    <style>
+    .mkt-cat{color:#ffd700;font-weight:600;font-size:.85rem;margin:12px 0 4px;
+      border-bottom:1px solid #ffd70033;padding-bottom:4px}
+    .mkt-row2{display:grid;grid-template-columns:3fr 1fr 1.2fr 1.2fr 1.5fr;
+      align-items:center;background:#0a0a1e;border-radius:8px;
+      padding:7px 10px;margin:3px 0;gap:8px}
+    .mkt-n{color:#ddd;font-size:.85rem}
+    .mkt-p{color:#ffd700;font-weight:700;font-size:.95rem;text-align:center}
+    .mkt-c{color:#888;font-size:.78rem;text-align:center}
+    .mkt-ep{color:#00ee66;font-size:.8rem;font-weight:600;text-align:center}
+    .mkt-en{color:#ff4444;font-size:.8rem;font-weight:600;text-align:center}
+    .val-badge{background:#082a12;color:#00ee66;border:1px solid #00aa44;
+      padding:1px 6px;border-radius:4px;font-size:.72rem;font-weight:700}
+    .neutro-badge{background:#1a1200;color:#ccaa00;padding:1px 6px;border-radius:4px;font-size:.72rem}
+    .neg-badge{background:#200a0a;color:#ff4444;padding:1px 6px;border-radius:4px;font-size:.72rem}
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Cabecera de columnas
+    hc1,hc2,hc3,hc4,hc5=st.columns([3,1,1.2,1.2,1.5])
+    with hc1: st.markdown('<span style="color:#888;font-size:.75rem">MERCADO</span>',unsafe_allow_html=True)
+    with hc2: st.markdown('<span style="color:#888;font-size:.75rem">PROB</span>',unsafe_allow_html=True)
+    with hc3: st.markdown('<span style="color:#888;font-size:.75rem">C.REF</span>',unsafe_allow_html=True)
+    with hc4: st.markdown('<span style="color:#888;font-size:.75rem">EDGE</span>',unsafe_allow_html=True)
+    with hc5: st.markdown('<span style="color:#888;font-size:.75rem">ACCION</span>',unsafe_allow_html=True)
+
+    idx_global=0
+    for cat_name, items in cats.items():
+        if not items: continue
+        st.markdown(f'<div class="mkt-cat">{cat_name}</div>', unsafe_allow_html=True)
+        for nombre,prob,cuota in items:
+            edge=round((prob/100*cuota-1)*100,1) if cuota else 0
+            sel=any(p.get("mercado")==nombre and p.get("local")==partido["local"] for p in picks_sel)
+            # Badge de valor
+            if edge>=5:   badge='<span class="val-badge">🔥 VALOR</span>'
+            elif edge>=2: badge='<span class="val-badge">✅ VALOR</span>'
+            elif edge>=0: badge='<span class="neutro-badge">⚪</span>'
+            else:         badge='<span class="neg-badge">❌</span>'
+            edge_cls="mkt-ep" if edge>=0 else "mkt-en"
+            c1,c2,c3,c4,c5=st.columns([3,1,1.2,1.2,1.5])
+            with c1: st.markdown(f'{badge} <span class="mkt-n">{nombre}</span>',unsafe_allow_html=True)
+            with c2: st.markdown(f'<span class="mkt-p">{prob:.0f}%</span>',unsafe_allow_html=True)
+            with c3: st.markdown(f'<span class="mkt-c">{cuota}</span>',unsafe_allow_html=True)
+            with c4: st.markdown(f'<span class="{edge_cls}">{edge:+.1f}%</span>',unsafe_allow_html=True)
+            with c5:
+                key_btn=f"pub_{partido['local'][:6]}_{partido['visitante'][:6]}_{idx_global}"
+                btn_lbl="✔ Agregado" if sel else "➕ Seleccionar"
+                if st.button(btn_lbl,key=key_btn):
+                    pick_data={"local":partido["local"],"visitante":partido["visitante"],
+                               "liga":partido.get("liga",""),"hora":partido.get("hora","00:00"),
+                               "mercado":nombre,"prob":prob,"cuota":cuota,"edge":edge,
+                               "confianza":calc.get("confianza",0),"rango":calc.get("rango","C")}
+                    if not sel:
+                        if "picks_sel" not in st.session_state: st.session_state.picks_sel=[]
+                        st.session_state.picks_sel.append(pick_data)
+                    else:
+                        st.session_state.picks_sel=[p for p in st.session_state.picks_sel
+                            if not(p.get("mercado")==nombre and p.get("local")==partido["local"])]
+                    st.rerun()
+            idx_global+=1
 
 # ══════════════════════════════════════════════════════════
 # PANTALLA LOGIN
@@ -1042,13 +1105,26 @@ def pantalla_admin():
     # ── Tab 5: Escalera ────────────────────────────────────
     with tabs[4]:
         st.markdown("### 🏆 Reto Escalera del Dia")
+        st.info("La escalera usa automaticamente los picks con mayor confianza Y edge positivo publicados hoy.")
         picks_hoy=db_picks_get(hoy_str,plan="admin")
         picks_reales=[p for p in picks_hoy if "🔒" not in str(p.get("mercado",""))]
-        if picks_reales:
-            st.markdown(f"**{len(picks_reales)} picks disponibles hoy para la escalera**")
-            for i,p in enumerate(picks_reales[:12],1):
+        # Ordenar: primero por edge positivo, luego por confianza
+        def esc_score(p):
+            edge=p.get("edge") or -99
+            conf=p.get("confianza") or 0
+            return (1 if edge and edge>=2 else 0, conf)
+        picks_esc=sorted(picks_reales, key=esc_score, reverse=True)[:8]
+        if picks_esc:
+            cuota_total=1.0
+            for p in picks_esc:
+                if p.get("cuota"): cuota_total=round(cuota_total*p["cuota"],2)
+            st.markdown(f"**{len(picks_esc)} pasos en la escalera | Cuota combinada: {cuota_total}x**")
+            for i,p in enumerate(picks_esc,1):
+                edge_v=p.get("edge")
+                edge_str=f"Edge: {edge_v:+.1f}%" if edge_v is not None else ""
+                val_ico="🔥" if edge_v and edge_v>=5 else ("✅" if edge_v and edge_v>=2 else "⚪")
                 cls="ap" if p.get("rango")=="A+" else "b"
-                st.markdown(f'<div class="esc-box">**Paso {i}:** {p["local"]} vs {p["visitante"]} · {p["liga"]}<br>🎯 {p["mercado"]} @ {p.get("cuota","?")} · Confianza: {p.get("confianza","?")}%</div>',unsafe_allow_html=True)
+                st.markdown(f'<div class="esc-box"><b>Paso {i}:</b> {p["local"]} vs {p["visitante"]} · <i>{p["liga"]}</i><br>{val_ico} <b>{p["mercado"]}</b> @ {p.get("cuota","?")} · Conf: {p.get("confianza","?")}% {edge_str}</div>',unsafe_allow_html=True)
         else:
             st.info("Publica picks primero para armar la escalera.")
 
@@ -1210,17 +1286,25 @@ def pantalla_pago(u,plan):
 
     with tabs[3]:
         st.markdown("### 🏆 Reto Escalera")
+        st.caption("Picks del dia ordenados por mayor confianza y valor estadistico.")
         picks_e=db_picks_get(str(date.today()),plan)
         reales=[p for p in picks_e if "🔒" not in str(p.get("mercado",""))]
-        if reales:
-            st.info(f"La escalera tiene {len(reales)} pasos hoy. Cada paso debe acertar para continuar.")
-            for i,p in enumerate(reales[:12],1):
-                cls="ap" if p.get("rango")=="A+" else "b"
-                st.markdown(f'<div class="esc-box"><b>Paso {i}:</b> {p["local"]} vs {p["visitante"]} · {p["liga"]}<br>🎯 <b>{p["mercado"]}</b> @ {p.get("cuota","?")} · Confianza: {p.get("confianza","?")}%</div>',unsafe_allow_html=True)
+        def esc_score(p):
+            edge=p.get("edge") or -99
+            conf=p.get("confianza") or 0
+            return (1 if edge and edge>=2 else 0, conf)
+        picks_esc=sorted(reales, key=esc_score, reverse=True)[:8]
+        if picks_esc:
             cuota_total=1.0
-            for p in reales[:12]:
+            for p in picks_esc:
                 if p.get("cuota"): cuota_total=round(cuota_total*p["cuota"],2)
-            st.markdown(f"**💰 Cuota combinada escalera: {cuota_total}x**")
+            st.markdown(f"**{len(picks_esc)} pasos | Cuota combinada: {cuota_total}x**")
+            for i,p in enumerate(picks_esc,1):
+                edge_v=p.get("edge")
+                edge_str=f" · Edge: {edge_v:+.1f}%" if edge_v is not None else ""
+                val_ico="🔥" if edge_v and edge_v>=5 else ("✅" if edge_v and edge_v>=2 else "⚪")
+                cls="ap" if p.get("rango")=="A+" else "b"
+                st.markdown(f'<div class="esc-box"><b>Paso {i}:</b> {p["local"]} vs {p["visitante"]} · {p["liga"]}<br>{val_ico} <b>{p["mercado"]}</b> @ {p.get("cuota","?")} · Conf: {p.get("confianza","?")}%{edge_str}</div>',unsafe_allow_html=True)
         else:
             st.info("No hay picks publicados hoy para la escalera.")
 
