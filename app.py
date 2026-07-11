@@ -516,26 +516,84 @@ def get_elo(eq):
     except: pass
     _ec[eq]=None; return None
 
-def obtener_stats(nombre,liga,tid=None,lid=None):
-    s={"gm":None,"gc":None,"elo":None,"fuente":"Prom.liga","ok":False}
-    torneo=any(k in liga.lower() for k in TORNEOS_FIFA)
-    selec=any(k in nombre.lower() for k in SELECCIONES)
+def obtener_stats_detalle(nombre, liga, tid=None, lid=None):
+    """Obtiene stats detallados para mostrar tabla de datos reales."""
+    det = {
+        "nombre": nombre, "liga": liga, "fuente": "Sin datos", "ok": False,
+        "gm": None, "gc": None, "elo": None,
+        # Ultimos 5 partidos
+        "ultimos5": [], "racha": "",
+        "ganados5": 0, "empatados5": 0, "perdidos5": 0,
+        "goles_fav5": 0, "goles_con5": 0,
+        # Stats generales
+        "posicion": None, "puntos": None,
+        "tarj_amarillas": None,
+    }
+    torneo = any(k in liga.lower() for k in TORNEOS_FIFA)
+    selec  = any(k in nombre.lower() for k in SELECCIONES)
+
+    # Stats basicos desde API-Football
     if not torneo and tid and lid:
-        gm,gc=get_stats_api(tid,lid)
-        if gm: s.update({"gm":gm,"gc":gc,"fuente":"API-Football","ok":True})
-    if not torneo and not selec and not s["ok"]:
-        xg,xga,gm_u,gc_u=get_understat(nombre,liga)
-        if xg: s.update({"gm":gm_u,"gc":gc_u,"fuente":"Understat","ok":True})
+        gm, gc = get_stats_api(tid, lid)
+        if gm:
+            det.update({"gm": gm, "gc": gc, "fuente": "API-Football", "ok": True})
+
+    # Understat para ligas europeas
+    if not torneo and not selec and not det["ok"]:
+        xg, xga, gm_u, gc_u = get_understat(nombre, liga)
+        if xg:
+            det.update({"gm": gm_u, "gc": gc_u, "fuente": "Understat", "ok": True})
         time.sleep(0.2)
-    if not s["ok"]:
-        td=get_tsdb(nombre)
+
+    # TheSportsDB — ultimos partidos con detalle
+    try:
+        td = get_tsdb(nombre)
         if td:
-            gm2,gc2=stats_tsdb(td.get("idTeam",""))
-            if gm2: s.update({"gm":gm2,"gc":gc2,"fuente":"TSDB","ok":True})
+            team_id = td.get("idTeam", "")
+            if not det["ok"]:
+                gm2, gc2 = stats_tsdb(team_id)
+                if gm2:
+                    det.update({"gm": gm2, "gc": gc2, "fuente": "TheSportsDB", "ok": True})
+            # Obtener ultimos 5 partidos con detalle
+            try:
+                r = SH.get(f"https://www.thesportsdb.com/api/v1/json/3/eventslast.php?id={team_id}", timeout=8)
+                d = r.json()
+                if d and d.get("results"):
+                    raw = d["results"][-5:]
+                    for x in raw:
+                        try:
+                            sh = int(x.get("intHomeScore") or 0)
+                            sa = int(x.get("intAwayScore") or 0)
+                            es_local = str(x.get("idHomeTeam","")) == str(team_id)
+                            gf = sh if es_local else sa
+                            gc_p = sa if es_local else sh
+                            rival = x.get("strAwayTeam" if es_local else "strHomeTeam", "?")
+                            if gf > gc_p:   res="G"; det["ganados5"]+=1
+                            elif gf == gc_p: res="E"; det["empatados5"]+=1
+                            else:            res="P"; det["perdidos5"]+=1
+                            det["goles_fav5"] += gf
+                            det["goles_con5"] += gc_p
+                            det["ultimos5"].append({
+                                "rival": rival[:15], "res": res,
+                                "goles": f"{gf}-{gc_p}",
+                                "local": "L" if es_local else "V"
+                            })
+                        except: pass
+                    racha = "".join(p["res"] for p in det["ultimos5"])
+                    det["racha"] = racha
+            except: pass
         time.sleep(0.25)
-    elo=get_elo(nombre)
-    if elo: s["elo"]=elo
-    return s
+    except: pass
+
+    # ClubElo
+    elo = get_elo(nombre)
+    if elo: det["elo"] = elo
+
+    return det
+
+def obtener_stats(nombre,liga,tid=None,lid=None):
+    d = obtener_stats_detalle(nombre, liga, tid, lid)
+    return {"gm":d["gm"],"gc":d["gc"],"elo":d["elo"],"fuente":d["fuente"],"ok":d["ok"]}
 
 def leer_imagen(img_bytes,mt="image/jpeg"):
     try:
@@ -838,10 +896,14 @@ def mostrar_mercados_con_publicar(calc, partido):
     with hc5: st.markdown('<span style="color:#888;font-size:.75rem">ACCION</span>',unsafe_allow_html=True)
 
     idx_global=0
+    hay_valor=False
     for cat_name, items in cats.items():
-        if not items: continue
+        # Solo mostrar mercados con edge >= 0
+        items_valor=[(n,p,c) for n,p,c in items if c and round((p/100*c-1)*100,1)>=0]
+        if not items_valor: continue
+        hay_valor=True
         st.markdown(f'<div class="mkt-cat">{cat_name}</div>', unsafe_allow_html=True)
-        for nombre,prob,cuota in items:
+        for nombre,prob,cuota in items_valor:
             edge=round((prob/100*cuota-1)*100,1) if cuota else 0
             sel=any(p.get("mercado")==nombre and p.get("local")==partido["local"] for p in picks_sel)
             # Badge de valor
@@ -942,62 +1004,121 @@ def pantalla_admin():
                            "tid_l":None,"tid_v":None}
                 with st.spinner(f"Analizando {local_i} vs {visita_i}..."):
                     if usar_api_i:
-                        sl=obtener_stats(local_i,liga_i); sv=obtener_stats(visita_i,liga_i)
-                        gml=sl["gm"] if sl["ok"] else None; gcl=sl["gc"] if sl["ok"] else None
-                        gmv=sv["gm"] if sv["ok"] else None; gcv=sv["gc"] if sv["ok"] else None
-                        elo_l=sl["elo"]; elo_v=sv["elo"]
-                        fl=sl["fuente"]; fv=sv["fuente"]
+                        sl_det=obtener_stats_detalle(local_i,liga_i)
+                        sv_det=obtener_stats_detalle(visita_i,liga_i)
+                        gml=sl_det["gm"] if sl_det["ok"] else None; gcl=sl_det["gc"] if sl_det["ok"] else None
+                        gmv=sv_det["gm"] if sv_det["ok"] else None; gcv=sv_det["gc"] if sv_det["ok"] else None
+                        elo_l=sl_det["elo"]; elo_v=sv_det["elo"]
+                        fl=sl_det["fuente"]; fv=sv_det["fuente"]
                     else:
+                        sl_det={}; sv_det={}
                         gml=gcl=gmv=gcv=elo_l=elo_v=None; fl=fv="Manual"
                     calc=calcular(gml,gcl,gmv,gcv,liga_i,elo_l,elo_v)
                 resultado_i={**partido_i,**calc,"fuente_l":fl,"fuente_v":fv}
                 st.session_state["resultado_individual"]=resultado_i
+                st.session_state["sl_det"]=sl_det
+                st.session_state["sv_det"]=sv_det
                 st.success(f"✅ Analisis completo — Rango {calc['rango']} ({calc['confianza']}% confianza)")
             else:
                 st.error("Completa local, visitante y liga.")
 
         if "resultado_individual" in st.session_state:
-            r=st.session_state["resultado_individual"]
-            calc=r
+            r = st.session_state["resultado_individual"]
+            sl_det = st.session_state.get("sl_det", {})
+            sv_det = st.session_state.get("sv_det", {})
             st.markdown("---")
-            st.markdown(f"## {bdg(r['rango'])} **{r['local']} vs {r['visitante']}** — {r['liga']}",unsafe_allow_html=True)
-            c1,c2,c3,c4,c5=st.columns(5)
-            with c1: st.markdown(f'<div class="mc"><div class="v">{r["p1"]:.0f}%</div><div class="l">P1 (Local)</div></div>',unsafe_allow_html=True)
-            with c2: st.markdown(f'<div class="mc"><div class="v">{r["px"]:.0f}%</div><div class="l">Empate</div></div>',unsafe_allow_html=True)
-            with c3: st.markdown(f'<div class="mc"><div class="v">{r["p2"]:.0f}%</div><div class="l">P2 (Visita)</div></div>',unsafe_allow_html=True)
-            with c4: st.markdown(f'<div class="mc"><div class="v">{r["confianza"]}%</div><div class="l">Confianza</div></div>',unsafe_allow_html=True)
-            with c5: st.markdown(f'<div class="mc"><div class="v">{r["xt"]}</div><div class="l">xG Total</div></div>',unsafe_allow_html=True)
+            st.markdown(f"## {bdg(r['rango'])} **{r['local']} vs {r['visitante']}** — {r['liga']}", unsafe_allow_html=True)
 
-            col1,col2=st.columns(2)
-            with col1:
-                st.markdown("**📊 Comparacion de modelos**")
-                st.markdown(f"- Poisson: **{r['p1_po']:.1f}%** / {r['px_po']:.1f}% / {r['p2_po']:.1f}%")
-                st.markdown(f"- Dixon-Coles: **{r['p1_dc']:.1f}%** / {r['px_dc']:.1f}% / {r['p2_dc']:.1f}%")
-                st.markdown(f"- Monte Carlo: **{r['p1_mc']:.1f}%** / {r['px_mc']:.1f}% / {r['p2_mc']:.1f}%")
-                st.markdown(f"- Elo: **{r['p1_el']:.1f}%** / {r['px_el']:.1f}% / {r['p2_el']:.1f}%")
-                st.markdown(f"**⚽ Marcadores mas probables:** {' | '.join([f'{k}({v}%)' for k,v in list(r.get('top_ex',{}).items())[:5]])}")
-                st.markdown(f"**🎯 Tiros estimados:** Local {r.get('tiros_l',0)} | Visita {r.get('tiros_v',0)} | Total ~{r.get('tiros_tot',0)}")
-                st.markdown(f"**🟨 Tarjetas:** {r.get('tar_str','')} | **Corners:** {r.get('corners_str','')}")
-            with col2:
-                st.markdown("**📌 Todos los mercados — selecciona para publicar**")
-                mostrar_mercados_con_publicar(r,r)
+            # ── SECCION 1: Comparacion de modelos (arriba, ancho completo) ──
+            st.markdown("### 📊 Comparacion de modelos")
+            mc1,mc2,mc3,mc4,mc5,mc6 = st.columns(6)
+            with mc1: st.markdown(f'<div class="mc"><div class="v">{r["p1"]:.0f}%</div><div class="l">P1 Final</div></div>',unsafe_allow_html=True)
+            with mc2: st.markdown(f'<div class="mc"><div class="v">{r["px"]:.0f}%</div><div class="l">Empate</div></div>',unsafe_allow_html=True)
+            with mc3: st.markdown(f'<div class="mc"><div class="v">{r["p2"]:.0f}%</div><div class="l">P2 Final</div></div>',unsafe_allow_html=True)
+            with mc4: st.markdown(f'<div class="mc"><div class="v">{r["confianza"]}%</div><div class="l">Confianza</div></div>',unsafe_allow_html=True)
+            with mc5: st.markdown(f'<div class="mc"><div class="v">{r["xt"]}</div><div class="l">xG Total</div></div>',unsafe_allow_html=True)
+            with mc6: st.markdown(f'<div class="mc"><div class="v">{r["rango"]}</div><div class="l">Rango</div></div>',unsafe_allow_html=True)
 
-            # Picks seleccionados
-            picks_sel=st.session_state.get("picks_sel",[])
+            # Tabla modelos
+            import pandas as pd
+            df_mod = pd.DataFrame({
+                "Modelo":   ["Poisson", "Dixon-Coles", "Monte Carlo", "Elo", "⭐ FINAL (SS)"],
+                f"{r['local'][:12]} (P1)%": [r["p1_po"], r["p1_dc"], r["p1_mc"], r["p1_el"], r["p1"]],
+                "Empate (PX)%":              [r["px_po"], r["px_dc"], r["px_mc"], r["px_el"], r["px"]],
+                f"{r['visitante'][:12]} (P2)%": [r["p2_po"], r["p2_dc"], r["p2_mc"], r["p2_el"], r["p2"]],
+            })
+            st.dataframe(df_mod.style.highlight_max(axis=1, color="#0a2810").format("{:.1f}"), use_container_width=True, hide_index=True)
+
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.markdown(f"🎯 **Marcadores probables:** {' | '.join([f'{k}({v}%)' for k,v in list(r.get('top_ex',{}).items())[:5]])}")
+                st.markdown(f"🔫 **Tiros:** Local ~{r.get('tiros_l',0)} | Visita ~{r.get('tiros_v',0)} | Total ~{r.get('tiros_tot',0)}")
+                st.markdown(f"📐 **Corners:** {r.get('corners_str','')} | 🟨 **Tarjetas:** {r.get('tar_str','')}")
+                st.markdown(f"⚽ **xG:** {r.get('xl',0)} (local) vs {r.get('xv',0)} (visita)")
+
+            # ── SECCION 2: Tabla de datos reales de cada equipo ─────────────
+            st.markdown("---")
+            st.markdown("### 🌐 Datos reales encontrados en internet")
+            if sl_det or sv_det:
+                col_l, col_v = st.columns(2)
+                for col, det, nombre_eq in [(col_l, sl_det, r["local"]), (col_v, sv_det, r["visitante"])]:
+                    with col:
+                        fuente_ico = "✅" if det.get("ok") else "⚠️"
+                        fuente_txt = det.get("fuente","Sin datos")
+                        st.markdown(f"**{fuente_ico} {nombre_eq}** — Fuente: `{fuente_txt}`")
+                        if det.get("ok"):
+                            # Stats generales
+                            gm  = det.get("gm")
+                            gc  = det.get("gc")
+                            elo = det.get("elo")
+                            d1,d2,d3 = st.columns(3)
+                            with d1: st.metric("Goles/partido", f"{gm:.2f}" if gm else "N/D")
+                            with d2: st.metric("Concedidos/partido", f"{gc:.2f}" if gc else "N/D")
+                            with d3: st.metric("ELO Rating", f"{int(elo)}" if elo else "N/D")
+                            # Ultimos 5
+                            u5 = det.get("ultimos5", [])
+                            if u5:
+                                st.markdown("**Ultimos 5 partidos:**")
+                                g=det.get("ganados5",0); e=det.get("empatados5",0); p=det.get("perdidos5",0)
+                                gf5=det.get("goles_fav5",0); gc5=det.get("goles_con5",0)
+                                racha_html = ""
+                                for partido_u in u5:
+                                    color = "#00ee66" if partido_u["res"]=="G" else ("#ffaa00" if partido_u["res"]=="E" else "#ff4444")
+                                    racha_html += f'<span style="background:{color};color:#000;padding:1px 6px;border-radius:4px;font-weight:700;font-size:.85rem;margin:1px">{partido_u["res"]}</span> '
+                                st.markdown(f'<div style="margin:4px 0">{racha_html}</div>', unsafe_allow_html=True)
+                                st.markdown(f"G:{g} E:{e} P:{p} | Goles: {gf5} a favor, {gc5} en contra")
+                                for pu in u5:
+                                    st.markdown(f"  · {pu['local']} vs {pu['rival']} — **{pu['goles']}** ({pu['res']})")
+                            else:
+                                st.caption("Detalle de partidos no disponible desde esta fuente.")
+                        else:
+                            st.warning(f"No se encontraron datos para {nombre_eq}. Se usaron promedios de liga.")
+                            st.caption("Los modelos calcularon con promedios generales de la liga, no con stats reales.")
+            else:
+                st.info("Activa 'Buscar stats reales en internet' para ver datos de los equipos.")
+
+            # ── SECCION 3: Solo picks con VALOR (edge positivo) ─────────────
+            st.markdown("---")
+            st.markdown("### 📌 Picks con valor estadistico — selecciona para publicar")
+            st.caption("Solo se muestran mercados donde el modelo detecta ventaja real (edge ≥ 0%). Los demas se ocultan.")
+            mostrar_mercados_con_publicar(r, r)
+
+            # ── SECCION 4: Picks seleccionados ──────────────────────────────
+            picks_sel = st.session_state.get("picks_sel", [])
             if picks_sel:
-                st.markdown(f"---\n### ✅ Picks seleccionados para publicar ({len(picks_sel)})")
-                plan_pub=st.selectbox("Plan minimo para verlos",["gratis","dia","semana","mes"],key="plan_pub_i")
-                notas_pub=st.text_area("Notas (opcional)",height=60,key="notas_pub_i")
-                if st.button("📢 PUBLICAR PICKS SELECCIONADOS",key="pub_sel"):
+                st.markdown(f"---\n### ✅ Picks seleccionados ({len(picks_sel)})")
+                plan_pub = st.selectbox("Plan minimo", ["gratis","dia","semana","mes"], key="plan_pub_i")
+                notas_pub = st.text_area("Notas (opcional)", height=60, key="notas_pub_i")
+                if st.button("📢 PUBLICAR PICKS SELECCIONADOS", key="pub_sel"):
                     for pk in picks_sel:
-                        det=f"xG:{r.get('xl',0)}-{r.get('xv',0)} | O2.5:{r.get('over25',0)}% | BTTS:{r.get('btts_si',0)}% | Tiros:~{r.get('tiros_tot',0)} | Corners:{r.get('corners_str','')}"
+                        det_str = f"xG:{r.get('xl',0)}-{r.get('xv',0)} | O2.5:{r.get('over25',0)}% | BTTS:{r.get('btts_si',0)}% | Tiros:~{r.get('tiros_tot',0)} | Corners:{r.get('corners_str','')}"
                         db_pick_guardar(str(r.get("dia",date.today())),pk["liga"],pk["local"],pk["visitante"],
-                                        pk["hora"],pk["mercado"],det,pk["cuota"],pk["edge"],
+                                        pk["hora"],pk["mercado"],det_str,pk["cuota"],pk["edge"],
                                         pk["confianza"],pk["rango"],notas_pub,plan_pub,0)
                     st.success(f"✅ {len(picks_sel)} picks publicados!")
-                    st.session_state.picks_sel=[]; st.rerun()
-                if st.button("🗑️ Limpiar seleccion",key="clear_sel"):
-                    st.session_state.picks_sel=[]; st.rerun()
+                    st.session_state.picks_sel = []; st.rerun()
+                if st.button("🗑️ Limpiar seleccion", key="clear_sel"):
+                    st.session_state.picks_sel = []; st.rerun()
                 for pk in picks_sel:
                     st.markdown(f"✔ **{pk['local']} vs {pk['visitante']}** · {pk['mercado']} · {pk['prob']:.0f}% · Edge:{pk['edge']:+.1f}%")
 
