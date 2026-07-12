@@ -1039,14 +1039,25 @@ def pantalla_admin():
             with mc5: st.markdown(f'<div class="mc"><div class="v">{r["xt"]}</div><div class="l">xG Total</div></div>',unsafe_allow_html=True)
             with mc6: st.markdown(f'<div class="mc"><div class="v">{r["rango"]}</div><div class="l">Rango</div></div>',unsafe_allow_html=True)
 
-            # Tabla modelos
-            df_mod = pd.DataFrame({
-                "Modelo":   ["Poisson", "Dixon-Coles", "Monte Carlo", "Elo", "⭐ FINAL (SS)"],
-                f"{r['local'][:12]} (P1)%": [r["p1_po"], r["p1_dc"], r["p1_mc"], r["p1_el"], r["p1"]],
-                "Empate (PX)%":              [r["px_po"], r["px_dc"], r["px_mc"], r["px_el"], r["px"]],
-                f"{r['visitante'][:12]} (P2)%": [r["p2_po"], r["p2_dc"], r["p2_mc"], r["p2_el"], r["p2"]],
-            })
-            st.markdown(tabla_html, unsafe_allow_html=True)
+            # Tabla modelos HTML pura
+            lbl_l = r["local"][:14]; lbl_v = r["visitante"][:14]
+            filas_m = [
+                ("Poisson",       r["p1_po"], r["px_po"], r["p2_po"]),
+                ("Dixon-Coles",   r["p1_dc"], r["px_dc"], r["p2_dc"]),
+                ("Monte Carlo",   r["p1_mc"], r["px_mc"], r["p2_mc"]),
+                ("Elo",           r["p1_el"], r["px_el"], r["p2_el"]),
+                ("⭐ FINAL",      r["p1"],    r["px"],    r["p2"]),
+            ]
+            tbl = f'<table style="width:100%;border-collapse:collapse;font-size:.84rem;margin:8px 0"><thead><tr style="background:#0a0a1e;color:#ffd700"><th style="padding:8px 12px;text-align:left">Modelo</th><th style="padding:8px 12px;text-align:center">{lbl_l} (P1)%</th><th style="padding:8px 12px;text-align:center">Empate%</th><th style="padding:8px 12px;text-align:center">{lbl_v} (P2)%</th></tr></thead><tbody>'
+            for i,(mod,p1v,pxv,p2v) in enumerate(filas_m):
+                bg="#0d1e0d" if mod.startswith("⭐") else ("#0a0a1e" if i%2==0 else "#0d0d18")
+                fw="700" if mod.startswith("⭐") else "400"
+                clr="#ffd700" if mod.startswith("⭐") else "#fff"
+                mx=max(p1v,pxv,p2v)
+                def c(v,mx=mx,clr=clr): return f'<td style="padding:7px 12px;text-align:center;{"color:#00ee66;font-weight:700" if v==mx else f"color:{clr}"}">{ v:.1f}%</td>'
+                tbl+=f'<tr style="background:{bg};font-weight:{fw}"><td style="padding:7px 12px;color:{clr}">{mod}</td>{c(p1v)}{c(pxv)}{c(p2v)}</tr>'
+            tbl+="</tbody></table>"
+            st.markdown(tbl, unsafe_allow_html=True)
 
             col_a, col_b = st.columns(2)
             with col_a:
@@ -1064,35 +1075,40 @@ def pantalla_admin():
                     with col:
                         fuente_ico = "✅" if det.get("ok") else "⚠️"
                         fuente_txt = det.get("fuente","Sin datos")
-                        st.markdown(f"**{fuente_ico} {nombre_eq}** — Fuente: `{fuente_txt}`")
+                        st.markdown(f"**{fuente_ico} {nombre_eq}**")
+                        st.caption(f"Fuente: {fuente_txt}")
                         if det.get("ok"):
-                            # Stats generales
-                            gm  = det.get("gm")
-                            gc  = det.get("gc")
-                            elo = det.get("elo")
-                            d1,d2,d3 = st.columns(3)
-                            with d1: st.metric("Goles/partido", f"{gm:.2f}" if gm else "N/D")
-                            with d2: st.metric("Concedidos/partido", f"{gc:.2f}" if gc else "N/D")
-                            with d3: st.metric("ELO Rating", f"{int(elo)}" if elo else "N/D")
-                            # Ultimos 5
-                            u5 = det.get("ultimos5", [])
+                            gm  = det.get("gm"); gc = det.get("gc"); elo = det.get("elo")
+                            u5  = det.get("ultimos5",[])
+                            g5  = det.get("ganados5",0); e5=det.get("empatados5",0); p5=det.get("perdidos5",0)
+                            gf5 = det.get("goles_fav5",0); gc5=det.get("goles_con5",0)
+                            # Tabla de stats generales
+                            tbl_eq = f"""<table style="width:100%;border-collapse:collapse;font-size:.82rem;margin:6px 0">
+                              <thead><tr style="background:#0a0a1e;color:#ffd700">
+                                <th style="padding:6px 10px;text-align:left">Stat</th>
+                                <th style="padding:6px 10px;text-align:center">Valor</th>
+                              </tr></thead><tbody>
+                              <tr style="background:#0d0d18"><td style="padding:5px 10px;color:#aaa">Goles marcados/partido</td><td style="padding:5px 10px;text-align:center;color:#00ee66;font-weight:700">{f"{gm:.2f}" if gm else "N/D"}</td></tr>
+                              <tr style="background:#0a0a1e"><td style="padding:5px 10px;color:#aaa">Goles concedidos/partido</td><td style="padding:5px 10px;text-align:center;color:#ff6666;font-weight:700">{f"{gc:.2f}" if gc else "N/D"}</td></tr>
+                              <tr style="background:#0d0d18"><td style="padding:5px 10px;color:#aaa">ELO Rating</td><td style="padding:5px 10px;text-align:center;color:#ffd700;font-weight:700">{f"{int(elo)}" if elo else "N/D"}</td></tr>
+                              <tr style="background:#0a0a1e"><td style="padding:5px 10px;color:#aaa">Ultimos 5 (G/E/P)</td><td style="padding:5px 10px;text-align:center;color:#fff;font-weight:700">{g5}G / {e5}E / {p5}P</td></tr>
+                              <tr style="background:#0d0d18"><td style="padding:5px 10px;color:#aaa">Goles U5 (F/C)</td><td style="padding:5px 10px;text-align:center;color:#fff">{gf5} a favor / {gc5} en contra</td></tr>
+                            </tbody></table>"""
+                            st.markdown(tbl_eq, unsafe_allow_html=True)
+                            # Ultimos 5 con colores
                             if u5:
                                 st.markdown("**Ultimos 5 partidos:**")
-                                g=det.get("ganados5",0); e=det.get("empatados5",0); p=det.get("perdidos5",0)
-                                gf5=det.get("goles_fav5",0); gc5=det.get("goles_con5",0)
-                                racha_html = ""
-                                for partido_u in u5:
-                                    color = "#00ee66" if partido_u["res"]=="G" else ("#ffaa00" if partido_u["res"]=="E" else "#ff4444")
-                                    racha_html += f'<span style="background:{color};color:#000;padding:1px 6px;border-radius:4px;font-weight:700;font-size:.85rem;margin:1px">{partido_u["res"]}</span> '
-                                st.markdown(f'<div style="margin:4px 0">{racha_html}</div>', unsafe_allow_html=True)
-                                st.markdown(f"G:{g} E:{e} P:{p} | Goles: {gf5} a favor, {gc5} en contra")
-                                for pu in u5:
-                                    st.markdown(f"  · {pu['local']} vs {pu['rival']} — **{pu['goles']}** ({pu['res']})")
+                                tbl_u5 = '<table style="width:100%;border-collapse:collapse;font-size:.8rem;margin:4px 0"><thead><tr style="background:#0a0a1e;color:#ffd700"><th style="padding:5px 8px">Rival</th><th style="padding:5px 8px;text-align:center">L/V</th><th style="padding:5px 8px;text-align:center">Marcador</th><th style="padding:5px 8px;text-align:center">Res</th></tr></thead><tbody>'
+                                for i_u,pu in enumerate(u5):
+                                    bg_u="#0d0d18" if i_u%2==0 else "#0a0a1e"
+                                    rc={"G":"#00ee66","E":"#ffaa00","P":"#ff4444"}.get(pu["res"],"#fff")
+                                    tbl_u5+=f'<tr style="background:{bg_u}"><td style="padding:5px 8px;color:#ccc">{pu["rival"]}</td><td style="padding:5px 8px;text-align:center;color:#888">{pu["local"]}</td><td style="padding:5px 8px;text-align:center;color:#fff;font-weight:700">{pu["goles"]}</td><td style="padding:5px 8px;text-align:center"><span style="background:{rc};color:#000;padding:1px 7px;border-radius:4px;font-weight:700">{pu["res"]}</span></td></tr>'
+                                tbl_u5+="</tbody></table>"
+                                st.markdown(tbl_u5, unsafe_allow_html=True)
                             else:
-                                st.caption("Detalle de partidos no disponible desde esta fuente.")
+                                st.caption("Detalle partido a partido no disponible en esta fuente.")
                         else:
-                            st.warning(f"No se encontraron datos para {nombre_eq}. Se usaron promedios de liga.")
-                            st.caption("Los modelos calcularon con promedios generales de la liga, no con stats reales.")
+                            st.warning(f"Sin datos reales para {nombre_eq}. Se usaron promedios de liga.")
             else:
                 st.info("Activa 'Buscar stats reales en internet' para ver datos de los equipos.")
 
