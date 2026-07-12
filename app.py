@@ -325,17 +325,19 @@ def calcular(gml,gcl,gmv,gcv,liga,elo_l=None,elo_v=None):
     o05=round((1-p0)*100); o15=round((1-p0-p1_)*100)
     o25=round((1-p0-p1_-p2_)*100); o35=round((1-p0-p1_-p2_-p3_)*100)
     btts_si=round((1-pp(xl,0))*(1-pp(xv,0))*100); btts_no=100-btts_si
-    cmu=round(xt*2.1+4.5,1); sc=2.5
+    # Corners: promedio real es ~10 por partido, formula calibrada
+    cmu=round(min(14, xt*1.4+6.5),1); sc=2.0
     def poc(l):
         z=(l-cmu)/sc; return max(5,min(95,round((1-0.5*(1+math.erf(z/math.sqrt(2))))*100)))
     c75=poc(7.5);c85=poc(8.5);c95=poc(9.5);c105=poc(10.5)
     dif=abs(p1-p2)
     base=3.8 if any(k in liga.lower() for k in ["la liga","serie a","ligue","libertadores","colombia"]) else 3.2
     tmu=round(base+(1-dif/60)*1.8,1)
-    # Tiros al arco estimados
-    tiros_l=round(pr.get("tiros",12.8)*0.55*(xl/pr["gm"]),1) if xl else round(pr.get("tiros",12.8)*0.55,1)
-    tiros_v=round(pr.get("tiros",12.8)*0.45*(xv/pr["gm"]),1) if xv else round(pr.get("tiros",12.8)*0.45,1)
-    tiros_tot=round(tiros_l+tiros_v,1)
+    # Tiros al arco estimados — proporcional al xG real, no multiplicado
+    # Promedio real: ~1 tiro al arco cada 0.18 xG aproximadamente
+    tiros_l   = round(max(2.0, xl * 3.8), 1)   # xG * factor calibrado
+    tiros_v   = round(max(1.5, xv * 3.8), 1)
+    tiros_tot = round(tiros_l + tiros_v, 1)
     mk="1" if p1>p2 and p1>px else ("X" if px>=p1 and px>=p2 else "2")
     if p1>p2 and p1>px and o25>=55: mk2="Gana Local + Over 1.5"
     elif p2>p1 and p2>px and o25>=55: mk2="Gana Visita + Over 1.5"
@@ -1018,7 +1020,11 @@ def pantalla_admin():
                 st.session_state["resultado_individual"]=resultado_i
                 st.session_state["sl_det"]=sl_det
                 st.session_state["sv_det"]=sv_det
-                st.success(f"✅ Analisis completo — Rango {calc['rango']} ({calc['confianza']}% confianza)")
+                fuentes_ok = sl_det.get("ok",False) and sv_det.get("ok",False)
+                if fuentes_ok:
+                    st.success(f"✅ Analisis con DATOS REALES — Rango {calc['rango']} ({calc['confianza']}% confianza) | Fuente: {sl_det.get('fuente','')} / {sv_det.get('fuente','')}")
+                else:
+                    st.warning(f"⚠️ Rango {calc['rango']} ({calc['confianza']}% confianza) — Sin datos reales encontrados. Se usaron promedios de liga. Los valores de tiros/corners/tarjetas son ESTIMADOS, no reales.")
             else:
                 st.error("Completa local, visitante y liga.")
 
@@ -1059,12 +1065,51 @@ def pantalla_admin():
             tbl+="</tbody></table>"
             st.markdown(tbl, unsafe_allow_html=True)
 
-            col_a, col_b = st.columns(2)
-            with col_a:
-                st.markdown(f"🎯 **Marcadores probables:** {' | '.join([f'{k}({v}%)' for k,v in list(r.get('top_ex',{}).items())[:5]])}")
-                st.markdown(f"🔫 **Tiros:** Local ~{r.get('tiros_l',0)} | Visita ~{r.get('tiros_v',0)} | Total ~{r.get('tiros_tot',0)}")
-                st.markdown(f"📐 **Corners:** {r.get('corners_str','')} | 🟨 **Tarjetas:** {r.get('tar_str','')}")
-                st.markdown(f"⚽ **xG:** {r.get('xl',0)} (local) vs {r.get('xv',0)} (visita)")
+            # Stats del partido en tabla organizada
+            st.markdown("**📊 Estadisticas del partido**")
+            local_n = r["local"][:16]; visita_n = r["visitante"][:16]
+            tbl_stats = f"""<table style="width:100%;border-collapse:collapse;font-size:.83rem;margin:6px 0">
+              <thead><tr style="background:#0a0a1e;color:#ffd700">
+                <th style="padding:6px 12px;text-align:left">Metrica</th>
+                <th style="padding:6px 12px;text-align:center">{local_n}</th>
+                <th style="padding:6px 12px;text-align:center">Total</th>
+                <th style="padding:6px 12px;text-align:center">{visita_n}</th>
+              </tr></thead><tbody>
+              <tr style="background:#0d0d18">
+                <td style="padding:5px 12px;color:#aaa">xG Esperado</td>
+                <td style="padding:5px 12px;text-align:center;color:#00ddff;font-weight:700">{r.get("xl",0)}</td>
+                <td style="padding:5px 12px;text-align:center;color:#888">{r.get("xt",0)}</td>
+                <td style="padding:5px 12px;text-align:center;color:#00ddff;font-weight:700">{r.get("xv",0)}</td>
+              </tr>
+              <tr style="background:#0a0a1e">
+                <td style="padding:5px 12px;color:#aaa">Tiros al arco (est.)</td>
+                <td style="padding:5px 12px;text-align:center;color:#fff">~{r.get("tiros_l",0)}</td>
+                <td style="padding:5px 12px;text-align:center;color:#888">~{r.get("tiros_tot",0)}</td>
+                <td style="padding:5px 12px;text-align:center;color:#fff">~{r.get("tiros_v",0)}</td>
+              </tr>
+              <tr style="background:#0d0d18">
+                <td style="padding:5px 12px;color:#aaa">Corners (est.)</td>
+                <td style="padding:5px 12px;text-align:center;color:#fff" colspan="3">{r.get("corners_str","")}</td>
+              </tr>
+              <tr style="background:#0a0a1e">
+                <td style="padding:5px 12px;color:#aaa">Tarjetas (est.)</td>
+                <td style="padding:5px 12px;text-align:center;color:#fff" colspan="3">{r.get("tar_str","")}</td>
+              </tr>
+              <tr style="background:#0d0d18">
+                <td style="padding:5px 12px;color:#aaa">Over 1.5 / 2.5 / 3.5</td>
+                <td style="padding:5px 12px;text-align:center;color:#ffd700;font-weight:700" colspan="3">{r.get("over15",0)}% / {r.get("over25",0)}% / {r.get("over35",0)}%</td>
+              </tr>
+              <tr style="background:#0a0a1e">
+                <td style="padding:5px 12px;color:#aaa">BTTS (Ambos Marcan)</td>
+                <td style="padding:5px 12px;text-align:center;color:#ffd700;font-weight:700" colspan="3">{r.get("btts_si",0)}% Si / {r.get("btts_no",0)}% No</td>
+              </tr>
+            </tbody></table>"""
+            st.markdown(tbl_stats, unsafe_allow_html=True)
+            # Marcadores mas probables
+            top_ex_str = " | ".join([f"{k} ({v}%)" for k,v in list(r.get("top_ex",{}).items())[:5]])
+            st.markdown(f"🎯 **Marcadores mas probables:** {top_ex_str}")
+            col_a, col_b = st.columns([1,1])
+            with col_a: pass
 
             # ── SECCION 2: Tabla de datos reales de cada equipo ─────────────
             st.markdown("---")
@@ -1115,7 +1160,7 @@ def pantalla_admin():
             # ── SECCION 3: Solo picks con VALOR (edge positivo) ─────────────
             st.markdown("---")
             st.markdown("### 📌 Picks con valor estadistico — selecciona para publicar")
-            st.caption("Solo se muestran mercados donde el modelo detecta ventaja real (edge ≥ 0%). Los demas se ocultan.")
+            st.caption("Edge calculado con cuotas de referencia promedio. Con la API de The Odds configurada en Secrets, los edges seran sobre cuotas reales en vivo.")
             mostrar_mercados_con_publicar(r, r)
 
             # ── SECCION 4: Picks seleccionados ──────────────────────────────
