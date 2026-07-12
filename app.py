@@ -519,77 +519,118 @@ def get_elo(eq):
     _ec[eq]=None; return None
 
 def obtener_stats_detalle(nombre, liga, tid=None, lid=None):
-    """Obtiene stats detallados para mostrar tabla de datos reales."""
+    """
+    Obtiene stats detallados desde multiples fuentes en cascada:
+    1. API-Football (goles, stats de temporada) — requiere API key
+    2. Understat (xG reales, ligas europeas top)
+    3. TheSportsDB (ultimos partidos, cualquier liga/seleccion)
+    4. ClubElo (ELO rating europeo)
+    """
     det = {
         "nombre": nombre, "liga": liga, "fuente": "Sin datos", "ok": False,
         "gm": None, "gc": None, "elo": None,
-        # Ultimos 5 partidos
-        "ultimos5": [], "racha": "",
-        "ganados5": 0, "empatados5": 0, "perdidos5": 0,
+        "xg": None, "xga": None,
+        "tiros_pg": None, "tarj_pg": None, "posesion": None,
+        "ultimos5": [], "ganados5": 0, "empatados5": 0, "perdidos5": 0,
         "goles_fav5": 0, "goles_con5": 0,
-        # Stats generales
-        "posicion": None, "puntos": None,
-        "tarj_amarillas": None,
+        "fuentes_usadas": [],
     }
     torneo = any(k in liga.lower() for k in TORNEOS_FIFA)
     selec  = any(k in nombre.lower() for k in SELECCIONES)
 
-    # Stats basicos desde API-Football
-    if not torneo and tid and lid:
-        gm, gc = get_stats_api(tid, lid)
-        if gm:
-            det.update({"gm": gm, "gc": gc, "fuente": "API-Football", "ok": True})
+    # ── FUENTE 1: API-Football (stats completos de temporada) ────────────
+    if tid and lid:
+        try:
+            t = get_temp(lid)
+            h = {"x-apisports-key": API_FOOTBALL_KEY}
+            r = SH.get("https://v3.football.api-sports.io/teams/statistics",
+                       headers=h, params={"team":tid,"season":t,"league":lid}, timeout=12)
+            d = r.json().get("response", {})
+            if d:
+                gf = d.get("goals",{}).get("for",{}).get("average",{}).get("total")
+                ga = d.get("goals",{}).get("against",{}).get("average",{}).get("total")
+                shots = d.get("shots",{}).get("total",{}).get("average")
+                cards = d.get("cards",{}).get("yellow",{})
+                # Sumar tarjetas amarillas por intervalo
+                tarj = 0
+                if isinstance(cards, dict):
+                    for v in cards.values():
+                        if isinstance(v, dict) and v.get("total"):
+                            try: tarj += int(v["total"])
+                            except: pass
+                played = d.get("fixtures",{}).get("played",{}).get("total") or 1
+                if gf:
+                    det.update({
+                        "gm": round(float(gf),2),
+                        "gc": round(float(ga),2) if ga else None,
+                        "tiros_pg": round(float(shots),1) if shots else None,
+                        "tarj_pg": round(tarj/played,2) if tarj and played else None,
+                        "fuente": "API-Football",
+                        "ok": True,
+                    })
+                    det["fuentes_usadas"].append("API-Football")
+        except: pass
 
-    # Understat para ligas europeas
-    if not torneo and not selec and not det["ok"]:
-        xg, xga, gm_u, gc_u = get_understat(nombre, liga)
-        if xg:
-            det.update({"gm": gm_u, "gc": gc_u, "fuente": "Understat", "ok": True})
-        time.sleep(0.2)
+    # ── FUENTE 2: Understat (xG reales, ligas europeas) ─────────────────
+    if not torneo and not selec:
+        try:
+            xg, xga, gm_u, gc_u = get_understat(nombre, liga)
+            if xg is not None:
+                det["xg"]  = xg
+                det["xga"] = xga
+                if not det["ok"]:
+                    det.update({"gm": gm_u, "gc": gc_u, "fuente": "Understat", "ok": True})
+                det["fuentes_usadas"].append("Understat")
+            time.sleep(0.2)
+        except: pass
 
-    # TheSportsDB — ultimos partidos con detalle
+    # ── FUENTE 3: TheSportsDB (ultimos partidos + stats basicos) ─────────
     try:
         td = get_tsdb(nombre)
         if td:
-            team_id = td.get("idTeam", "")
+            team_id = td.get("idTeam","")
             if not det["ok"]:
                 gm2, gc2 = stats_tsdb(team_id)
                 if gm2:
                     det.update({"gm": gm2, "gc": gc2, "fuente": "TheSportsDB", "ok": True})
-            # Obtener ultimos 5 partidos con detalle
+            det["fuentes_usadas"].append("TheSportsDB")
+            # Ultimos 5 partidos con detalle de resultado
             try:
-                r = SH.get(f"https://www.thesportsdb.com/api/v1/json/3/eventslast.php?id={team_id}", timeout=8)
-                d = r.json()
-                if d and d.get("results"):
-                    raw = d["results"][-5:]
-                    for x in raw:
+                r2 = SH.get(f"https://www.thesportsdb.com/api/v1/json/3/eventslast.php?id={team_id}", timeout=8)
+                d2 = r2.json()
+                if d2 and d2.get("results"):
+                    for x in d2["results"][-5:]:
                         try:
                             sh = int(x.get("intHomeScore") or 0)
                             sa = int(x.get("intAwayScore") or 0)
-                            es_local = str(x.get("idHomeTeam","")) == str(team_id)
-                            gf = sh if es_local else sa
-                            gc_p = sa if es_local else sh
-                            rival = x.get("strAwayTeam" if es_local else "strHomeTeam", "?")
-                            if gf > gc_p:   res="G"; det["ganados5"]+=1
-                            elif gf == gc_p: res="E"; det["empatados5"]+=1
-                            else:            res="P"; det["perdidos5"]+=1
-                            det["goles_fav5"] += gf
+                            es_l = str(x.get("idHomeTeam","")) == str(team_id)
+                            gf_p = sh if es_l else sa
+                            gc_p = sa if es_l else sh
+                            rival = x.get("strAwayTeam" if es_l else "strHomeTeam","?")
+                            liga_p = x.get("strLeague","")
+                            if gf_p > gc_p:    res="G"; det["ganados5"]+=1
+                            elif gf_p == gc_p: res="E"; det["empatados5"]+=1
+                            else:              res="P"; det["perdidos5"]+=1
+                            det["goles_fav5"] += gf_p
                             det["goles_con5"] += gc_p
                             det["ultimos5"].append({
-                                "rival": rival[:15], "res": res,
-                                "goles": f"{gf}-{gc_p}",
-                                "local": "L" if es_local else "V"
+                                "rival": rival[:16], "res": res,
+                                "goles": f"{gf_p}-{gc_p}",
+                                "local": "Local" if es_l else "Visita",
+                                "liga": liga_p[:18],
                             })
                         except: pass
-                    racha = "".join(p["res"] for p in det["ultimos5"])
-                    det["racha"] = racha
             except: pass
-        time.sleep(0.25)
+        time.sleep(0.2)
     except: pass
 
-    # ClubElo
-    elo = get_elo(nombre)
-    if elo: det["elo"] = elo
+    # ── FUENTE 4: ClubElo (ELO rating) ───────────────────────────────────
+    try:
+        elo = get_elo(nombre)
+        if elo:
+            det["elo"] = elo
+            det["fuentes_usadas"].append("ClubElo")
+    except: pass
 
     return det
 
@@ -1122,38 +1163,51 @@ def pantalla_admin():
                         fuente_txt = det.get("fuente","Sin datos")
                         st.markdown(f"**{fuente_ico} {nombre_eq}**")
                         st.caption(f"Fuente: {fuente_txt}")
+                        fuentes_str = " + ".join(det.get("fuentes_usadas",[])) or "Sin datos"
+                        st.caption(f"Fuentes consultadas: {fuentes_str}")
                         if det.get("ok"):
-                            gm  = det.get("gm"); gc = det.get("gc"); elo = det.get("elo")
-                            u5  = det.get("ultimos5",[])
-                            g5  = det.get("ganados5",0); e5=det.get("empatados5",0); p5=det.get("perdidos5",0)
-                            gf5 = det.get("goles_fav5",0); gc5=det.get("goles_con5",0)
-                            # Tabla de stats generales
-                            tbl_eq = f"""<table style="width:100%;border-collapse:collapse;font-size:.82rem;margin:6px 0">
-                              <thead><tr style="background:#0a0a1e;color:#ffd700">
-                                <th style="padding:6px 10px;text-align:left">Stat</th>
-                                <th style="padding:6px 10px;text-align:center">Valor</th>
-                              </tr></thead><tbody>
-                              <tr style="background:#0d0d18"><td style="padding:5px 10px;color:#aaa">Goles marcados/partido</td><td style="padding:5px 10px;text-align:center;color:#00ee66;font-weight:700">{f"{gm:.2f}" if gm else "N/D"}</td></tr>
-                              <tr style="background:#0a0a1e"><td style="padding:5px 10px;color:#aaa">Goles concedidos/partido</td><td style="padding:5px 10px;text-align:center;color:#ff6666;font-weight:700">{f"{gc:.2f}" if gc else "N/D"}</td></tr>
-                              <tr style="background:#0d0d18"><td style="padding:5px 10px;color:#aaa">ELO Rating</td><td style="padding:5px 10px;text-align:center;color:#ffd700;font-weight:700">{f"{int(elo)}" if elo else "N/D"}</td></tr>
-                              <tr style="background:#0a0a1e"><td style="padding:5px 10px;color:#aaa">Ultimos 5 (G/E/P)</td><td style="padding:5px 10px;text-align:center;color:#fff;font-weight:700">{g5}G / {e5}E / {p5}P</td></tr>
-                              <tr style="background:#0d0d18"><td style="padding:5px 10px;color:#aaa">Goles U5 (F/C)</td><td style="padding:5px 10px;text-align:center;color:#fff">{gf5} a favor / {gc5} en contra</td></tr>
-                            </tbody></table>"""
+                            gm   = det.get("gm");   gc   = det.get("gc")
+                            elo  = det.get("elo");   xg   = det.get("xg")
+                            tiros= det.get("tiros_pg"); tarj=det.get("tarj_pg")
+                            u5   = det.get("ultimos5",[])
+                            g5   = det.get("ganados5",0); e5=det.get("empatados5",0); p5=det.get("perdidos5",0)
+                            gf5  = det.get("goles_fav5",0); gc5=det.get("goles_con5",0)
+
+                            # Tabla estilo Sofascore
+                            rows = [
+                                ("⚽ Goles marcados/partido",   f"{gm:.2f}" if gm else "N/D",   "#00ee66"),
+                                ("🥅 Goles concedidos/partido", f"{gc:.2f}" if gc else "N/D",   "#ff6666"),
+                                ("🎯 xG por partido",           f"{xg:.2f}" if xg else "N/D",   "#00ddff"),
+                                ("🔫 Tiros al arco/partido",    f"{tiros:.1f}" if tiros else "N/D","#ffaa00"),
+                                ("🟨 Tarjetas amarillas/partido",f"{tarj:.2f}" if tarj else "N/D","#ffd700"),
+                                ("🏆 ELO Rating",               f"{int(elo)}" if elo else "N/D", "#ffd700"),
+                                ("📊 Ultimos 5 (G/E/P)",        f"{g5}G / {e5}E / {p5}P",       "#ffffff"),
+                                ("⚽ Goles U5",                 f"{gf5} a favor / {gc5} en contra","#aaaaaa"),
+                            ]
+                            tbl_eq = '<table style="width:100%;border-collapse:collapse;font-size:.82rem;margin:6px 0">'
+                            tbl_eq += '<thead><tr style="background:#0a0a1e;color:#ffd700"><th style="padding:6px 10px;text-align:left">Estadistica</th><th style="padding:6px 10px;text-align:center">Valor</th></tr></thead><tbody>'
+                            for i_r,(stat,val,clr) in enumerate(rows):
+                                bg_r="#0d0d18" if i_r%2==0 else "#0a0a1e"
+                                tbl_eq+=f'<tr style="background:{bg_r}"><td style="padding:5px 10px;color:#aaa">{stat}</td><td style="padding:5px 10px;text-align:center;color:{clr};font-weight:700">{val}</td></tr>'
+                            tbl_eq+="</tbody></table>"
                             st.markdown(tbl_eq, unsafe_allow_html=True)
-                            # Ultimos 5 con colores
+
+                            # Ultimos 5 partidos detallados
                             if u5:
-                                st.markdown("**Ultimos 5 partidos:**")
-                                tbl_u5 = '<table style="width:100%;border-collapse:collapse;font-size:.8rem;margin:4px 0"><thead><tr style="background:#0a0a1e;color:#ffd700"><th style="padding:5px 8px">Rival</th><th style="padding:5px 8px;text-align:center">L/V</th><th style="padding:5px 8px;text-align:center">Marcador</th><th style="padding:5px 8px;text-align:center">Res</th></tr></thead><tbody>'
+                                st.markdown("**🕐 Ultimos 5 partidos:**")
+                                tbl_u5='<table style="width:100%;border-collapse:collapse;font-size:.8rem;margin:4px 0">'
+                                tbl_u5+='<thead><tr style="background:#0a0a1e;color:#ffd700"><th style="padding:5px 8px;text-align:left">Rival</th><th style="padding:5px 8px;text-align:center">Cond.</th><th style="padding:5px 8px;text-align:center">Marcador</th><th style="padding:5px 8px;text-align:center">Res</th></tr></thead><tbody>'
                                 for i_u,pu in enumerate(u5):
                                     bg_u="#0d0d18" if i_u%2==0 else "#0a0a1e"
                                     rc={"G":"#00ee66","E":"#ffaa00","P":"#ff4444"}.get(pu["res"],"#fff")
-                                    tbl_u5+=f'<tr style="background:{bg_u}"><td style="padding:5px 8px;color:#ccc">{pu["rival"]}</td><td style="padding:5px 8px;text-align:center;color:#888">{pu["local"]}</td><td style="padding:5px 8px;text-align:center;color:#fff;font-weight:700">{pu["goles"]}</td><td style="padding:5px 8px;text-align:center"><span style="background:{rc};color:#000;padding:1px 7px;border-radius:4px;font-weight:700">{pu["res"]}</span></td></tr>'
+                                    tbl_u5+=f'<tr style="background:{bg_u}"><td style="padding:5px 8px;color:#ccc">{pu["rival"]}</td><td style="padding:5px 8px;text-align:center;color:#888;font-size:.75rem">{pu["local"]}</td><td style="padding:5px 8px;text-align:center;color:#fff;font-weight:700">{pu["goles"]}</td><td style="padding:5px 8px;text-align:center"><span style="background:{rc};color:#000;padding:1px 8px;border-radius:4px;font-weight:700;font-size:.8rem">{pu["res"]}</span></td></tr>'
                                 tbl_u5+="</tbody></table>"
                                 st.markdown(tbl_u5, unsafe_allow_html=True)
                             else:
-                                st.caption("Detalle partido a partido no disponible en esta fuente.")
+                                st.caption("Historial partido a partido no disponible en esta fuente.")
                         else:
-                            st.warning(f"Sin datos reales para {nombre_eq}. Se usaron promedios de liga.")
+                            st.warning(f"Sin datos reales para {nombre_eq}. Se usaron promedios de la liga.")
+                            st.caption("Verifica que la API_FOOTBALL_KEY este configurada en Streamlit Secrets.")
             else:
                 st.info("Activa 'Buscar stats reales en internet' para ver datos de los equipos.")
 
@@ -1364,8 +1418,28 @@ def pantalla_pago(u,plan):
 
     with tabs[0]:
         st.markdown("### Selecciona liga y periodo")
+
+        # Mostrar ligas activas hoy
+        with st.expander("⚡ Ver ligas con partidos HOY", expanded=False):
+            st.caption("Consultando API-Football para ligas activas hoy...")
+            hoy_str2 = str(date.today())
+            ligas_activas_hoy = []
+            for ln, lid in list(LIGAS.items())[:8]:  # revisar primeras 8 para no agotar requests
+                try:
+                    fx_test = get_fx_dia(lid, hoy_str2)
+                    if fx_test:
+                        ligas_activas_hoy.append((ln, len(fx_test)))
+                    time.sleep(0.3)
+                except: pass
+            if ligas_activas_hoy:
+                for ln, cnt in ligas_activas_hoy:
+                    st.markdown(f"✅ **{ln}** — {cnt} partidos hoy")
+            else:
+                st.info("No se encontraron partidos hoy en las ligas principales, o la API no responde.")
+
         c1,c2=st.columns([2,1])
         with c1:
+            st.caption("Puedes seleccionar cualquier liga, este o no activa hoy.")
             if plan=="mes":
                 ligas_sel=st.multiselect("Ligas",list(LIGAS.keys()),default=[list(LIGAS.keys())[0]])
             else:
