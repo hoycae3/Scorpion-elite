@@ -1492,23 +1492,93 @@ def pantalla_pago(u,plan):
     if plan=="mes" and len(tabs)>4:
         with tabs[4]:
             st.markdown("### 🔗 Combinadas del Dia")
+            st.markdown("""
+            **¿Cómo funciona una combinada?**
+            Una combinada es apostar a varios partidos a la vez. Para ganar, **todos** los picks deben acertar.
+            La cuota total se multiplica (ej: 1.8 × 2.0 × 1.5 = 5.4x tu apuesta).
+            Cuanto mas picks agregas, mayor es la cuota pero menor la probabilidad de acertar.
+            """)
+
             picks_c=db_picks_get(str(date.today()),plan)
             reales_c=[p for p in picks_c if "🔒" not in str(p.get("mercado","")) and p.get("cuota")]
             if reales_c:
-                st.markdown("**Selecciona picks para armar tu combinada:**")
+                st.markdown("**Selecciona los picks que quieres combinar:**")
                 sel_comb=[]
                 for p in reales_c:
-                    if st.checkbox(f'{p["local"]} vs {p["visitante"]} — {p["mercado"]} @ {p.get("cuota","?")}',key=f"comb_{p['id']}"):
+                    conf=p.get("confianza",0); cuota_p=p.get("cuota",1)
+                    edge=p.get("edge",0)
+                    edge_str=f" · Edge: {edge:+.1f}%" if edge else ""
+                    lbl=f'{p["local"]} vs {p["visitante"]} — {p["mercado"]} @ {cuota_p} · Conf: {conf}%{edge_str}'
+                    if st.checkbox(lbl, key=f"comb_{p['id']}"):
                         sel_comb.append(p)
+
                 if sel_comb:
-                    cuota_c=1.0
-                    prob_c=1.0
+                    cuota_c=1.0; prob_c=1.0
                     for s in sel_comb:
-                        if s.get("cuota"): cuota_c=round(cuota_c*s["cuota"],2)
-                        if s.get("confianza"): prob_c=round(prob_c*s["confianza"]/100,4)
-                    st.markdown(f'<div class="comb-box"><b>Tu combinada:</b> {len(sel_comb)} partidos<br>Cuota total: <b>{cuota_c}x</b> | Prob estimada: <b>{round(prob_c*100,1)}%</b><br>Kelly recomendado: <b>{round(max(0,(prob_c*cuota_c-1)/(cuota_c-1))*0.25*100,1)}%</b> del bankroll</div>',unsafe_allow_html=True)
+                        if s.get("cuota"):     cuota_c=round(cuota_c*float(s["cuota"]),2)
+                        if s.get("confianza"): prob_c=round(prob_c*float(s["confianza"])/100,5)
+                    prob_pct=round(prob_c*100,1)
+                    # Kelly conservador (1/4)
+                    b=cuota_c-1
+                    kelly_f=max(0,(prob_c*b-(1-prob_c))/b)*0.25 if b>0 else 0
+                    kelly_pct=round(kelly_f*100,1)
+                    # Ganancia neta si acierta con $100 base
+                    ganancia_100=round(100*cuota_c-100,1)
+
+                    st.markdown("---")
+                    st.markdown("### 📊 Tu Combinada")
+
+                    # Tabla de picks seleccionados
+                    tbl_comb='<table style="width:100%;border-collapse:collapse;font-size:.83rem;margin:8px 0"><thead><tr style="background:#0a0a1e;color:#ffd700"><th style="padding:6px 12px;text-align:left">Partido</th><th style="padding:6px 12px;text-align:left">Pick</th><th style="padding:6px 12px;text-align:center">Cuota</th><th style="padding:6px 12px;text-align:center">Confianza</th></tr></thead><tbody>'
+                    for i_c,s in enumerate(sel_comb):
+                        bg_c="#0d0d18" if i_c%2==0 else "#0a0a1e"
+                        tbl_comb+=f'<tr style="background:{bg_c}"><td style="padding:5px 12px;color:#ccc">{s["local"][:12]} vs {s["visitante"][:12]}</td><td style="padding:5px 12px;color:#ffd700;font-weight:600">{s["mercado"]}</td><td style="padding:5px 12px;text-align:center;color:#fff">{s.get("cuota","?")}</td><td style="padding:5px 12px;text-align:center;color:#00ee66">{s.get("confianza","?")}%</td></tr>'
+                    tbl_comb+="</tbody></table>"
+                    st.markdown(tbl_comb, unsafe_allow_html=True)
+
+                    # Resumen de metricas con explicacion
+                    tbl_res=f'''<table style="width:100%;border-collapse:collapse;font-size:.85rem;margin:10px 0">
+                      <thead><tr style="background:#0a1e0a;color:#ffd700">
+                        <th style="padding:7px 14px;text-align:left">Metrica</th>
+                        <th style="padding:7px 14px;text-align:center">Valor</th>
+                        <th style="padding:7px 14px;text-align:left">Que significa</th>
+                      </tr></thead><tbody>
+                      <tr style="background:#0d1e0d">
+                        <td style="padding:6px 14px;color:#aaa">Picks en la combinada</td>
+                        <td style="padding:6px 14px;text-align:center;color:#fff;font-weight:700">{len(sel_comb)}</td>
+                        <td style="padding:6px 14px;color:#888">Todos deben acertar para ganar</td>
+                      </tr>
+                      <tr style="background:#0a1a0a">
+                        <td style="padding:6px 14px;color:#aaa">Cuota total combinada</td>
+                        <td style="padding:6px 14px;text-align:center;color:#ffd700;font-weight:700">{cuota_c}x</td>
+                        <td style="padding:6px 14px;color:#888">Multiplica tu apuesta por {cuota_c}</td>
+                      </tr>
+                      <tr style="background:#0d1e0d">
+                        <td style="padding:6px 14px;color:#aaa">Probabilidad estimada</td>
+                        <td style="padding:6px 14px;text-align:center;color:{"#00ee66" if prob_pct>=40 else "#ffaa00" if prob_pct>=20 else "#ff4444"};font-weight:700">{prob_pct}%</td>
+                        <td style="padding:6px 14px;color:#888">{"Razonable ✅" if prob_pct>=40 else "Arriesgada ⚠️" if prob_pct>=20 else "Muy arriesgada ❌"}</td>
+                      </tr>
+                      <tr style="background:#0a1a0a">
+                        <td style="padding:6px 14px;color:#aaa">Ganancia neta por $100</td>
+                        <td style="padding:6px 14px;text-align:center;color:#00ee66;font-weight:700">${ganancia_100}</td>
+                        <td style="padding:6px 14px;color:#888">Si apuestas $100 y aciertas, ganas ${ganancia_100} de utilidad</td>
+                      </tr>
+                      <tr style="background:#0d1e0d">
+                        <td style="padding:6px 14px;color:#aaa">Kelly recomendado</td>
+                        <td style="padding:6px 14px;text-align:center;color:#ffd700;font-weight:700">{kelly_pct}% del bankroll</td>
+                        <td style="padding:6px 14px;color:#888">Si tienes $1000, apuesta maximo ${round(kelly_pct*10,0)}</td>
+                      </tr>
+                    </tbody></table>'''
+                    st.markdown(tbl_res, unsafe_allow_html=True)
+
+                    if prob_pct < 20:
+                        st.error("⚠️ Esta combinada tiene menos de 20% de probabilidad. Es muy arriesgada. Considera reducir el numero de picks.")
+                    elif prob_pct < 40:
+                        st.warning("⚠️ Combinada arriesgada. Apuesta solo una fraccion pequena del bankroll.")
+                    else:
+                        st.success(f"✅ Combinada razonable con {prob_pct}% de probabilidad estimada.")
             else:
-                st.info("No hay picks disponibles hoy para combinar.")
+                st.info("No hay picks publicados hoy para combinar. El administrador debe publicar picks primero.")
 
         with tabs[5]:
             st.markdown("### 📈 Mi Historial")
