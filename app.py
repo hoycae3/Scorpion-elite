@@ -354,28 +354,36 @@ def calcular(gml,gcl,gmv,gcv,liga,elo_l=None,elo_v=None):
             if pij>=0.5: top_ex[f"{i}-{j}"]=pij
     top_ex=dict(sorted(top_ex.items(),key=lambda x:x[1],reverse=True)[:8])
     # Mercados completos para picks
+    # Cuotas de referencia calibradas con margen de casa tipico (5-8%)
+    # Cuota justa = 100/prob, cuota mercado = cuota_justa * 1.07 (margen)
+    def cuota_ref(prob, cuota_minima=1.05):
+        if prob <= 0: return None
+        cj = 100 / prob  # cuota justa sin margen
+        cm = round(cj * 1.07, 2)  # con margen de casa 7%
+        return max(cuota_minima, cm)
+
     mercados_picks = [
-        ("Over 0.5 Goles", o05, 1.10),
-        ("Over 1.5 Goles", o15, 1.28),
-        ("Over 2.5 Goles", o25, 1.88),
-        ("Over 3.5 Goles", o35, 3.25),
-        ("BTTS — Ambos Marcan", btts_si, 1.82),
-        ("BTTS — No", btts_no, 2.00),
-        (f"Corners +7.5", c75, 1.42),
-        (f"Corners +8.5", c85, 1.60),
-        (f"Corners +9.5", c95, 1.90),
-        (f"Corners +10.5", c105, 2.40),
-        (f"Tiros +{round(tiros_tot*0.8,1)}", round(min(85,tiros_tot*6),0), 1.45),
-        (f"Tarjetas +1.5", round(min(88,(tmu/5)*100),0), 1.35),
-        (f"Tarjetas +2.5", round(min(75,(tmu/6)*100),0), 1.72),
-        (f"Tarjetas +3.5", round(min(60,(tmu/7)*100),0), 2.20),
+        ("Over 0.5 Goles",       o05,     cuota_ref(o05)),
+        ("Over 1.5 Goles",       o15,     cuota_ref(o15)),
+        ("Over 2.5 Goles",       o25,     cuota_ref(o25)),
+        ("Over 3.5 Goles",       o35,     cuota_ref(o35)),
+        ("BTTS — Ambos Marcan",  btts_si, cuota_ref(btts_si)),
+        ("BTTS — No",            btts_no, cuota_ref(btts_no)),
+        ("Corners +7.5",         c75,     cuota_ref(c75)),
+        ("Corners +8.5",         c85,     cuota_ref(c85)),
+        ("Corners +9.5",         c95,     cuota_ref(c95)),
+        ("Corners +10.5",        c105,    cuota_ref(c105)),
+        ("Tarjetas +1.5",        round(min(85,(tmu/4.5)*100),0), cuota_ref(round(min(85,(tmu/4.5)*100),0))),
+        ("Tarjetas +2.5",        round(min(70,(tmu/5.5)*100),0), cuota_ref(round(min(70,(tmu/5.5)*100),0))),
+        ("Tarjetas +3.5",        round(min(50,(tmu/7)*100),0),   cuota_ref(round(min(50,(tmu/7)*100),0))),
     ]
+    # Resultado 1X2 — cuota justa desde probabilidades del modelo
     if p1>px and p1>p2:
-        mercados_picks.insert(0,("Victoria Local (1)", p1, round(100/max(p1,1),2)))
+        mercados_picks.insert(0,("Victoria Local (1)", p1, cuota_ref(p1)))
     elif p2>px and p2>p1:
-        mercados_picks.insert(0,("Victoria Visitante (2)", p2, round(100/max(p2,1),2)))
+        mercados_picks.insert(0,("Victoria Visitante (2)", p2, cuota_ref(p2)))
     else:
-        mercados_picks.insert(0,("Empate (X)", px, round(100/max(px,1),2)))
+        mercados_picks.insert(0,("Empate (X)", px, cuota_ref(px)))
     return {
         "xl":xl,"xv":xv,"xt":xt,
         "p1_po":p1_po,"px_po":px_po,"p2_po":p2_po,
@@ -483,20 +491,51 @@ def get_understat(eq,liga,temp=2024):
                         round(sum(x.get("missed",0) for x in h)/len(h),2))
     return None,None,None,None
 
+def limpiar_nombre(nombre):
+    """Limpia sufijos de ciudad/pais para mejorar busqueda: Botafogo-RJ -> Botafogo"""
+    import re as re2
+    # Quitar sufijos comunes: -RJ, -SP, -MG, -PR, etc.
+    nombre = re2.sub(r"-\s*[A-Z]{2,3}$", "", nombre.strip())
+    # Quitar parentesis: Atletico (MG) -> Atletico
+    nombre = re2.sub(r"\s*\([^)]+\)", "", nombre)
+    # Quitar puntos y guiones extra
+    nombre = nombre.strip(" .-")
+    return nombre
+
 def get_tsdb(nombre):
-    try:
-        r=SH.get(f"https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t={requests.utils.quote(nombre)}",timeout=8)
-        d=r.json()
-        if d and d.get("teams"): return d["teams"][0]
-    except: pass
+    nombre_clean = limpiar_nombre(nombre)
+    for buscar in [nombre_clean, nombre]:
+        try:
+            r=SH.get(f"https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t={requests.utils.quote(buscar)}",timeout=8)
+            d=r.json()
+            if d and d.get("teams"): return d["teams"][0]
+        except: pass
     return None
+
+def buscar_equipo_api_football(nombre, liga_id=None):
+    """Busca el team_id en API-Football por nombre."""
+    nombre_clean = limpiar_nombre(nombre)
+    h = {"x-apisports-key": API_FOOTBALL_KEY}
+    for buscar in [nombre_clean, nombre]:
+        try:
+            params = {"name": buscar}
+            if liga_id: params["league"] = liga_id
+            r = SH.get("https://v3.football.api-sports.io/teams",
+                       headers=h, params=params, timeout=10)
+            data = r.json().get("response", [])
+            if data:
+                return data[0]["team"]["id"], data[0]["team"]["name"]
+        except: pass
+    return None, None
 
 def stats_tsdb(tid):
     try:
-        r=SH.get(f"https://www.thesportsdb.com/api/v1/json/3/eventslast.php?id={tid}",timeout=8)
+        r=SH.get(f"https://www.thesportsdb.com/api/v1/json/3/eventslast.php?id={tid}",timeout=10)
         d=r.json()
         if d and d.get("results"):
-            raw=d["results"][-10:]; gml=[]; gcl=[]
+            # Filtrar solo partidos con score valido
+            raw=[x for x in d["results"] if x.get("intHomeScore") is not None]
+            raw=raw[-10:]; gml=[]; gcl=[]
             for x in raw:
                 try:
                     sh=int(x.get("intHomeScore") or 0); sa=int(x.get("intAwayScore") or 0)
@@ -539,6 +578,14 @@ def obtener_stats_detalle(nombre, liga, tid=None, lid=None):
     selec  = any(k in nombre.lower() for k in SELECCIONES)
 
     # ── FUENTE 1: API-Football (stats completos de temporada) ────────────
+    # Si no tenemos team_id, buscarlo por nombre
+    if not tid and lid:
+        tid_found, _ = buscar_equipo_api_football(nombre, lid)
+        if tid_found: tid = tid_found
+    if not tid:
+        tid_found, _ = buscar_equipo_api_football(nombre)
+        if tid_found: tid = tid_found
+
     if tid and lid:
         try:
             t = get_temp(lid)
@@ -594,12 +641,13 @@ def obtener_stats_detalle(nombre, liga, tid=None, lid=None):
                 if gm2:
                     det.update({"gm": gm2, "gc": gc2, "fuente": "TheSportsDB", "ok": True})
             det["fuentes_usadas"].append("TheSportsDB")
-            # Ultimos 5 partidos con detalle de resultado
+            # Ultimos partidos con detalle de resultado
             try:
-                r2 = SH.get(f"https://www.thesportsdb.com/api/v1/json/3/eventslast.php?id={team_id}", timeout=8)
+                r2 = SH.get(f"https://www.thesportsdb.com/api/v1/json/3/eventslast.php?id={team_id}", timeout=10)
                 d2 = r2.json()
                 if d2 and d2.get("results"):
-                    for x in d2["results"][-5:]:
+                    ultimos = [x for x in d2["results"] if x.get("intHomeScore") is not None][-5:]
+                    for x in ultimos:
                         try:
                             sh = int(x.get("intHomeScore") or 0)
                             sa = int(x.get("intAwayScore") or 0)
@@ -635,7 +683,10 @@ def obtener_stats_detalle(nombre, liga, tid=None, lid=None):
     return det
 
 def obtener_stats(nombre,liga,tid=None,lid=None):
-    d = obtener_stats_detalle(nombre, liga, tid, lid)
+    nombre_c = limpiar_nombre(nombre)
+    d = obtener_stats_detalle(nombre_c, liga, tid, lid)
+    if not d["ok"] and nombre_c != nombre:
+        d = obtener_stats_detalle(nombre, liga, tid, lid)
     return {"gm":d["gm"],"gc":d["gc"],"elo":d["elo"],"fuente":d["fuente"],"ok":d["ok"]}
 
 def leer_imagen(img_bytes,mt="image/jpeg"):
@@ -942,7 +993,10 @@ def mostrar_mercados_con_publicar(calc, partido):
     hay_valor=False
     for cat_name, items in cats.items():
         # Solo mostrar mercados con edge >= 0
-        items_valor=[(n,p,c) for n,p,c in items if c and round((p/100*c-1)*100,1)>=0]
+        # Edge real: solo mostrar si la cuota de mercado es MEJOR que la justa
+        # Con cuotas de referencia propias, no hay edge real sin odds reales
+        # Mostramos todos los mercados pero marcamos si son valor o estimado
+        items_valor=[(n,p,c) for n,p,c in items if c and p>0]
         if not items_valor: continue
         hay_valor=True
         st.markdown(f'<div class="mkt-cat">{cat_name}</div>', unsafe_allow_html=True)
@@ -950,10 +1004,16 @@ def mostrar_mercados_con_publicar(calc, partido):
             edge=round((prob/100*cuota-1)*100,1) if cuota else 0
             sel=any(p.get("mercado")==nombre and p.get("local")==partido["local"] for p in picks_sel)
             # Badge de valor
-            if edge>=5:   badge='<span class="val-badge">🔥 VALOR</span>'
-            elif edge>=2: badge='<span class="val-badge">✅ VALOR</span>'
-            elif edge>=0: badge='<span class="neutro-badge">⚪</span>'
-            else:         badge='<span class="neg-badge">❌</span>'
+            # Con cuotas de referencia propias, edge siempre es ~0
+            # Solo hay edge real si se configura ODDS_API_KEY con cuotas en vivo
+            tiene_odds_reales = False  # TODO: activar cuando ODDS_API_KEY este configurada
+            if tiene_odds_reales and edge>=5:   badge='<span class="val-badge">🔥 VALOR REAL</span>'
+            elif tiene_odds_reales and edge>=2: badge='<span class="val-badge">✅ VALOR REAL</span>'
+            else:
+                # Mostrar probabilidad del modelo como referencia
+                if prob>=70:   badge='<span class="val-badge">⭐ Alta prob</span>'
+                elif prob>=55: badge='<span class="neutro-badge">📊 Buena prob</span>'
+                else:          badge='<span class="neg-badge">📉 Prob baja</span>'
             edge_cls="mkt-ep" if edge>=0 else "mkt-en"
             c1,c2,c3,c4,c5=st.columns([3,1,1.2,1.2,1.5])
             with c1: st.markdown(f'{badge} <span class="mkt-n">{nombre}</span>',unsafe_allow_html=True)
@@ -1047,8 +1107,13 @@ def pantalla_admin():
                            "tid_l":None,"tid_v":None}
                 with st.spinner(f"Analizando {local_i} vs {visita_i}..."):
                     if usar_api_i:
-                        sl_det=obtener_stats_detalle(local_i,liga_i)
-                        sv_det=obtener_stats_detalle(visita_i,liga_i)
+                        # Buscar liga_id automaticamente si el nombre coincide
+                        liga_i_lower = liga_i.lower()
+                        liga_id_auto = next((v for k,v in LIGAS.items() if
+                                            any(w in liga_i_lower for w in k.lower().split()
+                                                if len(w)>3)), None)
+                        sl_det=obtener_stats_detalle(local_i, liga_i, lid=liga_id_auto)
+                        sv_det=obtener_stats_detalle(visita_i, liga_i, lid=liga_id_auto)
                         gml=sl_det["gm"] if sl_det["ok"] else None; gcl=sl_det["gc"] if sl_det["ok"] else None
                         gmv=sv_det["gm"] if sv_det["ok"] else None; gcv=sv_det["gc"] if sv_det["ok"] else None
                         elo_l=sl_det["elo"]; elo_v=sv_det["elo"]
@@ -1214,7 +1279,7 @@ def pantalla_admin():
             # ── SECCION 3: Solo picks con VALOR (edge positivo) ─────────────
             st.markdown("---")
             st.markdown("### 📌 Picks con valor estadistico — selecciona para publicar")
-            st.caption("Edge calculado con cuotas de referencia promedio. Con la API de The Odds configurada en Secrets, los edges seran sobre cuotas reales en vivo.")
+            st.caption("⚠️ Las probabilidades son del modelo matematico. El EDGE real solo se calcula cuando configuras ODDS_API_KEY en Secrets con cuotas de tu casa de apuestas. Compara la cuota justa con la cuota real que ofrece tu casa antes de apostar.")
             mostrar_mercados_con_publicar(r, r)
 
             # ── SECCION 4: Picks seleccionados ──────────────────────────────
