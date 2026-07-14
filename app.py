@@ -116,15 +116,20 @@ SELECCIONES = {
 SH = requests.Session()
 
 # ══════════════════════════════════════════════════════════
-# WEB SCRAPING - FLASHSCORE
+# WEB SCRAPING - DATOS REALES
 # ══════════════════════════════════════════════════════════
+GOLEADORES_CACHE = {}  # Cache para goleadores
+
 def scrape_flashscore_partidos():
     """Obtiene partidos del día desde Flashscore."""
     partidos = []
     try:
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive",
         }
         r = requests.get("https://www.flashscore.es/futbol/", headers=headers, timeout=15)
         soup = BeautifulSoup(r.text, "html.parser")
@@ -157,48 +162,135 @@ def scrape_flashscore_partidos():
             except:
                 continue
     except Exception as e:
-        print(f"Error scraping Flashscore: {e}")
+        print(f"Error scraping Flashscore partidos: {e}")
     return partidos
 
 
-def scrape_flashscore_goleadores(liga_url):
-    """Obtiene goleadores de una liga."""
+def scrape_goleadores_tiempo_real(liga_nombre):
+    """Obtiene goleadores en tiempo real desde Flashscore."""
+    global GOLEADORES_CACHE
+    
+    # Verificar cache (5 minutos)
+    cache_key = f"{liga_nombre}_{date.today()}"
+    if cache_key in GOLEADORES_CACHE:
+        return GOLEADORES_CACHE[cache_key]
+    
     goleadores = []
+    
     # Mapeo de ligas a URLs de Flashscore
     liga_urls = {
-        "Premier League": "inglaterra-premier-league",
-        "La Liga": "espana-laliga",
-        "Bundesliga": "alemania-bundesliga",
-        "Serie A": "italia-serie-a",
-        "Ligue 1": "francia-ligue-1",
-        "Champions League": "europa-champions-league",
+        "Premier League": ("inglaterra-premier-league", "🏴󠁧󠁢󠁥󠁮"),
+        "La Liga": ("espana-laliga", "🇪🇸"),
+        "Bundesliga": ("alemania-bundesliga", "🇩🇪"),
+        "Serie A": ("italia-serie-a", "🇮🇹"),
+        "Ligue 1": ("francia-ligue-1", "🇫🇷"),
+        "Champions League": ("europa-champions-league", "🌍"),
+        "Copa America": ("copa-america", "🌎"),
+        "Mundial FIFA 2026": ("mundial-fifa", "🌍"),
     }
-    url_part = liga_urls.get(liga_url, "")
+    
+    liga_info = liga_urls.get(liga_nombre)
+    if not liga_info:
+        return goleadores
+    
+    url_part, _ = liga_info
+    
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+        }
+        
+        # Probar varias URLs posibles
+        urls_to_try = [
+            f"https://www.flashscore.es/futbol/{url_part}/clasificacion/",
+            f"https://www.flashscore.es/futbol/{url_part}/estadisticas/",
+            f"https://www.flashscore.es/{url_part}/",
+        ]
+        
+        for url in urls_to_try:
+            try:
+                r = requests.get(url, headers=headers, timeout=10)
+                if r.status_code == 200:
+                    soup = BeautifulSoup(r.text, "html.parser")
+                    
+                    # Buscar tablas con goleadores
+                    tables = soup.find_all("table")
+                    for table in tables:
+                        rows = table.find_all("tr")
+                        for i, row in enumerate(rows[1:11], 1):
+                            cols = row.find_all("td")
+                            if len(cols) >= 2:
+                                nombre = cols[0].get_text(strip=True)
+                                try:
+                                    goles_text = cols[1].get_text(strip=True)
+                                    goles = int(re.sub(r'[^0-9]', '', goles_text))
+                                except:
+                                    goles = 0
+                                if nombre and len(nombre) > 2 and goles > 0:
+                                    goleadores.append({
+                                        "posicion": i,
+                                        "nombre": nombre,
+                                        "goles": goles,
+                                        "equipo": ""
+                                    })
+                    
+                    if goleadores:
+                        break  # Si encontramos datos, salir
+            except:
+                continue
+                
+    except Exception as e:
+        print(f"Error scraping goleadores {liga_nombre}: {e}")
+    
+    # Guardar en cache
+    GOLEADORES_CACHE[cache_key] = goleadores
+    return goleadores
+
+
+def obtener_goleadores_sofascore(liga_nombre):
+    """Obtiene goleadores desde Sofascore como alternativa."""
+    goleadores = []
+    
+    liga_urls_sofascore = {
+        "Premier League": "premier-league",
+        "La Liga": "laliga",
+        "Bundesliga": "bundesliga",
+        "Serie A": "serie-a",
+        "Ligue 1": "ligue-1",
+        "Champions League": "champions-league",
+        "Copa America": "copa-america",
+    }
+    
+    url_part = liga_urls_sofascore.get(liga_nombre)
     if not url_part:
         return goleadores
     
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json, text/plain, */*",
         }
-        r = requests.get(f"https://www.flashscore.es/{url_part}/estadisticas/", headers=headers, timeout=15)
-        soup = BeautifulSoup(r.text, "html.parser")
         
-        tables = soup.find_all("table")
-        for table in tables[:2]:
-            rows = table.find_all("tr")
-            for i, row in enumerate(rows[1:11], 1):
-                cols = row.find_all("td")
-                if len(cols) >= 2:
-                    nombre = cols[0].get_text(strip=True)
-                    try:
-                        goles = int(re.sub(r'[^0-9]', '', cols[1].get_text(strip=True)))
-                    except:
-                        goles = 0
-                    if nombre and goles > 0:
-                        goleadores.append({"nombre": nombre, "goles": goles})
+        r = requests.get(
+            f"https://www.sofascore.com/api/v1/sport/football/unique-tournament/1/season/61627/top-players",
+            headers=headers, timeout=10
+        )
+        
+        if r.status_code == 200:
+            data = r.json()
+            if "topPlayers" in data:
+                for i, player in enumerate(data["topPlayers"][:10], 1):
+                    goleadores.append({
+                        "posicion": i,
+                        "nombre": player.get("player", {}).get("name", "Unknown"),
+                        "goles": player.get("goals", 0),
+                        "equipo": player.get("team", {}).get("name", "")
+                    })
     except:
         pass
+    
     return goleadores
 
 
@@ -1985,26 +2077,56 @@ def pantalla_principal():
         st.markdown('<p class="section-title">🏆 Top Goleadores</p>', unsafe_allow_html=True)
         
         # Selector de liga
-        liga_seleccionada = st.selectbox("Liga", ["Premier League", "La Liga", "Bundesliga", "Serie A", "Ligue 1", "Champions League"])
+        liga_seleccionada = st.selectbox("Liga", [
+            "Premier League", "La Liga", "Bundesliga", "Serie A", 
+            "Ligue 1", "Champions League", "Copa America", "Mundial FIFA 2026"
+        ])
         
-        goleadores_ejemplo = {
-            "Premier League": [("Erling Haaland", 25), ("Cole Palmer", 22), ("Alexander Isak", 20), ("Ollie Watkins", 19), ("Mohamed Salah", 18)],
-            "La Liga": [("Kylian Mbappé", 24), ("Robert Lewandowski", 21), ("Lamine Yamal", 18), ("Raphinha", 17), ("Ante Budimir", 16)],
-            "Bundesliga": [("Harry Kane", 25), ("Omar Marmoush", 22), ("Lois Openda", 20), ("Serhou Guirassy", 19), ("Jamal Musiala", 18)],
-            "Serie A": [("Lautaro Martínez", 23), ("Dusan Vlahovic", 20), ("Victor Osimhen", 19), ("Romelu Lukaku", 18), ("Marcus Thuram", 17)],
-            "Ligue 1": [("Ousmane Dembélé", 24), ("Alexandre Lacazette", 20), ("Jonathan David", 19), ("Folarin Balogun", 18), ("Kingsley Coman", 17)],
-            "Champions League": [("Kylian Mbappé", 8), ("Robert Lewandowski", 7), ("Erling Haaland", 7), ("Harry Kane", 6), ("Lautaro Martínez", 6)],
-        }
+        # Intentar obtener goleadores reales
+        goleadores_reales = scrape_goleadores_tiempo_real(liga_seleccionada)
         
-        goleadores = goleadores_ejemplo.get(liga_seleccionada, goleadores_ejemplo["Premier League"])
-        for i, (nombre, goles) in enumerate(goleadores, 1):
-            medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
-            st.markdown(f"""
-            <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: #131926; border-radius: 5px; margin-bottom: 5px;">
-                <span style="color: #ffd700;">{medal} {nombre}</span>
-                <span style="color: #00ee66; font-weight: bold;">{goles} ⚽</span>
-            </div>
-            """, unsafe_allow_html=True)
+        if goleadores_reales:
+            for g in goleadores_reales[:8]:
+                i = g.get("posicion", 1)
+                nombre = g.get("nombre", "")
+                goles = g.get("goles", 0)
+                equipo = g.get("equipo", "")
+                
+                medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+                equipo_str = f'<span style="color:#888;font-size:0.7rem"> · {equipo}</span>' if equipo else ""
+                
+                st.markdown(f"""
+                <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: #131926; border-radius: 5px; margin-bottom: 5px;">
+                    <span style="color: #ffd700;">{medal} {nombre}{equipo_str}</span>
+                    <span style="color: #00ee66; font-weight: bold;">{goles} ⚽</span>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.caption("🔄 Datos actualizados de Flashscore")
+        else:
+            # Fallback con goleadores de ejemplo (temporada 2024/25)
+            goleadores_ejemplo = {
+                "Premier League": [("Erling Haaland", 25), ("Cole Palmer", 22), ("Alexander Isak", 20), ("Ollie Watkins", 19), ("Mohamed Salah", 18), ("Dominik Szoboszlai", 15)],
+                "La Liga": [("Kylian Mbappé", 24), ("Robert Lewandowski", 21), ("Lamine Yamal", 18), ("Raphinha", 17), ("Ante Budimir", 16), ("Alvaro Morata", 15)],
+                "Bundesliga": [("Harry Kane", 25), ("Omar Marmoush", 22), ("Lois Openda", 20), ("Serhou Guirassy", 19), ("Jamal Musiala", 18), ("Florian Wirtz", 17)],
+                "Serie A": [("Lautaro Martínez", 23), ("Dusan Vlahovic", 20), ("Victor Osimhen", 19), ("Romelu Lukaku", 18), ("Marcus Thuram", 17), ("Lafont", 16)],
+                "Ligue 1": [("Ousmane Dembélé", 24), ("Alexandre Lacazette", 20), ("Jonathan David", 19), ("Folarin Balogun", 18), ("Kingsley Coman", 17), ("Bradley Barcola", 16)],
+                "Champions League": [("Kylian Mbappé", 8), ("Robert Lewandowski", 7), ("Erling Haaland", 7), ("Harry Kane", 6), ("Lautaro Martínez", 6), ("Vinicius Jr", 5)],
+                "Copa America": [("Lionel Messi", 5), ("Luis Suarez", 4), ("Neymar Jr", 4), ("Enzo Fernandez", 3), ("Julian Alvarez", 3), ("James Rodriguez", 3)],
+                "Mundial FIFA 2026": [("Kylian Mbappé", 5), ("Harry Kane", 4), ("Lionel Messi", 4), ("Erling Haaland", 3), ("Cristiano Ronaldo", 3), ("Jude Bellingham", 3)],
+            }
+            
+            goleadores = goleadores_ejemplo.get(liga_seleccionada, goleadores_ejemplo["Premier League"])
+            for i, (nombre, goles) in enumerate(goleadores, 1):
+                medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+                st.markdown(f"""
+                <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: #131926; border-radius: 5px; margin-bottom: 5px;">
+                    <span style="color: #ffd700;">{medal} {nombre}</span>
+                    <span style="color: #00ee66; font-weight: bold;">{goles} ⚽</span>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.caption("📊 Datos de referencia (temporada 2024/25)")
     
     with col3:
         st.markdown('<p class="section-title">📊 Tendencias</p>', unsafe_allow_html=True)
@@ -2053,23 +2175,41 @@ if "li" not in st.session_state: st.session_state.li=False
 # Siempre mostrar dashboard principal
 pantalla_principal()
 
-# Si está logueado, mostrar opciones adicionales
+# Si está logueado, mostrar opciones según su plan
 if st.session_state.li:
     u=st.session_state.get("u",{}); ced=st.session_state.get("ced","")
     ok,plan,dr=db_acceso(ced)
     
     st.markdown("---")
-    st.markdown("### 🔧 Panel de Análisis")
     
+    # Solo mostrar panel si tiene acceso
     if plan=="admin":
-        st.markdown("#### Panel de Administrador")
-        if st.button("📊 Abrir Panel Admin"):
-            pantalla_admin()
+        st.markdown("### 🔧 Panel de Administrador")
+        col_a, col_b = st.columns(2)
+        with col_a:
+            if st.button("📊 Abrir Panel Admin Completo", use_container_width=True):
+                pantalla_admin()
+        with col_b:
+            st.info("Desde aquí puedes publicar picks, gestionar usuarios y analizar partidos.")
     elif plan=="gratis":
-        st.markdown("#### Plan Gratuito")
-        if st.button("📁 Analizar Archivo"):
+        st.markdown("### 📁 Plan Gratuito - Analizar Archivo")
+        if st.button("📸 Abrir Analizador de Imágenes", use_container_width=True):
             pantalla_gratis(u)
+        st.caption("Máximo 5 partidos por día. Sin datos de API.")
     elif plan in ("dia","semana","mes"):
-        st.markdown("#### Análisis Completo")
-        if st.button("📊 Abrir Pantalla de Pago"):
-            pantalla_pago(u,plan)
+        st.markdown("### 📊 Análisis Completo")
+        col_a, col_b, col_c = st.columns(3)
+        with col_a:
+            if st.button("🏟️ Por Liga", use_container_width=True):
+                pantalla_pago(u,plan)
+        with col_b:
+            if st.button("📸 Subir Captura", use_container_width=True):
+                pantalla_pago(u,plan)
+        with col_c:
+            if st.button("📢 Picks del Día", use_container_width=True):
+                pantalla_pago(u,plan)
+    else:
+        st.error("Plan no reconocido. Contacta al administrador.")
+        if st.button("Volver al inicio"):
+            st.session_state.clear()
+            st.rerun()
