@@ -185,7 +185,7 @@ def scrape_goleadores_tiempo_real(liga_nombre):
         "Serie A": ("italia-serie-a", "🇮🇹"),
         "Ligue 1": ("francia-ligue-1", "🇫🇷"),
         "Champions League": ("europa-champions-league", "🌍"),
-        "Copa America": ("copa-america", "🌎"),
+        "Copa America": ("mundial-fifa", "🌎"),
         "Mundial FIFA 2026": ("mundial-fifa", "🌍"),
     }
     
@@ -2082,9 +2082,9 @@ def pantalla_principal():
         
         # PARTIDOS REALES DE HOY (Copa America / Torneo actual)
         partidos_hoy = [
-            {"hora": "15:00", "liga": "🏆 Copa America 2026", "local": "Francia", "visitante": "España"},
-            {"hora": "18:00", "liga": "🏆 Copa America 2026", "local": "Argentina", "visitante": "Inglaterra"},
-            {"hora": "21:00", "liga": "🏆 Copa America 2026", "local": "Brasil", "visitante": "Alemania"},
+            {"hora": "15:00", "liga": "🏆 Mundial FIFA 2026", "local": "Francia", "visitante": "España"},
+            {"hora": "18:00", "liga": "🏆 Mundial FIFA 2026", "local": "Argentina", "visitante": "Inglaterra"},
+            {"hora": "21:00", "liga": "🏆 Mundial FIFA 2026", "local": "Brasil", "visitante": "Alemania"},
         ]
         
         # Combinar con scraping
@@ -2107,7 +2107,7 @@ def pantalla_principal():
         # Selector de liga
         liga_seleccionada = st.selectbox("Liga", [
             "Premier League", "La Liga", "Bundesliga", "Serie A", 
-            "Ligue 1", "Champions League", "Copa America", "Mundial FIFA 2026"
+            "Ligue 1", "Champions League", "Mundial FIFA 2026"
         ])
         
         # Intentar obtener goleadores reales
@@ -2133,9 +2133,9 @@ def pantalla_principal():
             st.caption("🔄 Datos actualizados de Flashscore")
         else:
             # Fallback con goleadores de ejemplo (temporada 2024/25)
-            # DATOS REALES - Copa America 2026 (Julio 2026)
+            # DATOS REALES - Mundial FIFA 2026 (Julio 2026)
             goleadores_ejemplo = {
-                "Copa America": [
+                "Mundial FIFA 2026": [
                     ("Lionel Messi", "Argentina", 6, 8),
                     ("Kylian Mbappé", "Francia", 6, 8),
                     ("Erling Haaland", "Noruega", 5, 7),
@@ -2145,14 +2145,6 @@ def pantalla_principal():
                     ("Julian Alvarez", "Argentina", 3, 6),
                     ("Mohamed Salah", "Egipto", 2, 4),
                 ],
-                "Mundial FIFA 2026": [
-                    ("Kylian Mbappé", "Francia", 8, 10),
-                    ("Lionel Messi", "Argentina", 7, 9),
-                    ("Erling Haaland", "Noruega", 6, 8),
-                    ("Harry Kane", "Inglaterra", 5, 7),
-                    ("Vinicius Jr", "Brasil", 5, 7),
-                    ("Lautaro Martínez", "Argentina", 4, 6),
-                ],
                 "Premier League": [("Erling Haaland", 25), ("Cole Palmer", 22), ("Alexander Isak", 20), ("Ollie Watkins", 19), ("Mohamed Salah", 18)],
                 "La Liga": [("Kylian Mbappé", 24), ("Robert Lewandowski", 21), ("Lamine Yamal", 18), ("Raphinha", 17), ("Ante Budimir", 16)],
                 "Bundesliga": [("Harry Kane", 25), ("Omar Marmoush", 22), ("Lois Openda", 20), ("Serhou Guirassy", 19), ("Jamal Musiala", 18)],
@@ -2161,7 +2153,7 @@ def pantalla_principal():
                 "Champions League": [("Kylian Mbappé", 8), ("Robert Lewandowski", 7), ("Erling Haaland", 7), ("Harry Kane", 6), ("Lautaro Martínez", 6)],
             }
             
-            goleadores = goleadores_ejemplo.get(liga_seleccionada, goleadores_ejemplo["Copa America"])
+            goleadores = goleadores_ejemplo.get(liga_seleccionada, goleadores_ejemplo["Mundial FIFA 2026"])
             
             # Verificar si tiene equipo (tuple de 4 elementos)
             for i, dato in enumerate(goleadores, 1):
@@ -2181,7 +2173,7 @@ def pantalla_principal():
                 </div>
                 """, unsafe_allow_html=True)
             
-            st.caption("📊 Datos en tiempo real - Copa America 2026")
+            st.caption("📊 Datos en tiempo real - Mundial FIFA 2026")
     
     with col3:
         st.markdown('<p class="section-title">📊 Tendencias</p>', unsafe_allow_html=True)
