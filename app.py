@@ -1632,7 +1632,8 @@ def pantalla_admin():
             st.markdown("---")
             st.markdown("### 📌 Picks con valor estadistico — selecciona para publicar")
             st.caption("⚠️ Las probabilidades son del modelo matematico. El EDGE real solo se calcula cuando configuras ODDS_API_KEY en Secrets con cuotas de tu casa de apuestas. Compara la cuota justa con la cuota real que ofrece tu casa antes de apostar.")
-            mostrar_mercados_con_publicar(r, r)
+            umbral_actual = st.session_state.get("umbral_actual", 3)
+            mostrar_mercados_con_publicar(r, r, umbral_actual)
 
             # ── SECCION 4: Picks seleccionados ──────────────────────────────
             picks_sel = st.session_state.get("picks_sel", [])
