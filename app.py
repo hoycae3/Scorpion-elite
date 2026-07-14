@@ -1377,10 +1377,12 @@ def get_mundial_partidos():
     if partidos:
         return partidos
     
-    # SEMIFINALES del Mundial 2026
+    # SEMIFINALES REALES del Mundial 2026 - 14 y 15 de julio
+    from datetime import date, timedelta
+    hoy = date.today()
     return [
-        {"hora": "15:00", "liga": "🌍 Mundial FIFA 2026", "local": "Francia", "visitante": "España"},
-        {"hora": "18:00", "liga": "🌍 Mundial FIFA 2026", "local": "Argentina", "visitante": "Inglaterra"},
+        {"hora": "13:00", "liga": "🌍 Mundial FIFA 2026", "local": "Francia", "visitante": "España", "dia": str(hoy)},
+        {"hora": "16:00", "liga": "🌍 Mundial FIFA 2026", "local": "Inglaterra", "visitante": "Argentina", "dia": str(hoy + timedelta(days=1))},
     ]
 
 # ══════════════════════════════════════════════════════════
@@ -2380,12 +2382,13 @@ def pantalla_admin():
                         es_mundial = "mundial" in ln.lower() or "fifa" in ln.lower()
                         
                         if es_mundial:
-                            # Solo las SEMIFINALES del Mundial 2026
-                            partidos_liga = [
-                                {"hora": "15:00", "local": "Francia", "visitante": "España", "liga": ln, "dia": str(fecha_s)},
-                                {"hora": "18:00", "local": "Argentina", "visitante": "Inglaterra", "liga": ln, "dia": str(fecha_s)},
-                            ]
-                            fuente = "Semifinales Mundial 2026"
+                            # SEMIFINALES REALES del Mundial 2026 - 14 y 15 de julio
+                            from datetime import date, timedelta
+                            hoy = date.today()
+                            partido1 = {"hora": "13:00", "local": "Francia", "visitante": "España", "liga": ln, "dia": str(hoy)}
+                            partido2 = {"hora": "16:00", "local": "Inglaterra", "visitante": "Argentina", "liga": ln, "dia": str(hoy + timedelta(days=1))}
+                            partidos_liga = [partido1, partido2]
+                            fuente = "Semifinales Mundial 2026 - 14 y 15 julio"
                         else:
                             # Buscar en API-Football
                             lid = LIGAS.get(ln, None)
@@ -2980,11 +2983,12 @@ def pantalla_principal():
         st.markdown("---")
         st.markdown('<p class="section-title">⚽ Partidos del Día</p>', unsafe_allow_html=True)
         
-        # PARTIDOS REALES DE HOY (Cuartos de Final Mundial 2026)
+        # SEMIFINALES del Mundial 2026 - 14 y 15 de julio
+        from datetime import date, timedelta
+        hoy = date.today()
         partidos_hoy = [
-            {"hora": "15:00", "liga": "🏆 Mundial 2026", "local": "Francia", "visitante": "España"},
-            {"hora": "18:00", "liga": "🏆 Mundial 2026", "local": "Argentina", "visitante": "Inglaterra"},
-            {"hora": "21:00", "liga": "🏆 Mundial 2026", "local": "Portugal", "visitante": "Francia"},
+            {"hora": "13:00", "liga": "🏆 Mundial 2026", "local": "Francia", "visitante": "España", "dia": str(hoy)},
+            {"hora": "16:00", "liga": "🏆 Mundial 2026", "local": "Inglaterra", "visitante": "Argentina", "dia": str(hoy + timedelta(days=1))},
         ]
         
         # Combinar con scraping
