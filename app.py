@@ -1377,7 +1377,7 @@ def get_mundial_partidos():
     if partidos:
         return partidos
     
-    # Fallback: usar datos predefinidos solo como ejemplo
+    # SEMIFINALES del Mundial 2026
     return [
         {"hora": "15:00", "liga": "🌍 Mundial FIFA 2026", "local": "Francia", "visitante": "España"},
         {"hora": "18:00", "liga": "🌍 Mundial FIFA 2026", "local": "Argentina", "visitante": "Inglaterra"},
@@ -2380,14 +2380,12 @@ def pantalla_admin():
                         es_mundial = "mundial" in ln.lower() or "fifa" in ln.lower()
                         
                         if es_mundial:
-                            # Partidos del Mundial con datos reales
+                            # Solo las SEMIFINALES del Mundial 2026
                             partidos_liga = [
                                 {"hora": "15:00", "local": "Francia", "visitante": "España", "liga": ln, "dia": str(fecha_s)},
                                 {"hora": "18:00", "local": "Argentina", "visitante": "Inglaterra", "liga": ln, "dia": str(fecha_s)},
-                                {"hora": "21:00", "local": "Portugal", "visitante": "Italia", "liga": ln, "dia": str(fecha_s)},
-                                {"hora": "17:00", "local": "Uruguay", "visitante": "Brasil", "liga": ln, "dia": str(fecha_s)},
                             ]
-                            fuente = "Mundial 2026"
+                            fuente = "Semifinales Mundial 2026"
                         else:
                             # Buscar en API-Football
                             lid = LIGAS.get(ln, None)
