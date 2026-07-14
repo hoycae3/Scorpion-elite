@@ -9,13 +9,18 @@ from openpyxl.utils import get_column_letter
 warnings.filterwarnings("ignore")
 
 
+# ⚽ MUNDIAL 2026 - Del 8 al 20 de julio de 2026
+# Usamos fecha fija para el torneo
+FECHA_MUNDIAL_HOY = "2026-07-14"  # Cambiar según el día actual
+
 def get_hoy():
-    """Obtiene la fecha de hoy como string ISO para Streamlit."""
-    return date.today().isoformat()
+    """Obtiene la fecha de hoy como string ISO (usa fecha del Mundial 2026)."""
+    return FECHA_MUNDIAL_HOY
 
 def get_hoy_date():
-    """Obtiene la fecha de hoy como objeto date para cálculos."""
-    return date.today()
+    """Obtiene la fecha de hoy como objeto date (usa fecha del Mundial 2026)."""
+    from datetime import date as date_class
+    return date_class(2026, 7, 14)  # Cambiar según el día actual
 
 # ══════════════════════════════════════════════════════════
 # CONFIG
