@@ -16,8 +16,7 @@ ADMIN_PWD        = os.getenv("ADMIN_PASSWORD",   "scorpion_admin_2025")
 DB_PATH          = "/tmp/scorpion_v4.db"
 
 LIGAS = {
-    # ===== LIGAS TOP =====
-    "🏴󠁧󠁢󠁥󠁮 Premier League":  39,
+    "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League":  39,
     "🇪🇸 La Liga":           140,
     "🇩🇪 Bundesliga":        78,
     "🇮🇹 Serie A":           135,
@@ -27,48 +26,17 @@ LIGAS = {
     "🌍 Champions League":   2,
     "🌍 Europa League":      3,
     "🌍 Conference League":  848,
-    # ===== SURAMERICA =====
     "🌎 Libertadores":       13,
     "🌎 Sudamericana":       11,
-    "🇧🇷 Brasileirao":       71,
-    "🇧🇷 Serie B":          72,
-    "🇦🇷 Primera Division":  128,
-    "🇦🇷 Primera Nacional":  131,
-    "🇨🇱 Primera Division":  67,
-    "🇨🇷 Liga BetPlay":     239,
-    "🇺🇾 Primera Division":  73,
-    # ===== LIGAS B - ESPAÑA =====
-    "🇪🇸 La Liga 2":        141,
-    # ===== LIGAS B - INGLATERRA =====
-    "🏴󠁧󠁢󠁥󠁮 Championship": 40,
-    "🏴󠁧󠁢󠁥󠁮 League One":   41,
-    "🏴󠁧󠁢󠁥󠁮 League Two":   42,
-    # ===== LIGAS B - ALEMANIA =====
-    "🇩🇪 2. Bundesliga":    79,
-    # ===== LIGAS B - ITALIA =====
-    "🇮🇹 Serie B":          136,
-    # ===== LIGAS B - FRANCIA =====
-    "🇫🇷 Ligue 2":          63,
-    # ===== OTRAS AMERICAS =====
-    "🇺🇸 MLS":               253,
-    "🇲🇽 Liga MX":           262,
-    "🇲🇽 Liga MX Expansion": 2775,
-    # ===== OTRAS EUROPA =====
-    "🇹🇷 Super Lig":         203,
-    "🇹🇷 1. Lig":           315,
-    "🇸🇦 Saudi Pro League":  307,
-    "🇬🇷 Super League Greece": 184,
-    "🇷🇺 Premier League":    235,
-    "🇧🇪 Jupiler League":    150,
-    "🇨🇭 Super League":      207,
-    "🇦🇹 Bundesliga Austria": 218,
-    "🇸🇪 Allsvenskan":      113,
-    "🇳🇴 Eliteserien":      105,
-    "🇩🇰 Superliga":         69,
-    "🇮🇪 Premier Division":  2006,
-    # ===== COPA INTERNACIONAL =====
     "🌎 Copa America":       9,
     "🌍 Mundial FIFA 2026":  1,
+    "🇺🇸 MLS":               253,
+    "🇲🇽 Liga MX":           262,
+    "🇨🇴 Liga BetPlay":      239,
+    "🇦🇷 Primera Division":  128,
+    "🇧🇷 Brasileirao":       71,
+    "🇹🇷 Super Lig":         203,
+    "🇸🇦 Saudi Pro League":  307,
 }
 
 PROM_LIGA = {
@@ -114,95 +82,6 @@ SELECCIONES = {
 }
 
 SH = requests.Session()
-
-# ══════════════════════════════════════════════════════════
-# WEB SCRAPING - FLASHSCORE
-# ══════════════════════════════════════════════════════════
-def scrape_flashscore_partidos():
-    """Obtiene partidos del día desde Flashscore."""
-    partidos = []
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        }
-        r = requests.get("https://www.flashscore.es/futbol/", headers=headers, timeout=15)
-        soup = BeautifulSoup(r.text, "html.parser")
-        
-        for match in soup.find_all("div", class_="event__match"):
-            try:
-                hora = match.find("div", class_="event__time")
-                local = match.find("div", class_="event__homeParticipant")
-                visitante = match.find("div", class_="event__awayParticipant")
-                
-                if local and visitante:
-                    h = hora.get_text(strip=True) if hora else "--:--"
-                    # Buscar liga del contenedor padre
-                    league_div = match.find_parent("div", class_=lambda x: x and "leagues" in str(x))
-                    liga = "Partido"
-                    if league_div:
-                        header = league_div.find_previous("div", class_="event__header")
-                        if header:
-                            ltext = header.get_text(strip=True)
-                            if ltext:
-                                liga = ltext
-                    
-                    partidos.append({
-                        "hora": h,
-                        "local": local.get_text(strip=True),
-                        "visitante": visitante.get_text(strip=True),
-                        "liga": liga,
-                        "dia": str(date.today())
-                    })
-            except:
-                continue
-    except Exception as e:
-        print(f"Error scraping Flashscore: {e}")
-    return partidos
-
-
-def scrape_flashscore_goleadores(liga_url):
-    """Obtiene goleadores de una liga."""
-    goleadores = []
-    # Mapeo de ligas a URLs de Flashscore
-    liga_urls = {
-        "Premier League": "inglaterra-premier-league",
-        "La Liga": "espana-laliga",
-        "Bundesliga": "alemania-bundesliga",
-        "Serie A": "italia-serie-a",
-        "Ligue 1": "francia-ligue-1",
-        "Champions League": "europa-champions-league",
-    }
-    url_part = liga_urls.get(liga_url, "")
-    if not url_part:
-        return goleadores
-    
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        }
-        r = requests.get(f"https://www.flashscore.es/{url_part}/estadisticas/", headers=headers, timeout=15)
-        soup = BeautifulSoup(r.text, "html.parser")
-        
-        tables = soup.find_all("table")
-        for table in tables[:2]:
-            rows = table.find_all("tr")
-            for i, row in enumerate(rows[1:11], 1):
-                cols = row.find_all("td")
-                if len(cols) >= 2:
-                    nombre = cols[0].get_text(strip=True)
-                    try:
-                        goles = int(re.sub(r'[^0-9]', '', cols[1].get_text(strip=True)))
-                    except:
-                        goles = 0
-                    if nombre and goles > 0:
-                        goleadores.append({"nombre": nombre, "goles": goles})
-    except:
-        pass
-    return goleadores
-
-
-
 SH.headers.update({"User-Agent":"Mozilla/5.0","Accept":"application/json,text/html,*/*"})
 
 # ══════════════════════════════════════════════════════════
@@ -1039,7 +918,7 @@ def pll(plan,dr):
     return '<span class="pill-v">Vencido</span>'
 
 def widget_archivo(max_p=None,key="up"):
-    up=st.file_uploader("Sube captura de pantalla (Sofascore, FlashScore, etc.)",type=["png","jpg","jpeg","webp"],key=key)
+    up=st.file_uploader("Sube Excel o captura de pantalla",type=["xlsx","xls","png","jpg","jpeg","webp"],key=key)
     if not up: return None
     fb=up.read(); nm=up.name.lower()
     if nm.endswith((".xlsx",".xls")):
@@ -1560,7 +1439,7 @@ def pantalla_gratis(u):
     st.markdown(f'👋 Hola **{u["nombre"]}** {pll("gratis",dr)} · Max 5 partidos/dia',unsafe_allow_html=True)
     t1,t2=st.tabs(["📁 Analizar archivo","📢 Picks del dia"])
     with t1:
-        st.info("Plan gratuito: primeros 5 partidos, sin datos reales de API. Solo imagenes (sin Excel). Actualiza para acceso completo.")
+        st.info("Plan gratuito: primeros 5 partidos, sin datos reales de API. Actualiza para acceso completo.")
         cons=db_consultas(u["cedula"])
         if cons>5:
             st.warning("Limite de 5 consultas diarias alcanzado. Vuelve manana o actualiza tu plan.")
@@ -1701,7 +1580,7 @@ def pantalla_pago(u,plan):
                 for r in res: db_historial_guardar(u["cedula"],r,r)
 
     with tabs[1]:
-        st.info("Sube una captura de Sofascore, FlashScore o cualquier app. La IA lee los partidos automaticamente. Solo imagenes (PNG, JPG).")
+        st.info("Sube una captura de Sofascore, FlashScore o cualquier app. La IA lee los partidos automaticamente.")
         p=widget_archivo(key="pago_up")
         if p and st.button("🦂 Analizar archivo",key="btn_arch"):
             prg=st.progress(0,"Analizando...")
