@@ -2232,52 +2232,115 @@ if st.session_state.li:
         st.markdown("### 🔧 Panel de Administrador")
         
         # Tabs para admin
-        admin_tabs = st.tabs(["📊 Dashboard", "📝 Publicar Picks", "👥 Usuarios", "🏟️ Análisis por Liga", "📈 Estadísticas"])
-        
-        with admin_tabs[0]:
+    if plan=="admin" or st.session_state.get("is_admin"):
+        st.markdown("---")
+        st.markdown("### 🔧 Panel de Administrador")
+
+        # Usar selectbox en lugar de tabs para evitar problemas
+        admin_opcion = st.selectbox(
+            "Selecciona una opción:",
+            ["📊 Dashboard", "📝 Publicar Pick", "👥 Usuarios", "🏟️ Análisis por Liga", "📈 Estadísticas"]
+        )
+
+        if admin_opcion == "📊 Dashboard":
             st.markdown("#### Bienvenido al Panel de Admin")
-            st.info("Desde aquí puedes gestionar todo el sistema.")
-        
-        with admin_tabs[1]:
-            # Simplified publish picks
-            st.markdown("#### 📝 Publicar Pick")
-            with st.form("publish_pick_form"):
-                pick_fecha = st.date_input("Fecha", value=date.today())
-                pick_liga = st.selectbox("Liga", list(LIGAS.keys())[:15])
-                pick_local = st.text_input("Equipo Local")
-                pick_visit = st.text_input("Equipo Visitante")
-                pick_hora = st.text_input("Hora", value="00:00")
-                pick_mercado = st.selectbox("Mercado", [
-                    "Victoria Local (1)", "Empate (X)", "Victoria Visitante (2)",
-                    "Over 2.5 Goles", "Under 2.5 Goles", "BTTS - Si", "BTTS - No",
-                    "Over 1.5 Goles", "Over 3.5 Goles"
-                ])
-                pick_cuota = st.number_input("Cuota", min_value=1.01, max_value=100.0, value=1.9)
-                pick_confianza = st.slider("Confianza %", 0, 100, 70)
-                pick_rango = st.selectbox("Rango", ["A+", "A", "B", "C"])
-                
-                if st.form_submit_button("✅ Publicar Pick"):
-                    db_pick_guardar(
-                        str(pick_fecha), pick_liga, pick_local, pick_visit,
-                        pick_hora, pick_mercado, pick_mercado, pick_cuota, 0,
-                        pick_confianza, pick_rango, "", "gratis", auto=1
-                    )
-                    st.success("✅ Pick publicado exitosamente!")
-        
-        with admin_tabs[2]:
+            st.success("Desde aquí puedes gestionar todo el sistema.")
+            stats = db_stats()
+            col_d1, col_d2, col_d3 = st.columns(3)
+            with col_d1:
+                st.metric("Total Picks", stats.get("picks", 0))
+            with col_d2:
+                st.metric("Total Usuarios", stats.get("usuarios", 0))
+            with col_d3:
+                st.metric("Usuarios Activos", stats.get("activos", 0))
+            
+            st.markdown("---")
+            st.markdown("#### Accesos Rápidos")
+            col_ar1, col_ar2 = st.columns(2)
+            with col_ar1:
+                if st.button("📝 Publicar Nuevo Pick", use_container_width=True):
+                    st.session_state["admin_ver"] = "📝 Publicar Pick"
+                    st.rerun()
+            with col_ar2:
+                if st.button("🏟️ Análisis por Liga", use_container_width=True):
+                    pantalla_admin()
+
+        elif admin_opcion == "📝 Publicar Pick":
+            st.markdown("#### 📝 Publicar Pick Nuevo")
+            
+            # Inicializar session_state para los campos
+            if "pick_liga" not in st.session_state:
+                st.session_state.pick_liga = list(LIGAS.keys())[0]
+            if "pick_local" not in st.session_state:
+                st.session_state.pick_local = ""
+            if "pick_visit" not in st.session_state:
+                st.session_state.pick_visit = ""
+            if "pick_hora" not in st.session_state:
+                st.session_state.pick_hora = "00:00"
+            
+            pick_fecha = st.date_input("📅 Fecha", value=date.today())
+            pick_liga = st.selectbox("🏆 Liga", list(LIGAS.keys())[:20])
+            pick_local = st.text_input("⚽ Equipo Local", value=st.session_state.pick_local)
+            pick_visit = st.text_input("⚽ Equipo Visitante", value=st.session_state.pick_visit)
+            pick_hora = st.text_input("🕐 Hora", value=st.session_state.pick_hora)
+            
+            st.session_state.pick_liga = pick_liga
+            st.session_state.pick_local = pick_local
+            st.session_state.pick_visit = pick_visit
+            st.session_state.pick_hora = pick_hora
+            
+            pick_mercado = st.selectbox("📌 Mercado", [
+                "Victoria Local (1)", "Empate (X)", "Victoria Visitante (2)",
+                "Over 2.5 Goles", "Under 2.5 Goles", "BTTS - Si", "BTTS - No"
+            ])
+            pick_cuota = st.number_input("💰 Cuota", min_value=1.01, max_value=100.0, value=1.9, step=0.01)
+            pick_confianza = st.slider("📊 Confianza %", 0, 100, 70)
+            pick_rango = st.selectbox("🏷️ Rango", ["A+", "A", "B", "C"])
+            
+            col_pub1, col_pub2 = st.columns(2)
+            with col_pub1:
+                if st.button("✅ Publicar Pick", use_container_width=True, type="primary"):
+                    if pick_local and pick_visit and pick_liga:
+                        db_pick_guardar(
+                            str(pick_fecha), pick_liga, pick_local, pick_visit,
+                            pick_hora, pick_mercado, pick_mercado, pick_cuota, 0,
+                            pick_confianza, pick_rango, "", "gratis", auto=1
+                        )
+                        st.success(f"✅ Pick publicado: {pick_local} vs {pick_visit}")
+                        st.session_state.pick_local = ""
+                        st.session_state.pick_visit = ""
+                        st.rerun()
+                    else:
+                        st.error("❌ Completa todos los campos")
+            with col_pub2:
+                if st.button("🗑️ Limpiar", use_container_width=True):
+                    st.session_state.pick_local = ""
+                    st.session_state.pick_visit = ""
+                    st.rerun()
+
+        elif admin_opcion == "👥 Usuarios":
             st.markdown("#### 👥 Gestión de Usuarios")
             usuarios = db_todos()
-            st.write(f"Total usuarios: {len(usuarios)}")
-            for usr in usuarios[:10]:
-                st.write(f"- {usr.get('nombre', 'N/A')} ({usr.get('cedula', 'N/A')}) - Plan: {usr.get('plan', 'gratis')}")
-        
-        with admin_tabs[3]:
+            st.write(f"**Total usuarios:** {len(usuarios)}")
+            if usuarios:
+                datos_usuarios = []
+                for usr in usuarios[:20]:
+                    datos_usuarios.append({
+                        "Nombre": usr.get('nombre', 'N/A'),
+                        "Cédula": usr.get('cedula', 'N/A'),
+                        "Plan": usr.get('plan', 'gratis'),
+                    })
+                st.dataframe(datos_usuarios, use_container_width=True)
+            else:
+                st.info("No hay usuarios registrados")
+
+        elif admin_opcion == "🏟️ Análisis por Liga":
             st.markdown("#### 🏟️ Análisis por Liga")
-            st.info("Usa esta función para analizar partidos de cualquier liga.")
-            if st.button("Abrir Análisis Completo"):
+            st.info("Abre el panel completo de análisis de partidos.")
+            if st.button("🚀 Abrir Análisis Completo", use_container_width=True, type="primary"):
                 pantalla_admin()
-        
-        with admin_tabs[4]:
+
+        elif admin_opcion == "📈 Estadísticas":
             st.markdown("#### 📈 Estadísticas del Sistema")
             stats = db_stats()
             col_stat1, col_stat2, col_stat3, col_stat4 = st.columns(4)
@@ -2289,7 +2352,8 @@ if st.session_state.li:
                 st.metric("Picks Publicados", stats.get("picks", 0))
             with col_stat4:
                 st.metric("Consultas Totales", stats.get("historial", 0))
-    
+
+
     elif plan=="gratis":
         st.markdown("---")
         st.markdown("### 📁 Plan Gratuito")
