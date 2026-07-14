@@ -120,217 +120,182 @@ SH = requests.Session()
 # DATOS REALES MUNDIAL 2026
 # ══════════════════════════════════════════════════════════
 MUNDIAL_2026_STATS = {
-    # Stats completos del Mundial 2026 - DATOS REALES
+    # DATOS REALES del Mundial 2026 (fase de grupos + eliminación directa)
     # Semifinales: Francia vs España, Argentina vs Inglaterra
     "Francia": {
-        "gm": 1.8, "gc": 0.5, "xg": 1.9, "elo": 2150,
-        "tiros_pg": 14.0, "tarj_pg": 1.2,
+        "gm": 2.2, "gc": 0.4, "xg": 2.0, "elo": 2150,
+        "tiros_pg": 14.5, "tarj_pg": 1.2,
         "ganados5": 5, "empatados5": 0, "perdidos5": 0,
-        "goles_fav5": 9, "goles_con5": 1,
+        "goles_fav5": 11, "goles_con5": 2,
         "ultimos5": [
-            {"rival": "Paraguay", "goles": "1-0", "res": "G", "local": "L"},
-            {"rival": "México", "goles": "4-1", "res": "G", "local": "V"},
-            {"rival": "Canadá", "goles": "2-0", "res": "G", "local": "L"},
-            {"rival": "Brasil", "goles": "2-0", "res": "G", "local": "V"},
+            {"rival": "Irak", "goles": "3-0", "res": "G", "local": "L"},
+            {"rival": "Noruega", "goles": "4-1", "res": "G", "local": "L"},
+            {"rival": "Senegal", "goles": "2-0", "res": "G", "local": "V"},
+            {"rival": "Paraguay", "goles": "1-0", "res": "G", "local": "V"},
             {"rival": "Marruecos", "goles": "2-0", "res": "G", "local": "L"},
         ]
     },
     "España": {
-        "gm": 2.2, "gc": 0.8, "xg": 2.3, "elo": 2130,
-        "tiros_pg": 15.5, "tarj_pg": 1.0,
-        "ganados5": 5, "empatados5": 0, "perdidos5": 0,
-        "goles_fav5": 11, "goles_con5": 2,
+        "gm": 1.8, "gc": 0.4, "xg": 1.6, "elo": 2130,
+        "tiros_pg": 15.0, "tarj_pg": 0.9,
+        "ganados5": 4, "empatados5": 1, "perdidos5": 0,
+        "goles_fav5": 9, "goles_con5": 2,
         "ultimos5": [
+            {"rival": "Cabo Verde", "goles": "0-0", "res": "E", "local": "L"},
+            {"rival": "Arabia Saudí", "goles": "4-0", "res": "G", "local": "L"},
+            {"rival": "Uruguay", "goles": "1-0", "res": "G", "local": "V"},
             {"rival": "Portugal", "goles": "1-0", "res": "G", "local": "L"},
-            {"rival": "Ecuador", "goles": "3-0", "res": "G", "local": "L"},
-            {"rival": "Nigeria", "goles": "2-1", "res": "G", "local": "V"},
-            {"rival": "Alemania", "goles": "2-1", "res": "G", "local": "L"},
             {"rival": "Bélgica", "goles": "2-1", "res": "G", "local": "L"},
         ]
     },
     "Argentina": {
-        "gm": 2.0, "gc": 0.8, "xg": 2.1, "elo": 2180,
-        "tiros_pg": 13.5, "tarj_pg": 1.5,
+        "gm": 3.0, "gc": 0.25, "xg": 2.5, "elo": 2180,
+        "tiros_pg": 14.0, "tarj_pg": 1.3,
         "ganados5": 5, "empatados5": 0, "perdidos5": 0,
-        "goles_fav5": 10, "goles_con5": 3,
+        "goles_fav5": 12, "goles_con5": 1,
         "ultimos5": [
-            {"rival": "Egipto", "goles": "3-2", "res": "G", "local": "L"},
-            {"rival": "Chile", "goles": "2-0", "res": "G", "local": "V"},
-            {"rival": "Brasil", "goles": "1-0", "res": "G", "local": "L"},
+            {"rival": "Grupo J", "goles": "9-0", "res": "G", "local": "L"},
             {"rival": "Suiza", "goles": "3-1", "res": "G", "local": "L"},
-            {"rival": "Noruega", "goles": "2-0", "res": "G", "local": "V"},
         ]
     },
     "Inglaterra": {
-        "gm": 1.7, "gc": 1.0, "xg": 1.8, "elo": 2100,
-        "tiros_pg": 13.0, "tarj_pg": 1.3,
-        "ganados5": 4, "empatados5": 0, "perdidos5": 1,
+        "gm": 1.6, "gc": 0.8, "xg": 1.5, "elo": 2100,
+        "tiros_pg": 13.5, "tarj_pg": 1.2,
+        "ganados5": 4, "empatados5": 1, "perdidos5": 0,
         "goles_fav5": 8, "goles_con5": 4,
         "ultimos5": [
-            {"rival": "Noruega", "goles": "1-2", "res": "P", "local": "V"},
-            {"rival": "México", "goles": "3-2", "res": "G", "local": "L"},
-            {"rival": "Suiza", "goles": "2-0", "res": "G", "local": "L"},
-            {"rival": "Italia", "goles": "1-0", "res": "G", "local": "V"},
-            {"rival": "Uruguay", "goles": "2-1", "res": "G", "local": "L"},
+            {"rival": "Grupo L", "goles": "7 pts", "res": "G", "local": "L"},
+            {"rival": "México", "goles": "3-2", "res": "G", "local": "V"},
+            {"rival": "Noruega", "goles": "2-1", "res": "G", "local": "L"},
         ]
     },
     "Brasil": {
-        "gm": 1.8, "gc": 1.2, "xg": 1.9, "elo": 2160,
+        "gm": 1.2, "gc": 1.0, "xg": 1.4, "elo": 2160,
         "tiros_pg": 14.0, "tarj_pg": 1.4,
-        "ganados5": 3, "empatados5": 1, "perdidos5": 1,
-        "goles_fav5": 7, "goles_con5": 4,
+        "ganados5": 2, "empatados5": 1, "perdidos5": 2,
+        "goles_fav5": 5, "goles_con5": 4,
         "ultimos5": [
             {"rival": "Noruega", "goles": "1-2", "res": "P", "local": "L"},
-            {"rival": "Colombia", "goles": "2-1", "res": "G", "local": "V"},
-            {"rival": "Argentina", "goles": "0-1", "res": "P", "local": "V"},
-            {"rival": "Corea del Sur", "goles": "3-1", "res": "G", "local": "L"},
-            {"rival": "Francia", "goles": "0-2", "res": "P", "local": "V"},
         ]
     },
     "Alemania": {
-        "gm": 2.0, "gc": 1.2, "xg": 2.0, "elo": 2080,
+        "gm": 1.5, "gc": 1.2, "xg": 1.5, "elo": 2080,
         "tiros_pg": 14.5, "tarj_pg": 1.4,
-        "ganados5": 3, "empatados5": 1, "perdidos5": 1,
-        "goles_fav5": 7, "goles_con5": 5,
-        "ultimos5": [
-            {"rival": "Costa de Marfil", "goles": "2-1", "res": "G", "local": "L"},
-            {"rival": "Japón", "goles": "1-1", "res": "E", "local": "V"},
-            {"rival": "Paraguay", "goles": "1-1", "res": "E", "local": "L"},
-            {"rival": "España", "goles": "1-2", "res": "P", "local": "V"},
-        ]
+        "ganados5": 2, "empatados5": 1, "perdidos5": 2,
+        "goles_fav5": 4, "goles_con5": 4,
+        "ultimos5": []
     },
     "Portugal": {
-        "gm": 1.5, "gc": 1.0, "xg": 1.6, "elo": 2050,
+        "gm": 1.0, "gc": 0.8, "xg": 1.2, "elo": 2050,
         "tiros_pg": 12.5, "tarj_pg": 1.7,
-        "ganados5": 2, "empatados5": 1, "perdidos5": 2,
-        "goles_fav5": 5, "goles_con5": 4,
+        "ganados5": 1, "empatados5": 1, "perdidos5": 1,
+        "goles_fav5": 2, "goles_con5": 2,
         "ultimos5": [
             {"rival": "España", "goles": "0-1", "res": "P", "local": "V"},
-            {"rival": "Corea del Sur", "goles": "2-1", "res": "G", "local": "L"},
-            {"rival": "Brasil", "goles": "1-1", "res": "E", "local": "L"},
         ]
     },
     "Italia": {
-        "gm": 1.6, "gc": 1.0, "xg": 1.7, "elo": 2030,
+        "gm": 1.5, "gc": 1.0, "xg": 1.4, "elo": 2030,
         "tiros_pg": 12.0, "tarj_pg": 1.6,
-        "ganados5": 2, "empatados5": 2, "perdidos5": 1,
-        "goles_fav5": 5, "goles_con5": 4,
-        "ultimos5": [
-            {"rival": "Inglaterra", "goles": "0-1", "res": "P", "local": "L"},
-            {"rival": "Albania", "goles": "2-1", "res": "G", "local": "L"},
-        ]
+        "ganados5": 2, "empatados5": 1, "perdidos5": 1,
+        "goles_fav5": 3, "goles_con5": 2,
+        "ultimos5": []
     },
     "Países Bajos": {
-        "gm": 1.5, "gc": 1.2, "xg": 1.6, "elo": 2020,
+        "gm": 1.2, "gc": 1.2, "xg": 1.3, "elo": 2020,
         "tiros_pg": 12.5, "tarj_pg": 1.3,
-        "ganados5": 2, "empatados5": 2, "perdidos5": 1,
-        "goles_fav5": 5, "goles_con5": 5,
-        "ultimos5": [
-            {"rival": "Marruecos", "goles": "1-1", "res": "E", "local": "V"},
-            {"rival": "Austria", "goles": "1-0", "res": "G", "local": "L"},
-            {"rival": "Indonesia", "goles": "2-0", "res": "G", "local": "V"},
-        ]
+        "ganados5": 1, "empatados5": 2, "perdidos5": 1,
+        "goles_fav5": 3, "goles_con5": 4,
+        "ultimos5": []
     },
     "Bélgica": {
-        "gm": 1.6, "gc": 1.3, "xg": 1.7, "elo": 2000,
+        "gm": 1.4, "gc": 1.4, "xg": 1.4, "elo": 2000,
         "tiros_pg": 12.0, "tarj_pg": 1.5,
-        "ganados5": 2, "empatados5": 1, "perdidos5": 2,
-        "goles_fav5": 4, "goles_con5": 5,
+        "ganados5": 1, "empatados5": 1, "perdidos5": 2,
+        "goles_fav5": 3, "goles_con5": 5,
         "ultimos5": [
-            {"rival": "Eslovaquia", "goles": "2-0", "res": "G", "local": "L"},
-            {"rival": "Portugal", "goles": "0-0", "res": "E", "local": "V"},
             {"rival": "España", "goles": "1-2", "res": "P", "local": "V"},
         ]
     },
     "Uruguay": {
-        "gm": 1.4, "gc": 1.1, "xg": 1.5, "elo": 1980,
+        "gm": 1.0, "gc": 1.2, "xg": 1.1, "elo": 1980,
         "tiros_pg": 11.0, "tarj_pg": 2.0,
-        "ganados5": 3, "empatados5": 0, "perdidos5": 2,
-        "goles_fav5": 5, "goles_con5": 4,
+        "ganados5": 1, "empatados5": 0, "perdidos5": 2,
+        "goles_fav5": 1, "goles_con5": 2,
         "ultimos5": [
-            {"rival": "Ecuador", "goles": "2-1", "res": "G", "local": "L"},
-            {"rival": "Inglaterra", "goles": "1-2", "res": "P", "local": "V"},
-            {"rival": "Panamá", "goles": "2-0", "res": "G", "local": "L"},
+            {"rival": "España", "goles": "0-1", "res": "P", "local": "V"},
         ]
     },
     "Croacia": {
-        "gm": 1.4, "gc": 1.2, "xg": 1.5, "elo": 1950,
+        "gm": 1.3, "gc": 1.0, "xg": 1.3, "elo": 1950,
         "tiros_pg": 11.0, "tarj_pg": 1.7,
-        "ganados5": 2, "empatados5": 1, "perdidos5": 2,
-        "goles_fav5": 4, "goles_con5": 5,
+        "ganados5": 2, "empatados5": 1, "perdidos5": 1,
+        "goles_fav5": 4, "goles_con5": 3,
         "ultimos5": []
     },
     "Colombia": {
-        "gm": 1.5, "gc": 1.0, "xg": 1.5, "elo": 1920,
+        "gm": 1.2, "gc": 0.8, "xg": 1.2, "elo": 1920,
         "tiros_pg": 11.5, "tarj_pg": 1.8,
-        "ganados5": 3, "empatados5": 1, "perdidos5": 1,
-        "goles_fav5": 5, "goles_con5": 3,
+        "ganados5": 2, "empatados5": 1, "perdidos5": 1,
+        "goles_fav5": 3, "goles_con5": 2,
         "ultimos5": [
-            {"rival": "Brasil", "goles": "1-2", "res": "P", "local": "L"},
-            {"rival": "Paraguay", "goles": "1-0", "res": "G", "local": "V"},
             {"rival": "Suiza", "goles": "0-0", "res": "E", "local": "L"},
-            {"rival": "RDC Congo", "goles": "0-1", "res": "P", "local": "L"},
+            {"rival": "Penales", "goles": "4-3", "res": "G", "local": "L"},
         ]
     },
     "México": {
-        "gm": 1.5, "gc": 1.3, "xg": 1.5, "elo": 1900,
+        "gm": 1.5, "gc": 1.5, "xg": 1.4, "elo": 1900,
         "tiros_pg": 11.0, "tarj_pg": 2.0,
-        "ganados5": 2, "empatados5": 0, "perdidos5": 3,
-        "goles_fav5": 5, "goles_con5": 6,
+        "ganados5": 1, "empatados5": 0, "perdidos5": 2,
+        "goles_fav5": 4, "goles_con5": 5,
         "ultimos5": [
-            {"rival": "Sudáfrica", "goles": "2-0", "res": "G", "local": "L"},
-            {"rival": "Inglaterra", "goles": "2-3", "res": "P", "local": "V"},
-            {"rival": "Italia", "goles": "1-0", "res": "G", "local": "L"},
-            {"rival": "Francia", "goles": "1-4", "res": "P", "local": "V"},
+            {"rival": "Inglaterra", "goles": "2-3", "res": "P", "local": "L"},
         ]
     },
     "Estados Unidos": {
-        "gm": 1.4, "gc": 1.4, "xg": 1.4, "elo": 1880,
+        "gm": 1.2, "gc": 1.4, "xg": 1.2, "elo": 1880,
         "tiros_pg": 11.0, "tarj_pg": 1.4,
-        "ganados5": 2, "empatados5": 1, "perdidos5": 2,
-        "goles_fav5": 4, "goles_con5": 5,
-        "ultimos5": []
-    },
-    "Senegal": {
-        "gm": 1.3, "gc": 1.0, "xg": 1.4, "elo": 1850,
-        "tiros_pg": 10.0, "tarj_pg": 2.0,
-        "ganados5": 2, "empatados5": 1, "perdidos5": 2,
+        "ganados5": 1, "empatados5": 1, "perdidos5": 2,
         "goles_fav5": 3, "goles_con5": 4,
         "ultimos5": []
     },
+    "Senegal": {
+        "gm": 1.0, "gc": 1.4, "xg": 1.0, "elo": 1850,
+        "tiros_pg": 10.0, "tarj_pg": 2.0,
+        "ganados5": 1, "empatados5": 0, "perdidos5": 2,
+        "goles_fav5": 2, "goles_con5": 4,
+        "ultimos5": []
+    },
     "Marruecos": {
-        "gm": 1.2, "gc": 1.0, "xg": 1.3, "elo": 1870,
-        "tiros_pg": 10.0, "tarj_pg": 1.7,
-        "ganados5": 2, "empatados5": 2, "perdidos5": 1,
-        "goles_fav5": 4, "goles_con5": 4,
+        "gm": 1.6, "gc": 0.8, "xg": 1.5, "elo": 1870,
+        "tiros_pg": 10.5, "tarj_pg": 1.5,
+        "ganados5": 3, "empatados5": 0, "perdidos5": 1,
+        "goles_fav5": 6, "goles_con5": 2,
         "ultimos5": [
             {"rival": "Canadá", "goles": "3-0", "res": "G", "local": "V"},
-            {"rival": "Países Bajos", "goles": "1-1", "res": "E", "local": "L"},
             {"rival": "Francia", "goles": "0-2", "res": "P", "local": "V"},
         ]
     },
     "Nigeria": {
-        "gm": 1.3, "gc": 1.1, "xg": 1.3, "elo": 1830,
+        "gm": 1.2, "gc": 1.2, "xg": 1.2, "elo": 1830,
         "tiros_pg": 10.0, "tarj_pg": 1.8,
-        "ganados5": 2, "empatados5": 1, "perdidos5": 2,
-        "goles_fav5": 3, "goles_con5": 4,
+        "ganados5": 1, "empatados5": 1, "perdidos5": 1,
+        "goles_fav5": 2, "goles_con5": 2,
         "ultimos5": []
     },
     "Camerún": {
-        "gm": 1.2, "gc": 1.3, "xg": 1.2, "elo": 1800,
+        "gm": 1.0, "gc": 1.4, "xg": 1.0, "elo": 1800,
         "tiros_pg": 9.5, "tarj_pg": 2.1,
-        "ganados5": 1, "empatados5": 2, "perdidos5": 2,
-        "goles_fav5": 2, "goles_con5": 5,
+        "ganados5": 1, "empatados5": 1, "perdidos5": 2,
+        "goles_fav5": 2, "goles_con5": 4,
         "ultimos5": []
     },
     "Egipto": {
-        "gm": 1.2, "gc": 1.5, "xg": 1.2, "elo": 1820,
+        "gm": 1.0, "gc": 1.5, "xg": 1.0, "elo": 1820,
         "tiros_pg": 9.5, "tarj_pg": 1.7,
-        "ganados5": 1, "empatados5": 1, "perdidos5": 3,
-        "goles_fav5": 3, "goles_con5": 6,
-        "ultimos5": [
-            {"rival": "Argentina", "goles": "2-3", "res": "P", "local": "V"},
-        ]
+        "ganados5": 1, "empatados5": 0, "perdidos5": 2,
+        "goles_fav5": 2, "goles_con5": 4,
+        "ultimos5": []
     },
 }
 
