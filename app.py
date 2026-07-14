@@ -704,7 +704,7 @@ def scrape_flashscore_partidos():
                         "local": local.get_text(strip=True),
                         "visitante": visitante.get_text(strip=True),
                         "liga": liga,
-                        "dia": str(date.today())
+                        "dia": date.today().isoformat()
                     })
             except:
                 continue
@@ -888,7 +888,7 @@ def _parse_flashscore_partidos(soup, liga_nombre):
                         "local": l,
                         "visitante": v,
                         "liga": liga_nombre,
-                        "dia": str(date.today())
+                        "dia": date.today().isoformat()
                     })
         except:
             continue
@@ -935,7 +935,7 @@ def _scrape_sofascore_api(liga_nombre):
                     "local": home.get("name", ""),
                     "visitante": away.get("name", ""),
                     "liga": liga_nombre,
-                    "dia": str(date.today())
+                    "dia": date.today().isoformat()
                 })
             
             if partidos:
@@ -973,7 +973,7 @@ def _scrape_betexplorer(liga_nombre):
                         "local": teams[0].get_text(strip=True),
                         "visitante": teams[1].get_text(strip=True),
                         "liga": liga_nombre,
-                        "dia": str(date.today())
+                        "dia": date.today().isoformat()
                     })
             except:
                 continue
@@ -1209,7 +1209,7 @@ def init_db():
     """)
     h = hashlib.sha256(ADMIN_PWD.encode()).hexdigest()
     c.execute("INSERT OR IGNORE INTO usuarios (cedula,nombre,plan,fecha_inicio,dias,activo,es_admin,pwd_hash) VALUES (?,?,?,?,?,?,?,?)",
-              ("admin","Administrador","admin",str(date.today()),36500,1,1,h))
+              ("admin","Administrador","admin",date.today().isoformat(),36500,1,1,h))
     c.commit(); c.close()
 
 def db_get(cedula):
@@ -1247,7 +1247,7 @@ def db_login_admin(pwd):
     return u and u.get("pwd_hash")==hashlib.sha256(pwd.encode()).hexdigest()
 
 def db_consultas(cedula):
-    c=get_conn(); hoy=str(date.today())
+    c=get_conn(); hoy=date.today().isoformat()
     u=c.execute("SELECT consultas_hoy,fecha_reset FROM usuarios WHERE cedula=?",(cedula,)).fetchone()
     if u:
         if u["fecha_reset"]!=hoy:
@@ -1285,7 +1285,7 @@ def db_picks_get(fecha=None, plan="gratis"):
 def db_historial_guardar(cedula,p,calc):
     c=get_conn()
     c.execute("INSERT INTO historial (cedula,fecha,liga,local,visitante,p1,px,p2,xg_l,xg_v,over25,btts,mercado,rango,confianza) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-              (cedula,p.get("dia",str(date.today())),p.get("liga",""),p.get("local",""),p.get("visitante",""),
+              (cedula,p.get("dia",date.today().isoformat()),p.get("liga",""),p.get("local",""),p.get("visitante",""),
                calc.get("p1"),calc.get("px"),calc.get("p2"),calc.get("xl"),calc.get("xv"),
                calc.get("over25"),calc.get("btts_si"),calc.get("mk2",""),calc.get("rango",""),calc.get("confianza")))
     c.commit(); c.close()
@@ -1896,7 +1896,7 @@ def leer_imagen(img_bytes,mt="image/jpeg"):
             try: h,m=hora.split(":"); hs=int(h)*60+int(m)
             except: hs=0
             if p.get("local") and p.get("visitante"):
-                result.append({"dia":str(date.today()),"hora":hora,"hora_sort":hs,
+                result.append({"dia":date.today().isoformat(),"hora":hora,"hora_sort":hs,
                                "liga":p.get("liga","Sin Liga"),"liga_id":0,
                                "local":p["local"],"visitante":p["visitante"],"tid_l":None,"tid_v":None})
         return result
@@ -1923,7 +1923,7 @@ def leer_excel(fb):
                 l=fix(ws.cell(row=ri+1,column=1).value or "")
                 v=fix(ws.cell(row=ri+2,column=1).value or "")
                 if l not in ("","--") and v not in ("","--"):
-                    partidos.append({"dia":str(date.today()),"hora":f"{val.hour:02d}:{val.minute:02d}",
+                    partidos.append({"dia":date.today().isoformat(),"hora":f"{val.hour:02d}:{val.minute:02d}",
                                      "hora_sort":val.hour*60+val.minute,"liga":cur_liga or "Sin Liga",
                                      "liga_id":0,"local":l,"visitante":v,"tid_l":None,"tid_v":None})
             except: pass
@@ -2695,7 +2695,7 @@ def pantalla_admin():
     with tabs[2]:
         st.markdown("### Picks publicados")
         picks=db_picks_get(plan="admin")
-        hoy_str=str(date.today())
+        hoy_str=date.today().isoformat()
         hoy_picks=[p for p in picks if p.get("fecha")==hoy_str]
         st.markdown(f"**Hoy ({hoy_str}): {len(hoy_picks)} picks publicados**")
         for p in hoy_picks:
@@ -2778,7 +2778,7 @@ def pantalla_gratis(u):
                     file_name=f"Scorpion_gratis_{date.today()}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     with t2:
-        picks=db_picks_get(str(date.today()),"gratis")
+        picks=db_picks_get(date.today().isoformat(),"gratis")
         if picks:
             for p in picks:
                 cls="ap" if p.get("rango")=="A+" else "b"
@@ -2810,7 +2810,7 @@ def pantalla_pago(u,plan):
         # Mostrar ligas activas hoy
         with st.expander("⚡ Ver ligas con partidos HOY", expanded=False):
             st.caption("Consultando API-Football para ligas activas hoy...")
-            hoy_str2 = str(date.today())
+            hoy_str2 = date.today().isoformat()
             ligas_activas_hoy = []
             for ln, lid in list(LIGAS.items())[:8]:  # revisar primeras 8 para no agotar requests
                 try:
@@ -2915,7 +2915,7 @@ def pantalla_pago(u,plan):
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
     with tabs[2]:
-        picks=db_picks_get(str(date.today()),plan)
+        picks=db_picks_get(date.today().isoformat(),plan)
         if picks:
             for p in picks:
                 cls="ap" if p.get("rango")=="A+" else "b"
@@ -2930,7 +2930,7 @@ def pantalla_pago(u,plan):
     with tabs[3]:
         st.markdown("### 🏆 Reto Escalera")
         st.caption("Picks del dia ordenados por mayor confianza y valor estadistico.")
-        picks_e=db_picks_get(str(date.today()),plan)
+        picks_e=db_picks_get(date.today().isoformat(),plan)
         reales=[p for p in picks_e if "🔒" not in str(p.get("mercado",""))]
         def esc_score(p):
             edge=p.get("edge") or -99
@@ -2961,7 +2961,7 @@ def pantalla_pago(u,plan):
             Cuanto mas picks agregas, mayor es la cuota pero menor la probabilidad de acertar.
             """)
 
-            picks_c=db_picks_get(str(date.today()),plan)
+            picks_c=db_picks_get(date.today().isoformat(),plan)
             reales_c=[p for p in picks_c if "🔒" not in str(p.get("mercado","")) and p.get("cuota")]
             if reales_c:
                 st.markdown("**Selecciona los picks que quieres combinar:**")
@@ -3155,7 +3155,7 @@ def pantalla_principal():
     col1, col2, col3 = st.columns([2, 1.2, 1.2])
     
     # Obtener picks y datos
-    picks_hoy = db_picks_get(str(date.today()), "gratis")
+    picks_hoy = db_picks_get(date.today().isoformat(), "gratis")
     
     # Intentar scraping de partidos
     try:
