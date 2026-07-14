@@ -223,53 +223,18 @@ def render_dashboard(user: str, plan: str):
     
     # Obtener datos
     picks_hoy = get_picks_del_dia()
+    partidos = []
+    analisis = []
+    goleadores = []
     
-    with st.spinner("Cargando partidos..."):
-        partidos = get_partidos_del_dia()
-    
-    # Columna 1: Picks y Partidos
-    with col1:
-        st.markdown('<p class="section-title">🔥 Picks Recomendados del Día</p>', unsafe_allow_html=True)
+    with st.spinner("Cargando datos..."):
+        try:
+            partidos = get_partidos_del_dia()
+        except Exception as e:
+            logger.warning(f"Error obteniendo partidos: {e}")
         
-        if picks_hoy:
-            sub_c1, sub_c2, sub_c3 = st.columns(3)
-            for i, (pick, col) in enumerate(zip(picks_hoy[:3], [sub_c1, sub_c2, sub_c3]), 1):
-                with col:
-                    st.markdown(render_pick_card(
-                        numero=i,
-                        liga=pick.get("liga", ""),
-                        local=pick.get("local", ""),
-                        visitante=pick.get("visitante", ""),
-                        mercado=pick.get("mercado", ""),
-                        cuota=pick.get("cuota"),
-                        confianza=pick.get("confianza"),
-                        rango=pick.get("rango", "B")
-                    ), unsafe_allow_html=True)
-        else:
-            # Picks de ejemplo cuando no hay publicados
-            st.markdown(render_pick_card(
-                numero=1, liga="Premier League",
-                local="Manchester City", visitante="Liverpool",
-                mercado="Over 2.5 Goles", cuota=1.75, confianza=72, rango="A+"
-            ), unsafe_allow_html=True)
-            st.markdown(render_pick_card(
-                numero=2, liga="La Liga",
-                local="Real Madrid", visitante="Barcelona",
-                mercado="BTTS - Ambos Marcan", cuota=1.65, confianza=68, rango="B"
-            ), unsafe_allow_html=True)
-            st.markdown(render_pick_card(
-                numero=3, liga="Champions League",
-                local="Bayern Munich", visitante=" PSG",
-                mercado="Victoria Local (1)", cuota=1.80, confianza=65, rango="B"
-            ), unsafe_allow_html=True)
-        
-        # Mejores partidos
-        st.markdown("---")
-        st.markdown('<p class="section-title">⚽ Mejores Partidos del Día</p>', unsafe_allow_html=True)
-        
+        # Analizar partidos solo si hay
         if partidos:
-            # Analizar partidos
-            analisis = []
             for p in partidos[:10]:
                 try:
                     stats_local = api.obtener_stats_completo(p.local, p.liga)
@@ -291,65 +256,91 @@ def render_dashboard(user: str, plan: str):
                 except Exception as e:
                     logger.warning(f"Error analizando {p.local} vs {p.visitante}: {e}")
             
-            # Ordenar por confianza
             if analisis:
                 analisis.sort(key=lambda x: x["resultado"].confianza, reverse=True)
-                
-                for a in analisis[:6]:
-                    p = a["partido"]
-                    r = a["resultado"]
-                    st.markdown(render_match_row(
-                        local=p.local,
-                        visitante=p.visitante,
-                        hora=p.hora,
-                        liga=p.liga,
-                        rango=r.rango,
-                        over25=r.over25
+        
+        # Obtener goleadores
+        try:
+            liga_opciones = list(LIGAS.keys())[:6]
+            liga_sel_default = "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League"
+            liga_id = LIGAS.get(liga_sel_default, 39)
+            goleadores = get_goleadores_liga(liga_id, liga_sel_default)
+        except Exception as e:
+            logger.warning(f"Error obteniendo goleadores: {e}")
+    
+    # Columna 1: Picks y Partidos
+    with col1:
+        st.markdown('<p class="section-title">🔥 Picks Recomendados del Día</p>', unsafe_allow_html=True)
+        
+        if picks_hoy:
+            sub_c1, sub_c2, sub_c3 = st.columns(3)
+            for i, (pick, col) in enumerate(zip(picks_hoy[:3], [sub_c1, sub_c2, sub_c3]), 1):
+                with col:
+                    st.markdown(render_pick_card(
+                        numero=i,
+                        liga=pick.get("liga", ""),
+                        local=pick.get("local", ""),
+                        visitante=pick.get("visitante", ""),
+                        mercado=pick.get("mercado", ""),
+                        cuota=pick.get("cuota"),
+                        confianza=pick.get("confianza"),
+                        rango=pick.get("rango", "B")
                     ), unsafe_allow_html=True)
         else:
-            # Partidos de ejemplo
-            st.markdown(render_match_row("Manchester City", "Liverpool", "21:00", "Premier League", "A+", 72), unsafe_allow_html=True)
-            st.markdown(render_match_row("Real Madrid", "Barcelona", "21:00", "La Liga", "B", 68), unsafe_allow_html=True)
-            st.markdown(render_match_row("Bayern Munich", "PSG", "21:00", "Champions League", "B", 65), unsafe_allow_html=True)
-            st.markdown(render_match_row("Juventus", "Inter Milan", "20:45", "Serie A", "B", 62), unsafe_allow_html=True)
-            st.markdown(render_match_row("Atletico Madrid", "Sevilla", "21:00", "La Liga", "C", 55), unsafe_allow_html=True)
+            st.info("📢 No hay picks publicados hoy. El administrador debe publicar picks desde el panel.")
+        
+        # Mejores partidos
+        st.markdown("---")
+        st.markdown('<p class="section-title">⚽ Partidos del Día</p>', unsafe_allow_html=True)
+        
+        if analisis:
+            for a in analisis[:8]:
+                p = a["partido"]
+                r = a["resultado"]
+                st.markdown(render_match_row(
+                    local=p.local,
+                    visitante=p.visitante,
+                    hora=p.hora,
+                    liga=p.liga,
+                    rango=r.rango,
+                    over25=r.over25
+                ), unsafe_allow_html=True)
+        elif partidos:
+            st.info("⚠️ Los partidos se encontraron pero no se pudieron analizar. Intenta más tarde.")
+            for p in partidos[:5]:
+                st.markdown(render_match_row(
+                    local=p.local,
+                    visitante=p.visitante,
+                    hora=p.hora,
+                    liga=p.liga,
+                    rango=None,
+                    over25=None
+                ), unsafe_allow_html=True)
+        else:
+            st.warning("⚠️ No se encontraron partidos hoy. Las APIs pueden estar temporalmente no disponibles.")
+            st.info("💡 Los administradores pueden usar el panel de análisis para estudiar partidos manualmente.")
     
     # Columna 2: Goleadores y Stats
     with col2:
-        st.markdown('<p class="section-title">🏆 Top Goleadores</p>', unsafe_allow_html=True)
-        
-        liga_opciones = list(LIGAS.keys())[:6]
-        liga_sel = st.selectbox("Liga", liga_opciones)
-        liga_id = LIGAS.get(liga_sel, 39)
-        
-        with st.spinner("Cargando goleadores..."):
-            goleadores = get_goleadores_liga(liga_id, liga_sel)
+        st.markdown('<p class="section-title">🏆 Top Equipos por Goles</p>', unsafe_allow_html=True)
         
         if goleadores:
             for i, g in enumerate(goleadores[:8], 1):
                 st.markdown(render_goleador(i, g["nombre"], g["goles"]), unsafe_allow_html=True)
         else:
-            # Goleadores de ejemplo
-            goleadores_ejemplo = [
-                ("Erling Haaland", 33), ("Mohamed Salah", 28), ("Kylian Mbappé", 26),
-                ("Harry Kane", 24), ("Robert Lewandowski", 22), ("Lautaro Martínez", 21),
-                ("Vinicius Jr", 19), ("Bukayo Saka", 18)
-            ]
-            for i, (nombre, goles) in enumerate(goleadores_ejemplo, 1):
-                st.markdown(render_goleador(i, nombre, goles), unsafe_allow_html=True)
+            st.info("📊 Datos de goleadores no disponibles. La API gratuita tiene limitaciones.")
         
         # Stats
         st.markdown("---")
-        st.markdown('<p class="section-title">📈 Stats del Día</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-title">📈 Stats del Sistema</p>', unsafe_allow_html=True)
         
         try:
             stats = db.get_estadisticas()
             st.markdown(render_metrica("Picks Publicados", str(stats.get("picks", 0))), unsafe_allow_html=True)
-            st.markdown(render_metrica("Partidos Analizados", str(len(partidos) if partidos else 0)), unsafe_allow_html=True)
-            st.markdown(render_metrica("Goleadores", str(len(goleadores) if goleadores else 8)), unsafe_allow_html=True)
+            st.markdown(render_metrica("Partidos Analizados", str(len(analisis))), unsafe_allow_html=True)
         except DatabaseError:
             st.markdown(render_metrica("Picks Publicados", "0"), unsafe_allow_html=True)
-            st.markdown(render_metrica("Partidos Analizados", "5+"), unsafe_allow_html=True)
+            st.markdown(render_metrica("Partidos Analizados", "0"), unsafe_allow_html=True)
     
     # Columna 3: Tendencias y Alertas
     with col3:
@@ -364,11 +355,9 @@ def render_dashboard(user: str, plan: str):
                 conf_color = "#00ee66" if p.get("confianza", 0) >= 70 else "#ffd700"
                 st.markdown(f'<div class="text-trend">• {p.get("mercado", "N/A")} @ {p.get("cuota", "N/A")} <span style="color: {conf_color};">[{p.get("confianza", 0)}%]</span></div>', unsafe_allow_html=True)
         else:
-            st.markdown('<div class="text-trend">• Over 2.5 @ 1.75 [72%]</div>', unsafe_allow_html=True)
-            st.markdown('<div class="text-trend">• BTTS @ 1.65 [68%]</div>', unsafe_allow_html=True)
-            st.markdown('<div class="text-trend">• Victoria 1 @ 1.80 [65%]</div>', unsafe_allow_html=True)
+            st.markdown('<div class="text-trend">• No hay picks publicados</div>', unsafe_allow_html=True)
         
-        st.markdown('<p style="color:#bfa15f; font-weight:bold; font-size:14px; margin-top:15px; margin-bottom:5px;">📈 Tendencias de Equipos</p>', unsafe_allow_html=True)
+        st.markdown('<p style="color:#bfa15f; font-weight:bold; font-size:14px; margin-top:15px; margin-bottom:5px;">📈 Tendencias de Partidos</p>', unsafe_allow_html=True)
         
         if analisis:
             for a in analisis[:3]:
@@ -380,18 +369,16 @@ def render_dashboard(user: str, plan: str):
                 else:
                     st.markdown(f'<div class="text-trend">⚖️ {a["partido"].local}: Empate</div>', unsafe_allow_html=True)
         else:
-            st.markdown('<div class="text-trend">📈 Man City: 80% últimos 10</div>', unsafe_allow_html=True)
-            st.markdown('<div class="text-trend">📈 Real Madrid: 75% últimos 10</div>', unsafe_allow_html=True)
-            st.markdown('<div class="text-trend">📉 Barcelona: 60% últimos 10</div>', unsafe_allow_html=True)
+            st.markdown('<div class="text-trend">• Sin datos de partidos</div>', unsafe_allow_html=True)
         
-        st.markdown('<p style="color:#bfa15f; font-weight:bold; font-size:14px; margin-top:15px; margin-bottom:5px;">⚠️ Alertas de Última Hora</p>', unsafe_allow_html=True)
-        st.markdown(render_alerta("Datos actualizados desde múltiples APIs deportivas"), unsafe_allow_html=True)
+        st.markdown('<p style="color:#bfa15f; font-weight:bold; font-size:14px; margin-top:15px; margin-bottom:5px;">⚠️ Estado del Sistema</p>', unsafe_allow_html=True)
+        st.markdown(render_alerta("Los datos se obtienen de APIs externas en tiempo real"), unsafe_allow_html=True)
         st.markdown(render_alerta("Los análisis son solo informativos"), unsafe_allow_html=True)
         
         if plan == "admin":
             st.markdown("---")
             st.markdown('<p style="color:#bfa15f; font-weight:bold; font-size:14px;">🔧 Panel Admin</p>', unsafe_allow_html=True)
-            st.info("Usa el panel de administración para publicar picks.")
+            st.info("Usa el panel de administración para publicar picks y analizar partidos.")
         
         st.markdown('</div>', unsafe_allow_html=True)
 
