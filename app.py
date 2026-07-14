@@ -308,11 +308,117 @@ def obtener_stats_tiempo_real(equipo):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "application/json, text/html,application/xhtml+xml",
         "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+        "Referer": "https://www.sofascore.com/",
     }
     
     equipo_clean = equipo.strip()
     
-    # 1. Intentar API-Football (PRIORIDAD - tiene datos completos)
+    # 1. Intentar Sofascore (PRIMERA PRIORIDAD)
+    try:
+        # Buscar equipo en Sofascore
+        search_url = f"https://api.sofascore.com/api/v1/search/teams/{equipo_clean.replace(' ', '%20')}"
+        r = requests.get(search_url, headers=headers, timeout=10)
+        
+        if r.status_code == 200:
+            data = r.json()
+            if data.get("results") and len(data["results"]) > 0:
+                team = data["results"][0]
+                team_id = team.get("id")
+                team_name = team.get("name", equipo_clean)
+                
+                if team_id:
+                    # Obtener estadísticas generales del equipo
+                    stats_url = f"https://api.sofascore.com/api/v1/team/{team_id}/statistics/overall"
+                    r2 = requests.get(stats_url, headers=headers, timeout=10)
+                    
+                    if r2.status_code == 200:
+                        s = r2.json()
+                        gm = s.get("goalsScored", {})
+                        gc = s.get("goalsConceded", {})
+                        shots = s.get("shots", {})
+                        yellows = s.get("yellowCards", {})
+                        
+                        gm_val = gm.get("average", 1.5) or 1.5
+                        gc_val = gc.get("average", 1.0) or 1.0
+                        tiros_val = shots.get("total", 12) or 12
+                        tarj_val = yellows if isinstance(yellows, (int, float)) else 2.0
+                        
+                        return {
+                            "ok": True,
+                            "fuente": "Sofascore",
+                            "equipo": team_name,
+                            "gm": gm_val,
+                            "gc": gc_val,
+                            "xg": gm_val * 0.9,
+                            "elo": 1950,
+                            "tiros_pg": tiros_val,
+                            "tarj_pg": tarj_val,
+                            "ultimos5": [],
+                            "ganados5": 0, "empatados5": 0, "perdidos5": 0,
+                            "goles_fav5": 0, "goles_con5": 0,
+                        }
+    except Exception as e:
+        print(f"Sofascore error: {e}")
+    
+    # 2. Intentar Sofascore Web (scraping)
+    try:
+        # Buscar en la web de Sofascore
+        slug = equipo_clean.lower().replace(" ", "-").replace("'", "")
+        web_url = f"https://www.sofascore.com/football/team/{slug}/statistics"
+        r = requests.get(web_url, headers=headers, timeout=10)
+        
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, "html.parser")
+            
+            # Buscar estadísticas en la página
+            stats_data = {}
+            
+            # Buscar valores numéricos en secciones relevantes
+            sections = soup.select(".sc-hpvKGa, .kAWnYK, .bMLHBq, [class*='stat']")
+            
+            for section in sections:
+                text = section.get_text(strip=True)
+                if "Goal" in text or "goal" in text.lower():
+                    numbers = re.findall(r'\d+\.?\d*', text)
+                    if numbers:
+                        stats_data["gm"] = float(numbers[0])
+                elif "Shot" in text or "shot" in text.lower():
+                    numbers = re.findall(r'\d+\.?\d*', text)
+                    if numbers:
+                        stats_data["tiros"] = float(numbers[0])
+            
+            # Buscar en JSON embebido
+            scripts = soup.select("script[type='application/json']")
+            for script in scripts:
+                text = script.string or ""
+                if "goalsScored" in text or "goalsConceded" in text:
+                    import json
+                    try:
+                        data = json.loads(text)
+                        # Extraer datos relevantes
+                        pass
+                    except:
+                        pass
+            
+            if stats_data:
+                return {
+                    "ok": True,
+                    "fuente": "Sofascore Web",
+                    "equipo": equipo_clean,
+                    "gm": stats_data.get("gm", 1.5),
+                    "gc": stats_data.get("gc", 1.0),
+                    "xg": stats_data.get("gm", 1.5) * 0.9,
+                    "elo": 1950,
+                    "tiros_pg": stats_data.get("tiros", 12),
+                    "tarj_pg": 2.0,
+                    "ultimos5": [],
+                    "ganados5": 0, "empatados5": 0, "perdidos5": 0,
+                    "goles_fav5": 0, "goles_con5": 0,
+                }
+    except Exception as e:
+        print(f"Sofascore Web error: {e}")
+    
+    # 3. Intentar API-Football
     if API_FOOTBALL_KEY:
         try:
             headers_af = {"x-apisports-key": API_FOOTBALL_KEY}
@@ -326,7 +432,6 @@ def obtener_stats_tiempo_real(equipo):
                     team_id = team_data["team"]["id"]
                     team_name = team_data["team"]["name"]
                     
-                    # Obtener estadísticas de la temporada actual
                     stats_url = f"https://v3.football.api-sports.io/teams/statistics?team={team_id}&season=2024"
                     r2 = requests.get(stats_url, headers=headers_af, timeout=10)
                     
@@ -359,17 +464,14 @@ def obtener_stats_tiempo_real(equipo):
         except Exception as e:
             print(f"API-Football error: {e}")
     
-    # 2. Intentar FBref (Football Reference)
+    # 4. Intentar FBref
     try:
-        # Mapeo de nombres comunes
         fbref_names = {
             "francia": "France", "espana": "Spain", "argentina": "Argentina",
             "inglaterra": "England", "brasil": "Brazil", "alemania": "Germany",
             "portugal": "Portugal", "italia": "Italy", "paises bajos": "Netherlands",
             "belgica": "Belgium", "croacia": "Croatia", "uruguay": "Uruguay",
-            "marruecos": "Morocco", "mexico": "Mexico", "eeuu": "United-States",
-            "estados unidos": "United-States", "senegal": "Senegal", "colombia": "Colombia",
-            "brasil": "Brazil"
+            "marruecos": "Morocco", "mexico": "Mexico", "senegal": "Senegal", "colombia": "Colombia",
         }
         
         fbref_name = fbref_names.get(equipo_clean.lower(), equipo_clean.replace(" ", "-"))
@@ -379,9 +481,8 @@ def obtener_stats_tiempo_real(equipo):
         
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, "html.parser")
-            
-            # Buscar tabla de estadísticas
             stats_table = soup.select_one("#stats_squads_standard")
+            
             if stats_table:
                 rows = stats_table.select("tbody tr")
                 for row in rows:
@@ -389,14 +490,12 @@ def obtener_stats_tiempo_real(equipo):
                     if team_name_cell:
                         name = team_name_cell.get_text(strip=True)
                         if equipo_clean.lower() in name.lower() or name.lower() in equipo_clean.lower():
-                            # Extraer stats
                             cols = row.select("td")
                             if len(cols) >= 12:
                                 try:
-                                    # GP, MP, G, etc.
-                                    mp = float(cols[2].get_text(strip=True) or 0)  # Matches Played
-                                    gls = float(cols[4].get_text(strip=True) or 0)  # Goals
-                                    xg = float(cols[6].get_text(strip=True) or 0)  # xG
+                                    mp = float(cols[2].get_text(strip=True) or 0)
+                                    gls = float(cols[4].get_text(strip=True) or 0)
+                                    xg = float(cols[6].get_text(strip=True) or 0)
                                     
                                     if mp > 0:
                                         gm_val = round(gls / mp, 2)
@@ -421,7 +520,7 @@ def obtener_stats_tiempo_real(equipo):
     except Exception as e:
         print(f"FBref error: {e}")
     
-    # 3. Intentar Transfermarkt
+    # 5. Intentar Transfermarkt
     try:
         tm_name = equipo_clean.lower().replace(" ", "-").replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
         url = f"https://www.transfermarkt.com/{tm_name}/leistungsdaten/verein/0/plus/1"
@@ -430,123 +529,41 @@ def obtener_stats_tiempo_real(equipo):
         
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, "html.parser")
+            data_sections = soup.select(".box-content tr")
             
-            # Buscar estadísticas
-            stats_div = soup.select_one(".dataHeader")
-            if stats_div:
-                text = stats_div.get_text(strip=True)
-                # Intentar extraer datos de rendimiento
-                data_sections = soup.select(".box-content tr")
-                for row in data_sections:
-                    cells = row.select("td")
-                    if len(cells) >= 2:
-                        label = cells[0].get_text(strip=True).lower()
-                        value = cells[1].get_text(strip=True)
-                        
-                        if "tor" in label or "goles" in label or "goals" in label:
-                            try:
-                                parts = value.replace(":", "-").split("-")
-                                if len(parts) == 2:
-                                    gm_val = float(parts[0].strip())
-                                    gc_val = float(parts[1].strip())
-                                    
-                                    return {
-                                        "ok": True,
-                                        "fuente": "Transfermarkt",
-                                        "equipo": equipo_clean,
-                                        "gm": gm_val,
-                                        "gc": gc_val,
-                                        "xg": round(gm_val * 0.9, 2),
-                                        "elo": 1950,
-                                        "tiros_pg": round(gm_val * 6, 1),
-                                        "tarj_pg": 1.8,
-                                        "ultimos5": [],
-                                        "ganados5": 0, "empatados5": 0, "perdidos5": 0,
-                                        "goles_fav5": 0, "goles_con5": 0,
-                                    }
-                            except:
-                                pass
+            for row in data_sections:
+                cells = row.select("td")
+                if len(cells) >= 2:
+                    label = cells[0].get_text(strip=True).lower()
+                    value = cells[1].get_text(strip=True)
+                    
+                    if "tor" in label or "goles" in label or "goals" in label:
+                        try:
+                            parts = value.replace(":", "-").split("-")
+                            if len(parts) == 2:
+                                gm_val = float(parts[0].strip())
+                                gc_val = float(parts[1].strip())
+                                
+                                return {
+                                    "ok": True,
+                                    "fuente": "Transfermarkt",
+                                    "equipo": equipo_clean,
+                                    "gm": gm_val,
+                                    "gc": gc_val,
+                                    "xg": round(gm_val * 0.9, 2),
+                                    "elo": 1950,
+                                    "tiros_pg": round(gm_val * 6, 1),
+                                    "tarj_pg": 1.8,
+                                    "ultimos5": [],
+                                    "ganados5": 0, "empatados5": 0, "perdidos5": 0,
+                                    "goles_fav5": 0, "goles_con5": 0,
+                                }
+                        except:
+                            pass
     except Exception as e:
         print(f"Transfermarkt error: {e}")
     
-    # 4. Intentar Soccerway
-    try:
-        sw_name = equipo_clean.lower().replace(" ", "-").replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
-        url = f"https://es.soccerway.com/teams/{sw_name}/"
-        
-        r = requests.get(url, headers=headers, timeout=15)
-        
-        if r.status_code == 200:
-            soup = BeautifulSoup(r.text, "html.parser")
-            
-            # Buscar estadísticas del equipo
-            stats_block = soup.select_one("#general-statistics")
-            if stats_block:
-                text = stats_block.get_text()
-                
-                # Extraer números
-                import re
-                numbers = re.findall(r'\d+\.?\d*', text)
-                
-                if numbers:
-                    gm_val = float(numbers[0]) if numbers else 1.5
-                    
-                    return {
-                        "ok": True,
-                        "fuente": "Soccerway",
-                        "equipo": equipo_clean,
-                        "gm": gm_val,
-                        "gc": round(gm_val * 0.7, 2),
-                        "xg": round(gm_val * 0.85, 2),
-                        "elo": 1950,
-                        "tiros_pg": round(gm_val * 5, 1),
-                        "tarj_pg": 1.8,
-                        "ultimos5": [],
-                        "ganados5": 0, "empatados5": 0, "perdidos5": 0,
-                        "goles_fav5": 0, "goles_con5": 0,
-                    }
-    except Exception as e:
-        print(f"Soccerway error: {e}")
-    
-    # 5. Intentar WhoScored
-    try:
-        ws_name = equipo_clean.lower().replace(" ", "-")
-        url = f"https://www.whoscored.com/Teams/{ws_name}"
-        
-        r = requests.get(url, headers=headers, timeout=15)
-        
-        if r.status_code == 200:
-            soup = BeautifulSoup(r.text, "html.parser")
-            
-            # Buscar stats
-            stats_section = soup.select_one("#team-stats")
-            if stats_section:
-                text = stats_section.get_text()
-                
-                import re
-                numbers = re.findall(r'\d+\.?\d*', text)
-                
-                if numbers:
-                    gm_val = float(numbers[0]) if numbers else 1.5
-                    
-                    return {
-                        "ok": True,
-                        "fuente": "WhoScored",
-                        "equipo": equipo_clean,
-                        "gm": gm_val,
-                        "gc": round(gm_val * 0.7, 2),
-                        "xg": round(gm_val * 0.85, 2),
-                        "elo": 1950,
-                        "tiros_pg": round(gm_val * 5, 1),
-                        "tarj_pg": 1.8,
-                        "ultimos5": [],
-                        "ganados5": 0, "empatados5": 0, "perdidos5": 0,
-                        "goles_fav5": 0, "goles_con5": 0,
-                    }
-    except Exception as e:
-        print(f"WhoScored error: {e}")
-    
-    # 6. Intentar Flashscore (como último recurso)
+    # 6. Intentar Flashscore
     try:
         slug = equipo_clean.lower().replace(" ", "-").replace("'", "").replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
         url = f"https://www.flashscore.es/equipo/{slug}/estadisticas/"
