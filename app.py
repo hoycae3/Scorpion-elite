@@ -2949,29 +2949,65 @@ def pantalla_pago(u,plan):
 
         c1,c2=st.columns([2,1])
         with c1:
-            st.caption("Puedes seleccionar cualquier liga, este o no activa hoy.")
-            if plan=="mes":
-                ligas_sel=st.multiselect("Ligas",list(LIGAS.keys()),default=[list(LIGAS.keys())[0]])
-            else:
-                ligas_sel=[st.selectbox("Liga",list(LIGAS.keys()))]
-        with c2:
+            # Determinar fecha según período seleccionado
             if plan=="dia":
-                fecha_s=st.date_input("Fecha",value=None); modo="dia"
+                fecha_sel=st.date_input("Fecha",value=None); modo="dia"
             else:
                 ops=["Hoy","Dia especifico","Esta semana","Semana personalizada"]
                 if plan in ("semana","mes"): ops.append("Dias de la semana")
                 ml=st.radio("Periodo",ops)
-                if ml=="Hoy": fecha_s=get_hoy(); modo="dia"
-                elif ml=="Dia especifico": fecha_s=st.date_input("Fecha"); modo="dia"
+                if ml=="Hoy": fecha_sel=get_hoy_date(); modo="dia"
+                elif ml=="Dia especifico": fecha_sel=st.date_input("Fecha"); modo="dia"
                 elif ml=="Esta semana":
-                    hoy=get_hoy(); lu=hoy-timedelta(days=hoy.weekday())
+                    hoy=get_hoy_date(); fecha_sel=hoy; lu=hoy-timedelta(days=hoy.weekday())
                     fd=lu; fh=lu+timedelta(days=6); modo="rango"
                 elif ml=="Semana personalizada":
                     fd=st.date_input("Desde",value=None)
                     fh=st.date_input("Hasta",value=None+timedelta(days=6)); modo="rango"
                 elif ml=="Dias de la semana":
-                    dias_n=st.multiselect("Dias",["Lunes","Martes","Miercoles","Jueves","Viernes","Sabado","Domingo"])
-                    modo="dias"
+                    dias_n=st.multiselect("Dias",["Lunes","Martes","Miercoles","Viernes","Sabado","Domingo"])
+                    fecha_sel=get_hoy_date(); modo="dias"
+                else:
+                    fecha_sel=get_hoy_date()
+            
+            # Buscar ligas con partidos para la fecha seleccionada
+            st.caption("Buscando ligas con partidos...")
+            ligas_activas=[]
+            
+            # MUNDIAL 2026: Solo del 8 al 20 de julio 2026
+            if fecha_sel.year==2026 and fecha_sel.month==7 and 8<=fecha_sel.day<=20:
+                ligas_activas.append("🌍 Mundial FIFA 2026")
+            
+            # Buscar en API para otras ligas
+            fecha_str=str(fecha_sel)
+            for ln, lid in list(LIGAS.items())[:20]:
+                if "mundial" in ln.lower(): continue
+                try:
+                    fx_test=get_fx_dia(lid, fecha_str)
+                    if fx_test:
+                        ligas_activas.append(ln)
+                    time.sleep(0.2)
+                except: pass
+            
+            if plan=="mes":
+                # Para plan mes, permitir seleccionar cualquier liga
+                if ligas_activas:
+                    st.success(f"✅ {len(ligas_activas)} ligas con partidos: {', '.join(ligas_activas[:5])}{'...' if len(ligas_activas)>5 else ''}")
+                else:
+                    st.info("No hay ligas con partidos para esta fecha.")
+                ligas_sel=st.multiselect("Ligas",list(LIGAS.keys()),default=[list(LIGAS.keys())[0]])
+            else:
+                # Para dia/semana, solo mostrar ligas activas
+                if ligas_activas:
+                    st.success(f"✅ {len(ligas_activas)} ligas con partidos")
+                    ligas_sel=[st.selectbox("Liga",ligas_activas)]
+                else:
+                    st.warning("⚠️ No hay partidos para esta fecha")
+                    ligas_sel=[]
+        with c2:
+            if plan=="dia":
+                fecha_s=st.date_input("Fecha",value=None); modo="dia"
+
 
         if st.button("🦂 Obtener y Analizar",key="btn_liga_pago"):
             todos=[]
