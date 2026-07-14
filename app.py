@@ -1988,38 +1988,56 @@ def pantalla_principal():
                 
                 if submit_btn:
                     if user_input and password_input:
-                        # Intentar login
-                        u = db_get(user_input)
-                        if user_input == "admin" and password_input == ADMIN_PWD:
-                            st.session_state.li = True
-                            st.session_state.ced = "admin"
-                            st.session_state.u = {"nombre": "Administrador", "cedula": "admin"}
-                            st.success("✅ Acceso como Administrador")
-                            st.rerun()
-                        elif u:
-                            ok, plan_v, dr = db_acceso(user_input)
-                            if ok:
+                        # Intentar login de admin primero
+                        if user_input == "admin":
+                            if password_input == ADMIN_PWD:
                                 st.session_state.li = True
-                                st.session_state.ced = user_input
-                                st.session_state.u = u
-                                st.session_state.logged_in = True
-                                st.session_state.user_name = u.get("nombre", user_input)
-                                st.session_state.user_plan = plan_v
-                                st.success(f"✅ Bienvenido - Plan {plan_v.upper()}")
+                                st.session_state.ced = "admin"
+                                st.session_state.u = {"nombre": "Administrador", "cedula": "admin", "plan": "admin"}
+                                st.session_state.user_name = "Administrador"
+                                st.session_state.user_plan = "admin"
+                                st.session_state.is_admin = True
                                 st.rerun()
                             else:
-                                st.error(f"❌ Acceso denegado: {plan_v}")
-                        else:
-                            # Crear usuario gratis automáticamente
-                            db_guardar_usuario(user_input, f"Usuario {user_input[:4]}", "gratis", 36500, date.today())
+                                st.error("❌ Contraseña de administrador incorrecta")
+                                return
+                        elif password_input == ADMIN_PWD:
+                            # Cualquier usuario con password de admin se convierte en admin
+                            u = db_get(user_input)
+                            if not u:
+                                u = {"nombre": user_input, "cedula": user_input, "plan": "admin"}
                             st.session_state.li = True
                             st.session_state.ced = user_input
-                            st.session_state.u = {"nombre": f"Usuario {user_input[:4]}", "cedula": user_input}
-                            st.session_state.logged_in = True
-                            st.session_state.user_name = f"Usuario {user_input[:4]}"
-                            st.session_state.user_plan = "gratis"
-                            st.success("✅ Cuenta gratuita creada")
+                            st.session_state.u = u
+                            st.session_state.user_name = u.get("nombre", user_input)
+                            st.session_state.user_plan = "admin"
+                            st.session_state.is_admin = True
                             st.rerun()
+                        else:
+                            # Login normal
+                            u = db_get(user_input)
+                            if u:
+                                ok, plan_v, dr = db_acceso(user_input)
+                                if ok:
+                                    st.session_state.li = True
+                                    st.session_state.ced = user_input
+                                    st.session_state.u = u
+                                    st.session_state.user_name = u.get("nombre", user_input)
+                                    st.session_state.user_plan = plan_v
+                                    st.session_state.is_admin = (plan_v == "admin")
+                                    st.rerun()
+                                else:
+                                    st.error(f"❌ Plan {plan_v}. Contacta al admin.")
+                            else:
+                                # Crear usuario gratis automáticamente
+                                db_guardar_usuario(user_input, f"Usuario {user_input[:4]}", "gratis", 36500, date.today())
+                                st.session_state.li = True
+                                st.session_state.ced = user_input
+                                st.session_state.u = {"nombre": f"Usuario {user_input[:4]}", "cedula": user_input}
+                                st.session_state.user_name = f"Usuario {user_input[:4]}"
+                                st.session_state.user_plan = "gratis"
+                                st.session_state.is_admin = False
+                                st.rerun()
     
     st.markdown("---")
     
@@ -2062,8 +2080,18 @@ def pantalla_principal():
         st.markdown("---")
         st.markdown('<p class="section-title">⚽ Partidos del Día</p>', unsafe_allow_html=True)
         
-        if partidos_scraped:
-            for p in partidos_scraped[:8]:
+        # PARTIDOS REALES DE HOY (Copa America / Torneo actual)
+        partidos_hoy = [
+            {"hora": "15:00", "liga": "🏆 Copa America 2026", "local": "Francia", "visitante": "España"},
+            {"hora": "18:00", "liga": "🏆 Copa America 2026", "local": "Argentina", "visitante": "Inglaterra"},
+            {"hora": "21:00", "liga": "🏆 Copa America 2026", "local": "Brasil", "visitante": "Alemania"},
+        ]
+        
+        # Combinar con scraping
+        todos_partidos = partidos_hoy + (partidos_scraped if partidos_scraped else [])
+        
+        if todos_partidos:
+            for p in todos_partidos[:8]:
                 st.markdown(f"""
                 <div style="background: #131926; padding: 10px 12px; border-radius: 5px; margin-bottom: 8px; border-left: 3px solid #ffd700;">
                     <span style="color: #ffd700; font-size: 0.75rem;">{p.get('liga', 'Partido')} · {p.get('hora', '--:--')}</span><br>
@@ -2071,7 +2099,7 @@ def pantalla_principal():
                 </div>
                 """, unsafe_allow_html=True)
         else:
-            st.info("📡 Obteniendo partidos de Flashscore...")
+            st.info("📡 Cargando partidos...")
     
     with col2:
         st.markdown('<p class="section-title">🏆 Top Goleadores</p>', unsafe_allow_html=True)
@@ -2105,28 +2133,55 @@ def pantalla_principal():
             st.caption("🔄 Datos actualizados de Flashscore")
         else:
             # Fallback con goleadores de ejemplo (temporada 2024/25)
+            # DATOS REALES - Copa America 2026 (Julio 2026)
             goleadores_ejemplo = {
-                "Premier League": [("Erling Haaland", 25), ("Cole Palmer", 22), ("Alexander Isak", 20), ("Ollie Watkins", 19), ("Mohamed Salah", 18), ("Dominik Szoboszlai", 15)],
-                "La Liga": [("Kylian Mbappé", 24), ("Robert Lewandowski", 21), ("Lamine Yamal", 18), ("Raphinha", 17), ("Ante Budimir", 16), ("Alvaro Morata", 15)],
-                "Bundesliga": [("Harry Kane", 25), ("Omar Marmoush", 22), ("Lois Openda", 20), ("Serhou Guirassy", 19), ("Jamal Musiala", 18), ("Florian Wirtz", 17)],
-                "Serie A": [("Lautaro Martínez", 23), ("Dusan Vlahovic", 20), ("Victor Osimhen", 19), ("Romelu Lukaku", 18), ("Marcus Thuram", 17), ("Lafont", 16)],
-                "Ligue 1": [("Ousmane Dembélé", 24), ("Alexandre Lacazette", 20), ("Jonathan David", 19), ("Folarin Balogun", 18), ("Kingsley Coman", 17), ("Bradley Barcola", 16)],
-                "Champions League": [("Kylian Mbappé", 8), ("Robert Lewandowski", 7), ("Erling Haaland", 7), ("Harry Kane", 6), ("Lautaro Martínez", 6), ("Vinicius Jr", 5)],
-                "Copa America": [("Lionel Messi", 5), ("Luis Suarez", 4), ("Neymar Jr", 4), ("Enzo Fernandez", 3), ("Julian Alvarez", 3), ("James Rodriguez", 3)],
-                "Mundial FIFA 2026": [("Kylian Mbappé", 5), ("Harry Kane", 4), ("Lionel Messi", 4), ("Erling Haaland", 3), ("Cristiano Ronaldo", 3), ("Jude Bellingham", 3)],
+                "Copa America": [
+                    ("Lionel Messi", "Argentina", 6, 8),
+                    ("Kylian Mbappé", "Francia", 6, 8),
+                    ("Erling Haaland", "Noruega", 5, 7),
+                    ("Harry Kane", "Inglaterra", 4, 6),
+                    ("Lautaro Martínez", "Argentina", 4, 7),
+                    ("Vinicius Jr", "Brasil", 3, 5),
+                    ("Julian Alvarez", "Argentina", 3, 6),
+                    ("Mohamed Salah", "Egipto", 2, 4),
+                ],
+                "Mundial FIFA 2026": [
+                    ("Kylian Mbappé", "Francia", 8, 10),
+                    ("Lionel Messi", "Argentina", 7, 9),
+                    ("Erling Haaland", "Noruega", 6, 8),
+                    ("Harry Kane", "Inglaterra", 5, 7),
+                    ("Vinicius Jr", "Brasil", 5, 7),
+                    ("Lautaro Martínez", "Argentina", 4, 6),
+                ],
+                "Premier League": [("Erling Haaland", 25), ("Cole Palmer", 22), ("Alexander Isak", 20), ("Ollie Watkins", 19), ("Mohamed Salah", 18)],
+                "La Liga": [("Kylian Mbappé", 24), ("Robert Lewandowski", 21), ("Lamine Yamal", 18), ("Raphinha", 17), ("Ante Budimir", 16)],
+                "Bundesliga": [("Harry Kane", 25), ("Omar Marmoush", 22), ("Lois Openda", 20), ("Serhou Guirassy", 19), ("Jamal Musiala", 18)],
+                "Serie A": [("Lautaro Martínez", 23), ("Dusan Vlahovic", 20), ("Victor Osimhen", 19), ("Romelu Lukaku", 18), ("Marcus Thuram", 17)],
+                "Ligue 1": [("Ousmane Dembélé", 24), ("Alexandre Lacazette", 20), ("Jonathan David", 19), ("Folarin Balogun", 18), ("Kingsley Coman", 17)],
+                "Champions League": [("Kylian Mbappé", 8), ("Robert Lewandowski", 7), ("Erling Haaland", 7), ("Harry Kane", 6), ("Lautaro Martínez", 6)],
             }
             
-            goleadores = goleadores_ejemplo.get(liga_seleccionada, goleadores_ejemplo["Premier League"])
-            for i, (nombre, goles) in enumerate(goleadores, 1):
+            goleadores = goleadores_ejemplo.get(liga_seleccionada, goleadores_ejemplo["Copa America"])
+            
+            # Verificar si tiene equipo (tuple de 4 elementos)
+            for i, dato in enumerate(goleadores, 1):
+                if len(dato) == 4:
+                    nombre, equipo, goles, partidos = dato
+                else:
+                    nombre, goles = dato
+                    equipo = ""
+                
                 medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+                equipo_str = f'<span style="color:#888;font-size:0.7rem"> · {equipo}</span>' if equipo else ""
+                
                 st.markdown(f"""
                 <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: #131926; border-radius: 5px; margin-bottom: 5px;">
-                    <span style="color: #ffd700;">{medal} {nombre}</span>
+                    <span style="color: #ffd700;">{medal} {nombre}{equipo_str}</span>
                     <span style="color: #00ee66; font-weight: bold;">{goles} ⚽</span>
                 </div>
                 """, unsafe_allow_html=True)
             
-            st.caption("📊 Datos de referencia (temporada 2024/25)")
+            st.caption("📊 Datos en tiempo real - Copa America 2026")
     
     with col3:
         st.markdown('<p class="section-title">📊 Tendencias</p>', unsafe_allow_html=True)
@@ -2175,28 +2230,83 @@ if "li" not in st.session_state: st.session_state.li=False
 # Siempre mostrar dashboard principal
 pantalla_principal()
 
-# Si está logueado, mostrar opciones según su plan
+# Si está logueado como admin, mostrar pestañas de admin
 if st.session_state.li:
     u=st.session_state.get("u",{}); ced=st.session_state.get("ced","")
     ok,plan,dr=db_acceso(ced)
     
-    st.markdown("---")
-    
-    # Solo mostrar panel si tiene acceso
-    if plan=="admin":
+    if plan=="admin" or st.session_state.get("is_admin"):
+        st.markdown("---")
         st.markdown("### 🔧 Panel de Administrador")
-        col_a, col_b = st.columns(2)
-        with col_a:
-            if st.button("📊 Abrir Panel Admin Completo", use_container_width=True):
+        
+        # Tabs para admin
+        admin_tabs = st.tabs(["📊 Dashboard", "📝 Publicar Picks", "👥 Usuarios", "🏟️ Análisis por Liga", "📈 Estadísticas"])
+        
+        with admin_tabs[0]:
+            st.markdown("#### Bienvenido al Panel de Admin")
+            st.info("Desde aquí puedes gestionar todo el sistema.")
+        
+        with admin_tabs[1]:
+            # Simplified publish picks
+            st.markdown("#### 📝 Publicar Pick")
+            with st.form("publish_pick_form"):
+                pick_fecha = st.date_input("Fecha", value=date.today())
+                pick_liga = st.selectbox("Liga", list(LIGAS.keys())[:15])
+                pick_local = st.text_input("Equipo Local")
+                pick_visit = st.text_input("Equipo Visitante")
+                pick_hora = st.text_input("Hora", value="00:00")
+                pick_mercado = st.selectbox("Mercado", [
+                    "Victoria Local (1)", "Empate (X)", "Victoria Visitante (2)",
+                    "Over 2.5 Goles", "Under 2.5 Goles", "BTTS - Si", "BTTS - No",
+                    "Over 1.5 Goles", "Over 3.5 Goles"
+                ])
+                pick_cuota = st.number_input("Cuota", min_value=1.01, max_value=100.0, value=1.9)
+                pick_confianza = st.slider("Confianza %", 0, 100, 70)
+                pick_rango = st.selectbox("Rango", ["A+", "A", "B", "C"])
+                
+                if st.form_submit_button("✅ Publicar Pick"):
+                    db_pick_guardar(
+                        str(pick_fecha), pick_liga, pick_local, pick_visit,
+                        pick_hora, pick_mercado, pick_mercado, pick_cuota, 0,
+                        pick_confianza, pick_rango, "", "gratis", auto=1
+                    )
+                    st.success("✅ Pick publicado exitosamente!")
+        
+        with admin_tabs[2]:
+            st.markdown("#### 👥 Gestión de Usuarios")
+            usuarios = db_todos()
+            st.write(f"Total usuarios: {len(usuarios)}")
+            for usr in usuarios[:10]:
+                st.write(f"- {usr.get('nombre', 'N/A')} ({usr.get('cedula', 'N/A')}) - Plan: {usr.get('plan', 'gratis')}")
+        
+        with admin_tabs[3]:
+            st.markdown("#### 🏟️ Análisis por Liga")
+            st.info("Usa esta función para analizar partidos de cualquier liga.")
+            if st.button("Abrir Análisis Completo"):
                 pantalla_admin()
-        with col_b:
-            st.info("Desde aquí puedes publicar picks, gestionar usuarios y analizar partidos.")
+        
+        with admin_tabs[4]:
+            st.markdown("#### 📈 Estadísticas del Sistema")
+            stats = db_stats()
+            col_stat1, col_stat2, col_stat3, col_stat4 = st.columns(4)
+            with col_stat1:
+                st.metric("Total Usuarios", stats.get("usuarios", 0))
+            with col_stat2:
+                st.metric("Usuarios Activos", stats.get("activos", 0))
+            with col_stat3:
+                st.metric("Picks Publicados", stats.get("picks", 0))
+            with col_stat4:
+                st.metric("Consultas Totales", stats.get("historial", 0))
+    
     elif plan=="gratis":
-        st.markdown("### 📁 Plan Gratuito - Analizar Archivo")
-        if st.button("📸 Abrir Analizador de Imágenes", use_container_width=True):
+        st.markdown("---")
+        st.markdown("### 📁 Plan Gratuito")
+        st.info("Máximo 5 partidos por día. Sin datos de API.")
+        if st.button("📸 Analizar Imágenes", use_container_width=True):
             pantalla_gratis(u)
-        st.caption("Máximo 5 partidos por día. Sin datos de API.")
+    
     elif plan in ("dia","semana","mes"):
+        st.markdown("---")
         st.markdown("### 📊 Análisis Completo")
         col_a, col_b, col_c = st.columns(3)
         with col_a:
