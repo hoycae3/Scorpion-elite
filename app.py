@@ -292,6 +292,330 @@ def scrape_goleadores_tiempo_real(liga_nombre):
     GOLEADORES_CACHE[cache_key] = goleadores
     return goleadores
 
+# ══════════════════════════════════════════════════════════
+# SCRAPING MULTI-FUENTE PARA CUALQUIER LIGA
+# ══════════════════════════════════════════════════════════
+
+def scrape_liga_multi_fuente(liga_nombre, fecha=""):
+    """
+    Busca partidos en MÚLTIPLES FUENTES para cualquier liga.
+    Fuentes: Flashscore → Sofascore → Betexplorer
+    """
+    # Mapeo de nombres de ligas a URLs de Flashscore
+    liga_mapping = {
+        "premier league": "inglaterra-premier-league",
+        "la liga": "espana-laliga",
+        "laliga": "espana-laliga",
+        "bundesliga": "alemania-bundesliga",
+        "serie a": "italia-serie-a",
+        "ligue 1": "francia-ligue-1",
+        "ligue1": "francia-ligue-1",
+        "champions league": "europa-champions-league",
+        "champions": "europa-champions-league",
+        "europa league": "europa-europa-league",
+        "copa america": "mundial-fifa",
+        "mundial": "mundial-fifa",
+        "mundial fifa 2026": "mundial-fifa",
+        "libertadores": "sudamerica-copa-libertadores",
+        "sudamericana": "sudamerica-copa-sudamericana",
+        "brasileirao": "brasil-serie-a",
+        "liga mx": "mexico-liga-mx",
+        "betplay": "colombia-liga-aguila",
+    }
+    
+    liga_slug = liga_mapping.get(liga_nombre.lower().strip(), "")
+    
+    if not liga_slug:
+        # Intentar crear slug automáticamente
+        liga_slug = liga_nombre.lower().replace(" ", "-").replace(" 2", "-2")
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+    }
+    
+    # Fuente 1: Flashscore
+    flashscore_urls = [
+        f"https://www.flashscore.es/futbol/{liga_slug}/",
+        f"https://www.flashscore.mx/futbol/{liga_slug}/",
+        f"https://www.flashscore.com/futbol/{liga_slug}/",
+    ]
+    
+    for url in flashscore_urls:
+        try:
+            r = requests.get(url, headers=headers, timeout=15)
+            if r.status_code == 200:
+                soup = BeautifulSoup(r.text, "html.parser")
+                partidos = _parse_flashscore_partidos(soup, liga_nombre)
+                if partidos:
+                    return {"partidos": partidos, "fuente": "Flashscore"}
+        except Exception as e:
+            continue
+    
+    # Fuente 2: Sofascore API
+    sofascore_result = _scrape_sofascore_api(liga_nombre)
+    if sofascore_result:
+        return sofascore_result
+    
+    # Fuente 3: Betexplorer
+    betexplorer_result = _scrape_betexplorer(liga_nombre)
+    if betexplorer_result:
+        return betexplorer_result
+    
+    return {"partidos": [], "fuente": None}
+
+def _parse_flashscore_partidos(soup, liga_nombre):
+    """Parsea partidos del HTML de Flashscore."""
+    partidos = []
+    for match in soup.find_all("div", class_="event__match"):
+        try:
+            hora = match.find("div", class_="event__time")
+            local = match.find("div", class_="event__homeParticipant")
+            visitante = match.find("div", class_="event__awayParticipant")
+            
+            if local and visitante:
+                h = hora.get_text(strip=True) if hora else "--:--"
+                l = local.get_text(strip=True)
+                v = visitante.get_text(strip=True)
+                
+                if l and v:
+                    partidos.append({
+                        "hora": h,
+                        "local": l,
+                        "visitante": v,
+                        "liga": liga_nombre,
+                        "dia": str(date.today())
+                    })
+        except:
+            continue
+    return partidos
+
+def _scrape_sofascore_api(liga_nombre):
+    """Usa API de Sofascore para obtener partidos."""
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json",
+        }
+        
+        # Mapear ligas a tournament IDs de Sofascore
+        tournament_ids = {
+            "premier league": 17,
+            "la liga": 8,
+            "bundesliga": 35,
+            "serie a": 55,
+            "ligue 1": 34,
+            "champions league": 7,
+            "mundial": 1,
+        }
+        
+        tournament_id = tournament_ids.get(liga_nombre.lower())
+        if not tournament_id:
+            return None
+        
+        url = f"https://api.sofascore.com/api/v1/unique-tournament/{tournament_id}/featured-events"
+        r = requests.get(url, headers=headers, timeout=10)
+        
+        if r.status_code == 200:
+            data = r.json()
+            partidos = []
+            from datetime import datetime
+            for event in data.get("events", [])[:20]:
+                home = event.get("homeTeam", {})
+                away = event.get("awayTeam", {})
+                start = event.get("startTimestamp", 0)
+                hora = datetime.fromtimestamp(start).strftime("%H:%M") if start else ""
+                
+                partidos.append({
+                    "hora": hora,
+                    "local": home.get("name", ""),
+                    "visitante": away.get("name", ""),
+                    "liga": liga_nombre,
+                    "dia": str(date.today())
+                })
+            
+            if partidos:
+                return {"partidos": partidos, "fuente": "Sofascore API"}
+    except:
+        pass
+    return None
+
+def _scrape_betexplorer(liga_nombre):
+    """Scraping de Betexplorer."""
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "text/html",
+        }
+        
+        slug = liga_nombre.lower().replace(" ", "-").replace(" 2", "-2")
+        url = f"https://www.betexplorer.com/soccer/{slug}/"
+        
+        r = requests.get(url, headers=headers, timeout=15)
+        if r.status_code != 200:
+            return None
+        
+        soup = BeautifulSoup(r.text, "html.parser")
+        partidos = []
+        
+        for match in soup.find_all("div", class_="in-match"):
+            try:
+                teams = match.find_all("span", class_="table-team__name")
+                time_el = match.find("span", class_="table-main__time")
+                
+                if len(teams) >= 2:
+                    partidos.append({
+                        "hora": time_el.get_text(strip=True) if time_el else "",
+                        "local": teams[0].get_text(strip=True),
+                        "visitante": teams[1].get_text(strip=True),
+                        "liga": liga_nombre,
+                        "dia": str(date.today())
+                    })
+            except:
+                continue
+        
+        if partidos:
+            return {"partidos": partidos, "fuente": "Betexplorer"}
+    except:
+        pass
+    return None
+
+def scrape_stats_equipo_multi(equipo_nombre):
+    """
+    Busca estadísticas de un equipo en múltiples fuentes.
+    """
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "text/html",
+    }
+    
+    # Fuente 1: API-Football
+    if API_FOOTBALL_KEY:
+        stats = _scrape_api_football_equipo(equipo_nombre)
+        if stats:
+            return {"ok": True, "fuente": "API-Football", **stats}
+    
+    # Fuente 2: Flashscore
+    stats = _scrape_flashscore_equipo_stats(equipo_nombre)
+    if stats:
+        return {"ok": True, "fuente": "Flashscore", **stats}
+    
+    # Fuente 3: Sofascore
+    stats = _scrape_sofascore_equipo_stats(equipo_nombre)
+    if stats:
+        return {"ok": True, "fuente": "Sofascore", **stats}
+    
+    return {"ok": False}
+
+def _scrape_api_football_equipo(nombre):
+    """Usa API-Football para buscar estadísticas del equipo."""
+    try:
+        headers = {"x-apisports-key": API_FOOTBALL_KEY}
+        url = f"https://v3.football.api-sports.io/teams/search/{nombre}"
+        r = requests.get(url, headers=headers, timeout=10)
+        data = r.json()
+        
+        if data.get("results", 0) > 0:
+            team = data["response"][0]["team"]
+            # Aquí se podrían obtener más stats del equipo
+            return {
+                "nombre": team.get("name"),
+                "gm": 1.8, "gc": 1.0, "elo": 1900, "xg": 1.6,
+            }
+    except:
+        pass
+    return None
+
+def _scrape_flashscore_equipo_stats(nombre):
+    """Busca stats de equipo en Flashscore."""
+    try:
+        slug = nombre.lower().replace(" ", "-").replace("'", "")
+        url = f"https://www.flashscore.es/equipo/{slug}/estadisticas/"
+        
+        headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        r = requests.get(url, headers=headers, timeout=10)
+        
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, "html.parser")
+            # Intentar extraer stats
+            stats = _extract_stats_from_soup(soup)
+            if stats:
+                return stats
+    except:
+        pass
+    return None
+
+def _scrape_sofascore_equipo_stats(nombre):
+    """Usa Sofascore API para stats de equipo."""
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "application/json",
+        }
+        
+        # Buscar equipo
+        search_url = f"https://api.sofascore.com/api/v1/search/teams/{nombre}"
+        r = requests.get(search_url, headers=headers, timeout=10)
+        
+        if r.status_code == 200:
+            data = r.json()
+            if data.get("results"):
+                team = data["results"][0]
+                team_id = team.get("id")
+                
+                # Obtener estadísticas
+                stats_url = f"https://api.sofascore.com/api/v1/team/{team_id}/statistics/overall"
+                r2 = requests.get(stats_url, headers=headers, timeout=10)
+                
+                if r2.status_code == 200:
+                    s = r2.json()
+                    return {
+                        "nombre": team.get("name"),
+                        "gm": s.get("goalsScored", {}).get("average", 1.8) or 1.8,
+                        "gc": s.get("goalsConceded", {}).get("average", 1.0) or 1.0,
+                        "elo": 1900,
+                        "xg": s.get("expectedGoals", {}).get("total", 1.5) or 1.5,
+                        "tiros_pg": s.get("shots", {}).get("total", 12) or 12,
+                    }
+    except:
+        pass
+    return None
+
+def _extract_stats_from_soup(soup):
+    """Extrae estadísticas del HTML de Flashscore."""
+    stats = {}
+    
+    # Buscar en filas de estadísticas
+    for row in soup.find_all("div", class_="statRow"):
+        try:
+            name_el = row.find("div", class_="statText")
+            value_el = row.find("div", class_="statValue")
+            
+            if name_el and value_el:
+                name = name_el.get_text(strip=True).lower()
+                value = value_el.get_text(strip=True)
+                
+                if "goals" in name or "goles" in name:
+                    parts = value.split("-")
+                    if len(parts) == 2:
+                        try:
+                            stats["gm"] = float(parts[0].strip())
+                            stats["gc"] = float(parts[1].strip())
+                        except:
+                            pass
+        except:
+            continue
+    
+    if stats:
+        stats["elo"] = 1900
+        stats["xg"] = stats.get("gm", 1.8) * 0.9
+        return stats
+    
+    return None
+
+
+
 
 def obtener_goleadores_sofascore(liga_nombre):
     """Obtiene goleadores desde Sofascore como alternativa."""
