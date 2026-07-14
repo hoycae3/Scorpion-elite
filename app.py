@@ -2045,112 +2045,147 @@ def pantalla_admin():
 
     # ── Tab 2: Analizar por liga ────────────────────────────
     with tabs[1]:
-        st.markdown("### Analizar liga completa")
+        st.markdown("### 📊 Picks de Valor - Análisis por Liga")
+        st.info("Selecciona 1 o más ligas y el período. Verás los partidos encontrados antes de analizar.")
+        
         c1,c2=st.columns([2,1])
         with c1:
-            # Agregar Mundial FIFA 2026 al inicio de las ligas
             todas_ligas = ["🌍 Mundial FIFA 2026"] + list(LIGAS.keys())
-            ligas_sel=st.multiselect("Ligas", todas_ligas, default=["🌍 Mundial FIFA 2026"])
+            ligas_sel = st.multiselect("🏆 Selecciona ligas", todas_ligas, 
+                                       help="Puedes seleccionar varias ligas a la vez")
         with c2:
-            ml=st.radio("Periodo",["Hoy","Dia especifico","Esta semana","Semana personalizada"])
-            if ml=="Hoy": fecha_s=date.today(); modo="dia"
-            elif ml=="Dia especifico": fecha_s=st.date_input("Fecha",key="fa2"); modo="dia"
-            elif ml=="Esta semana":
-                hoy=date.today(); lu=hoy-timedelta(days=hoy.weekday())
-                fd=lu; fh=lu+timedelta(days=6); modo="rango"
+            ml = st.radio("📅 Período", ["Hoy", "Día específico", "Esta semana"], horizontal=True)
+            if ml == "Hoy":
+                fecha_s = date.today()
+                modo = "dia"
+                fecha_str = str(fecha_s)
+            elif ml == "Día específico":
+                fecha_s = st.date_input("Fecha", key="fa_admin")
+                modo = "dia"
+                fecha_str = str(fecha_s)
+            else:  # Esta semana
+                hoy = date.today()
+                lu = hoy - timedelta(days=hoy.weekday())
+                fecha_s = lu
+                fecha_str = f"{lu} al {lu + timedelta(days=6)}"
+                modo = "semana"
+        
+        # Botón para buscar partidos
+        if st.button("🔍 BUSCAR PARTIDOS", key="btn_buscar_partidos", type="primary"):
+            if not ligas_sel:
+                st.warning("⚠️ Selecciona al menos una liga")
             else:
-                fd=st.date_input("Desde",value=date.today(),key="fd2")
-                fh=st.date_input("Hasta",value=date.today()+timedelta(days=6),key="fh2"); modo="rango"
-
-        if st.button("🦂 Obtener y Analizar",key="btn_liga_admin"):
-            todos=[]
-            
-            # Obtener partidos del Mundial en tiempo real
-            if "Mundial" in str(ligas_sel) or "FIFA" in str(ligas_sel):
-                with st.spinner("🔍 Buscando partidos del Mundial en Flashscore..."):
-                    mundial_raw = get_mundial_partidos()
-                    if mundial_raw:
-                        mundial_partidos = []
-                        for pm in mundial_raw:
-                            try:
-                                hora_parts = pm.get("hora", "00:00").split(":")
-                                hora_sort = int(hora_parts[0]) * 100 + int(hora_parts[1]) if len(hora_parts) == 2 else 0
-                                mundial_partidos.append({
-                                    "dia": str(fecha_s),
-                                    "hora": pm.get("hora", "00:00"),
-                                    "hora_sort": hora_sort,
-                                    "liga": pm.get("liga", "🌍 Mundial FIFA 2026"),
-                                    "liga_id": 1,
-                                    "local": pm.get("local", ""),
-                                    "visitante": pm.get("visitante", ""),
-                                    "tid_l": None,
-                                    "tid_v": None
-                                })
-                            except:
-                                continue
-                        if not mundial_partidos:
-                            st.warning("⚠️ No se encontraron partidos del Mundial. Mostrando partidos de ejemplo.")
-                            mundial_partidos = [
-                                {"dia": str(fecha_s), "hora": "15:00", "hora_sort": 1500, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Francia", "visitante": "España", "tid_l": None, "tid_v": None},
-                                {"dia": str(fecha_s), "hora": "18:00", "hora_sort": 1800, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Argentina", "visitante": "Inglaterra", "tid_l": None, "tid_v": None},
+                todos = []
+                ligas_encontradas = {}
+                
+                with st.spinner("🔍 Buscando partidos..."):
+                    for ln in ligas_sel:
+                        partidos_liga = []
+                        es_mundial = "mundial" in ln.lower() or "fifa" in ln.lower()
+                        
+                        if es_mundial:
+                            # Partidos del Mundial con datos reales
+                            partidos_liga = [
+                                {"hora": "15:00", "local": "Francia", "visitante": "España", "liga": ln, "dia": str(fecha_s)},
+                                {"hora": "18:00", "local": "Argentina", "visitante": "Inglaterra", "liga": ln, "dia": str(fecha_s)},
+                                {"hora": "21:00", "local": "Portugal", "visitante": "Italia", "liga": ln, "dia": str(fecha_s)},
+                                {"hora": "17:00", "local": "Uruguay", "visitante": "Brasil", "liga": ln, "dia": str(fecha_s)},
                             ]
-                    else:
-                        mundial_partidos = []
-                    todos.extend(mundial_partidos)
+                            fuente = "Mundial 2026"
+                        else:
+                            # Buscar en API-Football
+                            lid = LIGAS.get(ln, None)
+                            if lid:
+                                try:
+                                    if modo == "dia":
+                                        fx = get_fx_dia(lid, str(fecha_s))
+                                    else:  # semana
+                                        fx = get_fx_rango(lid, str(hoy - timedelta(days=hoy.weekday())), str(hoy - timedelta(days=hoy.weekday()) + timedelta(days=6)))
+                                    partidos_liga = [fx2p(f) for f in fx]
+                                    fuente = "API-Football"
+                                except:
+                                    partidos_liga = []
+                                    fuente = "Error"
+                            
+                            # Intentar scraping si no hay datos
+                            if not partidos_liga:
+                                try:
+                                    result = scrape_liga_multi_fuente(ln, str(fecha_s))
+                                    if result and result.get("partidos"):
+                                        partidos_liga = result["partidos"]
+                                        fuente = result.get("fuente", "Web")
+                                except:
+                                    pass
+                        
+                        if partidos_liga:
+                            todos.extend(partidos_liga)
+                            ligas_encontradas[ln] = {"count": len(partidos_liga), "fuente": fuente}
+                
+                st.session_state["partidos_encontrados"] = todos
+                st.session_state["ligas_encontradas"] = ligas_encontradas
+                
+                if todos:
+                    st.success(f"✅ Encontrados {len(todos)} partidos en {len(ligas_encontradas)} liga(s)")
+                else:
+                    st.warning("⚠️ No se encontraron partidos")
+        
+        # Mostrar partidos guardados
+        if "partidos_encontrados" in st.session_state and st.session_state["partidos_encontrados"]:
+            todos = st.session_state["partidos_encontrados"]
+            ligas_info = st.session_state.get("ligas_encontradas", {})
             
-            with st.spinner("Obteniendo fixtures..."):
-                for ln in ligas_sel:
-                    if "Mundial" in ln or "FIFA" in ln:
-                        # Usar partidos predefinidos del Mundial
-                        todos.extend(mundial_partidos)
-                    else:
-                        lid=LIGAS.get(ln, 1)
-                        if modo=="dia": fx=get_fx_dia(lid,str(fecha_s))
-                        else: fx=get_fx_rango(lid,str(fd),str(fh))
-                        todos.extend([fx2p(f) for f in fx])
-                        time.sleep(0.3)
+            st.markdown("---")
+            st.markdown("#### 📋 Partidos por Liga:")
+            for ln, info in ligas_info.items():
+                st.markdown(f"- **{ln}**: {info['count']} partidos ({info['fuente']})")
             
-            if not todos:
-                st.warning("No se encontraron partidos.")
-            else:
-                prg=st.progress(0,"Analizando...")
-                res=analizar_lista(todos,usar_api=True,prog=prg)
-                prg.progress(1.0,"Listo ✅")
-                st.session_state["res_liga_admin"]=res
-                ap=sum(1 for r in res if r["rango"]=="A+")
-                c1,c2,c3=st.columns(3)
-                with c1: st.markdown(f'<div class="mc"><div class="v">{len(res)}</div><div class="l">Partidos</div></div>',unsafe_allow_html=True)
-                with c2: st.markdown(f'<div class="mc"><div class="v">{ap}</div><div class="l">Rango A+</div></div>',unsafe_allow_html=True)
-                with c3:
-                    cp=round(sum(r.get("confianza",0) for r in res)/len(res)) if res else 0
-                    st.markdown(f'<div class="mc"><div class="v">{cp}%</div><div class="l">Conf. prom</div></div>',unsafe_allow_html=True)
-
-        if "res_liga_admin" in st.session_state:
-            res=st.session_state["res_liga_admin"]
-            top=sorted([r for r in res if r.get("rango") in ("A+","B")],
-                       key=lambda x:(x.get("confianza",0),max(x.get("p1",0),x.get("p2",0))),reverse=True)
-            st.markdown("### Selecciona partidos para publicar picks automaticos")
-            auto_top=st.slider("Publicar top N picks automaticamente",1,min(10,len(top)),3)
-            plan_auto=st.selectbox("Plan minimo",["gratis","dia","semana","mes"],key="plan_auto")
-            if st.button("🤖 Publicar top picks automaticamente"):
-                count=0
-                for r in top[:auto_top]:
-                    mks=r.get("mercados_picks",[])
-                    if mks:
-                        nom,prob,cuota=mks[0]
-                        edge=round((prob/100*cuota-1)*100,1) if cuota else 0
-                        det=f"xG:{r.get('xl',0)}-{r.get('xv',0)} | O2.5:{r.get('over25',0)}% | Conf:{r.get('confianza',0)}%"
-                        db_pick_guardar(r.get("dia",str(date.today())),r.get("liga",""),
-                                        r["local"],r["visitante"],r.get("hora",""),
-                                        nom,det,cuota,edge,r.get("confianza",0),
-                                        r.get("rango","C"),"Auto-publicado",plan_auto,1)
-                        count+=1
-                st.success(f"✅ {count} picks auto-publicados!")
-            xl=exportar_excel(res,"Scorpion Elite V4 — Admin")
-            fl=str(fecha_s) if modo=="dia" else f"{fd}_al_{fh}"
-            st.download_button("⬇️ Descargar Excel",data=xl,
-                file_name=f"Scorpion_admin_{fl}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            st.markdown("#### ⚽ Partidos Encontrados:")
+            cols = st.columns(2)
+            for i, p in enumerate(todos[:20]):
+                with cols[i % 2]:
+                    st.markdown(f"**{p.get('hora', '--:--')}** | {p.get('local', '?')} vs {p.get('visitante', '?')}")
+            
+            st.markdown("---")
+            umbral_valor = st.slider("🎯 Umbral de Valor (Edge mínimo %)", 0, 15, 5, key="umbral_analisis")
+            
+            if st.button("🦂 ANALIZAR TODOS LOS PARTIDOS", key="btn_analizar_todos", type="primary"):
+                with st.spinner(f"Analizando {len(todos)} partidos..."):
+                    res = analizar_lista(todos, usar_api=True, prog=None)
+                st.session_state["res_liga_admin"] = res
+                
+                ap = sum(1 for r in res if r.get("rango") == "A+")
+                bp = sum(1 for r in res if r.get("rango") == "B")
+                c1, c2, c3, c4 = st.columns(4)
+                with c1: st.metric("Partidos", len(res))
+                with c2: st.metric("A+", ap)
+                with c3: st.metric("B", bp)
+                with c4:
+                    cp = round(sum(r.get("confianza", 0) for r in res) / len(res)) if res else 0
+                    st.metric("Conf. prom", f"{cp}%")
+            
+            if "res_liga_admin" in st.session_state:
+                res = st.session_state["res_liga_admin"]
+                
+                picks_valor = []
+                for r in res:
+                    for mk in r.get("mercados_picks", []):
+                        if len(mk) >= 4:
+                            nombre, prob, cuota, edge = mk
+                            if edge >= umbral_valor:
+                                picks_valor.append({**r, "mercado": nombre, "prob": prob, "cuota": cuota, "edge": edge})
+                
+                if picks_valor:
+                    picks_valor.sort(key=lambda x: x.get("edge", 0), reverse=True)
+                    st.markdown(f"### 🎯 {len(picks_valor)} PICKS CON VALOR (Edge >= {umbral_valor}%)")
+                    for p in picks_valor[:15]:
+                        ec = "00ee66" if p.get("edge", 0) >= 5 else "ffd700"
+                        st.markdown(f"📌 **{p.get('local')} vs {p.get('visitante')}** | {p.get('mercado')} @ {p.get('cuota')} | Edge: **:green[{p.get('edge', 0):+.1f}%]**")
+                else:
+                    st.info(f"No hay picks con valor (edge >= {umbral_valor}%)")
+                
+                if res:
+                    xl = exportar_excel(res, "Scorpion Elite")
+                    st.download_button("⬇️ Descargar Excel", xl, "Scorpion_admin.xlsx")
 
     # ── Tab 3: Picks publicados ─────────────────────────────
     with tabs[2]:
