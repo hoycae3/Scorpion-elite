@@ -11,7 +11,7 @@ warnings.filterwarnings("ignore")
 
 def get_hoy():
     """Obtiene la fecha de hoy de forma segura para Streamlit."""
-    return get_hoy()
+    return date.today().isoformat()
 
 # ══════════════════════════════════════════════════════════
 # CONFIG
