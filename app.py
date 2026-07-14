@@ -1,6 +1,6 @@
 """
 Scorpion Elite V4 - Dashboard Analítico
-Sistema de análisis deportivo con 4 modelos matemáticos + datos reales.
+Sistema de análisis deportivo con Web Scraping + APIs + 4 modelos matemáticos.
 """
 import streamlit as st
 import os
@@ -16,6 +16,13 @@ from scorpion.config import config, LIGAS
 from scorpion.db.database import get_db, DatabaseError
 from scorpion.models.math import MotorAnalisis
 from scorpion.api.football import FootballAPI
+from scorpion.api.scraper import (
+    obtener_partidos_hoy,
+    obtener_partidos_liga,
+    obtener_estadisticas_equipo,
+    obtener_top_goleadores_liga,
+    calcular_confianza_partido,
+)
 from scorpion.ui.components import (
     render_header,
     render_pick_card,
@@ -94,72 +101,52 @@ def get_picks_del_dia():
 
 
 def get_partidos_del_dia():
-    """Obtiene partidos del día desde APIs con datos de fallback."""
+    """Obtiene partidos del día desde Web Scraping de Flashscore."""
+    try:
+        # Usar scraper de Flashscore
+        partidos_scraped = obtener_partidos_hoy()
+        
+        # Convertir a formato del sistema
+        partidos = []
+        for p in partidos_scraped:
+            class PartidoData:
+                def __init__(self):
+                    self.hora = p.hora
+                    self.local = p.local
+                    self.visitante = p.visitante
+                    self.liga = p.liga
+                    self.fecha = p.fecha
+            partidos.append(PartidoData())
+        
+        if partidos:
+            logger.info(f"Scraping: {len(partidos)} partidos obtenidos")
+            return partidos
+        
+    except Exception as e:
+        logger.warning(f"Error en scraping: {e}")
+    
+    # Fallback: intentar APIs tradicionales
     partidos = []
     for ln, lid in list(LIGAS.items())[:6]:
         try:
             fx = api.get_fixtures(lid, str(date.today()))
             for f in fx[:5]:
                 partidos.append(api.parse_fixture(f))
-        except Exception as e:
-            logger.warning(f"Error obteniendo fixtures de {ln}: {e}")
-    
-    # Si no hay partidos de hoy, obtener de la semana
-    if not partidos:
-        try:
-            from datetime import timedelta
-            for ln, lid in list(LIGAS.items())[:4]:
-                fx = api.get_fixtures(lid, desde=str(date.today()), hasta=str(date.today() + timedelta(days=7)))
-                for f in fx[:3]:
-                    partidos.append(api.parse_fixture(f))
         except Exception:
             pass
     
     return partidos
 
 
-def get_goleadores_liga(liga_id: int, liga_nombre: str):
-    """Obtiene goleadores de una liga desde API."""
+def get_goleadores_liga_scraper(liga_nombre: str):
+    """Obtiene goleadores de una liga usando Web Scraping."""
     try:
-        # Obtener fixtures para tener equipos
-        fx = api.get_fixtures(liga_id, str(date.today()))
-        if not fx:
-            from datetime import timedelta
-            fx = api.get_fixtures(liga_id, desde=str(date.today()), hasta=str(date.today() + timedelta(days=7)))
-        
-        goleadores = []
-        equipos_vistos = set()
-        
-        for f in fx[:15]:  # Revisar hasta 15 partidos
-            home_id = f["teams"]["home"]["id"]
-            away_id = f["teams"]["away"]["id"]
-            
-            for tid, tname in [(home_id, f["teams"]["home"]["name"]), (away_id, f["teams"]["away"]["name"])]:
-                if tid in equipos_vistos:
-                    continue
-                equipos_vistos.add(tid)
-                
-                try:
-                    gm, gc = api.get_stats_equipo(tid, liga_id)
-                    if gm is not None:
-                        # Estimar goles en temporada (aprox 20 partidos)
-                        goleadores.append({
-                            "nombre": tname,
-                            "goles": round(gm * 18),  # Aproximado
-                            "liga": liga_nombre
-                        })
-                except Exception:
-                    pass
-                
-                if len(equipos_vistos) >= 12:
-                    break
-        
-        # Ordenar por goles
-        goleadores.sort(key=lambda x: x["goles"], reverse=True)
-        return goleadores[:10]
+        goleadores = obtener_top_goleadores_liga(liga_nombre)
+        if goleadores:
+            return [{"nombre": g.nombre, "goles": g.goles, "liga": liga_nombre} for g in goleadores]
     except Exception as e:
         logger.warning(f"Error obteniendo goleadores: {e}")
-        return []
+    return []
 
 
 def main():
@@ -218,55 +205,68 @@ def main():
 
 
 def render_dashboard(user: str, plan: str):
-    """Renderiza el dashboard principal."""
+    """Renderiza el dashboard principal con datos de Web Scraping."""
     col1, col2, col3 = st.columns([2, 1.2, 1.2])
     
-    # Obtener datos
+    # Obtener datos con scraping
     picks_hoy = get_picks_del_dia()
     partidos = []
     analisis = []
-    goleadores = []
     
-    with st.spinner("Cargando datos..."):
+    with st.spinner("🌐 Obteniendo partidos desde Flashscore..."):
         try:
             partidos = get_partidos_del_dia()
-        except Exception as e:
-            logger.warning(f"Error obteniendo partidos: {e}")
-        
-        # Analizar partidos solo si hay
-        if partidos:
-            for p in partidos[:10]:
+            
+            # Analizar partidos con modelo matemático
+            for p in partidos[:12]:
                 try:
-                    stats_local = api.obtener_stats_completo(p.local, p.liga)
-                    stats_visit = api.obtener_stats_completo(p.visitante, p.liga)
-                    resultado = motor.analizar(
-                        gm_local=stats_local.gm,
-                        gc_local=stats_local.gc,
-                        gm_visitante=stats_visit.gm,
-                        gc_visitante=stats_visit.gc,
-                        elo_local=stats_local.elo,
-                        elo_visitante=stats_visit.elo,
-                        liga=p.liga,
-                        usar_datos_reales=stats_local.ok or stats_visit.ok
-                    )
+                    # Obtener forma reciente del equipo (scraping)
+                    forma_local = obtener_estadisticas_equipo(p.local)
+                    forma_visit = obtener_estadisticas_equipo(p.visitante)
+                    
+                    # Calcular confianza
+                    confianza = calcular_confianza_partido(p.local, p.visitante, forma_local, forma_visit)
+                    
+                    # Crear resultado simplificado
+                    class ResultadoSimple:
+                        def __init__(self):
+                            self.p1 = confianza["pct_local"]
+                            self.p2 = confianza["pct_visit"]
+                            self.pX = 100 - self.p1 - self.p2
+                            self.confianza = confianza["confianza"]
+                            self.over25 = confianza["over_25"]
+                            self.resultado = confianza["resultado"]
+                            # Rangos
+                            if self.confianza >= 75:
+                                self.rango = "A+"
+                            elif self.confianza >= 65:
+                                self.rango = "A"
+                            elif self.confianza >= 55:
+                                self.rango = "B"
+                            else:
+                                self.rango = "C"
+                    
                     analisis.append({
                         "partido": p,
-                        "resultado": resultado
+                        "resultado": ResultadoSimple(),
+                        "forma_local": forma_local,
+                        "forma_visit": forma_visit
                     })
                 except Exception as e:
-                    logger.warning(f"Error analizando {p.local} vs {p.visitante}: {e}")
+                    logger.warning(f"Error analizando {p.local}: {e}")
             
             if analisis:
                 analisis.sort(key=lambda x: x["resultado"].confianza, reverse=True)
-        
-        # Obtener goleadores
-        try:
-            liga_opciones = list(LIGAS.keys())[:6]
-            liga_sel_default = "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League"
-            liga_id = LIGAS.get(liga_sel_default, 39)
-            goleadores = get_goleadores_liga(liga_id, liga_sel_default)
+                
         except Exception as e:
-            logger.warning(f"Error obteniendo goleadores: {e}")
+            logger.warning(f"Error obteniendo partidos: {e}")
+    
+    # Selector de liga para goleadores
+    liga_opciones = list(LIGAS.keys())[:6]
+    liga_seleccionada = st.selectbox("🏆 Seleccionar Liga", liga_opciones, key="liga_selector")
+    
+    with st.spinner("📊 Cargando goleadores..."):
+        goleadores = get_goleadores_liga_scraper(liga_seleccionada)
     
     # Columna 1: Picks y Partidos
     with col1:
@@ -287,48 +287,39 @@ def render_dashboard(user: str, plan: str):
                         rango=pick.get("rango", "B")
                     ), unsafe_allow_html=True)
         else:
-            st.info("📢 No hay picks publicados hoy. El administrador debe publicar picks desde el panel.")
+            st.info("📢 No hay picks publicados hoy. Publica picks desde el panel de administración.")
         
-        # Mejores partidos
+        # Partidos del día
         st.markdown("---")
-        st.markdown('<p class="section-title">⚽ Partidos del Día</p>', unsafe_allow_html=True)
+        st.markdown(f'<p class="section-title">⚽ Partidos del Día ({len(partidos)} encontrados)</p>', unsafe_allow_html=True)
         
         if analisis:
-            for a in analisis[:8]:
+            for a in analisis[:10]:
                 p = a["partido"]
                 r = a["resultado"]
+                f = a["forma_local"]
+                
+                # Mostrar partido con análisis
                 st.markdown(render_match_row(
-                    local=p.local,
+                    local=f"{p.local} {f['forma']}",
                     visitante=p.visitante,
                     hora=p.hora,
                     liga=p.liga,
                     rango=r.rango,
                     over25=r.over25
                 ), unsafe_allow_html=True)
-        elif partidos:
-            st.info("⚠️ Los partidos se encontraron pero no se pudieron analizar. Intenta más tarde.")
-            for p in partidos[:5]:
-                st.markdown(render_match_row(
-                    local=p.local,
-                    visitante=p.visitante,
-                    hora=p.hora,
-                    liga=p.liga,
-                    rango=None,
-                    over25=None
-                ), unsafe_allow_html=True)
         else:
-            st.warning("⚠️ No se encontraron partidos hoy. Las APIs pueden estar temporalmente no disponibles.")
-            st.info("💡 Los administradores pueden usar el panel de análisis para estudiar partidos manualmente.")
+            st.warning("⚠️ No se pudieron obtener partidos. Verificando conexión...")
     
     # Columna 2: Goleadores y Stats
     with col2:
-        st.markdown('<p class="section-title">🏆 Top Equipos por Goles</p>', unsafe_allow_html=True)
+        st.markdown(f'<p class="section-title">🏆 Top Goleadores - {liga_seleccionada.split()[0] if liga_seleccionada else "Liga"}</p>', unsafe_allow_html=True)
         
         if goleadores:
-            for i, g in enumerate(goleadores[:8], 1):
+            for i, g in enumerate(goleadores[:10], 1):
                 st.markdown(render_goleador(i, g["nombre"], g["goles"]), unsafe_allow_html=True)
         else:
-            st.info("📊 Datos de goleadores no disponibles. La API gratuita tiene limitaciones.")
+            st.info("📊 Cargando goleadores...")
         
         # Stats
         st.markdown("---")
@@ -337,14 +328,15 @@ def render_dashboard(user: str, plan: str):
         try:
             stats = db.get_estadisticas()
             st.markdown(render_metrica("Picks Publicados", str(stats.get("picks", 0))), unsafe_allow_html=True)
-            st.markdown(render_metrica("Partidos Analizados", str(len(analisis))), unsafe_allow_html=True)
         except DatabaseError:
             st.markdown(render_metrica("Picks Publicados", "0"), unsafe_allow_html=True)
-            st.markdown(render_metrica("Partidos Analizados", "0"), unsafe_allow_html=True)
+        
+        st.markdown(render_metrica("Partidos Analizados", str(len(analisis))), unsafe_allow_html=True)
+        st.markdown(render_metrica("Fuente", "Flashscore 🌐"), unsafe_allow_html=True)
     
     # Columna 3: Tendencias y Alertas
     with col3:
-        st.markdown('<p class="section-title">📊 Mercados y Tendencias</p>', unsafe_allow_html=True)
+        st.markdown('<p class="section-title">📊 Predicciones y Tendencias</p>', unsafe_allow_html=True)
         
         st.markdown('<div class="sidebar-right-card">', unsafe_allow_html=True)
         
@@ -354,31 +346,30 @@ def render_dashboard(user: str, plan: str):
             for p in picks_hoy[:3]:
                 conf_color = "#00ee66" if p.get("confianza", 0) >= 70 else "#ffd700"
                 st.markdown(f'<div class="text-trend">• {p.get("mercado", "N/A")} @ {p.get("cuota", "N/A")} <span style="color: {conf_color};">[{p.get("confianza", 0)}%]</span></div>', unsafe_allow_html=True)
-        else:
-            st.markdown('<div class="text-trend">• No hay picks publicados</div>', unsafe_allow_html=True)
-        
-        st.markdown('<p style="color:#bfa15f; font-weight:bold; font-size:14px; margin-top:15px; margin-bottom:5px;">📈 Tendencias de Partidos</p>', unsafe_allow_html=True)
-        
-        if analisis:
+        elif analisis[:3]:
             for a in analisis[:3]:
                 r = a["resultado"]
-                if r.p1 > r.p2:
-                    st.markdown(f'<div class="text-trend">📈 {a["partido"].local}: {r.p1}% victoria</div>', unsafe_allow_html=True)
-                elif r.p2 > r.p1:
-                    st.markdown(f'<div class="text-trend">📉 {a["partido"].local}: {r.p2}% visita</div>', unsafe_allow_html=True)
-                else:
-                    st.markdown(f'<div class="text-trend">⚖️ {a["partido"].local}: Empate</div>', unsafe_allow_html=True)
+                prediccion = f"1" if r.resultado == "1" else ("X" if r.resultado == "X" else "2")
+                st.markdown(f'<div class="text-trend">• {a["partido"].local[:15]} <span style="color:#00ee66;">{prediccion}</span> @ {r.confianza}%</div>', unsafe_allow_html=True)
         else:
-            st.markdown('<div class="text-trend">• Sin datos de partidos</div>', unsafe_allow_html=True)
+            st.markdown('<div class="text-trend">• Cargando predicciones...</div>', unsafe_allow_html=True)
         
-        st.markdown('<p style="color:#bfa15f; font-weight:bold; font-size:14px; margin-top:15px; margin-bottom:5px;">⚠️ Estado del Sistema</p>', unsafe_allow_html=True)
-        st.markdown(render_alerta("Los datos se obtienen de APIs externas en tiempo real"), unsafe_allow_html=True)
-        st.markdown(render_alerta("Los análisis son solo informativos"), unsafe_allow_html=True)
+        st.markdown('<p style="color:#bfa15f; font-weight:bold; font-size:14px; margin-top:15px; margin-bottom:5px;">📈 Forma Reciente</p>', unsafe_allow_html=True)
+        
+        if analisis:
+            for a in analisis[:4]:
+                f = a["forma_local"]
+                st.markdown(f'<div class="text-trend">• {a["partido"].local[:12]}: {f["forma"]} ({f["victorias"]}V-{f["empates"]}E-{f["derrotas"]}D)</div>', unsafe_allow_html=True)
+        
+        st.markdown('<p style="color:#bfa15f; font-weight:bold; font-size:14px; margin-top:15px; margin-bottom:5px;">⚠️ Alertas</p>', unsafe_allow_html=True)
+        st.markdown(render_alerta("🌐 Datos de Flashscore en tiempo real"), unsafe_allow_html=True)
+        st.markdown(render_alerta("⚽ Análisis con modelos matemáticos"), unsafe_allow_html=True)
         
         if plan == "admin":
             st.markdown("---")
             st.markdown('<p style="color:#bfa15f; font-weight:bold; font-size:14px;">🔧 Panel Admin</p>', unsafe_allow_html=True)
-            st.info("Usa el panel de administración para publicar picks y analizar partidos.")
+            if st.button("📝 Publicar Pick", key="btn_admin"):
+                st.info("Usa el panel de administración para publicar picks.")
         
         st.markdown('</div>', unsafe_allow_html=True)
 
