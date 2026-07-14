@@ -105,29 +105,55 @@ def main():
     """Función principal."""
     init_session()
     
-    # Header
-    st.markdown(render_header(), unsafe_allow_html=True)
+    # Header con logo y login en la misma línea
+    col_header_left, col_header_right = st.columns([4, 1])
     
-    # Login
-    col_space, col_login = st.columns([3, 1])
-    with col_login:
-        if render_login_form():
-            st.rerun()
+    with col_header_left:
+        st.markdown(render_header(), unsafe_allow_html=True)
     
-    # Contenido principal
-    if st.session_state.get("logged_in"):
-        user = st.session_state.get("user")
-        plan = st.session_state.get("plan")
-        
-        # Botón logout
-        if st.button("🚪 Cerrar sesión"):
-            st.session_state.clear()
-            st.rerun()
-        
-        # Dashboard
-        render_dashboard(user, plan)
-    else:
-        render_welcome()
+    with col_header_right:
+        if st.session_state.get("logged_in"):
+            st.markdown(f"""
+            <div style="text-align: right; padding: 10px; background: #131926; border-radius: 8px; margin-top: 20px;">
+                <div style="color: #d4af37; font-weight: bold;">👤 {st.session_state.get('user', 'Admin')}</div>
+                <div style="color: #888; font-size: 12px;">Plan: {st.session_state.get('plan', 'gratis').upper()}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("🚪 Cerrar sesión", key="logout_btn"):
+                st.session_state.clear()
+                st.rerun()
+        else:
+            st.markdown("<p style='color:#dfba6b; margin: 20px 0 5px; font-weight:bold; text-align: right;'>Acceso</p>", unsafe_allow_html=True)
+            with st.form("login_form_main", clear_on_submit=True):
+                user_input = st.text_input("Usuario", placeholder="Tu cédula o 'admin'", label_visibility="collapsed", key="user_main")
+                password_input = st.text_input("Contraseña", type="password", placeholder="Contraseña", label_visibility="collapsed", key="pass_main")
+                submit_btn = st.form_submit_button("Entrar →")
+                
+                if submit_btn:
+                    if user_input == "admin" and password_input == config.ADMIN_PASSWORD:
+                        st.session_state.logged_in = True
+                        st.session_state.user = "admin"
+                        st.session_state.plan = "admin"
+                        st.success("✅ Acceso concedido como Administrador")
+                        st.rerun()
+                    elif user_input:
+                        try:
+                            ok, plan, dr = db.verificar_acceso(user_input)
+                            if ok:
+                                st.session_state.logged_in = True
+                                st.session_state.user = user_input
+                                st.session_state.plan = plan
+                                st.success(f"✅ Bienvenido - Plan {plan.upper()}")
+                                st.rerun()
+                            else:
+                                st.error(f"❌ Acceso denegado: {dr}")
+                        except DatabaseError as e:
+                            st.error(f"Error de base de datos: {e}")
+    
+    # Dashboard siempre visible (sin pantalla de bienvenida)
+    user = st.session_state.get("user", "invitado")
+    plan = st.session_state.get("plan", "gratis")
+    render_dashboard(user, plan)
 
 
 def render_dashboard(user: str, plan: str):
