@@ -2188,7 +2188,7 @@ def pantalla_admin():
             liga_i   =st.text_input("🏆 Liga / Torneo",placeholder="ej: Mundial FIFA 2026")
             hora_i   =st.text_input("🕐 Hora (opcional)","20:00")
         with c2:
-            fecha_i  =st.date_input("📅 Fecha",value=date.today())
+            fecha_i  =st.date_input("📅 Fecha",value=None)
             usar_api_i=st.checkbox("✅ Buscar stats reales",value=True)
         
         umbral_valor = st.slider("🎯 Umbral de Valor (Edge mínimo %)", 0, 15, 5)
@@ -2567,7 +2567,7 @@ def pantalla_admin():
             plan2=st.selectbox("Plan",["gratis","dia","semana","mes"])
             dm={"gratis":30,"dia":1,"semana":7,"mes":30}
             dias2=st.number_input("Dias",min_value=1,max_value=3650,value=int(dm[plan2]))
-            fi2=st.date_input("Inicio",value=date.today())
+            fi2=st.date_input("Inicio",value=None)
             if st.button("💾 Guardar"):
                 if ced2.strip():
                     db_guardar_usuario(ced2.strip(),nom2 or f"Cliente {ced2[:6]}",plan2,int(dias2),fi2)
@@ -2689,7 +2689,7 @@ def pantalla_pago(u,plan):
                 ligas_sel=[st.selectbox("Liga",list(LIGAS.keys()))]
         with c2:
             if plan=="dia":
-                fecha_s=st.date_input("Fecha",value=date.today()); modo="dia"
+                fecha_s=st.date_input("Fecha",value=None); modo="dia"
             else:
                 ops=["Hoy","Dia especifico","Esta semana","Semana personalizada"]
                 if plan in ("semana","mes"): ops.append("Dias de la semana")
@@ -2700,8 +2700,8 @@ def pantalla_pago(u,plan):
                     hoy=date.today(); lu=hoy-timedelta(days=hoy.weekday())
                     fd=lu; fh=lu+timedelta(days=6); modo="rango"
                 elif ml=="Semana personalizada":
-                    fd=st.date_input("Desde",value=date.today())
-                    fh=st.date_input("Hasta",value=date.today()+timedelta(days=6)); modo="rango"
+                    fd=st.date_input("Desde",value=None)
+                    fh=st.date_input("Hasta",value=None+timedelta(days=6)); modo="rango"
                 elif ml=="Dias de la semana":
                     dias_n=st.multiselect("Dias",["Lunes","Martes","Miercoles","Jueves","Viernes","Sabado","Domingo"])
                     modo="dias"
