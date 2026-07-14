@@ -27,59 +27,60 @@ ADMIN_PWD        = os.getenv("ADMIN_PASSWORD",   "scorpion_admin_2025")
 DB_PATH          = "/tmp/scorpion_v4.db"
 
 LIGAS = {
-    # ===== LIGAS TOP =====
-    "🏴󠁧󠁢󠁥󠁮 Premier League":  39,
-    "🇪🇸 La Liga":           140,
-    "🇩🇪 Bundesliga":        78,
-    "🇮🇹 Serie A":           135,
-    "🇫🇷 Ligue 1":           61,
-    "🇳🇱 Eredivisie":        88,
-    "🇵🇹 Primeira Liga":     94,
-    "🌍 Champions League":   2,
-    "🌍 Europa League":      3,
-    "🌍 Conference League":  848,
-    # ===== SURAMERICA =====
-    "🌎 Libertadores":       13,
-    "🌎 Sudamericana":       11,
-    "🇧🇷 Brasileirao":       71,
-    "🇧🇷 Serie B":          72,
-    "🇦🇷 Primera Division":  128,
-    "🇦🇷 Primera Nacional":  131,
-    "🇨🇱 Primera Division":  67,
-    "🇨🇷 Liga BetPlay":     239,
-    "🇺🇾 Primera Division":  73,
-    # ===== LIGAS B - ESPAÑA =====
-    "🇪🇸 La Liga 2":        141,
-    # ===== LIGAS B - INGLATERRA =====
-    "🏴󠁧󠁢󠁥󠁮 Championship": 40,
-    "🏴󠁧󠁢󠁥󠁮 League One":   41,
-    "🏴󠁧󠁢󠁥󠁮 League Two":   42,
-    # ===== LIGAS B - ALEMANIA =====
-    "🇩🇪 2. Bundesliga":    79,
-    # ===== LIGAS B - ITALIA =====
-    "🇮🇹 Serie B":          136,
-    # ===== LIGAS B - FRANCIA =====
-    "🇫🇷 Ligue 2":          63,
-    # ===== OTRAS AMERICAS =====
-    "🇺🇸 MLS":               253,
-    "🇲🇽 Liga MX":           262,
-    "🇲🇽 Liga MX Expansion": 2775,
+    # ===== LIGAS TOP (orden alfabético) =====
+    "🏩󠁧󠁢󠁥󠁮 Inglaterra - Premier League": 39,
+    "🇩🇪 Deutschland - Bundesliga": 78,
+    "🇪🇸 España - La Liga": 140,
+    "🇫🇷 France - Ligue 1": 61,
+    "🇮🇹 Italia - Serie A": 135,
+    "🇳🇱 Nederland - Eredivisie": 88,
+    "🇵🇹 Portugal - Primeira Liga": 94,
+    # ===== UEFA =====
+    "🌍 Champions League": 2,
+    "🌍 Europa League": 3,
+    "🌍 Conference League": 848,
+    # ===== SURAMÉRICA =====
+    "🇦🇷 Argentina - Primera Division": 128,
+    "🇦🇷 Argentina - Primera Nacional": 131,
+    "🇧🇷 Brasil - Brasileirao": 71,
+    "🇧🇷 Brasil - Serie B": 72,
+    "🇨🇱 Chile - Primera Division": 67,
+    "🇨🇷 Costa Rica - Liga BetPlay": 239,
+    "🌎 Libertadores": 13,
+    "🇺🇾 Uruguay - Primera Division": 73,
+    "🌎 Sudamericana": 11,
+    # ===== ESPAÑA =====
+    "🇪🇸 España - La Liga 2": 141,
+    # ===== INGLATERRA =====
+    "🏴󠁧󠁢󠁥󠁮 Inglaterra - Championship": 40,
+    "🏴󠁧󠁢󠁥󠁮 Inglaterra - League One": 41,
+    "🏴󠁧󠁢󠁥󠁮 Inglaterra - League Two": 42,
+    # ===== ALEMANIA =====
+    "🇩🇪 Deutschland - 2. Bundesliga": 79,
+    # ===== ITALIA =====
+    "🇮🇹 Italia - Serie B": 136,
+    # ===== FRANCIA =====
+    "🇫🇷 France - Ligue 2": 63,
+    # ===== AMÉRICA =====
+    "🇺🇸 USA - MLS": 253,
+    "🇲🇽 México - Liga MX": 262,
+    "🇲🇽 México - Liga MX Expansion": 2775,
     # ===== OTRAS EUROPA =====
-    "🇹🇷 Super Lig":         203,
-    "🇹🇷 1. Lig":           315,
-    "🇸🇦 Saudi Pro League":  307,
-    "🇬🇷 Super League Greece": 184,
-    "🇷🇺 Premier League":    235,
-    "🇧🇪 Jupiler League":    150,
-    "🇨🇭 Super League":      207,
-    "🇦🇹 Bundesliga Austria": 218,
-    "🇸🇪 Allsvenskan":      113,
-    "🇳🇴 Eliteserien":      105,
-    "🇩🇰 Superliga":         69,
-    "🇮🇪 Premier Division":  2006,
-    # ===== COPA INTERNACIONAL =====
-    "🌎 Copa America":       9,
-    "🌍 Mundial FIFA 2026":  1,
+    "🇦🇹 Austria - Bundesliga": 218,
+    "🇧🇪 Belgica - Jupiler League": 150,
+    "🇨🇭 Suiza - Super League": 207,
+    "🇩🇰 Dinamarca - Superliga": 69,
+    "🇬🇷 Grecia - Super League": 184,
+    "🇮🇪 Irlanda - Premier Division": 2006,
+    "🇳🇴 Noruega - Eliteserien": 105,
+    "🇷🇺 Rusia - Premier League": 235,
+    "🇸🇦 Saudi Arabia - Pro League": 307,
+    "🇸🇪 Suecia - Allsvenskan": 113,
+    "🇹🇷 Türkiye - Super Lig": 203,
+    "🇹🇷 Türkiye - 1. Lig": 315,
+    # ===== TORNEOS INTERNACIONALES =====
+    "🌎 Copa America": 9,
+    "🌍 Mundial FIFA 2026": 1,
 }
 
 PROM_LIGA = {
@@ -2919,18 +2920,27 @@ def pantalla_pago(u,plan):
     with tabs[0]:
         st.markdown("### Selecciona liga y periodo")
 
-        # Mostrar ligas activas hoy
+        # Mostrar ligas activas hoy (con lógica del Mundial)
         with st.expander("⚡ Ver ligas con partidos HOY", expanded=False):
             st.caption("Consultando API-Football para ligas activas hoy...")
             hoy_str2 = get_hoy()
+            fecha_hoy = get_hoy_date()
             ligas_activas_hoy = []
-            for ln, lid in list(LIGAS.items())[:8]:  # revisar primeras 8 para no agotar requests
+            
+            # MUNDIAL 2026: Solo del 8 al 20 de julio 2026
+            if fecha_hoy.year == 2026 and fecha_hoy.month == 7 and 8 <= fecha_hoy.day <= 20:
+                ligas_activas_hoy.append(("🌍 Mundial FIFA 2026", 2))
+            
+            # Otras ligas - buscar en API
+            for ln, lid in list(LIGAS.items())[:15]:  # revisar primeras 15
+                if "mundial" in ln.lower(): continue  # skip Mundial (ya lo agregamos)
                 try:
                     fx_test = get_fx_dia(lid, hoy_str2)
                     if fx_test:
                         ligas_activas_hoy.append((ln, len(fx_test)))
                     time.sleep(0.3)
                 except: pass
+            
             if ligas_activas_hoy:
                 for ln, cnt in ligas_activas_hoy:
                     st.markdown(f"✅ **{ln}** — {cnt} partidos hoy")
