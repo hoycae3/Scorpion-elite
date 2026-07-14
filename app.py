@@ -2800,15 +2800,6 @@ def pantalla_principal():
         
         st.markdown("</div>")
         
-        st.markdown("""
-        <div style="background: #0d0d18; padding: 15px; border-radius: 8px;">
-            <div style="color: #ffd700; font-weight: bold; margin-bottom: 10px;">⚠️ Estado del Sistema</div>
-            <div style="color: #00ee66; margin: 5px 0;">✅ Motor activo</div>
-            <div style="color: #00ee66; margin: 5px 0;">🌐 Web scraping listo</div>
-            <div style="color: #ffd700; margin: 5px 0;">📊 4 modelos activos</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
         # Botón para ir a análisis
         st.markdown("---")
         if st.button("📊 Ir a Análisis Completo →", use_container_width=True):
