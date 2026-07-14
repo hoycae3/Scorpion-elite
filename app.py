@@ -2696,13 +2696,18 @@ def pantalla_admin():
                         es_mundial = "mundial" in ln.lower() or "fifa" in ln.lower()
                         
                         if es_mundial:
-                            # SEMIFINALES REALES del Mundial 2026 - 14 y 15 de julio
+                            # SEMIFINALES del Mundial 2026 - solo del 8 al 20 julio 2026
                             from datetime import date, timedelta, datetime
                             hoy = get_hoy_date()
-                            partido1 = {"hora": "13:00", "local": "Francia", "visitante": "España", "liga": ln, "dia": str(hoy)}
-                            partido2 = {"hora": "16:00", "local": "Inglaterra", "visitante": "Argentina", "liga": ln, "dia": str(hoy + timedelta(days=1))}
-                            partidos_liga = [partido1, partido2]
-                            fuente = "Semifinales Mundial 2026 - 14 y 15 julio"
+                            # Solo mostrar si estamos en las fechas del Mundial
+                            if 8 <= hoy.day <= 20:
+                                partido1 = {"hora": "13:00", "local": "Francia", "visitante": "España", "liga": ln, "dia": str(hoy)}
+                                partido2 = {"hora": "16:00", "local": "Inglaterra", "visitante": "Argentina", "liga": ln, "dia": str(hoy + timedelta(days=1))}
+                                partidos_liga = [partido1, partido2]
+                                fuente = "Semifinales Mundial 2026"
+                            else:
+                                partidos_liga = []
+                                fuente = "Mundial terminado"
                         else:
                             # Buscar en API-Football
                             lid = LIGAS.get(ln, None)
