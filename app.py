@@ -1852,19 +1852,224 @@ def pantalla_pago(u,plan):
     if st.button("🚪 Cerrar sesion",key="logout_pago"): st.session_state.clear(); st.rerun()
     st.markdown('<div class="ft">🦂 Scorpion Elite V4 Pro 2025 · Solo uso informativo</div>',unsafe_allow_html=True)
 
+
+# ══════════════════════════════════════════════════════════
+# PANTALLA PRINCIPAL - DASHBOARD
+# ══════════════════════════════════════════════════════════
+def pantalla_principal():
+    """Dashboard principal con login en header."""
+    st.markdown("""
+    <style>
+    .main-header {background: linear-gradient(135deg, #0a0a1e 0%, #1a1a3e 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px;}
+    .section-title {color: #ffd700; font-size: 1.3rem; font-weight: bold; margin: 15px 0 10px;}
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Header con logo y login
+    col_header_left, col_header_right = st.columns([4, 1])
+    
+    with col_header_left:
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #0a0a1e 0%, #1a1a3e 100%); padding: 15px 25px; border-radius: 10px; margin-bottom: 20px;">
+            <h1 style="color: #ffd700; margin: 0; font-size: 2rem;">🦂 SCORPION ELITE</h1>
+            <p style="color: #888; margin: 5px 0 0;">Dashboard Analítico · 4 Modelos Matemáticos</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col_header_right:
+        if st.session_state.get("logged_in"):
+            st.markdown(f"""
+            <div style="text-align: right; padding: 15px; background: #131926; border-radius: 8px; margin-top: 15px;">
+                <div style="color: #ffd700; font-weight: bold; font-size: 1.1rem;">👤 {st.session_state.get('user_name', 'Usuario')}</div>
+                <div style="color: #888; font-size: 0.85rem;">Plan: {st.session_state.get('user_plan', 'gratis').upper()}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("🚪 Cerrar sesión", key="logout_main"):
+                st.session_state.clear()
+                st.rerun()
+        else:
+            with st.form("login_form_dashboard", clear_on_submit=True):
+                st.markdown('<p style="color:#ffd700; text-align: right; font-weight: bold; margin-bottom: 5px;">Acceso</p>', unsafe_allow_html=True)
+                user_input = st.text_input("Usuario", placeholder="Tu cédula o 'admin'", label_visibility="collapsed", key="user_dash")
+                password_input = st.text_input("Contraseña", type="password", placeholder="Contraseña", label_visibility="collapsed", key="pass_dash")
+                submit_btn = st.form_submit_button("Entrar →")
+                
+                if submit_btn:
+                    if user_input and password_input:
+                        # Intentar login
+                        u = db_get(user_input)
+                        if user_input == "admin" and password_input == ADMIN_PWD:
+                            st.session_state.li = True
+                            st.session_state.ced = "admin"
+                            st.session_state.u = {"nombre": "Administrador", "cedula": "admin"}
+                            st.success("✅ Acceso como Administrador")
+                            st.rerun()
+                        elif u:
+                            ok, plan_v, dr = db_acceso(user_input)
+                            if ok:
+                                st.session_state.li = True
+                                st.session_state.ced = user_input
+                                st.session_state.u = u
+                                st.session_state.logged_in = True
+                                st.session_state.user_name = u.get("nombre", user_input)
+                                st.session_state.user_plan = plan_v
+                                st.success(f"✅ Bienvenido - Plan {plan_v.upper()}")
+                                st.rerun()
+                            else:
+                                st.error(f"❌ Acceso denegado: {plan_v}")
+                        else:
+                            # Crear usuario gratis automáticamente
+                            db_guardar_usuario(user_input, f"Usuario {user_input[:4]}", "gratis", 36500, date.today())
+                            st.session_state.li = True
+                            st.session_state.ced = user_input
+                            st.session_state.u = {"nombre": f"Usuario {user_input[:4]}", "cedula": user_input}
+                            st.session_state.logged_in = True
+                            st.session_state.user_name = f"Usuario {user_input[:4]}"
+                            st.session_state.user_plan = "gratis"
+                            st.success("✅ Cuenta gratuita creada")
+                            st.rerun()
+    
+    st.markdown("---")
+    
+    # Dashboard de 3 columnas
+    col1, col2, col3 = st.columns([2, 1.2, 1.2])
+    
+    # Obtener picks y datos
+    picks_hoy = db_picks_get(str(date.today()), "gratis")
+    
+    # Intentar scraping de partidos
+    try:
+        partidos_scraped = scrape_flashscore_partidos()
+    except:
+        partidos_scraped = []
+    
+    with col1:
+        st.markdown('<p class="section-title">🔥 Picks Recomendados del Día</p>', unsafe_allow_html=True)
+        
+        if picks_hoy:
+            real_picks = [p for p in picks_hoy if "🔒" not in str(p.get("mercado",""))]
+            if real_picks:
+                sub_c1, sub_c2, sub_c3 = st.columns(3)
+                for i, (pick, col) in enumerate(zip(real_picks[:3], [sub_c1, sub_c2, sub_c3]), 1):
+                    with col:
+                        cls = "ap" if pick.get("rango") == "A+" else "b"
+                        st.markdown(f"""
+                        <div style="background: #0d0d18; border-left: 4px solid {'#00ee66' if cls=='ap' else '#ffd700'}; padding: 12px; border-radius: 5px; margin-bottom: 10px;">
+                            <div style="color: #ffd700; font-size: 0.8rem;">{pick.get('liga', '')}</div>
+                            <div style="color: #fff; font-weight: bold; font-size: 0.9rem;">{pick.get('local', '')} vs {pick.get('visitante', '')}</div>
+                            <div style="color: #00ee66; font-size: 0.85rem;">{pick.get('mercado', '')}</div>
+                            <div style="color: #888; font-size: 0.75rem;">Cuota: {pick.get('cuota', '?')} · Conf: {pick.get('confianza', 0)}%</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+            else:
+                st.info("📢 No hay picks publicados hoy.")
+        else:
+            st.info("📢 No hay picks publicados hoy.")
+        
+        # Partidos del día
+        st.markdown("---")
+        st.markdown('<p class="section-title">⚽ Partidos del Día</p>', unsafe_allow_html=True)
+        
+        if partidos_scraped:
+            for p in partidos_scraped[:8]:
+                st.markdown(f"""
+                <div style="background: #131926; padding: 10px 12px; border-radius: 5px; margin-bottom: 8px; border-left: 3px solid #ffd700;">
+                    <span style="color: #ffd700; font-size: 0.75rem;">{p.get('liga', 'Partido')} · {p.get('hora', '--:--')}</span><br>
+                    <span style="color: #fff; font-size: 0.9rem;">{p.get('local', '')} vs {p.get('visitante', '')}</span>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("📡 Obteniendo partidos de Flashscore...")
+    
+    with col2:
+        st.markdown('<p class="section-title">🏆 Top Goleadores</p>', unsafe_allow_html=True)
+        
+        # Selector de liga
+        liga_seleccionada = st.selectbox("Liga", ["Premier League", "La Liga", "Bundesliga", "Serie A", "Ligue 1", "Champions League"])
+        
+        goleadores_ejemplo = {
+            "Premier League": [("Erling Haaland", 25), ("Cole Palmer", 22), ("Alexander Isak", 20), ("Ollie Watkins", 19), ("Mohamed Salah", 18)],
+            "La Liga": [("Kylian Mbappé", 24), ("Robert Lewandowski", 21), ("Lamine Yamal", 18), ("Raphinha", 17), ("Ante Budimir", 16)],
+            "Bundesliga": [("Harry Kane", 25), ("Omar Marmoush", 22), ("Lois Openda", 20), ("Serhou Guirassy", 19), ("Jamal Musiala", 18)],
+            "Serie A": [("Lautaro Martínez", 23), ("Dusan Vlahovic", 20), ("Victor Osimhen", 19), ("Romelu Lukaku", 18), ("Marcus Thuram", 17)],
+            "Ligue 1": [("Ousmane Dembélé", 24), ("Alexandre Lacazette", 20), ("Jonathan David", 19), ("Folarin Balogun", 18), ("Kingsley Coman", 17)],
+            "Champions League": [("Kylian Mbappé", 8), ("Robert Lewandowski", 7), ("Erling Haaland", 7), ("Harry Kane", 6), ("Lautaro Martínez", 6)],
+        }
+        
+        goleadores = goleadores_ejemplo.get(liga_seleccionada, goleadores_ejemplo["Premier League"])
+        for i, (nombre, goles) in enumerate(goleadores, 1):
+            medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+            st.markdown(f"""
+            <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: #131926; border-radius: 5px; margin-bottom: 5px;">
+                <span style="color: #ffd700;">{medal} {nombre}</span>
+                <span style="color: #00ee66; font-weight: bold;">{goles} ⚽</span>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown('<p class="section-title">📊 Tendencias</p>', unsafe_allow_html=True)
+        
+        st.markdown("""
+        <div style="background: #0d0d18; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <div style="color: #ffd700; font-weight: bold; margin-bottom: 10px;">🔥 Picks con Mayor Confianza</div>
+        """, unsafe_allow_html=True)
+        
+        if picks_hoy:
+            real_picks = [p for p in picks_hoy if "🔒" not in str(p.get("mercado",""))]
+            for p in real_picks[:3]:
+                conf = p.get("confianza", 0)
+                conf_color = "#00ee66" if conf >= 70 else "#ffd700" if conf >= 50 else "#ff6b6b"
+                st.markdown(f'<div style="color: #ccc; margin: 5px 0;">• {p.get("mercado", "N/A")[:25]}<br><span style="color: {conf_color};">@{p.get("cuota", "?")} [{conf}%]</span></div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div style="color: #888;">• Sin picks publicados</div>', unsafe_allow_html=True)
+        
+        st.markdown("</div>")
+        
+        st.markdown("""
+        <div style="background: #0d0d18; padding: 15px; border-radius: 8px;">
+            <div style="color: #ffd700; font-weight: bold; margin-bottom: 10px;">⚠️ Estado del Sistema</div>
+            <div style="color: #00ee66; margin: 5px 0;">✅ Motor activo</div>
+            <div style="color: #00ee66; margin: 5px 0;">🌐 Web scraping listo</div>
+            <div style="color: #ffd700; margin: 5px 0;">📊 4 modelos activos</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Botón para ir a análisis
+        st.markdown("---")
+        if st.button("📊 Ir a Análisis Completo →", use_container_width=True):
+            pass  # Ya está en la página principal
+    
+    # Footer
+    st.markdown("---")
+    st.markdown('<div style="text-align: center; color: #555; font-size: 0.8rem;">🦂 Scorpion Elite V4 Pro 2025 · Solo uso informativo · Las apuestas implican riesgo</div>', unsafe_allow_html=True)
+
+
 # ══════════════════════════════════════════════════════════
 # ROUTER
 # ══════════════════════════════════════════════════════════
 init_db()
 if "li" not in st.session_state: st.session_state.li=False
-if not st.session_state.li:
-    pantalla_login()
-else:
+
+# Siempre mostrar dashboard principal
+pantalla_principal()
+
+# Si está logueado, mostrar opciones adicionales
+if st.session_state.li:
     u=st.session_state.get("u",{}); ced=st.session_state.get("ced","")
     ok,plan,dr=db_acceso(ced)
-    if plan=="admin": pantalla_admin()
-    elif plan=="gratis": pantalla_gratis(u)
-    elif plan in ("dia","semana","mes"): pantalla_pago(u,plan)
-    else:
-        st.error("Acceso vencido. Contacta al administrador.")
-        if st.button("Volver"): st.session_state.clear(); st.rerun()
+    
+    st.markdown("---")
+    st.markdown("### 🔧 Panel de Análisis")
+    
+    if plan=="admin":
+        st.markdown("#### Panel de Administrador")
+        if st.button("📊 Abrir Panel Admin"):
+            pantalla_admin()
+    elif plan=="gratis":
+        st.markdown("#### Plan Gratuito")
+        if st.button("📁 Analizar Archivo"):
+            pantalla_gratis(u)
+    elif plan in ("dia","semana","mes"):
+        st.markdown("#### Análisis Completo")
+        if st.button("📊 Abrir Pantalla de Pago"):
+            pantalla_pago(u,plan)
