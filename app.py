@@ -1558,53 +1558,132 @@ def calcular(gml,gcl,gmv,gcv,liga,elo_l=None,elo_v=None):
 # ══════════════════════════════════════════════════════════
 # SCRAPING MUNDIAL FIFA 2026
 # ══════════════════════════════════════════════════════════
-def scrape_mundial_partidos():
-    """Busca partidos del Mundial FIFA 2026 en Flashscore."""
+def scrape_mundial_2026():
+    """
+    Busca partidos del Mundial 2026 en múltiples fuentes.
+    Retorna lista de partidos con datos.
+    """
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+    }
+    
+    partidos = []
+    
+    # 1. Soccerway - TIENE MUNDIAL 2026
     try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        }
-        # Flashscore Mundial 2026
-        url = "https://www.flashscore.mx/futbol/mundial/"
+        url = "https://es.soccerway.com/competitions/world-cup/matches/"
+        r = requests.get(url, headers=headers, timeout=15)
         
-        response = requests.get(url, headers=headers, timeout=10)
-        if response.status_code != 200:
-            return None
-        
-        from bs4 import BeautifulSoup
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        partidos = []
-        
-        # Buscar en la página los partidos
-        for evento in soup.select('.event__match'):
-            try:
-                hora = evento.select_one('.event__time')
-                time_text = hora.text.strip() if hora else ""
-                
-                # Nombres de equipos
-                equipos = evento.select('.event__participant')
-                if len(equipos) >= 2:
-                    local = equipos[0].text.strip()
-                    visitante = equipos[1].text.strip()
-                    
-                    # Solo agregar si son equipos del Mundial
-                    if local and visitante:
-                        partidos.append({
-                            "hora": time_text,
-                            "local": local,
-                            "visitante": visitante,
-                            "liga": "🌍 Mundial FIFA 2026"
-                        })
-            except:
-                continue
-        
-        return partidos if partidos else None
-        
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, "html.parser")
+            
+            # Buscar tablas de partidos
+            tables = soup.select("table.matches")
+            for table in tables:
+                rows = table.select("tbody tr")
+                for row in rows:
+                    try:
+                        cols = row.select("td")
+                        if len(cols) >= 4:
+                            # Extraer datos
+                            fecha = cols[0].get_text(strip=True)
+                            hora = cols[1].get_text(strip=True)
+                            local = cols[2].get_text(strip=True)
+                            visitante = cols[3].get_text(strip=True)
+                            
+                            # Filtrar solo partidos de fase final
+                            if any(x in str(fecha) for x in ["Jul", "14", "15", "Semi"]):
+                                if local and visitante:
+                                    partidos.append({
+                                        "liga": "🌍 Mundial FIFA 2026",
+                                        "dia": "2026-07-14",
+                                        "hora": hora or "00:00",
+                                        "local": local,
+                                        "visitante": visitante,
+                                        "fuente": "Soccerway"
+                                    })
+                    except:
+                        pass
     except Exception as e:
-        print(f"Error scraping Mundial: {e}")
-        return None
+        print(f"Soccerway error: {e}")
+    
+    # 2. FBref - Mundial 2026
+    try:
+        url = "https://fbref.com/en/comps/1/world-cup-2026/Men-World-Cup-2026"
+        r = requests.get(url, headers=headers, timeout=15)
+        
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, "html.parser")
+            
+            # Buscar partidos de eliminación directa
+            matches = soup.select(".score")
+            for match in matches:
+                try:
+                    parent = match.parent
+                    text = parent.get_text()
+                    
+                    # Extraer equipos
+                    teams = parent.select(".team")
+                    if len(teams) >= 2:
+                        local = teams[0].get_text(strip=True)
+                        visitante = teams[1].get_text(strip=True)
+                        score = match.get_text(strip=True)
+                        
+                        if local and visitante:
+                            partidos.append({
+                                "liga": "🌍 Mundial FIFA 2026",
+                                "dia": "2026-07-14",
+                                "hora": "00:00",
+                                "local": local,
+                                "visitante": visitante,
+                                "marcador": score,
+                                "fuente": "FBref"
+                            })
+                except:
+                    pass
+    except Exception as e:
+        print(f"FBref error: {e}")
+    
+    # 3. Transfermarkt - Mundial
+    try:
+        url = "https://www.transfermarkt.com/weltmeisterschaft-2026/spielplan"
+        r = requests.get(url, headers=headers, timeout=15)
+        
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, "html.parser")
+            
+            # Buscar finales
+            tables = soup.select(".items")
+            for table in tables:
+                rows = table.select("tr")
+                for row in rows:
+                    cols = row.select("td")
+                    if len(cols) >= 3:
+                        try:
+                            fecha = cols[0].get_text(strip=True)
+                            local = cols[1].get_text(strip=True)
+                            visitante = cols[2].get_text(strip=True)
+                            
+                            if "14.07" in fecha or "15.07" in fecha:
+                                if local and visitante:
+                                    partidos.append({
+                                        "liga": "🌍 Mundial FIFA 2026",
+                                        "dia": "2026-07-14",
+                                        "hora": "00:00",
+                                        "local": local,
+                                        "visitante": visitante,
+                                        "fuente": "Transfermarkt"
+                                    })
+                        except:
+                            pass
+    except Exception as e:
+        print(f"Transfermarkt error: {e}")
+    
+    return partidos
+
+
 
 def get_mundial_partidos():
     """Obtiene partidos del Mundial, con fallback a datos locales."""
