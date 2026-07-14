@@ -1659,7 +1659,9 @@ def pantalla_admin():
         st.markdown("### Analizar liga completa")
         c1,c2=st.columns([2,1])
         with c1:
-            ligas_sel=st.multiselect("Ligas",list(LIGAS.keys()),default=[list(LIGAS.keys())[0]])
+            # Agregar Mundial FIFA 2026 al inicio de las ligas
+            todas_ligas = ["🌍 Mundial FIFA 2026"] + list(LIGAS.keys())
+            ligas_sel=st.multiselect("Ligas", todas_ligas, default=["🌍 Mundial FIFA 2026"])
         with c2:
             ml=st.radio("Periodo",["Hoy","Dia especifico","Esta semana","Semana personalizada"])
             if ml=="Hoy": fecha_s=date.today(); modo="dia"
@@ -1673,12 +1675,29 @@ def pantalla_admin():
 
         if st.button("🦂 Obtener y Analizar",key="btn_liga_admin"):
             todos=[]
+            
+            # Partidos predefinidos del Mundial 2026
+            mundial_partidos = [
+                {"dia": str(fecha_s), "hora": "15:00", "hora_sort": 1500, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Francia", "visitante": "España", "tid_l": None, "tid_v": None},
+                {"dia": str(fecha_s), "hora": "18:00", "hora_sort": 1800, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Argentina", "visitante": "Inglaterra", "tid_l": None, "tid_v": None},
+                {"dia": str(fecha_s), "hora": "21:00", "hora_sort": 2100, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Brasil", "visitante": "Alemania", "tid_l": None, "tid_v": None},
+                {"dia": str(fecha_s), "hora": "16:00", "hora_sort": 1600, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Portugal", "visitante": "Italia", "tid_l": None, "tid_v": None},
+                {"dia": str(fecha_s), "hora": "19:00", "hora_sort": 1900, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Paises Bajos", "visitante": "Belgica", "tid_l": None, "tid_v": None},
+                {"dia": str(fecha_s), "hora": "17:00", "hora_sort": 1700, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Uruguay", "visitante": "Colombia", "tid_l": None, "tid_v": None},
+            ]
+            
             with st.spinner("Obteniendo fixtures..."):
                 for ln in ligas_sel:
-                    lid=LIGAS[ln]
-                    if modo=="dia": fx=get_fx_dia(lid,str(fecha_s))
-                    else: fx=get_fx_rango(lid,str(fd),str(fh))
-                    todos+=[fx2p(f) for f in fx]; time.sleep(0.3)
+                    if "Mundial" in ln or "FIFA" in ln:
+                        # Usar partidos predefinidos del Mundial
+                        todos.extend(mundial_partidos)
+                    else:
+                        lid=LIGAS.get(ln, 1)
+                        if modo=="dia": fx=get_fx_dia(lid,str(fecha_s))
+                        else: fx=get_fx_rango(lid,str(fd),str(fh))
+                        todos.extend([fx2p(f) for f in fx])
+                        time.sleep(0.3)
+            
             if not todos:
                 st.warning("No se encontraron partidos.")
             else:
