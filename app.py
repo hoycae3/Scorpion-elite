@@ -632,8 +632,8 @@ def calcular(gml,gcl,gmv,gcv,liga,elo_l=None,elo_v=None):
     tiros_tot = round(tiros_l + tiros_v, 1)
     
     # Atajadas estimadas del portero
-    atajadas_l = round(max(1.0, gcv * 2.5), 1)  # Más goles recibe = más atajadas
-    atajadas_v = round(max(1.0, gcl * 2.5), 1)
+    atajadas_l = round(max(1.0, (gcv or 1.0) * 2.5), 1)  # Más goles recibe = más atajadas
+    atajadas_v = round(max(1.0, (gcl or 1.0) * 2.5), 1)
     
     # Calcular edge para cada mercado (valor = probabilidad - cuota_justa)
     def calcular_edge(prob, cuota_mercado=1.95):
