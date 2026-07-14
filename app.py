@@ -10,8 +10,12 @@ warnings.filterwarnings("ignore")
 
 
 def get_hoy():
-    """Obtiene la fecha de hoy de forma segura para Streamlit."""
+    """Obtiene la fecha de hoy como string ISO para Streamlit."""
     return date.today().isoformat()
+
+def get_hoy_date():
+    """Obtiene la fecha de hoy como objeto date para cálculos."""
+    return date.today()
 
 # ══════════════════════════════════════════════════════════
 # CONFIG
@@ -1608,7 +1612,7 @@ def get_mundial_partidos():
     
     # SEMIFINALES REALES del Mundial 2026 - 14 y 15 de julio
     from datetime import date, timedelta, datetime
-    hoy = get_hoy()
+    hoy = get_hoy_date()
     return [
         {"hora": "13:00", "liga": "🌍 Mundial FIFA 2026", "local": "Francia", "visitante": "España", "dia": str(hoy)},
         {"hora": "16:00", "liga": "🌍 Mundial FIFA 2026", "local": "Inglaterra", "visitante": "Argentina", "dia": str(hoy + timedelta(days=1))},
@@ -2591,7 +2595,7 @@ def pantalla_admin():
                 modo = "dia"
                 fecha_str = str(fecha_s)
             else:  # Esta semana
-                hoy = get_hoy()
+                hoy = get_hoy_date()
                 lu = hoy - timedelta(days=hoy.weekday())
                 fecha_s = lu
                 fecha_str = f"{lu} al {lu + timedelta(days=6)}"
@@ -2613,7 +2617,7 @@ def pantalla_admin():
                         if es_mundial:
                             # SEMIFINALES REALES del Mundial 2026 - 14 y 15 de julio
                             from datetime import date, timedelta, datetime
-                            hoy = get_hoy()
+                            hoy = get_hoy_date()
                             partido1 = {"hora": "13:00", "local": "Francia", "visitante": "España", "liga": ln, "dia": str(hoy)}
                             partido2 = {"hora": "16:00", "local": "Inglaterra", "visitante": "Argentina", "liga": ln, "dia": str(hoy + timedelta(days=1))}
                             partidos_liga = [partido1, partido2]
@@ -3214,7 +3218,7 @@ def pantalla_principal():
         
         # SEMIFINALES del Mundial 2026 - 14 y 15 de julio
         from datetime import date, timedelta, datetime
-        hoy = get_hoy()
+        hoy = get_hoy_date()
         partidos_hoy = [
             {"hora": "13:00", "liga": "🏆 Mundial 2026", "local": "Francia", "visitante": "España", "dia": str(hoy)},
             {"hora": "16:00", "liga": "🏆 Mundial 2026", "local": "Inglaterra", "visitante": "Argentina", "dia": str(hoy + timedelta(days=1))},
