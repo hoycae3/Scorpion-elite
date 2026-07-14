@@ -1374,18 +1374,30 @@ def pantalla_admin():
                            "liga":liga_i,"liga_id":0,"local":local_i,"visitante":visita_i,
                            "tid_l":None,"tid_v":None}
                 with st.spinner(f"Analizando {local_i} vs {visita_i}..."):
+                    es_mundial = "mundial" in liga_i.lower() or "fifa" in liga_i.lower()
+                    
                     if usar_api_i:
-                        # Buscar liga_id automaticamente si el nombre coincide
-                        liga_i_lower = liga_i.lower()
-                        liga_id_auto = next((v for k,v in LIGAS.items() if
-                                            any(w in liga_i_lower for w in k.lower().split()
-                                                if len(w)>3)), None)
-                        sl_det=obtener_stats_detalle(local_i, liga_i, lid=liga_id_auto)
-                        sv_det=obtener_stats_detalle(visita_i, liga_i, lid=liga_id_auto)
-                        gml=sl_det["gm"] if sl_det["ok"] else None; gcl=sl_det["gc"] if sl_det["ok"] else None
-                        gmv=sv_det["gm"] if sv_det["ok"] else None; gcv=sv_det["gc"] if sv_det["ok"] else None
-                        elo_l=sl_det["elo"]; elo_v=sv_det["elo"]
-                        fl=sl_det["fuente"]; fv=sv_det["fuente"]
+                        if es_mundial:
+                            # Usar datos del Mundial 2026
+                            sl_det=obtener_stats_mundial(local_i)
+                            sv_det=obtener_stats_mundial(visita_i)
+                        else:
+                            # Buscar liga_id automaticamente si el nombre coincide
+                            liga_i_lower = liga_i.lower()
+                            liga_id_auto = next((v for k,v in LIGAS.items() if
+                                                any(w in liga_i_lower for w in k.lower().split()
+                                                    if len(w)>3)), None)
+                            sl_det=obtener_stats_detalle(local_i, liga_i, lid=liga_id_auto)
+                            sv_det=obtener_stats_detalle(visita_i, liga_i, lid=liga_id_auto)
+                        
+                        gml=sl_det["gm"] if sl_det.get("ok") else None
+                        gcl=sl_det["gc"] if sl_det.get("ok") else None
+                        gmv=sv_det["gm"] if sv_det.get("ok") else None
+                        gcv=sv_det["gc"] if sv_det.get("ok") else None
+                        elo_l=sl_det.get("elo", 1900)
+                        elo_v=sv_det.get("elo", 1900)
+                        fl=sl_det.get("fuente","Prom.liga")
+                        fv=sv_det.get("fuente","Prom.liga")
                     else:
                         sl_det={}; sv_det={}
                         gml=gcl=gmv=gcv=elo_l=elo_v=None; fl=fv="Manual"
