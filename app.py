@@ -2662,28 +2662,52 @@ def pantalla_admin():
         st.info("Selecciona 1 o más ligas y el período. Verás los partidos encontrados antes de analizar.")
         
         c1,c2=st.columns([2,1])
-        with c1:
-            todas_ligas = ["🌍 Mundial FIFA 2026"] + list(LIGAS.keys())
-            ligas_sel = st.multiselect("🏆 Selecciona ligas", todas_ligas, 
-                                       help="Puedes seleccionar varias ligas a la vez")
+        
+        # Seleccionar fecha primero
         with c2:
             ml = st.radio("📅 Período", ["Hoy", "Día específico", "Esta semana"], horizontal=True)
             if ml == "Hoy":
-                fecha_s = get_hoy()
-                modo = "dia"
+                fecha_s = get_hoy_date()
                 fecha_str = str(fecha_s)
+                modo = "dia"
             elif ml == "Día específico":
-                fecha_s = st.date_input("Fecha", key="fa_admin")
-                modo = "dia"
+                fecha_s = st.date_input("Fecha", key="fa_admin", value=get_hoy_date())
                 fecha_str = str(fecha_s)
-            else:  # Esta semana
+                modo = "dia"
+            else:
                 hoy = get_hoy_date()
                 lu = hoy - timedelta(days=hoy.weekday())
                 fecha_s = lu
                 fecha_str = f"{lu} al {lu + timedelta(days=6)}"
                 modo = "semana"
         
-        # Botón para buscar partidos
+        # Buscar ligas con partidos
+        with st.spinner("🔍 Buscando ligas..."):
+            ligas_activas = []
+            
+            # MUNDIAL 2026
+            if fecha_s.year == 2026 and fecha_s.month == 7 and 8 <= fecha_s.day <= 20:
+                ligas_activas.append("🌍 Mundial FIFA 2026")
+            
+            # Otras ligas de API
+            for ln, lid in list(LIGAS.items())[:15]:
+                if "mundial" in ln.lower(): continue
+                try:
+                    fx = get_fx_dia(lid, str(fecha_s))
+                    if fx:
+                        ligas_activas.append(ln)
+                    time.sleep(0.2)
+                except: pass
+        
+        with c1:
+            if ligas_activas:
+                st.success(f"✅ {len(ligas_activas)} liga(s) con partidos: {fecha_str}")
+                default_ligas = ligas_activas[:3] if len(ligas_activas) >= 3 else ligas_activas
+                ligas_sel = st.multiselect("🏆 Selecciona ligas", ligas_activas, default=default_ligas)
+            else:
+                st.warning("⚠️ No hay partidos para esta fecha")
+                ligas_sel = st.multiselect("🏆 Selecciona ligas", list(LIGAS.keys()))
+
         if st.button("🔍 BUSCAR PARTIDOS", key="btn_buscar_partidos", type="primary"):
             if not ligas_sel:
                 st.warning("⚠️ Selecciona al menos una liga")
