@@ -740,7 +740,7 @@ def scrape_goleadores_tiempo_real(liga_nombre):
     global GOLEADORES_CACHE
     
     # Verificar cache (5 minutos)
-    cache_key = f"{liga_nombre}_{date.today()}"
+    cache_key = f"{liga_nombre}_{get_hoy()}"
     if cache_key in GOLEADORES_CACHE:
         return GOLEADORES_CACHE[cache_key]
     
@@ -1260,8 +1260,8 @@ def db_acceso(cedula):
     if u["es_admin"]: return True,"admin",99999
     if u["plan"]=="gratis": return True,"gratis",99999
     inicio=date.fromisoformat(u["fecha_inicio"])
-    vence=inicio+timedelta(days=u["dias"]); dr=(vence-date.today()).days
-    if date.today()>vence: return False,"vencido",0
+    vence=inicio+timedelta(days=u["dias"]); dr=(vence-get_hoy()).days
+    if get_hoy()>vence: return False,"vencido",0
     return True,u["plan"],dr
 
 def db_login_admin(pwd):
@@ -1608,7 +1608,7 @@ def get_mundial_partidos():
     
     # SEMIFINALES REALES del Mundial 2026 - 14 y 15 de julio
     from datetime import date, timedelta, datetime
-    hoy = date.today()
+    hoy = get_hoy()
     return [
         {"hora": "13:00", "liga": "🌍 Mundial FIFA 2026", "local": "Francia", "visitante": "España", "dia": str(hoy)},
         {"hora": "16:00", "liga": "🌍 Mundial FIFA 2026", "local": "Inglaterra", "visitante": "Argentina", "dia": str(hoy + timedelta(days=1))},
@@ -2315,7 +2315,7 @@ def pantalla_login():
         else:
             u=db_get(ced.strip())
             if not u:
-                db_guardar_usuario(ced.strip(),f"Usuario {ced.strip()[:6]}","gratis",36500,date.today())
+                db_guardar_usuario(ced.strip(),f"Usuario {ced.strip()[:6]}","gratis",36500,get_hoy())
                 u=db_get(ced.strip())
             ok,plan,dr=db_acceso(ced.strip())
             if not ok: st.error("Acceso vencido o inactivo. Contacta al administrador.")
@@ -2560,7 +2560,7 @@ def pantalla_admin():
                 if st.button("📢 PUBLICAR PICKS SELECCIONADOS", key="pub_sel"):
                     for pk in picks_sel:
                         det_str = f"xG:{r.get('xl',0)}-{r.get('xv',0)} | O2.5:{r.get('over25',0)}% | BTTS:{r.get('btts_si',0)}% | Tiros:~{r.get('tiros_tot',0)} | Corners:{r.get('corners_str','')}"
-                        db_pick_guardar(str(r.get("dia",date.today())),pk["liga"],pk["local"],pk["visitante"],
+                        db_pick_guardar(str(r.get("dia",get_hoy())),pk["liga"],pk["local"],pk["visitante"],
                                         pk["hora"],pk["mercado"],det_str,pk["cuota"],pk["edge"],
                                         pk["confianza"],pk["rango"],notas_pub,plan_pub,0)
                     st.success(f"✅ {len(picks_sel)} picks publicados!")
@@ -2583,7 +2583,7 @@ def pantalla_admin():
         with c2:
             ml = st.radio("📅 Período", ["Hoy", "Día específico", "Esta semana"], horizontal=True)
             if ml == "Hoy":
-                fecha_s = date.today()
+                fecha_s = get_hoy()
                 modo = "dia"
                 fecha_str = str(fecha_s)
             elif ml == "Día específico":
@@ -2591,7 +2591,7 @@ def pantalla_admin():
                 modo = "dia"
                 fecha_str = str(fecha_s)
             else:  # Esta semana
-                hoy = date.today()
+                hoy = get_hoy()
                 lu = hoy - timedelta(days=hoy.weekday())
                 fecha_s = lu
                 fecha_str = f"{lu} al {lu + timedelta(days=6)}"
@@ -2613,7 +2613,7 @@ def pantalla_admin():
                         if es_mundial:
                             # SEMIFINALES REALES del Mundial 2026 - 14 y 15 de julio
                             from datetime import date, timedelta, datetime
-                            hoy = date.today()
+                            hoy = get_hoy()
                             partido1 = {"hora": "13:00", "local": "Francia", "visitante": "España", "liga": ln, "dia": str(hoy)}
                             partido2 = {"hora": "16:00", "local": "Inglaterra", "visitante": "Argentina", "liga": ln, "dia": str(hoy + timedelta(days=1))}
                             partidos_liga = [partido1, partido2]
@@ -2797,7 +2797,7 @@ def pantalla_gratis(u):
                 for r in res:
                     st.markdown(f'{bdg(r["rango"])} **{r["local"]} vs {r["visitante"]}** · {r.get("hora","")} · **{r["mk2"]}** · xG:{r["xl"]}-{r["xv"]} · O2.5:{r["over25"]}% · Conf:{r["confianza"]}%',unsafe_allow_html=True)
                 st.download_button("⬇️ Descargar Excel",data=exportar_excel(res,"Scorpion — Gratis"),
-                    file_name=f"Scorpion_gratis_{date.today()}.xlsx",
+                    file_name=f"Scorpion_gratis_{get_hoy()}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     with t2:
         picks=db_picks_get(get_hoy(),"gratis")
@@ -2861,10 +2861,10 @@ def pantalla_pago(u,plan):
                 ops=["Hoy","Dia especifico","Esta semana","Semana personalizada"]
                 if plan in ("semana","mes"): ops.append("Dias de la semana")
                 ml=st.radio("Periodo",ops)
-                if ml=="Hoy": fecha_s=date.today(); modo="dia"
+                if ml=="Hoy": fecha_s=get_hoy(); modo="dia"
                 elif ml=="Dia especifico": fecha_s=st.date_input("Fecha"); modo="dia"
                 elif ml=="Esta semana":
-                    hoy=date.today(); lu=hoy-timedelta(days=hoy.weekday())
+                    hoy=get_hoy(); lu=hoy-timedelta(days=hoy.weekday())
                     fd=lu; fh=lu+timedelta(days=6); modo="rango"
                 elif ml=="Semana personalizada":
                     fd=st.date_input("Desde",value=None)
@@ -2881,7 +2881,7 @@ def pantalla_pago(u,plan):
                     if modo=="dia": fx=get_fx_dia(lid,str(fecha_s))
                     elif modo=="rango": fx=get_fx_rango(lid,str(fd),str(fh))
                     elif modo=="dias":
-                        fx=[]; hoy=date.today(); lu=hoy-timedelta(days=hoy.weekday())
+                        fx=[]; hoy=get_hoy(); lu=hoy-timedelta(days=hoy.weekday())
                         mp={"Lunes":0,"Martes":1,"Miercoles":2,"Jueves":3,"Viernes":4,"Sabado":5,"Domingo":6}
                         for d in dias_n:
                             fd2=lu+timedelta(days=mp.get(d,0)); fx+=get_fx_dia(lid,str(fd2))
@@ -2933,7 +2933,7 @@ def pantalla_pago(u,plan):
             prg.progress(1.0,"Listo ✅")
             xl=exportar_excel(res,"Scorpion Elite — Archivo")
             st.download_button("⬇️ Descargar Excel",data=xl,
-                file_name=f"Scorpion_custom_{date.today()}.xlsx",
+                file_name=f"Scorpion_custom_{get_hoy()}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
     with tabs[2]:
@@ -3162,7 +3162,7 @@ def pantalla_principal():
                                     st.error(f"❌ Plan {plan_v}. Contacta al admin.")
                             else:
                                 # Crear usuario gratis automáticamente
-                                db_guardar_usuario(user_input, f"Usuario {user_input[:4]}", "gratis", 36500, date.today())
+                                db_guardar_usuario(user_input, f"Usuario {user_input[:4]}", "gratis", 36500, get_hoy())
                                 st.session_state.li = True
                                 st.session_state.ced = user_input
                                 st.session_state.u = {"nombre": f"Usuario {user_input[:4]}", "cedula": user_input}
@@ -3214,7 +3214,7 @@ def pantalla_principal():
         
         # SEMIFINALES del Mundial 2026 - 14 y 15 de julio
         from datetime import date, timedelta, datetime
-        hoy = date.today()
+        hoy = get_hoy()
         partidos_hoy = [
             {"hora": "13:00", "liga": "🏆 Mundial 2026", "local": "Francia", "visitante": "España", "dia": str(hoy)},
             {"hora": "16:00", "liga": "🏆 Mundial 2026", "local": "Inglaterra", "visitante": "Argentina", "dia": str(hoy + timedelta(days=1))},
