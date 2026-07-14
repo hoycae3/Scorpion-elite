@@ -1,0 +1,210 @@
+/* Scorpion Elite - Estilos CSS */
+
+/* Fondo general oscuro */
+.stApp {
+    background-color: #0b0f19;
+    color: #ffffff;
+}
+
+/* Contenedor del Encabezado Principal */
+.header-container {
+    background: linear-gradient(90deg, #0d162d 0%, #16224f 100%);
+    padding: 20px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    border-bottom: 2px solid #d4af37;
+}
+
+.header-title {
+    color: #d4af37;
+    font-family: 'Georgia', serif;
+    font-size: 38px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin: 0;
+}
+
+.header-subtitle {
+    color: #dfba6b;
+    font-size: 18px;
+    margin-left: 15px;
+    font-family: sans-serif;
+}
+
+/* Caja de Acceso / Login */
+.login-box {
+    background-color: #1a1e29;
+    border: 1px solid #3a3f50;
+    padding: 15px;
+    border-radius: 8px;
+    min-width: 280px;
+}
+
+/* Títulos de Secciones */
+.section-title {
+    color: #bfa15f;
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+/* Tarjetas de Picks Recomendados (Doradas) */
+.pick-card {
+    background-color: #131926;
+    border: 1px solid #bfa15f;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.pick-header {
+    font-size: 11px;
+    color: #8a94a6;
+}
+
+.pick-body {
+    font-size: 13px;
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+.pick-footer {
+    display: flex;
+    justify-content: space-between;
+    color: #d4af37;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* Bloques de Partidos y Listas */
+.match-row {
+    background-color: #121824;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border-left: 3px solid #3a3f50;
+    font-size: 13px;
+}
+
+/* Columna Derecha (Tendencias y Alertas) */
+.sidebar-right-card {
+    background-color: #161c2a;
+    border: 1px solid #283044;
+    border-radius: 8px;
+    padding: 15px;
+    height: 100%;
+}
+
+.text-trend {
+    font-size: 13px;
+    color: #cbd5e1;
+    margin-bottom: 6px;
+}
+
+.text-alert {
+    font-size: 12px;
+    color: #94a3b8;
+    background-color: #1e293b;
+    padding: 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+/* Goleadores */
+.goleador-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #232a3b;
+}
+
+.goleador-num {
+    color: #d4af37;
+    font-weight: bold;
+    width: 30px;
+}
+
+.goleador-nom {
+    color: #fff;
+    flex: 1;
+}
+
+.goleador-gol {
+    color: #d4af37;
+    font-weight: bold;
+}
+
+/* Cards de métricas */
+.metric-card {
+    background-color: #131926;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.metric-value {
+    color: #d4af37;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.metric-label {
+    color: #8a94a6;
+    font-size: 12px;
+    text-transform: uppercase;
+    margin-top: 5px;
+}
+
+/* Badges de rango */
+.badge-Aplus {
+    background-color: #082a12;
+    color: #00ee66;
+    border: 1px solid #00aa44;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.badge-B {
+    background-color: #081840;
+    color: #44aaff;
+    border: 1px solid #2255aa;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+}
+
+.badge-C {
+    background-color: #1a1200;
+    color: #ccaa00;
+    border: 1px solid #886600;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+}
+
+.badge-D {
+    background-color: #200a0a;
+    color: #ee4444;
+    border: 1px solid #882222;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: #3a3f50;
+    font-size: 12px;
+    padding: 20px;
+    margin-top: 30px;
+}
