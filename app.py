@@ -1676,14 +1676,12 @@ def pantalla_admin():
         if st.button("🦂 Obtener y Analizar",key="btn_liga_admin"):
             todos=[]
             
-            # Partidos predefinidos del Mundial 2026
+            # Partidos predefinidos del Mundial 2026 (cuartos de final)
             mundial_partidos = [
                 {"dia": str(fecha_s), "hora": "15:00", "hora_sort": 1500, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Francia", "visitante": "España", "tid_l": None, "tid_v": None},
                 {"dia": str(fecha_s), "hora": "18:00", "hora_sort": 1800, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Argentina", "visitante": "Inglaterra", "tid_l": None, "tid_v": None},
-                {"dia": str(fecha_s), "hora": "21:00", "hora_sort": 2100, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Brasil", "visitante": "Alemania", "tid_l": None, "tid_v": None},
-                {"dia": str(fecha_s), "hora": "16:00", "hora_sort": 1600, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Portugal", "visitante": "Italia", "tid_l": None, "tid_v": None},
-                {"dia": str(fecha_s), "hora": "19:00", "hora_sort": 1900, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Paises Bajos", "visitante": "Belgica", "tid_l": None, "tid_v": None},
-                {"dia": str(fecha_s), "hora": "17:00", "hora_sort": 1700, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Uruguay", "visitante": "Colombia", "tid_l": None, "tid_v": None},
+                {"dia": str(fecha_s), "hora": "21:00", "hora_sort": 2100, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Portugal", "visitante": "Francia", "tid_l": None, "tid_v": None},
+                {"dia": str(fecha_s), "hora": "16:00", "hora_sort": 1600, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Uruguay", "visitante": "Inglaterra", "tid_l": None, "tid_v": None},
             ]
             
             with st.spinner("Obteniendo fixtures..."):
@@ -2239,11 +2237,11 @@ def pantalla_principal():
         st.markdown("---")
         st.markdown('<p class="section-title">⚽ Partidos del Día</p>', unsafe_allow_html=True)
         
-        # PARTIDOS REALES DE HOY (Copa America / Torneo actual)
+        # PARTIDOS REALES DE HOY (Cuartos de Final Mundial 2026)
         partidos_hoy = [
-            {"hora": "15:00", "liga": "🏆 Mundial FIFA 2026", "local": "Francia", "visitante": "España"},
-            {"hora": "18:00", "liga": "🏆 Mundial FIFA 2026", "local": "Argentina", "visitante": "Inglaterra"},
-            {"hora": "21:00", "liga": "🏆 Mundial FIFA 2026", "local": "Brasil", "visitante": "Alemania"},
+            {"hora": "15:00", "liga": "🏆 Mundial 2026", "local": "Francia", "visitante": "España"},
+            {"hora": "18:00", "liga": "🏆 Mundial 2026", "local": "Argentina", "visitante": "Inglaterra"},
+            {"hora": "21:00", "liga": "🏆 Mundial 2026", "local": "Portugal", "visitante": "Francia"},
         ]
         
         # Combinar con scraping
