@@ -300,39 +300,20 @@ MUNDIAL_2026_STATS = {
 }
 
 
-def obtener_stats_mundial(nombre_equipo):
-    """Obtiene stats de un equipo del Mundial 2026 buscando en múltiples fuentes."""
-    nombre_lower = nombre_equipo.lower().strip()
+def obtener_stats_tiempo_real(equipo):
+    """
+    Busca estadísticas de un equipo en TIEMPO REAL desde internet.
+    Busca en múltiples fuentes hasta encontrar datos.
+    """
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "application/json, text/html",
+    }
     
-    # 1. Primero buscar en BD local del Mundial
-    for equipo, stats in MUNDIAL_2026_STATS.items():
-        if nombre_lower in equipo.lower() or equipo.lower() in nombre_lower:
-            return {
-                "ok": True, 
-                "gm": stats["gm"], 
-                "gc": stats["gc"], 
-                "xg": stats.get("xg", stats["gm"] * 0.9),
-                "elo": stats["elo"], 
-                "fuente": "BD Mundial 2026",
-                "tiros_pg": stats.get("tiros_pg", 12),
-                "tarj_pg": stats.get("tarj_pg", 2.0),
-                "ultimos5": stats.get("ultimos5", []),
-                "ganados5": stats.get("ganados5", 0),
-                "empatados5": stats.get("empatados5", 0),
-                "perdidos5": stats.get("perdidos5", 0),
-                "goles_fav5": stats.get("goles_fav5", 0),
-                "goles_con5": stats.get("goles_con5", 0),
-            }
-    
-    # 2. Intentar buscar en Sofascore API
+    # 1. Intentar Sofascore API
     try:
-        headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "application/json",
-        }
-        
         # Buscar equipo
-        search_url = f"https://api.sofascore.com/api/v1/search/teams/{nombre_equipo.replace(' ', '%20')}"
+        search_url = f"https://api.sofascore.com/api/v1/search/teams/{equipo.replace(' ', '%20')}"
         r = requests.get(search_url, headers=headers, timeout=10)
         
         if r.status_code == 200:
@@ -340,9 +321,10 @@ def obtener_stats_mundial(nombre_equipo):
             if data.get("results") and len(data["results"]) > 0:
                 team = data["results"][0]
                 team_id = team.get("id")
+                team_name = team.get("name", equipo)
                 
                 if team_id:
-                    # Obtener estadísticas del equipo
+                    # Obtener estadísticas generales
                     stats_url = f"https://api.sofascore.com/api/v1/team/{team_id}/statistics/overall"
                     r2 = requests.get(stats_url, headers=headers, timeout=10)
                     
@@ -350,16 +332,18 @@ def obtener_stats_mundial(nombre_equipo):
                         s = r2.json()
                         gm = s.get("goalsScored", {})
                         gc = s.get("goalsConceded", {})
+                        shots = s.get("shots", {})
                         
                         return {
                             "ok": True,
-                            "fuente": "Sofascore API",
+                            "fuente": "Sofascore (Tiempo Real)",
+                            "equipo": team_name,
                             "gm": gm.get("average", 1.5) or 1.5,
                             "gc": gc.get("average", 1.0) or 1.0,
-                            "xg": s.get("expectedGoals", {}).get("total", 1.5) or 1.5,
+                            "xg": gm.get("average", 1.5) or 1.5,
                             "elo": 1950,
-                            "tiros_pg": s.get("shots", {}).get("total", 12) or 12,
-                            "tarj_pg": s.get("yellowCards", {}).get("total", 2.0) or 2.0,
+                            "tiros_pg": shots.get("total", 12) or 12,
+                            "tarj_pg": s.get("yellowCards", 2.0) or 2.0,
                             "ultimos5": [],
                             "ganados5": 0, "empatados5": 0, "perdidos5": 0,
                             "goles_fav5": 0, "goles_con5": 0,
@@ -367,21 +351,22 @@ def obtener_stats_mundial(nombre_equipo):
     except Exception as e:
         print(f"Sofascore error: {e}")
     
-    # 3. Intentar API-Football
+    # 2. Intentar API-Football
     if API_FOOTBALL_KEY:
         try:
-            headers = {"x-apisports-key": API_FOOTBALL_KEY}
-            url = f"https://v3.football.api-sports.io/teams/search/{nombre_equipo}"
-            r = requests.get(url, headers=headers, timeout=10)
+            headers_af = {"x-apisports-key": API_FOOTBALL_KEY}
+            url = f"https://v3.football.api-sports.io/teams/search/{equipo}"
+            r = requests.get(url, headers=headers_af, timeout=10)
             data = r.json()
             
             if data.get("results", 0) > 0:
                 team_data = data["response"][0]
                 team_id = team_data["team"]["id"]
+                team_name = team_data["team"]["name"]
                 
-                # Obtener estadísticas del equipo
-                stats_url = f"https://v3.football.api-sports.io/teams/statistics?team={team_id}&season=2024"
-                r2 = requests.get(stats_url, headers=headers, timeout=10)
+                # Obtener estadísticas - buscar temporada actual del torneo
+                stats_url = f"https://v3.football.api-sports.io/teams/statistics?team={team_id}&season=2026"
+                r2 = requests.get(stats_url, headers=headers_af, timeout=10)
                 
                 if r2.status_code == 200:
                     s = r2.json().get("response", {})
@@ -390,16 +375,19 @@ def obtener_stats_mundial(nombre_equipo):
                     
                     gm_val = s.get("goals", {}).get("for", {}).get("average", {}).get("total", 1.5) or 1.5
                     gc_val = s.get("goals", {}).get("against", {}).get("average", {}).get("total", 1.0) or 1.0
+                    shots_total = s.get("shots", {}).get("total", 0) or 0
+                    yellows = s.get("cards", {}).get("yellow", {}).get("total", 0) or 0
                     
                     return {
                         "ok": True,
-                        "fuente": "API-Football",
+                        "fuente": "API-Football (Tiempo Real)",
+                        "equipo": team_name,
                         "gm": round(gm_val, 2),
                         "gc": round(gc_val, 2),
                         "xg": round(gm_val * 0.9, 2),
                         "elo": 1950,
-                        "tiros_pg": round(s.get("shots", {}).get("total", 0) / games, 1),
-                        "tarj_pg": round(s.get("cards", {}).get("yellow", {}).get("total", 0) / games, 1),
+                        "tiros_pg": round(shots_total / games, 1) if games > 0 else 12,
+                        "tarj_pg": round(yellows / games, 1) if games > 0 else 2.0,
                         "ultimos5": [],
                         "ganados5": fixtures.get("wins", {}).get("total", 0) or 0,
                         "empatados5": fixtures.get("draws", {}).get("total", 0) or 0,
@@ -409,16 +397,125 @@ def obtener_stats_mundial(nombre_equipo):
         except Exception as e:
             print(f"API-Football error: {e}")
     
-    # 4. Si no se encuentra nada, usar promedios genéricos
+    # 3. Intentar scraping de Flashscore
+    try:
+        slug = equipo.lower().replace(" ", "-").replace("'", "").replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
+        url = f"https://www.flashscore.es/equipo/{slug}/estadisticas/"
+        r = requests.get(url, headers=headers, timeout=10)
+        
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, "html.parser")
+            
+            # Buscar tabla de estadísticas
+            stats = {}
+            for row in soup.select(".statRow, .stat__row"):
+                try:
+                    name_el = row.select_one(".stat__name, .statName")
+                    value_el = row.select_one(".stat__value, .statValue")
+                    
+                    if name_el and value_el:
+                        name = name_el.get_text(strip=True).lower()
+                        value = value_el.get_text(strip=True).replace(",", ".")
+                        
+                        if "goals" in name or "goles" in name:
+                            parts = value.replace(":", "-").split("-")
+                            if len(parts) >= 2:
+                                try:
+                                    stats["gm"] = float(parts[0].strip())
+                                    stats["gc"] = float(parts[1].strip())
+                                except:
+                                    pass
+                        elif "shots" in name or "tiros" in name:
+                            try:
+                                stats["tiros_pg"] = float(value)
+                            except:
+                                pass
+                        elif "cards" in name or "tarjetas" in name:
+                            try:
+                                stats["tarj_pg"] = float(value)
+                            except:
+                                pass
+                except:
+                    continue
+            
+            if stats:
+                return {
+                    "ok": True,
+                    "fuente": "Flashscore (Tiempo Real)",
+                    "equipo": equipo,
+                    "gm": stats.get("gm", 1.5),
+                    "gc": stats.get("gc", 1.0),
+                    "xg": stats.get("gm", 1.5) * 0.9,
+                    "elo": 1950,
+                    "tiros_pg": stats.get("tiros_pg", 12),
+                    "tarj_pg": stats.get("tarj_pg", 2.0),
+                    "ultimos5": [],
+                    "ganados5": 0, "empatados5": 0, "perdidos5": 0,
+                    "goles_fav5": 0, "goles_con5": 0,
+                }
+    except Exception as e:
+        print(f"Flashscore error: {e}")
+    
+    return None
+
+def obtener_stats_mundial(nombre_equipo):
+    """Obtiene stats de un equipo buscando en múltiples fuentes en tiempo real."""
+    nombre_lower = nombre_equipo.lower().strip()
+    
+    # 1. Primero buscar en BD local del Mundial (como backup rápido)
+    for equipo, stats in MUNDIAL_2026_STATS.items():
+        if nombre_lower in equipo.lower() or equipo.lower() in nombre_lower:
+            result = {
+                "ok": True, 
+                "fuente": "BD Local Mundial 2026",
+                "equipo": equipo,
+                "gm": stats["gm"], 
+                "gc": stats["gc"], 
+                "xg": stats.get("xg", stats["gm"] * 0.9),
+                "elo": stats["elo"], 
+                "tiros_pg": stats.get("tiros_pg", 12),
+                "tarj_pg": stats.get("tarj_pg", 2.0),
+                "ultimos5": stats.get("ultimos5", []),
+                "ganados5": stats.get("ganados5", 0),
+                "empatados5": stats.get("empatados5", 0),
+                "perdidos5": stats.get("perdidos5", 0),
+                "goles_fav5": stats.get("goles_fav5", 0),
+                "goles_con5": stats.get("goles_con5", 0),
+            }
+            
+            # Intentar actualizar con datos de tiempo real en background
+            try:
+                real_stats = obtener_stats_tiempo_real(nombre_equipo)
+                if real_stats and real_stats.get("ok"):
+                    result["fuente"] = real_stats["fuente"] + " → Actualizado"
+                    result["gm"] = real_stats.get("gm", result["gm"])
+                    result["gc"] = real_stats.get("gc", result["gc"])
+                    result["xg"] = real_stats.get("xg", result["xg"])
+                    result["tiros_pg"] = real_stats.get("tiros_pg", result["tiros_pg"])
+                    result["tarj_pg"] = real_stats.get("tarj_pg", result["tarj_pg"])
+            except:
+                pass
+            
+            return result
+    
+    # 2. Si no está en BD local, buscar en tiempo real
+    real_stats = obtener_stats_tiempo_real(nombre_equipo)
+    if real_stats and real_stats.get("ok"):
+        return real_stats
+    
+    # 3. Si no se encuentra nada, usar promedios genéricos
     return {
         "ok": False,
         "fuente": "Sin datos - usando promedio genérico",
+        "equipo": nombre_equipo,
         "gm": 1.5, "gc": 1.2, "xg": 1.4, "elo": 1850,
         "tiros_pg": 11, "tarj_pg": 2.0,
         "ultimos5": [],
         "ganados5": 0, "empatados5": 0, "perdidos5": 0,
         "goles_fav5": 0, "goles_con5": 0,
     }
+
+
 
 # ══════════════════════════════════════════════════════════
 # WEB SCRAPING - DATOS REALES
