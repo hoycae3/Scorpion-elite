@@ -1398,15 +1398,7 @@ def pantalla_admin():
                 if fuentes_ok:
                     st.success(f"✅ Analisis con DATOS REALES — Rango {calc['rango']} ({calc['confianza']}% confianza) | Fuente: {sl_det.get('fuente','')} / {sv_det.get('fuente','')}")
                 else:
-                    # Solo mostrar warning si NO tenemos datos reales
-                    fuente_total = f"{res.get('fuente_l', '')} + {res.get('fuente_v', '')}"
-                    if "Prom.liga" in fuente_total or not res.get("fuente_l"):
-                        if calc.get('datos_r'):
-                            st.warning(f"⚠️ Rango {calc['rango']} — Sin datos reales de API. Se usaron promedios de liga.")
-                        else:
-                            st.warning("⚠️ Análisis básico (sin stats de equipos).")
-                    else:
-                        st.error("Completa local, visitante y liga.")
+                    st.warning(f"⚠️ Rango {calc['rango']} — Sin datos reales de API. Se usaron promedios de liga.")
 
         if "resultado_individual" in st.session_state:
             r = st.session_state["resultado_individual"]
