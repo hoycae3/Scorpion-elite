@@ -619,28 +619,65 @@ def calcular(gml,gcl,gmv,gcv,liga,elo_l=None,elo_v=None):
         cm = round(cj * 1.07, 2)  # con margen de casa 7%
         return max(cuota_minima, cm)
 
+    # Mercados con VALOR (edge calculado)
+    # Under mercados
+    u05 = round(100 - o05, 1)  # Under 0.5
+    u15 = round(100 - o15, 1)  # Under 1.5
+    u25 = round(100 - o25, 1)  # Under 2.5
+    u35 = round(100 - o35, 1)  # Under 3.5
+    
+    # Tiros al arco (estimados basado en xG)
+    tiros_l = round(max(2.0, xl * 3.8), 1)
+    tiros_v = round(max(1.5, xv * 3.8), 1)
+    tiros_tot = round(tiros_l + tiros_v, 1)
+    
+    # Atajadas estimadas del portero
+    atajadas_l = round(max(1.0, gcv * 2.5), 1)  # Más goles recibe = más atajadas
+    atajadas_v = round(max(1.0, gcl * 2.5), 1)
+    
+    # Calcular edge para cada mercado (valor = probabilidad - cuota_justa)
+    def calcular_edge(prob, cuota_mercado=1.95):
+        """Calcula el edge: valor positivo = apuesta con valor"""
+        cuota_justa = 100 / prob if prob > 0 else 0
+        edge = ((prob / 100) * cuota_mercado - 1) * 100
+        return round(edge, 1)
+    
+    # Mercados con valor
     mercados_picks = [
-        ("Over 0.5 Goles",       o05,     cuota_ref(o05)),
-        ("Over 1.5 Goles",       o15,     cuota_ref(o15)),
-        ("Over 2.5 Goles",       o25,     cuota_ref(o25)),
-        ("Over 3.5 Goles",       o35,     cuota_ref(o35)),
-        ("BTTS — Ambos Marcan",  btts_si, cuota_ref(btts_si)),
-        ("BTTS — No",            btts_no, cuota_ref(btts_no)),
-        ("Corners +7.5",         c75,     cuota_ref(c75)),
-        ("Corners +8.5",         c85,     cuota_ref(c85)),
-        ("Corners +9.5",         c95,     cuota_ref(c95)),
-        ("Corners +10.5",        c105,    cuota_ref(c105)),
-        ("Tarjetas +1.5",        round(min(85,(tmu/4.5)*100),0), cuota_ref(round(min(85,(tmu/4.5)*100),0))),
-        ("Tarjetas +2.5",        round(min(70,(tmu/5.5)*100),0), cuota_ref(round(min(70,(tmu/5.5)*100),0))),
-        ("Tarjetas +3.5",        round(min(50,(tmu/7)*100),0),   cuota_ref(round(min(50,(tmu/7)*100),0))),
+        # 1X2
+        ("Victoria Local (1)", p1, cuota_ref(p1), calcular_edge(p1)),
+        ("Empate (X)", px, cuota_ref(px), calcular_edge(px)),
+        ("Victoria Visitante (2)", p2, cuota_ref(p2), calcular_edge(p2)),
+        # Over
+        ("Over 0.5 Goles", o05, cuota_ref(o05), calcular_edge(o05)),
+        ("Over 1.5 Goles", o15, cuota_ref(o15), calcular_edge(o15)),
+        ("Over 2.5 Goles", o25, cuota_ref(o25), calcular_edge(o25)),
+        ("Over 3.5 Goles", o35, cuota_ref(o35), calcular_edge(o35)),
+        # Under
+        ("Under 0.5 Goles", u05, cuota_ref(u05), calcular_edge(u05)),
+        ("Under 1.5 Goles", u15, cuota_ref(u15), calcular_edge(u15)),
+        ("Under 2.5 Goles", u25, cuota_ref(u25), calcular_edge(u25)),
+        ("Under 3.5 Goles", u35, cuota_ref(u35), calcular_edge(u35)),
+        # BTTS
+        ("BTTS — Si", btts_si, cuota_ref(btts_si), calcular_edge(btts_si)),
+        ("BTTS — No", btts_no, cuota_ref(btts_no), calcular_edge(btts_no)),
+        # Corners
+        ("Corners +7.5", c75, cuota_ref(c75), calcular_edge(c75)),
+        ("Corners +8.5", c85, cuota_ref(c85), calcular_edge(c85)),
+        ("Corners +9.5", c95, cuota_ref(c95), calcular_edge(c95)),
+        ("Corners +10.5", c105, cuota_ref(c105), calcular_edge(c105)),
+        # Tarjetas
+        ("Tarjetas +1.5", round(min(85,(tmu/4.5)*100),0), cuota_ref(round(min(85,(tmu/4.5)*100),0)), calcular_edge(round(min(85,(tmu/4.5)*100),0))),
+        ("Tarjetas +2.5", round(min(70,(tmu/5.5)*100),0), cuota_ref(round(min(70,(tmu/5.5)*100),0)), calcular_edge(round(min(70,(tmu/5.5)*100),0))),
+        # Tiros al arco
+        ("Tiros Totales +7.5", round(min(85, tiros_tot / 12 * 100), 0), cuota_ref(round(min(85, tiros_tot / 12 * 100), 0)), calcular_edge(round(min(85, tiros_tot / 12 * 100), 0))),
+        ("Tiros Totales +8.5", round(min(75, tiros_tot / 13 * 100), 0), cuota_ref(round(min(75, tiros_tot / 13 * 100), 0)), calcular_edge(round(min(75, tiros_tot / 13 * 100), 0))),
+        ("Tiros Totales +9.5", round(min(65, tiros_tot / 14 * 100), 0), cuota_ref(round(min(65, tiros_tot / 14 * 100), 0)), calcular_edge(round(min(65, tiros_tot / 14 * 100), 0))),
+        # Atajadas
+        ("Atajadas +4.5", round(min(80, (atajadas_l + atajadas_v) / 10 * 100), 0), cuota_ref(round(min(80, (atajadas_l + atajadas_v) / 10 * 100), 0)), calcular_edge(round(min(80, (atajadas_l + atajadas_v) / 10 * 100), 0))),
+        ("Atajadas +5.5", round(min(70, (atajadas_l + atajadas_v) / 11 * 100), 0), cuota_ref(round(min(70, (atajadas_l + atajadas_v) / 11 * 100), 0)), calcular_edge(round(min(70, (atajadas_l + atajadas_v) / 11 * 100), 0))),
     ]
-    # Resultado 1X2 — cuota justa desde probabilidades del modelo
-    if p1>px and p1>p2:
-        mercados_picks.insert(0,("Victoria Local (1)", p1, cuota_ref(p1)))
-    elif p2>px and p2>p1:
-        mercados_picks.insert(0,("Victoria Visitante (2)", p2, cuota_ref(p2)))
-    else:
-        mercados_picks.insert(0,("Empate (X)", px, cuota_ref(px)))
+
     return {
         "xl":xl,"xv":xv,"xt":xt,
         "p1_po":p1_po,"px_po":px_po,"p2_po":p2_po,
@@ -653,6 +690,8 @@ def calcular(gml,gcl,gmv,gcv,liga,elo_l=None,elo_v=None):
         "cmu":cmu,"c75":c75,"c85":c85,"c95":c95,"c105":c105,
         "corners_str":f"~{int(cmu)} (+9.5:{c95}% | +8.5:{c85}%)",
         "tiros_l":tiros_l,"tiros_v":tiros_v,"tiros_tot":tiros_tot,
+        "atajadas_l":atajadas_l,"atajadas_v":atajadas_v,"atajadas_tot":round(atajadas_l+atajadas_v,1),
+        "u05":u05,"u15":u15,"u25":u25,"u35":u35,
         "tmu":tmu,"tar_str":f"~{max(2,int(tmu)-1)}-{int(tmu)+1} tarjetas",
         "mk":mk,"mk2":mk2,"top_ex":top_ex,
         "avg_g":mc["avg"],"top_mc":mc["top"],"datos_r":datos_r,
@@ -1199,24 +1238,50 @@ def widget_archivo(max_p=None,key="up"):
     if max_p: p=p[:max_p]
     st.success(f"✅ {len(p)} partidos detectados"); return p
 
-def mostrar_mercados_con_publicar(calc, partido):
-    """Muestra mercados organizados por categoria con botones de publicar."""
+def mostrar_mercados_con_publicar(calc, partido, umbral_valor=3):
+    """Muestra mercados organizados por categoria CON VALOR (edge > umbral)."""
     mercados=calc.get("mercados_picks",[])
     if not mercados: return
     picks_sel=st.session_state.get("picks_sel",[])
 
+    # Umbral de valor configurable
+    umbral = st.session_state.get("umbral_valor_global", umbral_valor)
+    
+    # Filtrar mercados con valor positivo
+    mercados_con_valor = []
+    for item in mercados:
+        if len(item) >= 4:
+            nombre, prob, cuota, edge = item
+        else:
+            nombre, prob, cuota = item
+            edge = round((prob/100*cuota-1)*100,1) if cuota else 0
+        
+        # Solo mostrar si tiene edge positivo (valor)
+        if edge >= umbral:
+            mercados_con_valor.append((nombre, prob, cuota, edge))
+    
+    if not mercados_con_valor:
+        st.warning(f"⚠️ No hay apuestas con valor (edge >= {umbral}%). Ajusta el umbral o usa menos restricciones.")
+        return
+    
+    st.success(f"🎯 {len(mercados_con_valor)} apuestas con VALOR encontradas (edge >= {umbral}%)")
+    
     # Organizar por categorias
     cats = {
         "⚽ Resultado 1X2":   [],
-        "🎯 Goles Over/Under":[],
+        "🎯 Goles Over":      [],
+        "📉 Goles Under":     [],
         "🤝 BTTS":            [],
         "📐 Corners":         [],
         "🎽 Tarjetas":        [],
         "🔫 Tiros":           [],
+        "🧤 Atajadas":        [],
     }
-    for item in mercados[:16]:
-        nombre,prob,cuota = item
-        n=nombre.lower()
+    
+    for item in mercados_con_valor:
+        nombre, prob, cuota, edge = item
+        n = nombre.lower()
+        
         if any(x in n for x in ["victoria","empate","local","visita","(1)","(2)","(x)"]):
             cats["⚽ Resultado 1X2"].append(item)
         elif "btts" in n or "ambos" in n:
@@ -1225,10 +1290,14 @@ def mostrar_mercados_con_publicar(calc, partido):
             cats["📐 Corners"].append(item)
         elif "tarjet" in n or "amarill" in n:
             cats["🎽 Tarjetas"].append(item)
-        elif "tiro" in n or "shot" in n:
+        elif "tiro" in n:
             cats["🔫 Tiros"].append(item)
-        elif "over" in n or "under" in n or "gol" in n:
-            cats["🎯 Goles Over/Under"].append(item)
+        elif "atajad" in n:
+            cats["🧤 Atajadas"].append(item)
+        elif "under" in n:
+            cats["📉 Goles Under"].append(item)
+        elif "over" in n or "gol" in n:
+            cats["🎯 Goles Over"].append(item)
 
     st.markdown("""
     <style>
@@ -1257,19 +1326,24 @@ def mostrar_mercados_con_publicar(calc, partido):
     with hc4: st.markdown('<span style="color:#888;font-size:.75rem">EDGE</span>',unsafe_allow_html=True)
     with hc5: st.markdown('<span style="color:#888;font-size:.75rem">ACCION</span>',unsafe_allow_html=True)
 
+    # Cabecera de columnas
+    hc1,hc2,hc3,hc4,hc5=st.columns([3,1,1.2,1.2,1.5])
+    with hc1: st.markdown('<span style="color:#888;font-size:.75rem">MERCADO</span>',unsafe_allow_html=True)
+    with hc2: st.markdown('<span style="color:#888;font-size:.75rem">PROB</span>',unsafe_allow_html=True)
+    with hc3: st.markdown('<span style="color:#888;font-size:.75rem">C.REF</span>',unsafe_allow_html=True)
+    with hc4: st.markdown('<span style="color:#888;font-size:.75rem">EDGE</span>',unsafe_allow_html=True)
+    with hc5: st.markdown('<span style="color:#888;font-size:.75rem">ACCION</span>',unsafe_allow_html=True)
+
     idx_global=0
-    hay_valor=False
     for cat_name, items in cats.items():
-        # Solo mostrar mercados con edge >= 0
-        # Edge real: solo mostrar si la cuota de mercado es MEJOR que la justa
-        # Con cuotas de referencia propias, no hay edge real sin odds reales
-        # Mostramos todos los mercados pero marcamos si son valor o estimado
-        items_valor=[(n,p,c) for n,p,c in items if c and p>0]
-        if not items_valor: continue
-        hay_valor=True
+        if not items: continue
         st.markdown(f'<div class="mkt-cat">{cat_name}</div>', unsafe_allow_html=True)
-        for nombre,prob,cuota in items_valor:
-            edge=round((prob/100*cuota-1)*100,1) if cuota else 0
+        for item in items:
+            if len(item) >= 4:
+                nombre, prob, cuota, edge = item
+            else:
+                nombre, prob, cuota = item
+                edge = 0
             sel=any(p.get("mercado")==nombre and p.get("local")==partido["local"] for p in picks_sel)
             # Badge de valor
             # Con cuotas de referencia propias, edge siempre es ~0
@@ -1346,29 +1420,31 @@ def pantalla_login():
 # ══════════════════════════════════════════════════════════
 def pantalla_admin():
     hdr("Panel de Administrador")
-    s=db_stats()
-    c1,c2,c3,c4=st.columns(4)
-    for col,(v,l) in zip([c1,c2,c3,c4],[(s["usuarios"],"Usuarios"),(s["activos"],"Activos"),(s["picks"],"Picks pub."),(s["historial"],"Analisis")]):
-        with col: st.markdown(f'<div class="mc"><div class="v">{v}</div><div class="l">{l}</div></div>',unsafe_allow_html=True)
+    
+    # Mostrar bienvenida sin stats innecesarios
+    st.markdown("### 🦂 Panel de Administrador")
+    st.info("Analiza partidos, genera picks de valor y publícalos para los usuarios.")
     st.markdown("---")
 
-    tabs=st.tabs(["🔍 Analizar Partido","🏟️ Analizar por Liga","📢 Publicar Picks","👥 Clientes","📊 Escalera"])
+    tabs=st.tabs(["🔍 Analizar Partido","📊 Picks de Valor","📢 Publicar Picks","👥 Clientes","📊 Escalera"])
 
     # ── Tab 1: Analizar partido individual ─────────────────
     with tabs[0]:
-        st.markdown("### Analizar cualquier partido")
-        st.info("Escribe cualquier partido: Millonarios vs Nacional, Barcelona vs Real Madrid, etc.")
+        st.markdown("### 📊 Analizar Partido")
+        st.info("Escribe cualquier partido. Se mostrarán solo las apuestas con VALOR (edge > 5%).")
         c1,c2=st.columns(2)
         with c1:
-            local_i  =st.text_input("Equipo Local",placeholder="ej: Millonarios")
-            visita_i =st.text_input("Equipo Visitante",placeholder="ej: Atletico Nacional")
-            liga_i   =st.text_input("Liga / Torneo",placeholder="ej: Liga BetPlay, Premier League")
-            hora_i   =st.text_input("Hora (opcional)","20:00")
+            local_i  =st.text_input("⚽ Equipo Local",placeholder="ej: Francia")
+            visita_i =st.text_input("⚽ Equipo Visitante",placeholder="ej: España")
+            liga_i   =st.text_input("🏆 Liga / Torneo",placeholder="ej: Mundial FIFA 2026")
+            hora_i   =st.text_input("🕐 Hora (opcional)","20:00")
         with c2:
-            fecha_i  =st.date_input("Fecha",value=date.today())
-            st.markdown("**Usar datos reales de API**")
-            usar_api_i=st.checkbox("Buscar stats reales en internet",value=True)
-        if st.button("🦂 Analizar este partido",key="btn_individual"):
+            fecha_i  =st.date_input("📅 Fecha",value=date.today())
+            usar_api_i=st.checkbox("✅ Buscar stats reales",value=True)
+        
+        umbral_valor = st.slider("🎯 Umbral de Valor (Edge mínimo %)", 0, 15, 5)
+        
+        if st.button("🔍 ANALIZAR",key="btn_individual", type="primary"):
             if local_i and visita_i and liga_i:
                 partido_i={"dia":str(fecha_i),"hora":hora_i,"hora_sort":0,
                            "liga":liga_i,"liga_id":0,"local":local_i,"visitante":visita_i,
@@ -1378,11 +1454,9 @@ def pantalla_admin():
                     
                     if usar_api_i:
                         if es_mundial:
-                            # Usar datos del Mundial 2026
                             sl_det=obtener_stats_mundial(local_i)
                             sv_det=obtener_stats_mundial(visita_i)
                         else:
-                            # Buscar liga_id automaticamente si el nombre coincide
                             liga_i_lower = liga_i.lower()
                             liga_id_auto = next((v for k,v in LIGAS.items() if
                                                 any(w in liga_i_lower for w in k.lower().split()
