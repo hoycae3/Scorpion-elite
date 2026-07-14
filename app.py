@@ -698,6 +698,71 @@ def calcular(gml,gcl,gmv,gcv,liga,elo_l=None,elo_v=None):
         "mercados_picks":mercados_picks,
     }
 
+
+
+# ══════════════════════════════════════════════════════════
+# SCRAPING MUNDIAL FIFA 2026
+# ══════════════════════════════════════════════════════════
+def scrape_mundial_partidos():
+    """Busca partidos del Mundial FIFA 2026 en Flashscore."""
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        }
+        # Flashscore Mundial 2026
+        url = "https://www.flashscore.mx/futbol/mundial/"
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code != 200:
+            return None
+        
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        partidos = []
+        
+        # Buscar en la página los partidos
+        for evento in soup.select('.event__match'):
+            try:
+                hora = evento.select_one('.event__time')
+                time_text = hora.text.strip() if hora else ""
+                
+                # Nombres de equipos
+                equipos = evento.select('.event__participant')
+                if len(equipos) >= 2:
+                    local = equipos[0].text.strip()
+                    visitante = equipos[1].text.strip()
+                    
+                    # Solo agregar si son equipos del Mundial
+                    if local and visitante:
+                        partidos.append({
+                            "hora": time_text,
+                            "local": local,
+                            "visitante": visitante,
+                            "liga": "🌍 Mundial FIFA 2026"
+                        })
+            except:
+                continue
+        
+        return partidos if partidos else None
+        
+    except Exception as e:
+        print(f"Error scraping Mundial: {e}")
+        return None
+
+def get_mundial_partidos():
+    """Obtiene partidos del Mundial, con fallback a datos locales."""
+    partidos = scrape_mundial_partidos()
+    if partidos:
+        return partidos
+    
+    # Fallback: usar datos predefinidos solo como ejemplo
+    return [
+        {"hora": "15:00", "liga": "🌍 Mundial FIFA 2026", "local": "Francia", "visitante": "España"},
+        {"hora": "18:00", "liga": "🌍 Mundial FIFA 2026", "local": "Argentina", "visitante": "Inglaterra"},
+    ]
+
 # ══════════════════════════════════════════════════════════
 # API-FOOTBALL
 # ══════════════════════════════════════════════════════════
@@ -1676,13 +1741,38 @@ def pantalla_admin():
         if st.button("🦂 Obtener y Analizar",key="btn_liga_admin"):
             todos=[]
             
-            # Partidos predefinidos del Mundial 2026 (cuartos de final)
-            mundial_partidos = [
-                {"dia": str(fecha_s), "hora": "15:00", "hora_sort": 1500, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Francia", "visitante": "España", "tid_l": None, "tid_v": None},
-                {"dia": str(fecha_s), "hora": "18:00", "hora_sort": 1800, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Argentina", "visitante": "Inglaterra", "tid_l": None, "tid_v": None},
-                {"dia": str(fecha_s), "hora": "21:00", "hora_sort": 2100, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Portugal", "visitante": "Francia", "tid_l": None, "tid_v": None},
-                {"dia": str(fecha_s), "hora": "16:00", "hora_sort": 1600, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Uruguay", "visitante": "Inglaterra", "tid_l": None, "tid_v": None},
-            ]
+            # Obtener partidos del Mundial en tiempo real
+            if "Mundial" in str(ligas_sel) or "FIFA" in str(ligas_sel):
+                with st.spinner("🔍 Buscando partidos del Mundial en Flashscore..."):
+                    mundial_raw = get_mundial_partidos()
+                    if mundial_raw:
+                        mundial_partidos = []
+                        for pm in mundial_raw:
+                            try:
+                                hora_parts = pm.get("hora", "00:00").split(":")
+                                hora_sort = int(hora_parts[0]) * 100 + int(hora_parts[1]) if len(hora_parts) == 2 else 0
+                                mundial_partidos.append({
+                                    "dia": str(fecha_s),
+                                    "hora": pm.get("hora", "00:00"),
+                                    "hora_sort": hora_sort,
+                                    "liga": pm.get("liga", "🌍 Mundial FIFA 2026"),
+                                    "liga_id": 1,
+                                    "local": pm.get("local", ""),
+                                    "visitante": pm.get("visitante", ""),
+                                    "tid_l": None,
+                                    "tid_v": None
+                                })
+                            except:
+                                continue
+                        if not mundial_partidos:
+                            st.warning("⚠️ No se encontraron partidos del Mundial. Mostrando partidos de ejemplo.")
+                            mundial_partidos = [
+                                {"dia": str(fecha_s), "hora": "15:00", "hora_sort": 1500, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Francia", "visitante": "España", "tid_l": None, "tid_v": None},
+                                {"dia": str(fecha_s), "hora": "18:00", "hora_sort": 1800, "liga": "🌍 Mundial FIFA 2026", "liga_id": 1, "local": "Argentina", "visitante": "Inglaterra", "tid_l": None, "tid_v": None},
+                            ]
+                    else:
+                        mundial_partidos = []
+                    todos.extend(mundial_partidos)
             
             with st.spinner("Obteniendo fixtures..."):
                 for ln in ligas_sel:
