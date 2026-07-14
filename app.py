@@ -3331,10 +3331,7 @@ def pantalla_principal():
         
         st.markdown("</div>")
         
-        # Botón para ir a análisis
-        st.markdown("---")
-        if st.button("📊 Ir a Análisis Completo →", use_container_width=True):
-            pass  # Ya está en la página principal
+        # Botón eliminado - ya está en la página principal
     
     # Footer
     st.markdown("---")
