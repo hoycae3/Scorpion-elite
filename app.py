@@ -1692,13 +1692,23 @@ def get_mundial_partidos():
     if partidos:
         return partidos
     
-    # SEMIFINALES REALES del Mundial 2026 - 14 y 15 de julio
+    # MUNDIAL 2026 - Solo el partido del día seleccionado
     from datetime import date, timedelta, datetime
     hoy = get_hoy_date()
-    return [
-        {"hora": "13:00", "liga": "🌍 Mundial FIFA 2026", "local": "Francia", "visitante": "España", "dia": str(hoy)},
-        {"hora": "16:00", "liga": "🌍 Mundial FIFA 2026", "local": "Inglaterra", "visitante": "Argentina", "dia": str(hoy + timedelta(days=1))},
-    ]
+    
+    # Solo del 8 al 20 julio 2026
+    if 8 <= hoy.day <= 20 and hoy.month == 7 and hoy.year == 2026:
+        if hoy.day == 14:
+            return [{"hora": "13:00", "liga": "🌍 Mundial FIFA 2026", "local": "Francia", "visitante": "España", "dia": str(hoy)}]
+        elif hoy.day == 15:
+            return [{"hora": "16:00", "liga": "🌍 Mundial FIFA 2026", "local": "Inglaterra", "visitante": "Argentina", "dia": str(hoy)}]
+        elif hoy.day == 18:
+            return [{"hora": "16:00", "liga": "🌍 Mundial FIFA 2026", "local": "Perdedor SF1", "visitante": "Perdedor SF2", "dia": str(hoy)}]
+        elif hoy.day in [19, 20]:
+            return [{"hora": "16:00", "liga": "🌍 Mundial FIFA 2026", "local": "Ganador SF1", "visitante": "Ganador SF2", "dia": str(hoy)}]
+        else:
+            return []
+    return []
 
 # ══════════════════════════════════════════════════════════
 # API-FOOTBALL
@@ -3391,13 +3401,20 @@ def pantalla_principal():
         st.markdown("---")
         st.markdown('<p class="section-title">⚽ Partidos del Día</p>', unsafe_allow_html=True)
         
-        # SEMIFINALES del Mundial 2026 - 14 y 15 de julio
+        # MUNDIAL 2026 - Solo el partido del día
         from datetime import date, timedelta, datetime
         hoy = get_hoy_date()
-        partidos_hoy = [
-            {"hora": "13:00", "liga": "🏆 Mundial 2026", "local": "Francia", "visitante": "España", "dia": str(hoy)},
-            {"hora": "16:00", "liga": "🏆 Mundial 2026", "local": "Inglaterra", "visitante": "Argentina", "dia": str(hoy + timedelta(days=1))},
-        ]
+        
+        partidos_hoy = []
+        if 8 <= hoy.day <= 20 and hoy.month == 7 and hoy.year == 2026:
+            if hoy.day == 14:
+                partidos_hoy = [{"hora": "13:00", "liga": "🏆 Mundial 2026", "local": "Francia", "visitante": "España", "dia": str(hoy)}]
+            elif hoy.day == 15:
+                partidos_hoy = [{"hora": "16:00", "liga": "🏆 Mundial 2026", "local": "Inglaterra", "visitante": "Argentina", "dia": str(hoy)}]
+            elif hoy.day == 18:
+                partidos_hoy = [{"hora": "16:00", "liga": "🏆 Mundial 2026", "local": "Perdedor SF1", "visitante": "Perdedor SF2", "dia": str(hoy)}]
+            elif hoy.day in [19, 20]:
+                partidos_hoy = [{"hora": "16:00", "liga": "🏆 Mundial 2026", "local": "Ganador SF1", "visitante": "Ganador SF2", "dia": str(hoy)}]
         
         # Combinar con scraping
         todos_partidos = partidos_hoy + (partidos_scraped if partidos_scraped else [])
