@@ -2721,18 +2721,37 @@ def pantalla_admin():
                         es_mundial = "mundial" in ln.lower() or "fifa" in ln.lower()
                         
                         if es_mundial:
-                            # SEMIFINALES del Mundial 2026 - solo del 8 al 20 julio 2026
+                            # MUNDIAL 2026 - Mostrar SOLO el partido del día seleccionado
                             from datetime import date, timedelta, datetime
                             hoy = get_hoy_date()
-                            # Solo mostrar si estamos en las fechas del Mundial
-                            if 8 <= hoy.day <= 20:
-                                partido1 = {"hora": "13:00", "local": "Francia", "visitante": "España", "liga": ln, "dia": str(hoy)}
-                                partido2 = {"hora": "16:00", "local": "Inglaterra", "visitante": "Argentina", "liga": ln, "dia": str(hoy + timedelta(days=1))}
-                                partidos_liga = [partido1, partido2]
-                                fuente = "Semifinales Mundial 2026"
+                            # Solo del 8 al 20 julio 2026
+                            if 8 <= hoy.day <= 20 and hoy.month == 7 and hoy.year == 2026:
+                                if hoy.day == 14:
+                                    # SEMIFINAL 1: Francia vs España
+                                    partido1 = {"hora": "13:00", "liga": "🌍 Mundial FIFA 2026", "local": "Francia", "visitante": "España", "dia": str(hoy)}
+                                    partidos_liga = [partido1]
+                                    fuente = "Semifinal 1 - 14 julio"
+                                elif hoy.day == 15:
+                                    # SEMIFINAL 2: Inglaterra vs Argentina
+                                    partido1 = {"hora": "16:00", "liga": "🌍 Mundial FIFA 2026", "local": "Inglaterra", "visitante": "Argentina", "dia": str(hoy)}
+                                    partidos_liga = [partido1]
+                                    fuente = "Semifinal 2 - 15 julio"
+                                elif hoy.day == 18:
+                                    # TERCER LUGAR
+                                    partido1 = {"hora": "16:00", "liga": "🌍 Mundial FIFA 2026", "local": "Perdedor Semifinal 1", "visitante": "Perdedor Semifinal 2", "dia": str(hoy)}
+                                    partidos_liga = [partido1]
+                                    fuente = "Tercer Lugar - 18 julio"
+                                elif hoy.day in [19, 20]:
+                                    # FINAL
+                                    partido1 = {"hora": "16:00", "liga": "🌍 Mundial FIFA 2026", "local": "Ganador Semifinal 1", "visitante": "Ganador Semifinal 2", "dia": str(hoy)}
+                                    partidos_liga = [partido1]
+                                    fuente = "Gran Final - 19 julio"
+                                else:
+                                    partidos_liga = []
+                                    fuente = "Mundial 2026 - Sin partido este día"
                             else:
                                 partidos_liga = []
-                                fuente = "Mundial terminado"
+                                fuente = "Mundial no activo"
                         else:
                             # Buscar en API-Football
                             lid = LIGAS.get(ln, None)
