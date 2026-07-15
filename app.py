@@ -4561,7 +4561,7 @@ def pantalla_principal():
                 "Inter Milan", "AC Milan", "Juventus", "Napoli", "Roma",
                 "PSG", "Marseille", "Monaco", "Lyon",
                 "Ajax", "PSV", "Porto", "Benfica", "Sporting",
-                "Atletico Nacional", "Millonarios", "Santa Fe", "Junior",
+                "Atletico Nacional", "Atletico Bucaramanga", "Millonarios", "Santa Fe", "Junior",
                 "River Plate", "Boca Juniors", "Al Hilal", "Al Nassr",
             ]
             
