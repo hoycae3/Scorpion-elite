@@ -888,35 +888,7 @@ def buscar_equipo_en_todas_fuentes(nombre):
     resultados = []
     seen = set()
     
-    # 1. WIKIPEDIA (siempre funciona)
-    try:
-        url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={nombre.replace(' ', '%20')}&format=json"
-        headers_w = {"User-Agent": "Mozilla/5.0 (compatible; ScorpionBot/1.0)"}
-        r = requests.get(url, headers=headers_w, timeout=10)
-        if r.status_code == 200:
-            data = r.json()
-            results = data.get("query", {}).get("search", [])
-            for item in results[:10]:
-                title = item.get("title", "")
-                page_id = item.get("pageid", "")
-                snippet = item.get("snippet", "").replace("<span class=\"searchmatch\">", "").replace("</span>", "")[:100]
-                key = f"wiki_{page_id}"
-                # Filtrar solo equipos de fútbol
-                title_lower = title.lower()
-                if key not in seen:
-                    seen.add(key)
-                    resultados.append({
-                        "id": f"wiki_{page_id}",
-                        "nombre": title,
-                        "pais": "Ver en Wikipedia",
-                        "liga": "Wikipedia",
-                        "fuente": "Wikipedia",
-                        "info": snippet
-                    })
-    except Exception as e:
-        print(f"Error Wikipedia: {e}")
-    
-    # 2. API-FOOTBALL
+    # 1. API-FOOTBALL
     if API_FOOTBALL_KEY:
         try:
             headers_af = {"x-apisports-key": API_FOOTBALL_KEY}
@@ -940,6 +912,117 @@ def buscar_equipo_en_todas_fuentes(nombre):
         except Exception as e:
             print(f"Error API-Football: {e}")
     
+    # 2. FBREF (web scraping)
+    try:
+        url = f"https://fbref.com/en/search/search/?q={nombre.replace(' ', '+')}"
+        headers_fb = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+        r = requests.get(url, headers=headers_fb, timeout=10)
+        if r.status_code == 200:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(r.text, "html.parser")
+            # Buscar equipos en resultados de búsqueda
+            search_results = soup.find_all("div", class_="search-item")
+            if not search_results:
+                search_results = soup.find_all("a", href=lambda h: h and "/squads/" in h if h else False)
+            for item in search_results[:8]:
+                if hasattr(item, 'get_text'):
+                    team_name = item.get_text(strip=True)
+                else:
+                    team_name = item.get_text(strip=True) if item else ""
+                href = item.get("href", "") if hasattr(item, 'get') else ""
+                if team_name and len(team_name) > 2:
+                    key = f"fbref_{href}"
+                    if key not in seen and "/squads/" in href:
+                        seen.add(key)
+                        resultados.append({
+                            "id": href,
+                            "nombre": team_name[:50],
+                            "pais": "",
+                            "liga": "FBref",
+                            "fuente": "FBref"
+                        })
+    except Exception as e:
+        print(f"Error FBref: {e}")
+    
+    # 3. UNDERSTAT (web scraping)
+    try:
+        url = f"https://understat.com/search?q={nombre.replace(' ', '+')}"
+        headers_us = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+        r = requests.get(url, headers=headers_us, timeout=10)
+        if r.status_code == 200:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(r.text, "html.parser")
+            # Buscar equipos
+            links = soup.find_all("a", href=lambda h: h and "/team/" in h if h else False)
+            for link in links[:5]:
+                team_name = link.get_text(strip=True)
+                href = link.get("href", "")
+                if team_name and len(team_name) > 2:
+                    key = f"understat_{href}"
+                    if key not in seen:
+                        seen.add(key)
+                        resultados.append({
+                            "id": href,
+                            "nombre": team_name[:50],
+                            "pais": "",
+                            "liga": "Understat",
+                            "fuente": "Understat"
+                        })
+    except Exception as e:
+        print(f"Error Understat: {e}")
+    
+    # 4. FLASHCORE (web scraping)
+    try:
+        slug = nombre.lower().replace(" ", "-").replace("'", "").replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
+        url = f"https://www.flashscore.es/equipo/{slug}/"
+        headers_fs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+        r = requests.get(url, headers=headers_fs, timeout=10)
+        if r.status_code == 200 and "/equipo/" in r.url:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(r.text, "html.parser")
+            title = soup.find("title")
+            if title:
+                equipo_nombre = title.get_text().replace(" - Flashscore", "").strip()
+                if nombre.lower() in equipo_nombre.lower():
+                    key = f"flashscore_{slug}"
+                    if key not in seen:
+                        seen.add(key)
+                        resultados.append({
+                            "id": slug,
+                            "nombre": equipo_nombre,
+                            "pais": "",
+                            "liga": "Flashscore",
+                            "fuente": "Flashscore"
+                        })
+    except Exception as e:
+        print(f"Error Flashscore: {e}")
+    
+    # 5. SOFASCORE (web scraping)
+    try:
+        url = f"https://www.sofascore.com/search/{nombre.replace(' ', '+')}"
+        headers_ss = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+        r = requests.get(url, headers=headers_ss, timeout=10)
+        if r.status_code == 200:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(r.text, "html.parser")
+            links = soup.find_all("a", href=lambda h: h and "/team/" in h if h else False)
+            for link in links[:5]:
+                team_name = link.get_text(strip=True)
+                href = link.get("href", "")
+                if team_name and len(team_name) > 2:
+                    key = f"sofascore_{href}"
+                    if key not in seen:
+                        seen.add(key)
+                        resultados.append({
+                            "id": href,
+                            "nombre": team_name[:50],
+                            "pais": "",
+                            "liga": "Sofascore",
+                            "fuente": "Sofascore"
+                        })
+    except Exception as e:
+        print(f"Error Sofascore: {e}")
+    
     return resultados
 
 
@@ -948,28 +1031,6 @@ def obtener_stats_equipo_fuente(equipo):
     fuente = equipo.get('fuente', '')
     tid = equipo.get('id')
     nombre = equipo.get('nombre', '')
-    
-    # WIKIPEDIA - obtener información del equipo
-    if fuente == 'Wikipedia':
-        try:
-            page_id = tid.replace("wiki_", "") if tid else None
-            if page_id:
-                # Obtener contenido de Wikipedia
-                url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro&explaintext&pageids={page_id}&format=json"
-                headers_w = {"User-Agent": "Mozilla/5.0"}
-                r = requests.get(url, headers=headers_w, timeout=10)
-                if r.status_code == 200:
-                    data = r.json()
-                    page = data.get("query", {}).get("pages", {}).get(page_id, {})
-                    extract = page.get("extract", "")[:500]
-                    return {
-                        "partidos": "Ver Wikipedia",
-                        "victorias": nombre,
-                        "goles_favor": extract if extract else "Sin información disponible",
-                        "goles_contra": "Wikipedia",
-                    }
-        except:
-            pass
     
     # API-FOOTBALL
     if fuente == 'API-Football' and API_FOOTBALL_KEY:
@@ -981,24 +1042,121 @@ def obtener_stats_equipo_fuente(equipo):
             if r.status_code == 200:
                 data = r.json()
                 if data.get("response"):
-                    leagues = data["response"][0].get("leagues", [])
-                    for league in leagues[:1]:
-                        lid = league.get("league", {}).get("id")
-                        if lid:
-                            stats_url = f"https://v3.football.api-sports.io/teams/statistics?team={tid}&league={lid}&season=2024"
-                            r2 = requests.get(stats_url, headers=headers, timeout=10)
-                            if r2.status_code == 200:
-                                s = r2.json()
-                                if s.get("response"):
-                                    resp = s["response"]
-                                    return {
-                                        "partidos": resp.get("fixtures", {}).get("played", 0),
-                                        "victorias": resp.get("fixtures", {}).get("wins", {}).get("total", 0),
-                                        "goles_favor": resp.get("goals", {}).get("for", {}).get("total", {}).get("total", 0),
-                                        "goles_contra": resp.get("goals", {}).get("against", {}).get("total", {}).get("total", 0),
-                                    }
-        except:
-            pass
+                    leagues = data["response"][0].get("leagues", {})
+                    if isinstance(leagues, list) and leagues:
+                        lid = leagues[0].get("league", {}).get("id")
+                    elif isinstance(leagues, dict):
+                        lid = leagues.get("id")
+                    else:
+                        lid = None
+                    if lid:
+                        stats_url = f"https://v3.football.api-sports.io/teams/statistics?team={tid}&league={lid}&season=2024"
+                        r2 = requests.get(stats_url, headers=headers, timeout=10)
+                        if r2.status_code == 200:
+                            s = r2.json()
+                            if s.get("response"):
+                                resp = s["response"]
+                                return {
+                                    "partidos": resp.get("fixtures", {}).get("played", 0),
+                                    "victorias": resp.get("fixtures", {}).get("wins", {}).get("total", 0),
+                                    "goles_favor": resp.get("goals", {}).get("for", {}).get("total", {}).get("total", 0),
+                                    "goles_contra": resp.get("goals", {}).get("against", {}).get("total", {}).get("total", 0),
+                                }
+        except Exception as e:
+            print(f"Error API-Football stats: {e}")
+    
+    # FBREF - scraping de estadísticas
+    elif fuente == 'FBref' and tid:
+        try:
+            url = f"https://fbref.com{tid}" if tid.startswith("/") else f"https://fbref.com/en/squads/{tid}"
+            headers_fb = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+            r = requests.get(url, headers=headers_fb, timeout=10)
+            if r.status_code == 200:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(r.text, "html.parser")
+                # Buscar estadísticas del equipo
+                stats_table = soup.find("table", {"id": "stats"})
+                if stats_table:
+                    rows = stats_table.find_all("tr")
+                    if rows:
+                        first_row = rows[0]
+                        cells = first_row.find_all("td")
+                        if cells and len(cells) >= 5:
+                            return {
+                                "partidos": cells[2].get_text(strip=True) if len(cells) > 2 else "N/A",
+                                "victorias": cells[3].get_text(strip=True) if len(cells) > 3 else "N/A",
+                                "goles_favor": cells[4].get_text(strip=True) if len(cells) > 4 else "N/A",
+                                "goles_contra": cells[5].get_text(strip=True) if len(cells) > 5 else "N/A",
+                            }
+                return {
+                    "partidos": "Ver FBref",
+                    "victorias": nombre,
+                    "goles_favor": "Estadísticas disponibles en FBref",
+                    "goles_contra": "FBref",
+                }
+        except Exception as e:
+            print(f"Error FBref stats: {e}")
+    
+    # UNDERSTAT - scraping de xG
+    elif fuente == 'Understat' and tid:
+        try:
+            url = f"https://understat.com{tid}" if tid.startswith("/") else f"https://understat.com/team/{tid}"
+            headers_us = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+            r = requests.get(url, headers=headers_us, timeout=10)
+            if r.status_code == 200:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(r.text, "html.parser")
+                # Buscar datos de xG
+                scripts = soup.find_all("script")
+                for script in scripts:
+                    if "xG" in script.get_text():
+                        text = script.get_text()
+                        return {
+                            "partidos": "Ver Understat",
+                            "victorias": nombre,
+                            "goles_favor": "xG y estadísticas avanzadas",
+                            "goles_contra": "Understat",
+                        }
+                return {
+                    "partidos": "Consultar",
+                    "victorias": nombre,
+                    "goles_favor": "Understat ofrece xG",
+                    "goles_contra": "Understat",
+                }
+        except Exception as e:
+            print(f"Error Understat stats: {e}")
+    
+    # FLASHCORE
+    elif fuente == 'Flashscore' and tid:
+        try:
+            url = f"https://www.flashscore.es/equipo/{tid}/"
+            headers_fs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+            r = requests.get(url, headers=headers_fs, timeout=10)
+            if r.status_code == 200:
+                return {
+                    "partidos": "Ver Flashscore",
+                    "victorias": nombre,
+                    "goles_favor": "Estadísticas en Flashscore",
+                    "goles_contra": "Flashscore",
+                }
+        except Exception as e:
+            print(f"Error Flashscore stats: {e}")
+    
+    # SOFASCORE
+    elif fuente == 'Sofascore' and tid:
+        try:
+            url = f"https://www.sofascore.com{tid}" if tid.startswith("/") else f"https://www.sofascore.com/team/{tid}"
+            headers_ss = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+            r = requests.get(url, headers=headers_ss, timeout=10)
+            if r.status_code == 200:
+                return {
+                    "partidos": "Ver Sofascore",
+                    "victorias": nombre,
+                    "goles_favor": "Estadísticas en Sofascore",
+                    "goles_contra": "Sofascore",
+                }
+        except Exception as e:
+            print(f"Error Sofascore stats: {e}")
     
     return None
 
