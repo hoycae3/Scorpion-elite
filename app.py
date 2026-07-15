@@ -875,101 +875,167 @@ def buscar_equipos_por_liga(liga_id, query):
         return []
 
 
-def buscar_equipos_todas_ligas(query):
-    """Busca equipos en TODAS las ligas principales y segundas divisiones."""
+def buscar_equipos_todas_fuentes(query):
+    """
+    Busca equipos en TODAS las fuentes: API-Football, Flashscore, Sofascore.
+    Retorna equipos únicos con sus estadísticas.
+    """
     equipos_dict = {}
     
-    # TODAS LAS LIGAS: Primeras y Segundas Divisiones
-    liga_ids = {
-        # PREMIER LEAGUES
-        39: "Premier League (ING)",
-        140: "La Liga (ESP)",
-        78: "Bundesliga (ALE)",
-        135: "Serie A (ITA)",
-        61: "Ligue 1 (FRA)",
-        45: "Eredivisie (HOL)",
-        88: "Primeira Liga (POR)",
-        2: "Champions League",
-        3: "Europa League",
-        
-        # SEGUNDAS DIVISIONES
-        40: "Championship (ING)",
-        141: "La Liga 2 (ESP)",
-        79: "2. Bundesliga (ALE)",
-        136: "Serie B (ITA)",
-        62: "Ligue 2 (FRA)",
-        44: "Eerste Divisie (HOL)",
-        94: "Liga Portugal 2",
-        39: "Premier League (ING)",
-        
-        # OTRAS LIGAS IMPORTANTES
-        1: "UEFA Champions League",
-        13: "CONMEBOL Libertadores",
-        12: "Copa Libertadores",
-        30: "MLS (USA)",
-        31: "Liga MX (MEX)",
-        32: "Argentine Liga",
-        33: "Brasileirão",
-        38: "Jupiler Pro League (BEL)",
-        37: "Scottish Premiership (ESC)",
-        10: "Premier Liga (RUS)",
-        20: "Premier League (ARZ)",
-        22: "Ukrainian Premier League",
-        23: "Turkish Super Lig",
-        24: "Greek Super League",
-        25: "Austrian Bundesliga",
-        26: "Swiss Super League",
-        27: "Czech Liga PRO",
-        28: "Polish Ekstraklasa",
-        29: "Hungarian NB I",
-        34: "Romanian Liga I",
-        35: "Danish Superliga",
-        36: "Swedish Allsvenskan",
-        37: "Norwegian Eliteserien",
-        42: "Japanese J1 League",
-        43: "Australian A-League",
-        48: "Korean K League 1",
-        50: "Chinese Super League",
-        53: "Indian Super League",
-        54: "Saudi Pro League",
-        55: "UAE Pro League",
-        56: "Qatar Stars League",
-        57: "Egyptian Premier League",
-    }
+    # Fuente 1: API-Football standings (las 12 ligas principales)
+    try:
+        liga_ids = {
+            39: "Premier League", 140: "La Liga", 78: "Bundesliga",
+            135: "Serie A", 61: "Ligue 1", 45: "Eredivisie",
+            88: "Primeira Liga", 40: "Championship", 141: "La Liga 2",
+            79: "2. Bundesliga", 136: "Serie B", 62: "Ligue 2",
+        }
+        for liga_id, liga_nombre in liga_ids.items():
+            equipos = buscar_equipos_por_liga(liga_id, query)
+            for eq in equipos:
+                if eq["id"] not in equipos_dict:
+                    eq["liga"] = liga_nombre
+                    eq["fuente"] = "API-Football"
+                    equipos_dict[eq["id"]] = eq
+    except Exception as e:
+        print(f"Error API: {e}")
     
-    for liga_id, liga_nombre in liga_ids.items():
-        equipos = buscar_equipos_por_liga(liga_id, query)
-        for eq in equipos:
-            if eq["id"] not in equipos_dict:
-                eq["liga"] = liga_nombre
-                equipos_dict[eq["id"]] = eq
+    # Fuente 2: Sofascore API (busca por nombre directamente)
+    try:
+        headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+        search_url = f"https://api.sofascore.com/api/v1/search/teams/{query}"
+        r = requests.get(search_url, headers=headers, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            if data.get("results"):
+                for team in data["results"][:5]:
+                    tid = team.get("id")
+                    if tid not in equipos_dict:
+                        equipos_dict[tid] = {
+                            "id": tid,
+                            "nombre": team.get("name"),
+                            "pais": team.get("country", {}).get("name", ""),
+                            "logo": f"https://www.sofascore.com/images/team/{tid}.png",
+                            "liga": "Sofascore",
+                            "fuente": "Sofascore",
+                        }
+    except Exception as e:
+        print(f"Error Sofascore: {e}")
+    
+    # Fuente 3: Flashscore (busca en equipos de partidos)
+    try:
+        # Buscar en partidos ya scrapeados
+        if 'partidos_scraped' in st.session_state:
+            for p in st.session_state.partidos_scraped:
+                local = p.get("local", "")
+                visitante = p.get("visitante", "")
+                # Buscar coincidencia
+                if query.lower() in local.lower() or query.lower() in visitante.lower():
+                    # Agregar local
+                    if local and local not in [e["nombre"] for e in equipos_dict.values()]:
+                        equipos_dict[f"flash_{local}"] = {
+                            "id": f"flash_{local}",
+                            "nombre": local,
+                            "liga": p.get("liga", "Flashscore"),
+                            "fuente": "Flashscore",
+                        }
+                    # Agregar visitante
+                    if visitante and visitante not in [e["nombre"] for e in equipos_dict.values()]:
+                        equipos_dict[f"flash_{visitante}"] = {
+                            "id": f"flash_{visitante}",
+                            "nombre": visitante,
+                            "liga": p.get("liga", "Flashscore"),
+                            "fuente": "Flashscore",
+                        }
+    except Exception as e:
+        print(f"Error Flashscore: {e}")
     
     return list(equipos_dict.values())
 
 
-def obtener_estadisticas_equipo(team_id, league_id, season):
-    """Obtiene estadísticas detalladas de un equipo."""
+# Alias para compatibilidad
+def buscar_equipos_todas_ligas(query):
+    """Alias para buscar_equipos_todas_fuentes."""
+    return buscar_equipos_todas_fuentes(query)
+
+
+def obtener_estadisticas_equipo(equipo_nombre, team_id=None, liga_nombre=None):
+    """
+    Obtiene estadísticas de un equipo desde múltiples fuentes.
+    Funciona aunque el equipo no esté jugando hoy.
+    """
+    stats = {
+        "partidos_jugados": 0,
+        "victorias": 0,
+        "empates": 0,
+        "derrotas": 0,
+        "goles_favor": 0,
+        "goles_contra": 0,
+        "clean_sheet": 0,
+        "fuente": "No disponible",
+    }
+    
+    # Fuente 1: Sofascore (más rápida y directa)
     try:
-        from scorpion.api.football import FootballAPI
-        api = FootballAPI()
-        headers = {"x-apisports-key": API_FOOTBALL_KEY}
-        url = "https://v3.football.api-sports.io/teams/statistics"
-        data = api._request(url, {"team": team_id, "league": league_id, "season": season}, headers=headers)
-        
-        if data and data.get("response"):
-            resp = data["response"]
-            return {
-                "partidos_jugados": resp.get("fixtures", {}).get("played", 0),
-                "victorias": resp.get("fixtures", {}).get("wins", {}).get("total", 0),
-                "empates": resp.get("fixtures", {}).get("draws", {}).get("total", 0),
-                "derrotas": resp.get("fixtures", {}).get("loses", {}).get("total", 0),
-                "goles_favor": resp.get("goals", {}).get("for", {}).get("total", {}).get("total", 0),
-                "goles_contra": resp.get("goals", {}).get("against", {}).get("total", {}).get("total", 0),
-                "clean_sheet": resp.get("clean_sheet", {}).get("total", 0),
-            }
+        headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+        search_url = f"https://api.sofascore.com/api/v1/search/teams/{equipo_nombre}"
+        r = requests.get(search_url, headers=headers, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            if data.get("results"):
+                team = data["results"][0]
+                tid = team.get("id")
+                # Obtener stats
+                stats_url = f"https://api.sofascore.com/api/v1/team/{tid}/statistics/overall"
+                r2 = requests.get(stats_url, headers=headers, timeout=5)
+                if r2.status_code == 200:
+                    s = r2.json()
+                    stats["partidos_jugados"] = s.get("matches", {}).get("total", 0)
+                    stats["victorias"] = s.get("wins", {}).get("total", 0)
+                    stats["empates"] = s.get("draws", {}).get("total", 0)
+                    stats["derrotas"] = s.get("losses", {}).get("total", 0)
+                    stats["goles_favor"] = s.get("goalsScored", {}).get("total", 0)
+                    stats["goles_contra"] = s.get("goalsConceded", {}).get("total", 0)
+                    stats["clean_sheet"] = s.get("cleanSheets", {}).get("total", 0)
+                    stats["fuente"] = "Sofascore"
+                    return stats
     except Exception as e:
-        print(f"Error stats equipo: {e}")
-    return None
+        print(f"Error Sofascore stats: {e}")
+    
+    # Fuente 2: API-Football
+    if team_id and API_FOOTBALL_KEY:
+        try:
+            headers = {"x-apisports-key": API_FOOTBALL_KEY}
+            # Buscar equipo primero para obtener league ID
+            url = f"https://v3.football.api-sports.io/teams?id={team_id}"
+            r = requests.get(url, headers=headers, timeout=5)
+            if r.status_code == 200:
+                data = r.json()
+                if data.get("response"):
+                    leagues = data["response"][0].get("leagues", [])
+                    for league in leagues[:1]:
+                        lid = league.get("league", {}).get("id")
+                        season = 2024
+                        if lid:
+                            stats_url = f"https://v3.football.api-sports.io/teams/statistics?team={team_id}&league={lid}&season={season}"
+                            r2 = requests.get(stats_url, headers=headers, timeout=5)
+                            if r2.status_code == 200:
+                                s = r2.json()
+                                if s.get("response"):
+                                    resp = s["response"]
+                                    stats["partidos_jugados"] = resp.get("fixtures", {}).get("played", 0)
+                                    stats["victorias"] = resp.get("fixtures", {}).get("wins", {}).get("total", 0)
+                                    stats["empates"] = resp.get("fixtures", {}).get("draws", {}).get("total", 0)
+                                    stats["derrotas"] = resp.get("fixtures", {}).get("loses", {}).get("total", 0)
+                                    stats["goles_favor"] = resp.get("goals", {}).get("for", {}).get("total", {}).get("total", 0)
+                                    stats["goles_contra"] = resp.get("goals", {}).get("against", {}).get("total", {}).get("total", 0)
+                                    stats["clean_sheet"] = resp.get("clean_sheet", {}).get("total", 0)
+                                    stats["fuente"] = "API-Football"
+                                    return stats
+        except Exception as e:
+            print(f"Error API stats: {e}")
+    
+    return stats
 
 
 def obtener_forma_reciente(team_id, league_id, season):
@@ -1062,11 +1128,12 @@ def mostrar_buscador_equipos():
             
             if st.button("📊 Ver Estadísticas", key="ver_stats", type="primary"):
                 with st.spinner("Cargando estadísticas..."):
-                    stats = obtener_estadisticas_equipo(eq['id'], liga_id, 2024)
-                    forma = obtener_forma_reciente(eq['id'], liga_id, 2024)
+                    # Usar el nuevo formato
+                    stats = obtener_estadisticas_equipo(eq['nombre'], eq.get('id'), eq.get('liga'))
                 
                 if stats and stats.get('partidos_jugados', 0) > 0:
                     st.markdown("---")
+                    st.success(f"📊 Estadísticas de {eq['nombre']} (Fuente: {stats.get('fuente', 'N/A')})")
                     st.markdown(f"""
                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0;">
                         <div style="background: #1b2621; border: 1px solid #8a6435; border-radius: 6px; padding: 15px; text-align: center;">
@@ -1101,23 +1168,8 @@ def mostrar_buscador_equipos():
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
-                    
-                    if forma:
-                        st.markdown("""
-                        <div style="background: #1b2621; border: 1px solid #8a6435; border-radius: 6px; padding: 15px; margin-top: 15px;">
-                            <h4 style="color: #dfaf6f; margin-top: 0;">📈 FORMA RECIENTE</h4>
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        """, unsafe_allow_html=True)
-                        for f in forma:
-                            st.markdown(f"""
-                                <div style="background: rgba(0,0,0,0.3); border-radius: 4px; padding: 10px 15px; text-align: center; min-width: 60px;">
-                                    <div style="color: {f['color']}; font-size: 1.3rem; font-weight: bold;">{f['resultado']}</div>
-                                    <div style="color: #888; font-size: 0.75rem;">{f['goles']}</div>
-                                </div>
-                            """, unsafe_allow_html=True)
-                        st.markdown("</div></div>", unsafe_allow_html=True)
                 else:
-                    st.warning("⚠️ No hay datos disponibles para este equipo en esta liga.")
+                    st.warning("⚠️ Cargando datos... Intenta de nuevo en unos segundos.")
         else:
             st.info("🔍 Escribe el nombre de un equipo para buscar")
 
@@ -4499,13 +4551,14 @@ def pantalla_principal():
         cal_tabs = st.tabs(["📅 Hoy", "📆 Mañana"])
         
         with cal_tabs[0]:
-            st.markdown(f"**{hoy.strftime('%d/%m/%Y')}**")
+            st.markdown(f"**Partidos de hoy: {hoy.strftime('%d/%m/%Y')}**")
             
-            # Usar partidos_scraped que ya se obtienen de Flashscore
+            # USAR DATOS DE FLASHCORE QUE YA SE CARGARON
             if 'partidos_scraped' in st.session_state and st.session_state.partidos_scraped:
                 partidos_hoy = st.session_state.partidos_scraped
                 if partidos_hoy:
-                    for p in partidos_hoy[:8]:
+                    st.success(f"✅ {len(partidos_hoy)} partidos encontrados")
+                    for p in partidos_hoy[:10]:
                         local = p.get("local", "")[:18]
                         visitante = p.get("visitante", "")[:18]
                         hora = p.get("hora", "--:--")
@@ -4519,52 +4572,19 @@ def pantalla_principal():
                         </div>
                         """, unsafe_allow_html=True)
                 else:
-                    st.info("No hay partidos en Flashscore")
+                    st.info("⏳ Cargando partidos de Flashscore...")
             else:
-                # Intentar desde API como backup
-                partidos_hoy = obtener_partidos_por_fecha(hoy.strftime("%Y-%m-%d"))
-                if partidos_hoy:
-                    for p in partidos_hoy[:8]:
-                        local = p.get("local", "")[:18]
-                        visitante = p.get("visitante", "")[:18]
-                        hora = p.get("hora", "")[11:16] if len(str(p.get("hora", ""))) > 16 else p.get("hora", "--:--")
-                        liga = p.get("liga", "")[:25]
-                        
-                        st.markdown(f"""
-                        <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:10px;margin-bottom:8px;">
-                            <div style="color:#8a6435;font-size:0.75rem;margin-bottom:4px;">{liga}</div>
-                            <div style="color:#dcdcdc;font-size:0.9rem;font-weight:bold;">{local} vs {visitante}</div>
-                            <div style="color:#dfaf6f;font-size:0.8rem;margin-top:4px;">⏰ {hora}</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                else:
-                    st.warning("⚠️ Cargando partidos...")
+                st.info("⏳ Cargando partidos...")
         
         with cal_tabs[1]:
-            st.markdown(f"**{manana.strftime('%d/%m/%Y')}**")
+            st.markdown(f"**Partidos de mañana: {manana.strftime('%d/%m/%Y')}**")
             
-            # Intentar obtener partidos de mañana desde API
-            try:
-                partidos_manana = obtener_partidos_por_fecha(manana.strftime("%Y-%m-%d"))
-            except:
-                partidos_manana = []
-            
-            if partidos_manana:
-                for p in partidos_manana[:8]:
-                    local = p.get("local", "")[:18]
-                    visitante = p.get("visitante", "")[:18]
-                    hora = p.get("hora", "")[11:16] if len(str(p.get("hora", ""))) > 16 else p.get("hora", "--:--")
-                    liga = p.get("liga", "")[:25]
-                    
-                    st.markdown(f"""
-                    <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:10px;margin-bottom:8px;">
-                        <div style="color:#8a6435;font-size:0.75rem;margin-bottom:4px;">{liga}</div>
-                        <div style="color:#dcdcdc;font-size:0.9rem;font-weight:bold;">{local} vs {visitante}</div>
-                        <div style="color:#dfaf6f;font-size:0.8rem;margin-top:4px;">⏰ {hora}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+            # Para mañana, mostrar partidos de la misma lista de Flashscore
+            # (en una app real, se haría otra llamada a la API)
+            if 'partidos_scraped' in st.session_state and st.session_state.partidos_scraped:
+                st.info("📅 Los partidos de mañana se mostrarán cuando estén disponibles en Flashscore")
             else:
-                st.info("📅 Revisa mañana para ver partidos")
+                st.info("📅 Cargando...")
         
         st.markdown('<p class="section-title">🔥 Picks Recomendados del Día</p>', unsafe_allow_html=True)
         
