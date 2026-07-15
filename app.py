@@ -2769,9 +2769,63 @@ st.markdown("""<style>
 .footer {
     color: #a3b899 !important;
 }
+/* Estilos heredados */
+.hdr {
+    background: linear-gradient(135deg, #142419 0%, #0d160f 100%) !important;
+    border: 1px solid #332115 !important;
+    border-left: 5px solid #d48243 !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    text-align: center !important;
+}
+.hdr h1 {
+    color: #d48243 !important;
+    font-family: 'Georgia', serif !important;
+    font-size: 2.2rem !important;
+    margin: 0 !important;
+    letter-spacing: 4px !important;
+}
+.hdr p {
+    color: #a3b899 !important;
+    margin: 5px 0 0 !important;
+    font-size: 0.9rem !important;
+}
+.pill-ok {
+    background: rgba(57, 255, 20, 0.15) !important;
+    color: #39ff14 !important;
+    border: 1px solid #39ff14 !important;
+    padding: 2px 10px !important;
+    border-radius: 20px !important;
+    font-size: 11px !important;
+}
+.pill-v {
+    background: rgba(255, 107, 107, 0.15) !important;
+    color: #ff6b6b !important;
+    border: 1px solid #ff6b6b !important;
+    padding: 2px 10px !important;
+    border-radius: 20px !important;
+    font-size: 11px !important;
+}
+.pill-f {
+    background: rgba(212, 130, 67, 0.15) !important;
+    color: #d48243 !important;
+    border: 1px solid #d48243 !important;
+    padding: 2px 10px !important;
+    border-radius: 20px !important;
+    font-size: 11px !important;
+}
+/* Forzar h1 a color cobre */
+h1 {
+    color: #d48243 !important;
+}
 </style>""",unsafe_allow_html=True)
 def hdr(sub="Motor de Analisis Deportivo — 4 Modelos + Datos Reales"):
-    st.markdown(f'<div class="hdr"><h1>🦂 SCORPION ELITE</h1><p>{sub}</p></div>',unsafe_allow_html=True)
+    st.markdown(f'''
+    <div class="header-container">
+        <div class="brand-title">🦂 SCORPION ELITE</div>
+        <div class="brand-subtitle">{sub}</div>
+    </div>
+    ''', unsafe_allow_html=True)
 
 def bdg(r):
     return f'<span class="badge-{r}">{r}</span>'
