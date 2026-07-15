@@ -4890,77 +4890,21 @@ def pantalla_principal():
         # Selector de liga
         liga_seleccionada = st.selectbox("Liga", [
             "Premier League", "La Liga", "Bundesliga", "Serie A", 
-            "Ligue 1", "Champions League", "Mundial FIFA 2026"
+            "Ligue 1", "Champions League"
         ])
         
-        # Primero intentar con API-Football para datos reales
+        # Buscar goleadores desde API
         goleadores_api = obtener_goleadores_api(liga_seleccionada)
         
         if goleadores_api:
-            for g in goleadores_api[:8]:
-                i = g.get("posicion", 1)
-                nombre = g.get("nombre", "")
+            for g in goleadores_api[:5]:
+                nombre = g.get("nombre", "")[:15]
                 goles = g.get("goles", 0)
-                equipo = g.get("equipo", "")
+                equipo = g.get("equipo", "")[:12]
                 
-                medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
-                equipo_str = f'<span style="color:#a3b899;font-size:0.7rem"> · {equipo}</span>' if equipo else ""
-                
-                st.markdown(f"""
-                <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: linear-gradient(135deg, #122016 0%, #0f1a12 100%); border-radius: 5px; margin-bottom: 5px; border-left: 3px solid #d48243;">
-                    <span style="color: #d48243;">{medal} {nombre}{equipo_str}</span>
-                    <span style="color: #d48243; font-weight: bold;">{goles} ⚽</span>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            st.caption(f"🔄 Datos reales - {liga_seleccionada} (API-Football)")
+                st.markdown(f'<div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:5px;margin-bottom:4px;display:flex;justify-content:space-between;"><span style="color:#dcdcdc;font-size:0.75rem;">{nombre} <span style="color:#888;">({equipo})</span></span><span style="color:#dfaf6f;font-size:0.8rem;font-weight:bold;">{goles}⚽</span></div>', unsafe_allow_html=True)
         else:
-            # Fallback con goleadores de ejemplo
-            goleadores_ejemplo = {
-                "Mundial FIFA 2026": [
-                    ("Lionel Messi", "Argentina", 6, 8),
-                    ("Kylian Mbappé", "Francia", 6, 8),
-                    ("Erling Haaland", "Noruega", 5, 7),
-                    ("Harry Kane", "Inglaterra", 4, 6),
-                    ("Lautaro Martínez", "Argentina", 4, 7),
-                    ("Vinicius Jr", "Brasil", 3, 5),
-                    ("Julian Alvarez", "Argentina", 3, 6),
-                    ("Mohamed Salah", "Egipto", 2, 4),
-                ],
-                "Premier League": [("Erling Haaland", 25, "Man City"), ("Cole Palmer", 22, "Chelsea"), ("Alexander Isak", 20, "Newcastle"), ("Ollie Watkins", 19, "Aston Villa"), ("Mohamed Salah", 18, "Liverpool")],
-                "La Liga": [("Kylian Mbappé", 24, "Real Madrid"), ("Robert Lewandowski", 21, "Barcelona"), ("Lamine Yamal", 18, "Barcelona"), ("Raphinha", 17, "Barcelona"), ("Ante Budimir", 16, "Real Sociedad")],
-                "Bundesliga": [("Harry Kane", 25, "Bayern"), ("Omar Marmoush", 22, "Eintracht"), ("Lois Openda", 20, "Leipzig"), ("Serhou Guirassy", 19, "Dortmund"), ("Jamal Musiala", 18, "Bayern")],
-                "Serie A": [("Lautaro Martínez", 23, "Inter"), ("Dusan Vlahovic", 20, "Juventus"), ("Victor Osimhen", 19, "Napoli"), ("Romelu Lukaku", 18, "Roma"), ("Marcus Thuram", 17, "Inter")],
-                "Ligue 1": [("Ousmane Dembélé", 24, "PSG"), ("Alexandre Lacazette", 20, "Lyon"), ("Jonathan David", 19, "Lille"), ("Folarin Balogun", 18, "Monaco"), ("Kingsley Coman", 17, "PSG")],
-                "Champions League": [("Kylian Mbappé", 8, "Real Madrid"), ("Robert Lewandowski", 7, "Barcelona"), ("Erling Haaland", 7, "Man City"), ("Harry Kane", 6, "Bayern"), ("Lautaro Martínez", 6, "Inter")],
-            }
-            
-            goleadores = goleadores_ejemplo.get(liga_seleccionada, goleadores_ejemplo["Mundial FIFA 2026"])
-            
-            for i, dato in enumerate(goleadores, 1):
-                # Manejar diferentes formatos de tuple
-                nombre = ""
-                goles = 0
-                equipo = ""
-                
-                if len(dato) == 4:
-                    nombre, equipo, goles, _ = dato  # (nombre, equipo, goles, partidos)
-                elif len(dato) == 3:
-                    nombre, goles, equipo = dato
-                elif len(dato) == 2:
-                    nombre, goles = dato
-                
-                medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
-                equipo_str = f'<span style="color:#a3b899;font-size:0.7rem"> · {equipo}</span>' if equipo else ""
-                
-                st.markdown(f"""
-                <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: #16261b; border-radius: 5px; margin-bottom: 5px; border-left: 3px solid #d48243;">
-                    <span style="color: #ffffff;">{medal} {nombre}{equipo_str}</span>
-                    <span style="color: #d48243; font-weight: bold;">{goles} ⚽</span>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            st.caption(f"📊 Datos de ejemplo - {liga_seleccionada}")
+            st.info("Cargando goleadores...")
     
     with col3:
         st.markdown('<p class="section-title">📊 Tendencias</p>', unsafe_allow_html=True)
