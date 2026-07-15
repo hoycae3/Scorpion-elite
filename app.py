@@ -742,6 +742,86 @@ def scrape_flashscore_partidos():
     return partidos
 
 
+def obtener_stats_equipos_api():
+    """
+    Obtiene estadísticas de equipos desde API-Football.
+    Retorna dict: {nombre_equipo: {pj, gf, gc, puntos}}
+    """
+    from scorpion.api.football import FootballAPI
+    
+    stats = {}
+    api = FootballAPI()
+    
+    # Ligas soportadas
+    liga_ids = {
+        39: "Premier League",
+        140: "La Liga", 
+        78: "Bundesliga",
+        135: "Serie A",
+        61: "Ligue 1",
+    }
+    
+    for liga_id, liga_nombre in liga_ids.items():
+        try:
+            temporada = api.get_temporada(liga_id)
+            headers = {"x-apisports-key": API_FOOTBALL_KEY}
+            
+            data = api._request(
+                "https://v3.football.api-sports.io/standings",
+                {"league": liga_id, "season": temporada},
+                headers=headers
+            )
+            
+            if data and data.get("response"):
+                for response in data["response"]:
+                    standings = response.get("league", {}).get("standings", [])
+                    for stage in standings:
+                        for row in stage:
+                            team = row.get("team", {})
+                            team_name = team.get("name", "")
+                            stats[team_name] = {
+                                "pj": row.get("played", 0),
+                                "gf": row.get("goals", {}).get("for", 0),
+                                "gc": row.get("goals", {}).get("against", 0),
+                                "puntos": row.get("points", 0),
+                                "liga": liga_nombre
+                            }
+        except Exception as e:
+            print(f"Error stats {liga_nombre}: {e}")
+    
+    return stats
+
+
+def enriquecer_partidos_con_stats(partidos, stats):
+    """Añade estadísticas a los partidos basándose en nombre de equipo."""
+    if not stats:
+        return partidos
+    
+    partidos_enriquecidos = []
+    for p in partidos:
+        partido = p.copy()
+        local = p.get("local", "").lower()
+        visitante = p.get("visitante", "").lower()
+        
+        stats_local = None
+        stats_visitante = None
+        
+        for nombre, data in stats.items():
+            if stats_local is None and local in nombre.lower():
+                stats_local = data
+            if stats_visitante is None and visitante in nombre.lower():
+                stats_visitante = data
+        
+        if stats_local:
+            partido["stats_local"] = stats_local
+        if stats_visitante:
+            partido["stats_visitante"] = stats_visitante
+        
+        partidos_enriquecidos.append(partido)
+    
+    return partidos_enriquecidos
+
+
 def scrape_goleadores_tiempo_real(liga_nombre):
     """Obtiene goleadores en tiempo real desde Flashscore."""
     global GOLEADORES_CACHE
@@ -3374,6 +3454,19 @@ def pantalla_principal():
     except:
         partidos_scraped = []
     
+    # Obtener estadísticas de equipos desde API-Football
+    stats_cache_key = f"stats_equipos_{get_hoy()}"
+    if stats_cache_key not in st.session_state:
+        try:
+            st.session_state[stats_cache_key] = obtener_stats_equipos_api()
+        except:
+            st.session_state[stats_cache_key] = {}
+    stats_equipos = st.session_state.get(stats_cache_key, {})
+    
+    # Enriquecer partidos con estadísticas
+    if stats_equipos:
+        partidos_scraped = enriquecer_partidos_con_stats(partidos_scraped, stats_equipos)
+    
     with col1:
         st.markdown('<p class="section-title">🔥 Picks Recomendados del Día</p>', unsafe_allow_html=True)
         
@@ -3437,10 +3530,45 @@ def pantalla_principal():
         
         if todos_partidos:
             for p in todos_partidos[:8]:
+                local = p.get('local', '')
+                visitante = p.get('visitante', '')
+                stats_local = p.get('stats_local', None)
+                stats_visitante = p.get('stats_visitante', None)
+                
+                # Info del equipo local
+                if stats_local:
+                    pj = stats_local.get('pj', '-')
+                    gf = stats_local.get('gf', '-')
+                    gc = stats_local.get('gc', '-')
+                    puntos = stats_local.get('puntos', '-')
+                    info_local = f"{pj}PJ | {gf}GF | {gc}GC | {puntos}pts"
+                else:
+                    info_local = "Stats no disp."
+                
+                # Info del equipo visitante
+                if stats_visitante:
+                    pj = stats_visitante.get('pj', '-')
+                    gf = stats_visitante.get('gf', '-')
+                    gc = stats_visitante.get('gc', '-')
+                    puntos = stats_visitante.get('puntos', '-')
+                    info_visitante = f"{pj}PJ | {gf}GF | {gc}GC | {puntos}pts"
+                else:
+                    info_visitante = "Stats no disp."
+                
                 st.markdown(f"""
-                <div style="background: #131926; padding: 10px 12px; border-radius: 5px; margin-bottom: 8px; border-left: 3px solid #ffd700;">
-                    <span style="color: #ffd700; font-size: 0.75rem;">{p.get('liga', 'Partido')} · {p.get('hora', '--:--')}</span><br>
-                    <span style="color: #fff; font-size: 0.9rem;">{p.get('local', '')} vs {p.get('visitante', '')}</span>
+                <div style="background: #131926; padding: 12px; border-radius: 5px; margin-bottom: 10px; border-left: 3px solid #ffd700;">
+                    <div style="color: #ffd700; font-size: 0.75rem; margin-bottom: 5px;">{p.get('liga', 'Partido')} - {p.get('hora', '--:--')}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="text-align: center; flex: 1;">
+                            <div style="color: #fff; font-size: 0.85rem; font-weight: bold;">{local}</div>
+                            <div style="color: #00ee66; font-size: 0.6rem; margin-top: 3px;">{info_local}</div>
+                        </div>
+                        <div style="color: #ffd700; font-size: 0.9rem; padding: 0 10px;">VS</div>
+                        <div style="text-align: center; flex: 1;">
+                            <div style="color: #fff; font-size: 0.85rem; font-weight: bold;">{visitante}</div>
+                            <div style="color: #00ee66; font-size: 0.6rem; margin-top: 3px;">{info_visitante}</div>
+                        </div>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
         else:
