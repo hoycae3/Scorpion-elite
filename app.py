@@ -888,60 +888,44 @@ def buscar_equipo_en_todas_fuentes(nombre):
     resultados = []
     seen = set()
     
-    # 1. SOFASCORE API
-    try:
-        headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
-        url = f"https://api.sofascore.com/api/v1/search/teams/{nombre.replace(' ', '%20')}"
-        r = requests.get(url, headers=headers, timeout=5)
-        if r.status_code == 200:
-            data = r.json()
-            if data.get("results"):
-                for t in data["results"][:5]:
-                    key = f"sofascore_{t.get('id')}"
-                    if key not in seen:
-                        seen.add(key)
-                        resultados.append({
-                            "id": t.get("id"),
-                            "nombre": t.get("name"),
-                            "pais": t.get("country", {}).get("name", ""),
-                            "liga": t.get("playerCategories", [{}])[0].get("tournament", {}).get("name", "Sofascore") if t.get("playerCategories") else "Sofascore",
-                            "fuente": "Sofascore"
-                        })
-    except Exception as e:
-        print(f"Error Sofascore: {e}")
-    
-    # 2. API-FOOTBALL
+    # 1. API-FOOTBALL (PRIORIDAD - funciona con KEY)
     if API_FOOTBALL_KEY:
         try:
             headers = {"x-apisports-key": API_FOOTBALL_KEY}
             url = f"https://v3.football.api-sports.io/teams/search/{nombre}"
-            r = requests.get(url, headers=headers, timeout=5)
+            r = requests.get(url, headers=headers, timeout=10)
             if r.status_code == 200:
                 data = r.json()
                 if data.get("response"):
-                    for item in data["response"][:5]:
+                    for item in data["response"][:10]:
                         t = item.get("team", {})
-                        leagues = item.get("leagues", {})
+                        leagues_data = item.get("leagues", {})
                         key = f"apifootball_{t.get('id')}"
                         if key not in seen:
                             seen.add(key)
-                            liga_nombre = leagues.get("name", "API-Football") if leagues else "API-Football"
+                            # Buscar nombre de liga
+                            liga_nombre = "Varias ligas"
+                            if isinstance(leagues_data, dict):
+                                liga_nombre = leagues_data.get("name", "API-Football")
+                            elif isinstance(leagues_data, list) and leagues_data:
+                                liga_nombre = leagues_data[0].get("league", {}).get("name", "API-Football")
                             resultados.append({
                                 "id": t.get("id"),
                                 "nombre": t.get("name"),
                                 "pais": t.get("country", ""),
+                                "logo": t.get("logo", ""),
                                 "liga": liga_nombre,
                                 "fuente": "API-Football"
                             })
         except Exception as e:
             print(f"Error API-Football: {e}")
     
-    # 3. FLASHCORE
+    # 2. FLASHCORE
     try:
-        slug = nombre.lower().replace(" ", "-").replace("'", "")
+        slug = nombre.lower().replace(" ", "-").replace("'", "").replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
         url = f"https://www.flashscore.es/equipo/{slug}/"
-        headers_req = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-        r = requests.get(url, headers=headers_req, timeout=5)
+        headers_req = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+        r = requests.get(url, headers=headers_req, timeout=10)
         if r.status_code == 200 and "/equipo/" in r.url:
             from bs4 import BeautifulSoup
             soup = BeautifulSoup(r.text, "html.parser")
@@ -961,6 +945,33 @@ def buscar_equipo_en_todas_fuentes(nombre):
                         })
     except Exception as e:
         print(f"Error Flashscore: {e}")
+    
+    # 3. SOFASCORE (si funciona)
+    try:
+        headers_s = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json",
+            "Origin": "https://www.sofascore.com",
+            "Referer": "https://www.sofascore.com/"
+        }
+        url = f"https://api.sofascore.com/api/v1/search/teams/{nombre.replace(' ', '%20')}"
+        r = requests.get(url, headers=headers_s, timeout=10)
+        if r.status_code == 200:
+            data = r.json()
+            if data.get("results"):
+                for t in data["results"][:5]:
+                    key = f"sofascore_{t.get('id')}"
+                    if key not in seen:
+                        seen.add(key)
+                        resultados.append({
+                            "id": t.get("id"),
+                            "nombre": t.get("name"),
+                            "pais": t.get("country", {}).get("name", ""),
+                            "liga": "Sofascore",
+                            "fuente": "Sofascore"
+                        })
+    except Exception as e:
+        print(f"Error Sofascore: {e}")
     
     return resultados
 
