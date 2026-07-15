@@ -4725,48 +4725,71 @@ def pantalla_principal():
         partidos_scraped = enriquecer_partidos_con_stats(partidos_scraped, stats_equipos)
     
     with col1:
-        # === BUSCADOR REAL EN TODAS LAS FUENTES ===
+        # === BUSCADOR CON SUGERENCIAS + BUSQUEDA EN INTERNET ===
         with st.expander("🔍 Buscar Equipo", expanded=False):
-            st.write("Escribe el nombre del equipo:")
-            busqueda = st.text_input("Equipo:", placeholder="Ej: Atletico Bucaramanga, Barcelona...", key="busqueda_equipo_main")
+            # Lista de sugerencias para autocomplete
+            sugerencias = [
+                # Europa
+                "Manchester City", "Liverpool", "Arsenal", "Chelsea", "Manchester United",
+                "Tottenham", "Newcastle", "Brighton", "Aston Villa", "West Ham",
+                "Real Madrid", "Barcelona", "Atletico Madrid", "Real Sociedad", "Villarreal",
+                "Sevilla", "Athletic Bilbao", "Real Betis", "Valencia", "Girona",
+                "Bayern Munich", "Borussia Dortmund", "RB Leipzig", "Bayer Leverkusen", "Eintracht Frankfurt",
+                "Inter Milan", "AC Milan", "Juventus", "Napoli", "Roma", "Lazio", "Atalanta",
+                "PSG", "Marseille", "Monaco", "Lyon", "Lille", "Nice",
+                "Ajax", "PSV", "Feyenoord",
+                "Porto", "Benfica", "Sporting CP",
+                "Galatasaray", "Fenerbahce", "Besiktas",
+                # America
+                "River Plate", "Boca Juniors", "Independiente", "Racing Club", "San Lorenzo",
+                "Atletico Nacional", "Millonarios", "Santa Fe", "Junior", "America de Cali",
+                "Atletico Bucaramanga", "Boyaca Chico", "Patriotas", "Once Caldas", "Alaves",
+                "Flamengo", "Palmeiras", "Santos", "Sao Paulo", "Corinthians", "Internacional",
+                "Colo-Colo", "Universidad de Chile", "Catolica",
+                "Cruz Azul", "Chivas", "America Mexico", "Monterrey", "Tigres", "Pumas",
+                "Al Hilal", "Al Nassr", "Al Ittihad",
+                "LA Galaxy", "LAFC", "Inter Miami", "Atlanta United",
+            ]
             
-            col_busq1, col_busq2 = st.columns([1, 4])
+            st.write("Escribe o selecciona un equipo:")
+            busqueda = st.selectbox("Equipo:", options=[""] + sorted(sugerencias), key="busqueda_equipo_main")
+            
+            col_busq1, col_busq2 = st.columns([1, 3])
             with col_busq1:
                 buscar_btn = st.button("🔍 Buscar", key="btn_buscar_eq")
-            with col_busq2:
-                if buscar_btn and busqueda:
-                    with st.spinner("Buscando en todas las fuentes..."):
-                        resultados = buscar_equipo_en_todas_fuentes(busqueda)
-                    
-                    if resultados:
-                        st.success(f"✅ {len(resultados)} equipos encontrados")
-                        for eq in resultados[:10]:
-                            fuente = eq.get('fuente', '')
-                            liga = eq.get('liga', '')
-                            nombre = eq.get('nombre', '')
-                            tid = eq.get('id', '')
-                            
-                            col_b1, col_b2 = st.columns([3, 1])
-                            with col_b1:
-                                st.markdown(f"**{nombre}** <span style='color:#888;font-size:0.75rem;'>{liga} [{fuente}]</span>", unsafe_allow_html=True)
-                            with col_b2:
-                                if st.button("📊", key=f"ver_{tid}"):
-                                    st.session_state['equipo_buscado'] = eq
-                                    st.rerun()
-                    else:
-                        st.warning("No se encontraron equipos. Prueba otro nombre.")
+            
+            if buscar_btn and busqueda:
+                with st.spinner("Buscando en internet..."):
+                    resultados = buscar_equipo_en_todas_fuentes(busqueda)
+                
+                if resultados:
+                    st.success(f"✅ {len(resultados)} equipos encontrados")
+                    for eq in resultados[:10]:
+                        fuente = eq.get('fuente', '')
+                        liga = eq.get('liga', '')
+                        nombre = eq.get('nombre', '')
+                        tid = eq.get('id', '')
+                        
+                        col_b1, col_b2 = st.columns([3, 1])
+                        with col_b1:
+                            st.markdown(f"**{nombre}** <span style='color:#888;font-size:0.75rem;'>{liga} [{fuente}]</span>", unsafe_allow_html=True)
+                        with col_b2:
+                            if st.button("📊", key=f"ver_{tid}"):
+                                st.session_state['equipo_buscado'] = eq
+                                st.rerun()
+                else:
+                    st.warning("No se encontraron equipos en internet.")
             
             # Mostrar stats si hay equipo seleccionado
             if 'equipo_buscado' in st.session_state:
                 eq = st.session_state['equipo_buscado']
                 nombre = eq.get('nombre', '')
-                tid = eq.get('id', '')
                 fuente = eq.get('fuente', '')
                 
                 st.markdown("---")
                 st.success(f"📊 {nombre} ({fuente})")
                 
-                # Obtener stats desde la fuente correspondiente
+                # Obtener stats desde internet
                 stats = obtener_stats_equipo_fuente(eq)
                 if stats:
                     col_s1, col_s2, col_s3, col_s4 = st.columns(4)
@@ -4779,7 +4802,7 @@ def pantalla_principal():
                     with col_s4:
                         st.metric("G/C", stats.get('goles_contra', stats.get('gc', '?')))
                 else:
-                    st.info("Stats no disponibles para este equipo.")
+                    st.info("Stats no disponibles.")
         
         # === CALENDARIO COMPACTO ===
         st.markdown("---")
