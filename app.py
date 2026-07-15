@@ -989,7 +989,7 @@ def mostrar_comparador_odds():
             if cuotas:
                 # Mostrar tabla de cuotas
                 st.markdown("""
-                <div style="background: linear-gradient(135deg, #1a0a2e 0%, #131926 100%); padding: 15px; border-radius: 10px; border: 1px solid #7b2cbf; margin-top: 10px;">
+                <div style="background: linear-gradient(135deg, #122016 0%, #0f1a12 100%); padding: 15px; border-radius: 10px; border: 1px solid #243829; margin-top: 10px;">
                 """, unsafe_allow_html=True)
                 
                 col1, col2, col3 = st.columns(3)
@@ -999,17 +999,17 @@ def mostrar_comparador_odds():
                     with col:
                         if cuota["opcion"] == "1":
                             label = "Local"
-                            color = "#00f5d4"
+                            color = "#d48243"
                         elif cuota["opcion"] == "X":
                             label = "Empate"
                             color = "#ffd700"
                         else:
                             label = "Visita"
-                            color = "#ff006e"
+                            color = "#d48243"
                         
                         st.markdown(f"""
                         <div style="text-align: center; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid {color};">
-                            <div style="color: #9d4edd; font-size: 0.75rem;">{label}</div>
+                            <div style="color: #a3b899; font-size: 0.75rem;">{label}</div>
                             <div style="color: {color}; font-size: 1.8rem; font-weight: bold; margin: 5px 0;">{cuota['cuota']}</div>
                             <div style="color: #888; font-size: 0.65rem;">{cuota['casa']}</div>
                         </div>
@@ -1092,8 +1092,8 @@ def mostrar_panel_alertas(cedula):
     
     if alertas:
         st.markdown("""
-        <div style="background: linear-gradient(135deg, #1a0a2e 0%, #131926 100%); padding: 15px; border-radius: 10px; border: 1px solid #ff006e; margin-top: 15px;">
-            <div style="color: #ff006e; font-size: 1rem; font-weight: bold; margin-bottom: 10px;">
+        <div style="background: linear-gradient(135deg, #122016 0%, #0f1a12 100%); padding: 15px; border-radius: 10px; border: 1px solid #d48243; margin-top: 15px;">
+            <div style="color: #d48243; font-size: 1rem; font-weight: bold; margin-bottom: 10px;">
                 🔔 Alertas Recientes
             </div>
         """, unsafe_allow_html=True)
@@ -1102,8 +1102,8 @@ def mostrar_panel_alertas(cedula):
             tipo_icono = "🔥" if alerta["tipo"] == "pick_top" else "📢" if alerta["tipo"] == "pick_nuevo" else "⚠️"
             
             st.markdown(f"""
-            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #00f5d4;">
-                <span style="color: #ff006e; font-size: 0.9rem;">{tipo_icono} {alerta['mensaje']}</span>
+            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #d48243;">
+                <span style="color: #d48243; font-size: 0.9rem;">{tipo_icono} {alerta['mensaje']}</span>
                 <div style="color: #666; font-size: 0.65rem; margin-top: 3px;">{alerta['fecha']}</div>
             </div>
             """, unsafe_allow_html=True)
@@ -1116,7 +1116,7 @@ def mostrar_panel_alertas(cedula):
         st.markdown("</div>", unsafe_allow_html=True)
     else:
         st.markdown("""
-        <div style="background: linear-gradient(135deg, #1a0a2e 0%, #131926 100%); padding: 15px; border-radius: 10px; border: 1px solid #7b2cbf; margin-top: 15px; text-align: center;">
+        <div style="background: linear-gradient(135deg, #122016 0%, #0f1a12 100%); padding: 15px; border-radius: 10px; border: 1px solid #243829; margin-top: 15px; text-align: center;">
             <span style="color: #888;">🔕 No hay alertas nuevas</span>
         </div>
         """, unsafe_allow_html=True)
@@ -3766,7 +3766,7 @@ def pantalla_principal():
     with col_header_right:
         if st.session_state.get("logged_in"):
             st.markdown(f"""
-            <div style="text-align: right; padding: 15px; background: #131926; border-radius: 8px; margin-top: 15px;">
+            <div style="text-align: right; padding: 15px; background: #0f1a12; border-radius: 8px; margin-top: 15px;">
                 <div style="color: #ffd700; font-weight: bold; font-size: 1.1rem;">👤 {st.session_state.get('user_name', 'Usuario')}</div>
                 <div style="color: #888; font-size: 0.85rem;">Plan: {st.session_state.get('user_plan', 'gratis').upper()}</div>
             </div>
@@ -3961,19 +3961,19 @@ def pantalla_principal():
                     info_goles_v = ""
                 
                 st.markdown(f"""
-                <div style="background: linear-gradient(135deg, #1a0a2e 0%, #131926 100%); padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #00f5d4; border: 1px solid #7b2cbf;">
-                    <div style="color: #ff006e; font-size: 0.7rem; margin-bottom: 8px;">{p.get('liga', 'Partido')} - {p.get('hora', '--:--')}</div>
+                <div style="background: linear-gradient(135deg, #122016 0%, #0f1a12 100%); padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #d48243; border: 1px solid #243829;">
+                    <div style="color: #d48243; font-size: 0.7rem; margin-bottom: 8px;">{p.get('liga', 'Partido')} - {p.get('hora', '--:--')}</div>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div style="text-align: center; flex: 1;">
-                            <div style="color: #00f5d4; font-size: 0.9rem; font-weight: bold;">{local}</div>
-                            <div style="color: #9d4edd; font-size: 0.6rem; margin-top: 3px;">{info_local}</div>
-                            <div style="color: #39ff14; font-size: 0.6rem; margin-top: 2px;">{info_goles}</div>
+                            <div style="color: #d48243; font-size: 0.9rem; font-weight: bold;">{local}</div>
+                            <div style="color: #a3b899; font-size: 0.6rem; margin-top: 3px;">{info_local}</div>
+                            <div style="color: #d48243; font-size: 0.6rem; margin-top: 2px;">{info_goles}</div>
                         </div>
-                        <div style="color: #ff006e; font-size: 0.85rem; padding: 0 12px; font-weight: bold;">VS</div>
+                        <div style="color: #d48243; font-size: 0.85rem; padding: 0 12px; font-weight: bold;">VS</div>
                         <div style="text-align: center; flex: 1;">
-                            <div style="color: #00f5d4; font-size: 0.9rem; font-weight: bold;">{visitante}</div>
-                            <div style="color: #9d4edd; font-size: 0.6rem; margin-top: 3px;">{info_visitante}</div>
-                            <div style="color: #39ff14; font-size: 0.6rem; margin-top: 2px;">{info_goles_v}</div>
+                            <div style="color: #d48243; font-size: 0.9rem; font-weight: bold;">{visitante}</div>
+                            <div style="color: #a3b899; font-size: 0.6rem; margin-top: 3px;">{info_visitante}</div>
+                            <div style="color: #d48243; font-size: 0.6rem; margin-top: 2px;">{info_goles_v}</div>
                         </div>
                     </div>
                 </div>
@@ -4001,12 +4001,12 @@ def pantalla_principal():
                 equipo = g.get("equipo", "")
                 
                 medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
-                equipo_str = f'<span style="color:#9d4edd;font-size:0.7rem"> · {equipo}</span>' if equipo else ""
+                equipo_str = f'<span style="color:#a3b899;font-size:0.7rem"> · {equipo}</span>' if equipo else ""
                 
                 st.markdown(f"""
-                <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: linear-gradient(135deg, #1a0a2e 0%, #131926 100%); border-radius: 5px; margin-bottom: 5px; border-left: 3px solid #00f5d4;">
-                    <span style="color: #00f5d4;">{medal} {nombre}{equipo_str}</span>
-                    <span style="color: #39ff14; font-weight: bold;">{goles} ⚽</span>
+                <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: linear-gradient(135deg, #122016 0%, #0f1a12 100%); border-radius: 5px; margin-bottom: 5px; border-left: 3px solid #d48243;">
+                    <span style="color: #d48243;">{medal} {nombre}{equipo_str}</span>
+                    <span style="color: #d48243; font-weight: bold;">{goles} ⚽</span>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -4035,19 +4035,25 @@ def pantalla_principal():
             goleadores = goleadores_ejemplo.get(liga_seleccionada, goleadores_ejemplo["Mundial FIFA 2026"])
             
             for i, dato in enumerate(goleadores, 1):
-                if len(dato) == 3:
+                # Manejar diferentes formatos de tuple
+                nombre = ""
+                goles = 0
+                equipo = ""
+                
+                if len(dato) == 4:
+                    nombre, equipo, goles, _ = dato  # (nombre, equipo, goles, partidos)
+                elif len(dato) == 3:
                     nombre, goles, equipo = dato
-                else:
+                elif len(dato) == 2:
                     nombre, goles = dato
-                    equipo = ""
                 
                 medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
-                equipo_str = f'<span style="color:#9d4edd;font-size:0.7rem"> · {equipo}</span>' if equipo else ""
+                equipo_str = f'<span style="color:#a3b899;font-size:0.7rem"> · {equipo}</span>' if equipo else ""
                 
                 st.markdown(f"""
-                <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: linear-gradient(135deg, #1a0a2e 0%, #131926 100%); border-radius: 5px; margin-bottom: 5px; border-left: 3px solid #7b2cbf;">
-                    <span style="color: #00f5d4;">{medal} {nombre}{equipo_str}</span>
-                    <span style="color: #39ff14; font-weight: bold;">{goles} ⚽</span>
+                <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: #16261b; border-radius: 5px; margin-bottom: 5px; border-left: 3px solid #d48243;">
+                    <span style="color: #ffffff;">{medal} {nombre}{equipo_str}</span>
+                    <span style="color: #d48243; font-weight: bold;">{goles} ⚽</span>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -4057,15 +4063,15 @@ def pantalla_principal():
         st.markdown('<p class="section-title">📊 Tendencias</p>', unsafe_allow_html=True)
         
         st.markdown("""
-        <div style="background: linear-gradient(135deg, #1a0a2e 0%, #131926 100%); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #7b2cbf;">
-            <div style="color: #00f5d4; font-weight: bold; margin-bottom: 10px;">🔥 Picks con Mayor Confianza</div>
+        <div style="background: linear-gradient(135deg, #122016 0%, #0f1a12 100%); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #243829;">
+            <div style="color: #d48243; font-weight: bold; margin-bottom: 10px;">🔥 Picks con Mayor Confianza</div>
         """, unsafe_allow_html=True)
         
         if picks_hoy:
             real_picks = [p for p in picks_hoy if "🔒" not in str(p.get("mercado",""))]
             for p in real_picks[:3]:
                 conf = p.get("confianza", 0)
-                conf_color = "#39ff14" if conf >= 70 else "#ffd700" if conf >= 50 else "#ff6b6b"
+                conf_color = "#d48243" if conf >= 70 else "#ffd700" if conf >= 50 else "#ff6b6b"
                 st.markdown(f'<div style="color: #ccc; margin: 5px 0;">• {p.get("mercado", "N/A")[:25]}<br><span style="color: {conf_color};">@{p.get("cuota", "?")} [{conf}%]</span></div>', unsafe_allow_html=True)
         else:
             st.markdown('<div style="color: #888;">• Sin picks publicados</div>', unsafe_allow_html=True)
@@ -4078,8 +4084,8 @@ def pantalla_principal():
             alertas = obtener_alertas(cedula)
             if alertas:
                 st.markdown("""
-                <div style="background: linear-gradient(135deg, #1a0a2e 0%, #131926 100%); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ff006e;">
-                    <div style="color: #ff006e; font-weight: bold; margin-bottom: 10px;">🔔 Alertas Recientes</div>
+                <div style="background: linear-gradient(135deg, #122016 0%, #0f1a12 100%); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #d48243;">
+                    <div style="color: #d48243; font-weight: bold; margin-bottom: 10px;">🔔 Alertas Recientes</div>
                 """, unsafe_allow_html=True)
                 
                 for alerta in alertas[:3]:
@@ -4110,7 +4116,7 @@ def pantalla_principal():
                     if cuotas:
                         col_odds1, col_odds2, col_odds3 = st.columns(3)
                         opciones = {"1": "Local", "X": "Empate", "2": "Visita"}
-                        colores = {"1": "#00f5d4", "X": "#ffd700", "2": "#ff006e"}
+                        colores = {"1": "#d48243", "X": "#ffd700", "2": "#d48243"}
                         
                         for i, cuota in enumerate(cuotas):
                             col = [col_odds1, col_odds2, col_odds3][i]
@@ -4119,7 +4125,7 @@ def pantalla_principal():
                                 color = colores.get(cuota["opcion"], "#fff")
                                 st.markdown(f"""
                                 <div style="text-align: center; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 6px; border: 1px solid {color};">
-                                    <div style="color: #9d4edd; font-size: 0.7rem;">{label}</div>
+                                    <div style="color: #a3b899; font-size: 0.7rem;">{label}</div>
                                     <div style="color: {color}; font-size: 1.4rem; font-weight: bold;">{cuota['cuota']}</div>
                                     <div style="color: #666; font-size: 0.55rem;">{cuota['casa']}</div>
                                 </div>
