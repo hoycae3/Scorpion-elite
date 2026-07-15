@@ -869,6 +869,288 @@ def enriquecer_partidos_con_stats(partidos, stats):
     return partidos_enriquecidos
 
 
+# ══════════════════════════════════════════════════════════
+# COMPARADOR DE ODDS
+# ══════════════════════════════════════════════════════════
+
+def obtener_odds_partido(fixture_id):
+    """
+    Obtiene las cuotas de un partido desde múltiples casas de apuestas.
+    Usa API-Football para obtener cuotas reales.
+    """
+    try:
+        from scorpion.api.football import FootballAPI
+        api = FootballAPI()
+        headers = {"x-apisports-key": API_FOOTBALL_KEY}
+        url = "https://v3.football.api-sports.io/odds"
+        data = api._request(url, {"fixture": fixture_id}, headers=headers)
+        
+        if data and data.get("response"):
+            odds_list = []
+            for response in data["response"]:
+                bookmaker = response.get("bookmaker", {})
+                name = bookmaker.get("name", "Desconocido")
+                
+                for bet in response.get("values", []):
+                    bet_name = bet.get("name", "")
+                    if "Match Winner" in bet_name or "1X2" in bet_name or "Resultado" in bet_name:
+                        for value in bet.get("values", []):
+                            odds_list.append({
+                                "casa": name,
+                                "opcion": value.get("value", ""),
+                                "cuota": float(value.get("odd", 0))
+                            })
+            
+            return odds_list
+    except Exception as e:
+        print(f"Error obteniendo odds: {e}")
+    
+    return []
+
+
+def obtener_mejores_cuotas(local, visitante, liga_id):
+    """
+    Busca las mejores cuotas para un partido específico.
+    """
+    try:
+        from scorpion.api.football import FootballAPI
+        api = FootballAPI()
+        headers = {"x-apisports-key": API_FOOTBALL_KEY}
+        
+        # Obtener fixtures del día
+        fixtures = api.get_fixtures(liga_id, fecha=get_hoy())
+        
+        for f in fixtures:
+            home_team = f["teams"]["home"]["name"].lower()
+            away_team = f["teams"]["away"]["name"].lower()
+            
+            if local.lower() in home_team and visitante.lower() in away_team:
+                fixture_id = f["fixture"]["id"]
+                odds = obtener_odds_partido(fixture_id)
+                
+                if odds:
+                    # Agrupar por opción (1, X, 2)
+                    mejores = {"1": None, "X": None, "2": None}
+                    mejor_casa = {"1": "", "X": "", "2": ""}
+                    
+                    for odd in odds:
+                        opcion = odd["opcion"]
+                        cuota = odd["cuota"]
+                        
+                        # Normalizar opciones
+                        if opcion in ["1", "Home", "Local", "Ganador Local"]:
+                            clave = "1"
+                        elif opcion in ["X", "Draw", "Empate"]:
+                            clave = "X"
+                        elif opcion in ["2", "Away", "Visitante", "Ganador Visitante"]:
+                            clave = "2"
+                        else:
+                            continue
+                        
+                        if mejores[clave] is None or cuota > mejores[clave]:
+                            mejores[clave] = cuota
+                            mejor_casa[clave] = odd["casa"]
+                    
+                    return [{"opcion": k, "cuota": v, "casa": mejor_casa[k]} 
+                            for k, v in mejores.items() if v]
+        
+    except Exception as e:
+        print(f"Error mejores cuotas: {e}")
+    
+    return []
+
+
+def mostrar_comparador_odds():
+    """
+    Muestra el comparador de odds en la interfaz.
+    """
+    st.markdown("---")
+    st.markdown('<p class="section-title">📊 Comparador de Cuotas</p>', unsafe_allow_html=True)
+    
+    # Selector de partido
+    if 'partidos_scraped' in st.session_state and st.session_state.partidos_scraped:
+        partidos = st.session_state.partidos_scraped[:5]
+        opciones = [f"{p.get('local','')} vs {p.get('visitante','')}" for p in partidos]
+        
+        partido_seleccionado = st.selectbox("Selecciona un partido:", opciones)
+        
+        if partido_seleccionado:
+            idx = opciones.index(partido_seleccionado)
+            partido = partidos[idx]
+            
+            # Buscar mejores cuotas
+            liga_id = 39  # Por defecto Premier
+            cuotas = obtener_mejores_cuotas(
+                partido.get("local", ""),
+                partido.get("visitante", ""),
+                liga_id
+            )
+            
+            if cuotas:
+                # Mostrar tabla de cuotas
+                st.markdown("""
+                <div style="background: linear-gradient(135deg, #1a0a2e 0%, #131926 100%); padding: 15px; border-radius: 10px; border: 1px solid #7b2cbf; margin-top: 10px;">
+                """, unsafe_allow_html=True)
+                
+                col1, col2, col3 = st.columns(3)
+                
+                for i, cuota in enumerate(cuotas):
+                    col = [col1, col2, col3][i]
+                    with col:
+                        if cuota["opcion"] == "1":
+                            label = "Local"
+                            color = "#00f5d4"
+                        elif cuota["opcion"] == "X":
+                            label = "Empate"
+                            color = "#ffd700"
+                        else:
+                            label = "Visita"
+                            color = "#ff006e"
+                        
+                        st.markdown(f"""
+                        <div style="text-align: center; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid {color};">
+                            <div style="color: #9d4edd; font-size: 0.75rem;">{label}</div>
+                            <div style="color: {color}; font-size: 1.8rem; font-weight: bold; margin: 5px 0;">{cuota['cuota']}</div>
+                            <div style="color: #888; font-size: 0.65rem;">{cuota['casa']}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                
+                st.markdown("</div>", unsafe_allow_html=True)
+                
+                # Encontrar la mejor cuota
+                mejor = max(cuotas, key=lambda x: x["cuota"])
+                st.success(f"💰 Mejor cuota: **{mejor['opcion']}** a **{mejor['cuota']}** en {mejor['casa']}")
+            else:
+                st.info("Cuotas no disponibles. Intenta más tarde.")
+    else:
+        st.info("Cargando partidos para comparar cuotas...")
+
+
+# ══════════════════════════════════════════════════════════
+# SISTEMA DE ALERTAS
+# ══════════════════════════════════════════════════════════
+
+ALERTAS_CACHE = {}
+
+def guardar_alerta(cedula, tipo, mensaje, enlace=""):
+    """Guarda una alerta para un usuario."""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("""INSERT INTO alertas (cedula, tipo, mensaje, enlace, leida, fecha) 
+                  VALUES (?, ?, ?, ?, 0, datetime('now', 'localtime'))""",
+              (cedula, tipo, mensaje, enlace))
+    conn.commit()
+    conn.close()
+
+def obtener_alertas(cedula, limite=10):
+    """Obtiene las alertas no leídas de un usuario."""
+    if f"alertas_{cedula}" in ALERTAS_CACHE:
+        return ALERTAS_CACHE[f"alertas_{cedula}"]
+    
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("""SELECT id, tipo, mensaje, enlace, fecha FROM alertas 
+                  WHERE cedula = ? AND leida = 0 ORDER BY fecha DESC LIMIT ?""",
+              (cedula, limite))
+    alertas = [{"id": r[0], "tipo": r[1], "mensaje": r[2], "enlace": r[3], "fecha": r[4]} 
+               for r in c.fetchall()]
+    conn.close()
+    
+    ALERTAS_CACHE[f"alertas_{cedula}"] = alertas
+    return alertas
+
+def marcar_alerta_leida(alerta_id):
+    """Marca una alerta como leída."""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("UPDATE alertas SET leida = 1 WHERE id = ?", (alerta_id,))
+    conn.commit()
+    conn.close()
+    
+    # Limpiar cache
+    for key in list(ALERTAS_CACHE.keys()):
+        if key.startswith("alertas_"):
+            del ALERTAS_CACHE[key]
+
+def crear_alerta_nuevo_pick(pick, rango):
+    """Crea alertas para todos los usuarios cuando hay un nuevo pick."""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT cedula FROM usuarios WHERE activo = 1")
+    usuarios = [r[0] for r in c.fetchall()]
+    conn.close()
+    
+    tipo_alerta = "pick_top" if rango == "A+" else "pick_nuevo"
+    mensaje = f"🔥 Nuevo pick: {pick.get('local','')} vs {pick.get('visitante','')} - {pick.get('mercado','')} ({pick.get('cuota','')})"
+    
+    for cedula in usuarios:
+        guardar_alerta(cedula, tipo_alerta, mensaje)
+
+def mostrar_panel_alertas(cedula):
+    """Muestra el panel de alertas en la interfaz."""
+    alertas = obtener_alertas(cedula)
+    
+    if alertas:
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #1a0a2e 0%, #131926 100%); padding: 15px; border-radius: 10px; border: 1px solid #ff006e; margin-top: 15px;">
+            <div style="color: #ff006e; font-size: 1rem; font-weight: bold; margin-bottom: 10px;">
+                🔔 Alertas Recientes
+            </div>
+        """, unsafe_allow_html=True)
+        
+        for alerta in alertas[:5]:
+            tipo_icono = "🔥" if alerta["tipo"] == "pick_top" else "📢" if alerta["tipo"] == "pick_nuevo" else "⚠️"
+            
+            st.markdown(f"""
+            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #00f5d4;">
+                <span style="color: #ff006e; font-size: 0.9rem;">{tipo_icono} {alerta['mensaje']}</span>
+                <div style="color: #666; font-size: 0.65rem; margin-top: 3px;">{alerta['fecha']}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        if st.button("Marcar todas como leídas", key="marcar_leidas"):
+            for alerta in alertas:
+                marcar_alerta_leida(alerta["id"])
+            st.rerun()
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #1a0a2e 0%, #131926 100%); padding: 15px; border-radius: 10px; border: 1px solid #7b2cbf; margin-top: 15px; text-align: center;">
+            <span style="color: #888;">🔕 No hay alertas nuevas</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+def suscribir_notificaciones_email(cedula, email):
+    """Guarda email para notificaciones."""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("UPDATE usuarios SET email = ? WHERE cedula = ?", (email, cedula))
+    conn.commit()
+    conn.close()
+    return True
+
+def enviar_notificacion_email(email, asunto, mensaje):
+    """Envía un email de notificación (requiere configuración SMTP)."""
+    # Esta función requiere configuración de servidor SMTP
+    # Por ahora es un placeholder
+    print(f"Email a {email}: {asunto} - {mensaje}")
+    return True
+
+
+def verificar_y_crear_alertas_picks():
+    """
+    Verifica si hay nuevos picks y crea alertas automáticas.
+    Se ejecuta cuando se generan picks nuevos.
+    """
+    picks_hoy = db_picks_get(get_hoy())
+    
+    if picks_hoy:
+        for pick in picks_hoy:
+            rango = pick.get("rango", "C")
+            crear_alerta_nuevo_pick(pick, rango)
+
+
 def scrape_goleadores_tiempo_real(liga_nombre):
     """Obtiene goleadores en tiempo real desde Flashscore."""
     global GOLEADORES_CACHE
@@ -1340,6 +1622,7 @@ def init_db():
         fecha_inicio TEXT, dias INTEGER DEFAULT 36500, activo INTEGER DEFAULT 1,
         es_admin INTEGER DEFAULT 0, pwd_hash TEXT,
         consultas_hoy INTEGER DEFAULT 0, fecha_reset TEXT,
+        email TEXT,
         creado TEXT DEFAULT CURRENT_TIMESTAMP
     );
     CREATE TABLE IF NOT EXISTS picks (
@@ -1360,6 +1643,12 @@ def init_db():
     CREATE TABLE IF NOT EXISTS escalera (
         id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT,
         pasos TEXT, estado TEXT DEFAULT 'activa',
+        creado TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS alertas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        cedula TEXT, tipo TEXT, mensaje TEXT, enlace TEXT,
+        leida INTEGER DEFAULT 0, fecha TEXT,
         creado TEXT DEFAULT CURRENT_TIMESTAMP
     );
     """)
@@ -3498,8 +3787,9 @@ def pantalla_principal():
     # Intentar scraping de partidos
     try:
         partidos_scraped = scrape_flashscore_partidos()
+        st.session_state.partidos_scraped = partidos_scraped
     except:
-        partidos_scraped = []
+        partidos_scraped = st.session_state.get("partidos_scraped", [])
     
     # Obtener estadísticas de equipos desde API-Football
     stats_cache_key = f"stats_equipos_{get_hoy()}"
@@ -3711,22 +4001,78 @@ def pantalla_principal():
         st.markdown('<p class="section-title">📊 Tendencias</p>', unsafe_allow_html=True)
         
         st.markdown("""
-        <div style="background: #0d0d18; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-            <div style="color: #ffd700; font-weight: bold; margin-bottom: 10px;">🔥 Picks con Mayor Confianza</div>
+        <div style="background: linear-gradient(135deg, #1a0a2e 0%, #131926 100%); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #7b2cbf;">
+            <div style="color: #00f5d4; font-weight: bold; margin-bottom: 10px;">🔥 Picks con Mayor Confianza</div>
         """, unsafe_allow_html=True)
         
         if picks_hoy:
             real_picks = [p for p in picks_hoy if "🔒" not in str(p.get("mercado",""))]
             for p in real_picks[:3]:
                 conf = p.get("confianza", 0)
-                conf_color = "#00ee66" if conf >= 70 else "#ffd700" if conf >= 50 else "#ff6b6b"
+                conf_color = "#39ff14" if conf >= 70 else "#ffd700" if conf >= 50 else "#ff6b6b"
                 st.markdown(f'<div style="color: #ccc; margin: 5px 0;">• {p.get("mercado", "N/A")[:25]}<br><span style="color: {conf_color};">@{p.get("cuota", "?")} [{conf}%]</span></div>', unsafe_allow_html=True)
         else:
             st.markdown('<div style="color: #888;">• Sin picks publicados</div>', unsafe_allow_html=True)
         
         st.markdown("</div>")
         
-        # Botón eliminado - ya está en la página principal
+        # Panel de alertas
+        cedula = st.session_state.get("ced", "")
+        if cedula:
+            alertas = obtener_alertas(cedula)
+            if alertas:
+                st.markdown("""
+                <div style="background: linear-gradient(135deg, #1a0a2e 0%, #131926 100%); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ff006e;">
+                    <div style="color: #ff006e; font-weight: bold; margin-bottom: 10px;">🔔 Alertas Recientes</div>
+                """, unsafe_allow_html=True)
+                
+                for alerta in alertas[:3]:
+                    tipo_icono = "🔥" if alerta["tipo"] == "pick_top" else "📢"
+                    st.markdown(f'<div style="color: #e0e0e0; font-size: 0.8rem; margin: 5px 0; padding: 5px; background: rgba(255,255,255,0.05); border-radius: 4px;">{tipo_icono} {alerta["mensaje"][:50]}...</div>', unsafe_allow_html=True)
+                
+                st.markdown("</div>")
+        
+        # Comparador de Odds rápido
+        if 'partidos_scraped' in st.session_state and st.session_state.partidos_scraped:
+            with st.expander("📊 Comparador de Cuotas"):
+                partido_seleccionado = st.selectbox(
+                    "Selecciona partido:", 
+                    [f"{p.get('local','')} vs {p.get('visitante','')}" for p in st.session_state.partidos_scraped[:5]],
+                    key="odds_selector"
+                )
+                
+                if partido_seleccionado:
+                    idx = list(range(len(st.session_state.partidos_scraped[:5])))[list([f"{p.get('local','')} vs {p.get('visitante','')}" for p in st.session_state.partidos_scraped[:5]]).index(partido_seleccionado)]
+                    partido = st.session_state.partidos_scraped[idx]
+                    
+                    cuotas = obtener_mejores_cuotas(
+                        partido.get("local", ""),
+                        partido.get("visitante", ""),
+                        39  # Premier League por defecto
+                    )
+                    
+                    if cuotas:
+                        col_odds1, col_odds2, col_odds3 = st.columns(3)
+                        opciones = {"1": "Local", "X": "Empate", "2": "Visita"}
+                        colores = {"1": "#00f5d4", "X": "#ffd700", "2": "#ff006e"}
+                        
+                        for i, cuota in enumerate(cuotas):
+                            col = [col_odds1, col_odds2, col_odds3][i]
+                            with col:
+                                label = opciones.get(cuota["opcion"], cuota["opcion"])
+                                color = colores.get(cuota["opcion"], "#fff")
+                                st.markdown(f"""
+                                <div style="text-align: center; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 6px; border: 1px solid {color};">
+                                    <div style="color: #9d4edd; font-size: 0.7rem;">{label}</div>
+                                    <div style="color: {color}; font-size: 1.4rem; font-weight: bold;">{cuota['cuota']}</div>
+                                    <div style="color: #666; font-size: 0.55rem;">{cuota['casa']}</div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                        
+                        mejor = max(cuotas, key=lambda x: x["cuota"])
+                        st.success(f"💰 Mejor: {opciones.get(mejor['opcion'], mejor['opcion'])} @ {mejor['cuota']} en {mejor['casa']}")
+                    else:
+                        st.info("Cuotas no disponibles para este partido.")
     
     # Footer
     st.markdown("---")
