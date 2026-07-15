@@ -903,23 +903,38 @@ def buscar_equipo_en_todas_fuentes(nombre):
             data = r.json()
             teams = data.get("teams", [])
             if teams:
-                for t in teams[:15]:
+                # Ordenar: primero los que contengan el nombre exacto
+                exact_match = []
+                partial_match = []
+                other = []
+                
+                for t in teams:
                     tid = t.get("id")
                     tname = t.get("name", "")
                     tshort = t.get("shortName", "")
                     tcountry = t.get("country", "")
                     tcomp = t.get("runningCompetition", {}).get("name", "") if t.get("runningCompetition") else ""
                     key = f"fd_{tid}"
+                    
                     if key not in seen and tname:
-                        seen.add(key)
-                        resultados.append({
+                        entry = {
                             "id": str(tid),
                             "nombre": tname,
                             "short": tshort,
                             "pais": tcountry,
                             "liga": tcomp,
                             "fuente": "Football-Data"
-                        })
+                        }
+                        
+                        # Prioridad: nombre exacto > nombre contiene > otros
+                        if nombre.lower() in tname.lower() or tname.lower() in nombre.lower():
+                            exact_match.append(entry)
+                        else:
+                            partial_match.append(entry)
+                
+                # Combinar: exact primero, luego partial
+                resultados.extend(exact_match)
+                resultados.extend(partial_match[:10])
             else:
                 errores.append("Football-Data: Sin resultados en búsqueda")
         else:
@@ -5204,22 +5219,35 @@ def pantalla_principal():
                 st.markdown("---")
                 st.markdown('<p style="color:#dfaf6f;font-size:1rem;font-weight:bold;">💰 Cuotas de Apuestas</p>', unsafe_allow_html=True)
                 
-                with st.expander("📊 Ver Cuotas", expanded=False):
-                    # Selector de liga para cuotas
-                    liga_cuotas = st.selectbox(
+                with st.expander("💰 Ver Cuotas de Hoy", expanded=False):
+                    st.markdown("**Selecciona una liga:**")
+                    
+                    # Selector de liga
+                    liga_seleccionada = st.selectbox(
                         "Liga:",
                         options=[
-                            ("soccer_epl", "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League"),
-                            ("soccer_esp Primera División", "🇪🇸 La Liga"),
-                            ("soccer_fra Ligue 1", "🇫🇷 Ligue 1"),
-                            ("soccer_deu Bundesliga", "🇩🇪 Bundesliga"),
-                            ("soccer_ita Serie A", "🇮🇹 Serie A"),
+                            "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League",
+                            "🇪🇸 La Liga",
+                            "🇫🇷 Ligue 1",
+                            "🇩🇪 Bundesliga",
+                            "🇮🇹 Serie A",
                         ],
                         key="liga_cuotas_selector"
                     )
-                    liga_key = liga_cuotas[0] if isinstance(liga_cuotas, tuple) else liga_cuotas
                     
-                    if st.button("🔍 Buscar Cuotas", key="btn_cuotas"):
+                    # Mapear a keys de API
+                    liga_keys = {
+                        "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League": "soccer_epl",
+                        "🇪🇸 La Liga": "soccer_esp La Liga",
+                        "🇫🇷 Ligue 1": "soccer_fra Ligue 1",
+                        "🇩🇪 Bundesliga": "soccer_deu Bundesliga",
+                        "🇮🇹 Serie A": "soccer_ita Serie A",
+                    }
+                    liga_key = liga_keys.get(liga_seleccionada, "soccer_epl")
+                    
+                    st.markdown(f"📍 Liga seleccionada: **{liga_seleccionada}**")
+                    
+                    if st.button("🔍 Ver Cuotas", key="btn_cuotas"):
                         with st.spinner("Obteniendo cuotas..."):
                             cuotas = obtener_cuotas_todos_partidos(liga_key)
                         
@@ -5237,15 +5265,15 @@ def pantalla_principal():
                                 <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:8px;margin-bottom:6px;">
                                     <div style="color:#dcdcdc;font-size:0.85rem;font-weight:bold;">{home} vs {away}</div>
                                     <div style="display:flex;justify-content:space-around;margin-top:6px;">
-                                        <div style="text-align:center;"><div style="color:#dfaf6f;font-size:0.7rem;">Local</div><div style="color:#4ecdc4;font-size:1rem;">{cuota_l}</div></div>
-                                        <div style="text-align:center;"><div style="color:#dfaf6f;font-size:0.7rem;">Empate</div><div style="color:#4ecdc4;font-size:1rem;">{cuota_e}</div></div>
-                                        <div style="text-align:center;"><div style="color:#dfaf6f;font-size:0.7rem;">Visita</div><div style="color:#4ecdc4;font-size:1rem;">{cuota_v}</div></div>
+                                        <div style="text-align:center;"><div style="color:#dfaf6f;font-size:0.7rem;">1 (Local)</div><div style="color:#4ecdc4;font-size:1rem;">{cuota_l}</div></div>
+                                        <div style="text-align:center;"><div style="color:#dfaf6f;font-size:0.7rem;">X (Empate)</div><div style="color:#4ecdc4;font-size:1rem;">{cuota_e}</div></div>
+                                        <div style="text-align:center;"><div style="color:#dfaf6f;font-size:0.7rem;">2 (Visita)</div><div style="color:#4ecdc4;font-size:1rem;">{cuota_v}</div></div>
                                     </div>
                                     <div style="color:#888;font-size:0.6rem;text-align:right;margin-top:4px;">📌 {casa}</div>
                                 </div>
                                 """, unsafe_allow_html=True)
                         else:
-                            st.warning("No hay cuotas disponibles para esta liga")
+                            st.warning("No hay cuotas para esta liga. Intenta con otra.")
                 
                 # === SECCIÓN DE CLIMA ===
                 st.markdown("---")
