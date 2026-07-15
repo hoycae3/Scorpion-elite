@@ -1,13 +1,13 @@
-/* Scorpion Elite - Estilos CSS VERDE BOSQUE & COBRE */
+/* Scorpion Elite - Diseño Verde Bosque y Cobre */
 
-/* Fondo general de la aplicación */
+/* 1. CONFIGURACIÓN DE LA PÁGINA */
 .stApp {
     background-color: #0f1a12;
     color: #e2ebd5;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Cabecera Principal */
+/* 2. CABECERA PRINCIPAL */
 .header-container {
     background: linear-gradient(135deg, #142419 0%, #0d160f 100%);
     padding: 25px;
@@ -34,8 +34,8 @@
     letter-spacing: 1px;
 }
 
-/* Caja de Acceso / Login */
-.login-box, .login-container {
+/* 3. CAJA DE ACCESO / LOGIN */
+.login-container, .login-box {
     background-color: #152219;
     border: 1px solid #d48243;
     border-radius: 10px;
@@ -52,7 +52,7 @@
     padding-bottom: 5px;
 }
 
-/* Títulos de las Secciones */
+/* 4. TÍTULOS DE LAS SECCIONES */
 .section-title {
     color: #d48243;
     font-size: 18px;
@@ -66,7 +66,7 @@
     gap: 8px;
 }
 
-/* Tarjetas de Picks Recomendados */
+/* 5. TARJETAS DE PICKS RECOMENDADOS */
 .pick-card {
     background: linear-gradient(135deg, #16261b 0%, #0f1a12 100%);
     border: 1.5px solid #332115;
@@ -92,7 +92,7 @@
     margin-bottom: 8px;
 }
 
-.pick-body {
+.pick-match {
     font-size: 15px;
     font-weight: bold;
     color: #ffffff;
@@ -120,15 +120,7 @@
     color: #d48243;
 }
 
-.pick-footer {
-    display: flex;
-    justify-content: space-between;
-    color: #d48243;
-    font-size: 12px;
-    margin-top: 5px;
-}
-
-/* Tarjetas de la Columna de la Derecha (Resumen, Alertas) */
+/* 6. TARJETAS DE LA COLUMNA DERECHA (RESUMEN, ALERTAS) */
 .sidebar-card, .sidebar-right-card {
     background-color: #122016;
     border: 1px solid #243829;
@@ -160,70 +152,42 @@
     color: #ffffff;
 }
 
-.text-trend {
-    font-size: 13px;
-    color: #e2ebd5;
-    margin-bottom: 6px;
+/* 7. INPUT Y BOTONES PERSONALIZADOS */
+.stTextInput > div > div > input {
+    background-color: #0f1a12 !important;
+    color: #ffffff !important;
+    border: 1px solid #243829 !important;
 }
 
-.text-alert {
-    font-size: 12px;
-    color: #cbdcd0;
-    background: rgba(212, 130, 67, 0.1);
-    padding: 8px;
-    border-radius: 6px;
-    margin-bottom: 8px;
-    border-left: 3px solid #d48243;
+.stTextInput > div > div > input:focus {
+    border-color: #d48243 !important;
+    box-shadow: 0 0 0 1px #d48243 !important;
 }
 
-/* Goleadores */
-.goleador-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid #243829;
+.stButton > button {
+    background: linear-gradient(90deg, #d48243 0%, #a65d28 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: bold !important;
+    width: 100%;
+    transition: all 0.3s ease;
 }
 
-.goleador-num {
-    color: #d48243;
-    font-weight: bold;
-    width: 30px;
+.stButton > button:hover {
+    background: linear-gradient(90deg, #a65d28 0%, #d48243 100%) !important;
+    box-shadow: 0px 0px 8px rgba(212, 130, 67, 0.6) !important;
 }
 
-.goleador-nom {
-    color: #ffffff;
-    flex: 1;
-}
-
-.goleador-gol {
-    color: #d48243;
-    font-weight: bold;
-}
-
-/* Cards de métricas */
-.metric-card {
-    background-color: #122016;
-    border: 1px solid #243829;
-    border-radius: 10px;
-    padding: 15px;
+/* 8. FOOTER */
+.footer {
     text-align: center;
-    margin-bottom: 10px;
-}
-
-.metric-value {
-    color: #d48243;
-    font-size: 28px;
-    font-weight: bold;
-}
-
-.metric-label {
     color: #a3b899;
     font-size: 12px;
-    text-transform: uppercase;
-    margin-top: 5px;
+    padding: 20px;
+    margin-top: 30px;
 }
 
-/* Badges de rango */
+/* 9. BADGES DE RANGO */
 .badge-Aplus {
     background-color: rgba(57, 255, 20, 0.15);
     color: #39ff14;
@@ -261,107 +225,54 @@
     font-size: 11px;
 }
 
-/* Footer */
-.footer {
-    text-align: center;
-    color: #a3b899;
-    font-size: 12px;
-    padding: 20px;
-    margin-top: 30px;
-}
-
-/* Botones personalizados */
-.stButton > button {
-    background: linear-gradient(90deg, #d48243 0%, #a65d28 100%) !important;
-    color: #ffffff !important;
-    border: none !important;
-    font-weight: bold !important;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-}
-
-.stButton > button:hover {
-    background: linear-gradient(90deg, #a65d28 0%, #d48243 100%) !important;
-    box-shadow: 0px 0px 8px rgba(212, 130, 67, 0.6) !important;
-}
-
-/* Inputs personalizados */
-.stTextInput > div > div > input,
-.stNumberInput > div > div > input,
-.stSelectbox > div > div > select {
-    background-color: #0f1a12 !important;
-    color: #ffffff !important;
-    border: 1px solid #243829 !important;
-    border-radius: 6px;
-}
-
-.stTextInput > div > div > input:focus,
-.stNumberInput > div > div > input:focus,
-.stSelectbox > div > div > select:focus {
-    border-color: #d48243 !important;
-    box-shadow: 0 0 0 1px #d48243 !important;
-}
-
-/* Stats de equipos */
-.stats-container {
-    background-color: #122016;
-    border: 1px solid #243829;
-    border-radius: 8px;
-    padding: 8px;
-    margin-top: 5px;
-}
-
-.stat-item {
-    display: inline-block;
-    margin-right: 8px;
-    font-size: 0.65rem;
-}
-
-.stat-label {
-    color: #a3b899;
-}
-
-.stat-value {
-    color: #d48243;
-    font-weight: bold;
-}
-
-/* Cards de estadísticas de partido */
-.party-stat-card {
-    background-color: #122016;
-    border: 1px solid #243829;
-    border-left: 3px solid #d48243;
-    border-radius: 8px;
-    padding: 10px;
-    margin: 5px 0;
-}
-
-.party-stat-title {
-    color: #d48243;
-    font-size: 0.75rem;
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-.party-stat-row {
+/* 10. GOLEADORES */
+.goleador-row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    font-size: 0.7rem;
+    padding: 8px 0;
+    border-bottom: 1px solid #243829;
 }
 
-.party-stat-team {
+.goleador-num {
+    color: #d48243;
+    font-weight: bold;
+    width: 30px;
+}
+
+.goleador-nom {
     color: #ffffff;
     flex: 1;
 }
 
-.party-stat-value {
+.goleador-gol {
     color: #d48243;
     font-weight: bold;
-    text-align: center;
 }
 
-/* Match row */
+/* 11. CARDS DE MÉTRICAS */
+.metric-card {
+    background-color: #122016;
+    border: 1px solid #243829;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.metric-value {
+    color: #d48243;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.metric-label {
+    color: #a3b899;
+    font-size: 12px;
+    text-transform: uppercase;
+    margin-top: 5px;
+}
+
+/* 12. MATCH ROW */
 .match-row {
     background: linear-gradient(135deg, #16261b 0%, #0f1a12 100%);
     padding: 10px;
@@ -369,4 +280,21 @@
     margin-bottom: 8px;
     border-left: 3px solid #d48243;
     font-size: 13px;
+}
+
+/* 13. TEXTOS DE ALERTAS Y TENDENCIAS */
+.text-alert {
+    font-size: 12px;
+    color: #cbdcd0;
+    background: rgba(212, 130, 67, 0.1);
+    padding: 8px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border-left: 3px solid #d48243;
+}
+
+.text-trend {
+    font-size: 13px;
+    color: #e2ebd5;
+    margin-bottom: 6px;
 }
