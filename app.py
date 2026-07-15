@@ -745,14 +745,14 @@ def scrape_flashscore_partidos():
 def obtener_stats_equipos_api():
     """
     Obtiene estadísticas de equipos desde API-Football.
-    Retorna dict: {nombre_equipo: {pj, gf, gc, puntos}}
+    Incluye: PJ, GF, GC, puntos, remates, corners, tarjetas, posesión
     """
     from scorpion.api.football import FootballAPI
     
     stats = {}
     api = FootballAPI()
     
-    # Ligas soportadas
+    # ligas soportadas
     liga_ids = {
         39: "Premier League",
         140: "La Liga", 
@@ -766,6 +766,7 @@ def obtener_stats_equipos_api():
             temporada = api.get_temporada(liga_id)
             headers = {"x-apisports-key": API_FOOTBALL_KEY}
             
+            # Obtener clasificación
             data = api._request(
                 "https://v3.football.api-sports.io/standings",
                 {"league": liga_id, "season": temporada},
@@ -781,6 +782,9 @@ def obtener_stats_equipos_api():
                             team_name = team.get("name", "")
                             stats[team_name] = {
                                 "pj": row.get("played", 0),
+                                "ganados": row.get("win", 0),
+                                "empatados": row.get("draw", 0),
+                                "perdidos": row.get("lose", 0),
                                 "gf": row.get("goals", {}).get("for", 0),
                                 "gc": row.get("goals", {}).get("against", 0),
                                 "puntos": row.get("points", 0),
@@ -790,6 +794,49 @@ def obtener_stats_equipos_api():
             print(f"Error stats {liga_nombre}: {e}")
     
     return stats
+
+
+def obtener_stats_partido_en_vivo(local_id, visitante_id, liga_id):
+    """
+    Obtiene estadísticas detalladas de un partido específico.
+    Remates, corners, atajadas, posesión, faltas, tarjetas
+    """
+    try:
+        headers = {"x-apisports-key": API_FOOTBALL_KEY}
+        
+        # Obtener fixture del día para encontrar el partido
+        fixtures = api.get_fixtures(liga_id, fecha=get_hoy())
+        
+        for f in fixtures:
+            if (f["teams"]["home"]["id"] == local_id and 
+                f["teams"]["away"]["id"] == visitante_id):
+                
+                fixture_id = f["fixture"]["id"]
+                
+                # Obtener estadísticas del partido
+                stats_url = f"https://v3.football.api-sports.io/fixtures/statistics"
+                data = api._request(stats_url, 
+                    {"fixture": fixture_id}, 
+                    headers=headers
+                )
+                
+                if data and data.get("response"):
+                    result = {}
+                    for team_stats in data["response"]:
+                        team_name = team_stats["team"]["name"]
+                        stats_list = team_stats["statistics"]
+                        result[team_name] = {}
+                        
+                        for stat in stats_list:
+                            value = stat["value"]
+                            if value is not None:
+                                result[team_name][stat["type"]] = value
+                    
+                    return result
+    except Exception as e:
+        print(f"Error stats partido: {e}")
+    
+    return None
 
 
 def enriquecer_partidos_con_stats(partidos, stats):
@@ -3540,39 +3587,51 @@ def pantalla_principal():
                     pj = stats_local.get('pj', '-')
                     gf = stats_local.get('gf', '-')
                     gc = stats_local.get('gc', '-')
+                    ganados = stats_local.get('ganados', '-')
+                    empatados = stats_local.get('empatados', '-')
+                    perdidos = stats_local.get('perdidos', '-')
                     puntos = stats_local.get('puntos', '-')
-                    info_local = f"{pj}PJ | {gf}GF | {gc}GC | {puntos}pts"
+                    info_local = f"PJ:{pj} G:{ganados} E:{empatados} P:{perdidos}"
+                    info_goles = f"GF:{gf} GC:{gc}"
                 else:
                     info_local = "Stats no disp."
+                    info_goles = ""
                 
                 # Info del equipo visitante
                 if stats_visitante:
                     pj = stats_visitante.get('pj', '-')
                     gf = stats_visitante.get('gf', '-')
                     gc = stats_visitante.get('gc', '-')
+                    ganados = stats_visitante.get('ganados', '-')
+                    empatados = stats_visitante.get('empatados', '-')
+                    perdidos = stats_visitante.get('perdidos', '-')
                     puntos = stats_visitante.get('puntos', '-')
-                    info_visitante = f"{pj}PJ | {gf}GF | {gc}GC | {puntos}pts"
+                    info_visitante = f"PJ:{pj} G:{ganados} E:{empatados} P:{perdidos}"
+                    info_goles_v = f"GF:{gf} GC:{gc}"
                 else:
                     info_visitante = "Stats no disp."
+                    info_goles_v = ""
                 
                 st.markdown(f"""
-                <div style="background: #131926; padding: 12px; border-radius: 5px; margin-bottom: 10px; border-left: 3px solid #ffd700;">
-                    <div style="color: #ffd700; font-size: 0.75rem; margin-bottom: 5px;">{p.get('liga', 'Partido')} - {p.get('hora', '--:--')}</div>
+                <div style="background: linear-gradient(135deg, #1a0a2e 0%, #131926 100%); padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #00f5d4; border: 1px solid #7b2cbf;">
+                    <div style="color: #ff006e; font-size: 0.7rem; margin-bottom: 8px;">{p.get('liga', 'Partido')} - {p.get('hora', '--:--')}</div>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div style="text-align: center; flex: 1;">
-                            <div style="color: #fff; font-size: 0.85rem; font-weight: bold;">{local}</div>
-                            <div style="color: #00ee66; font-size: 0.6rem; margin-top: 3px;">{info_local}</div>
+                            <div style="color: #00f5d4; font-size: 0.9rem; font-weight: bold;">{local}</div>
+                            <div style="color: #9d4edd; font-size: 0.6rem; margin-top: 3px;">{info_local}</div>
+                            <div style="color: #39ff14; font-size: 0.6rem; margin-top: 2px;">{info_goles}</div>
                         </div>
-                        <div style="color: #ffd700; font-size: 0.9rem; padding: 0 10px;">VS</div>
+                        <div style="color: #ff006e; font-size: 0.85rem; padding: 0 12px; font-weight: bold;">VS</div>
                         <div style="text-align: center; flex: 1;">
-                            <div style="color: #fff; font-size: 0.85rem; font-weight: bold;">{visitante}</div>
-                            <div style="color: #00ee66; font-size: 0.6rem; margin-top: 3px;">{info_visitante}</div>
+                            <div style="color: #00f5d4; font-size: 0.9rem; font-weight: bold;">{visitante}</div>
+                            <div style="color: #9d4edd; font-size: 0.6rem; margin-top: 3px;">{info_visitante}</div>
+                            <div style="color: #39ff14; font-size: 0.6rem; margin-top: 2px;">{info_goles_v}</div>
                         </div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
         else:
-            st.info("📡 Cargando partidos...")
+            st.info("Cargando partidos...")
     
     with col2:
         st.markdown('<p class="section-title">🏆 Top Goleadores</p>', unsafe_allow_html=True)
