@@ -883,6 +883,143 @@ def obtener_stats_desde_sofascore(nombre_equipo):
     }
 
 
+def buscar_equipo_en_todas_fuentes(nombre):
+    """Busca equipos en TODAS las fuentes disponibles."""
+    resultados = []
+    seen = set()
+    
+    # 1. SOFASCORE API
+    try:
+        headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+        url = f"https://api.sofascore.com/api/v1/search/teams/{nombre.replace(' ', '%20')}"
+        r = requests.get(url, headers=headers, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            if data.get("results"):
+                for t in data["results"][:5]:
+                    key = f"sofascore_{t.get('id')}"
+                    if key not in seen:
+                        seen.add(key)
+                        resultados.append({
+                            "id": t.get("id"),
+                            "nombre": t.get("name"),
+                            "pais": t.get("country", {}).get("name", ""),
+                            "liga": t.get("playerCategories", [{}])[0].get("tournament", {}).get("name", "Sofascore") if t.get("playerCategories") else "Sofascore",
+                            "fuente": "Sofascore"
+                        })
+    except Exception as e:
+        print(f"Error Sofascore: {e}")
+    
+    # 2. API-FOOTBALL
+    if API_FOOTBALL_KEY:
+        try:
+            headers = {"x-apisports-key": API_FOOTBALL_KEY}
+            url = f"https://v3.football.api-sports.io/teams/search/{nombre}"
+            r = requests.get(url, headers=headers, timeout=5)
+            if r.status_code == 200:
+                data = r.json()
+                if data.get("response"):
+                    for item in data["response"][:5]:
+                        t = item.get("team", {})
+                        leagues = item.get("leagues", {})
+                        key = f"apifootball_{t.get('id')}"
+                        if key not in seen:
+                            seen.add(key)
+                            liga_nombre = leagues.get("name", "API-Football") if leagues else "API-Football"
+                            resultados.append({
+                                "id": t.get("id"),
+                                "nombre": t.get("name"),
+                                "pais": t.get("country", ""),
+                                "liga": liga_nombre,
+                                "fuente": "API-Football"
+                            })
+        except Exception as e:
+            print(f"Error API-Football: {e}")
+    
+    # 3. FLASHCORE
+    try:
+        slug = nombre.lower().replace(" ", "-").replace("'", "")
+        url = f"https://www.flashscore.es/equipo/{slug}/"
+        headers_req = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        r = requests.get(url, headers=headers_req, timeout=5)
+        if r.status_code == 200 and "/equipo/" in r.url:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(r.text, "html.parser")
+            title = soup.find("title")
+            if title:
+                equipo_nombre = title.get_text().replace(" - Flashscore", "").strip()
+                if nombre.lower() in equipo_nombre.lower():
+                    key = f"flashscore_{slug}"
+                    if key not in seen:
+                        seen.add(key)
+                        resultados.append({
+                            "id": slug,
+                            "nombre": equipo_nombre,
+                            "pais": "",
+                            "liga": "Flashscore",
+                            "fuente": "Flashscore"
+                        })
+    except Exception as e:
+        print(f"Error Flashscore: {e}")
+    
+    return resultados
+
+
+def obtener_stats_equipo_fuente(equipo):
+    """Obtiene estadísticas desde la fuente del equipo."""
+    fuente = equipo.get('fuente', '')
+    tid = equipo.get('id')
+    nombre = equipo.get('nombre', '')
+    
+    # SOFASCORE
+    if fuente == 'Sofascore':
+        try:
+            headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+            url = f"https://api.sofascore.com/api/v1/team/{tid}/statistics/overall"
+            r = requests.get(url, headers=headers, timeout=5)
+            if r.status_code == 200:
+                s = r.json()
+                return {
+                    "partidos": s.get("matches", {}).get("total", 0),
+                    "victorias": s.get("wins", {}).get("total", 0),
+                    "goles_favor": s.get("goalsScored", {}).get("total", 0),
+                    "goles_contra": s.get("goalsConceded", {}).get("total", 0),
+                }
+        except:
+            pass
+    
+    # API-FOOTBALL
+    elif fuente == 'API-Football' and API_FOOTBALL_KEY:
+        try:
+            headers = {"x-apisports-key": API_FOOTBALL_KEY}
+            # Buscar estadísticas en la liga del equipo
+            url = f"https://v3.football.api-sports.io/teams?id={tid}"
+            r = requests.get(url, headers=headers, timeout=5)
+            if r.status_code == 200:
+                data = r.json()
+                if data.get("response"):
+                    leagues = data["response"][0].get("leagues", [])
+                    for league in leagues[:1]:
+                        lid = league.get("league", {}).get("id")
+                        if lid:
+                            stats_url = f"https://v3.football.api-sports.io/teams/statistics?team={tid}&league={lid}&season=2024"
+                            r2 = requests.get(stats_url, headers=headers, timeout=5)
+                            if r2.status_code == 200:
+                                s = r2.json()
+                                if s.get("response"):
+                                    resp = s["response"]
+                                    return {
+                                        "partidos": resp.get("fixtures", {}).get("played", 0),
+                                        "victorias": resp.get("fixtures", {}).get("wins", {}).get("total", 0),
+                                        "goles_favor": resp.get("goals", {}).get("for", {}).get("total", {}).get("total", 0),
+                                        "goles_contra": resp.get("goals", {}).get("against", {}).get("total", {}).get("total", 0),
+                                    }
+        except:
+            pass
+    
+    return None
+
+
 def buscar_equipos_por_liga(liga_id, query):
     """Busca equipos por nombre dentro de una liga específica."""
     try:
@@ -4552,40 +4689,61 @@ def pantalla_principal():
         partidos_scraped = enriquecer_partidos_con_stats(partidos_scraped, stats_equipos)
     
     with col1:
-        # === BUSCADOR COMPACTO EN EXPANDER ===
+        # === BUSCADOR REAL EN TODAS LAS FUENTES ===
         with st.expander("🔍 Buscar Equipo", expanded=False):
-            equipos_populares = [
-                "Manchester City", "Liverpool", "Arsenal", "Chelsea", "Man United",
-                "Real Madrid", "Barcelona", "Atletico Madrid", "Sevilla",
-                "Bayern Munich", "Dortmund", "Leipzig",
-                "Inter Milan", "AC Milan", "Juventus", "Napoli", "Roma",
-                "PSG", "Marseille", "Monaco", "Lyon",
-                "Ajax", "PSV", "Porto", "Benfica", "Sporting",
-                "Atletico Nacional", "Atletico Bucaramanga", "Millonarios", "Santa Fe", "Junior",
-                "River Plate", "Boca Juniors", "Al Hilal", "Al Nassr",
-            ]
+            st.write("Escribe el nombre del equipo:")
+            busqueda = st.text_input("Equipo:", placeholder="Ej: Atletico Bucaramanga, Barcelona...", key="busqueda_equipo_main")
             
-            col_busq1, col_busq2 = st.columns([3, 1])
+            col_busq1, col_busq2 = st.columns([1, 4])
             with col_busq1:
-                busqueda = st.selectbox("Equipo:", options=[""] + sorted(equipos_populares), key="busqueda_equipo_main")
+                buscar_btn = st.button("🔍 Buscar", key="btn_buscar_eq")
             with col_busq2:
-                st.write(" ")
-                if st.button("🔍", key="btn_buscar_eq"):
-                    if busqueda:
-                        st.session_state['equipo_buscado'] = busqueda
+                if buscar_btn and busqueda:
+                    with st.spinner("Buscando en todas las fuentes..."):
+                        resultados = buscar_equipo_en_todas_fuentes(busqueda)
+                    
+                    if resultados:
+                        st.success(f"✅ {len(resultados)} equipos encontrados")
+                        for eq in resultados[:10]:
+                            fuente = eq.get('fuente', '')
+                            liga = eq.get('liga', '')
+                            nombre = eq.get('nombre', '')
+                            tid = eq.get('id', '')
+                            
+                            col_b1, col_b2 = st.columns([3, 1])
+                            with col_b1:
+                                st.markdown(f"**{nombre}** <span style='color:#888;font-size:0.75rem;'>{liga} [{fuente}]</span>", unsafe_allow_html=True)
+                            with col_b2:
+                                if st.button("📊", key=f"ver_{tid}"):
+                                    st.session_state['equipo_buscado'] = eq
+                                    st.rerun()
+                    else:
+                        st.warning("No se encontraron equipos. Prueba otro nombre.")
             
-            # Stats en expander
+            # Mostrar stats si hay equipo seleccionado
             if 'equipo_buscado' in st.session_state:
-                nombre = st.session_state['equipo_buscado']
-                st.success(f"📊 {nombre}")
-                stats = obtener_stats_desde_sofascore(nombre)
-                col_s1, col_s2, col_s3 = st.columns(3)
-                with col_s1:
-                    st.metric("PJ", stats.get('partidos', '?'))
-                with col_s2:
-                    st.metric("G/F", stats.get('goles', '?'))
-                with col_s3:
-                    st.metric("V", stats.get('victorias', '?'))
+                eq = st.session_state['equipo_buscado']
+                nombre = eq.get('nombre', '')
+                tid = eq.get('id', '')
+                fuente = eq.get('fuente', '')
+                
+                st.markdown("---")
+                st.success(f"📊 {nombre} ({fuente})")
+                
+                # Obtener stats desde la fuente correspondiente
+                stats = obtener_stats_equipo_fuente(eq)
+                if stats:
+                    col_s1, col_s2, col_s3, col_s4 = st.columns(4)
+                    with col_s1:
+                        st.metric("PJ", stats.get('partidos', stats.get('pj', '?')))
+                    with col_s2:
+                        st.metric("Victorias", stats.get('victorias', stats.get('ganados', '?')))
+                    with col_s3:
+                        st.metric("G/F", stats.get('goles_favor', stats.get('goles', '?')))
+                    with col_s4:
+                        st.metric("G/C", stats.get('goles_contra', stats.get('gc', '?')))
+                else:
+                    st.info("Stats no disponibles para este equipo.")
         
         # === CALENDARIO COMPACTO ===
         st.markdown("---")
