@@ -876,14 +876,65 @@ def buscar_equipos_por_liga(liga_id, query):
 
 
 def buscar_equipos_todas_ligas(query):
-    """Busca equipos en todas las ligas principales."""
+    """Busca equipos en TODAS las ligas principales y segundas divisiones."""
     equipos_dict = {}
+    
+    # TODAS LAS LIGAS: Primeras y Segundas Divisiones
     liga_ids = {
-        39: "Premier League",
-        140: "La Liga",
-        78: "Bundesliga",
-        135: "Serie A",
-        61: "Ligue 1",
+        # PREMIER LEAGUES
+        39: "Premier League (ING)",
+        140: "La Liga (ESP)",
+        78: "Bundesliga (ALE)",
+        135: "Serie A (ITA)",
+        61: "Ligue 1 (FRA)",
+        45: "Eredivisie (HOL)",
+        88: "Primeira Liga (POR)",
+        2: "Champions League",
+        3: "Europa League",
+        
+        # SEGUNDAS DIVISIONES
+        40: "Championship (ING)",
+        141: "La Liga 2 (ESP)",
+        79: "2. Bundesliga (ALE)",
+        136: "Serie B (ITA)",
+        62: "Ligue 2 (FRA)",
+        44: "Eerste Divisie (HOL)",
+        94: "Liga Portugal 2",
+        39: "Premier League (ING)",
+        
+        # OTRAS LIGAS IMPORTANTES
+        1: "UEFA Champions League",
+        13: "CONMEBOL Libertadores",
+        12: "Copa Libertadores",
+        30: "MLS (USA)",
+        31: "Liga MX (MEX)",
+        32: "Argentine Liga",
+        33: "Brasileirão",
+        38: "Jupiler Pro League (BEL)",
+        37: "Scottish Premiership (ESC)",
+        10: "Premier Liga (RUS)",
+        20: "Premier League (ARZ)",
+        22: "Ukrainian Premier League",
+        23: "Turkish Super Lig",
+        24: "Greek Super League",
+        25: "Austrian Bundesliga",
+        26: "Swiss Super League",
+        27: "Czech Liga PRO",
+        28: "Polish Ekstraklasa",
+        29: "Hungarian NB I",
+        34: "Romanian Liga I",
+        35: "Danish Superliga",
+        36: "Swedish Allsvenskan",
+        37: "Norwegian Eliteserien",
+        42: "Japanese J1 League",
+        43: "Australian A-League",
+        48: "Korean K League 1",
+        50: "Chinese Super League",
+        53: "Indian Super League",
+        54: "Saudi Pro League",
+        55: "UAE Pro League",
+        56: "Qatar Stars League",
+        57: "Egyptian Premier League",
     }
     
     for liga_id, liga_nombre in liga_ids.items():
@@ -1077,44 +1128,74 @@ def mostrar_buscador_equipos():
 
 
 def obtener_partidos_por_fecha(fecha_str, liga_id=None):
-    """Obtiene partidos para una fecha específica."""
+    """Obtiene partidos para una fecha específica desde API-Football."""
     try:
         from scorpion.api.football import FootballAPI
         api = FootballAPI()
         headers = {"x-apisports-key": API_FOOTBALL_KEY}
         
-        params = {"date": fecha_str}
-        if liga_id:
-            params["league"] = liga_id
+        # Determinar temporada basada en la fecha
+        year = int(fecha_str[:4]) if fecha_str else 2024
+        season = 2024 if year >= 2024 else year
         
-        url = "https://v3.football.api-sports.io/fixtures"
-        data = api._request(url, params, headers=headers)
+        # Buscar en todas las ligas principales
+        ligas_principales = [
+            (39, "Premier League"), (140, "La Liga"), (78, "Bundesliga"),
+            (135, "Serie A"), (61, "Ligue 1"), (45, "Eredivisie"),
+            (88, "Primeira Liga"), (40, "Championship"), (141, "La Liga 2"),
+            (79, "2. Bundesliga"), (136, "Serie B"), (62, "Ligue 2"),
+        ]
         
-        partidos = []
-        if data and data.get("response"):
-            for item in data["response"]:
-                fixture = item.get("fixture", {})
-                league = item.get("league", {})
-                teams = item.get("teams", {})
-                goals = item.get("goals", {})
+        todos_partidos = []
+        
+        for lid, lname in ligas_principales:
+            try:
+                params = {
+                    "date": fecha_str,
+                    "league": lid,
+                    "season": season
+                }
                 
-                es_vivo = fixture.get("status", {}).get("short") in ["1H", "2H", "HT", "ET", "P", "LIVE"]
+                url = "https://v3.football.api-sports.io/fixtures"
+                data = api._request(url, params, headers=headers)
                 
-                partidos.append({
-                    "id": fixture.get("id"),
-                    "fecha": fixture.get("date", "")[:16] if fixture.get("date") else "",
-                    "hora": fixture.get("time", "")[:5] if fixture.get("time") else "",
-                    "liga": league.get("name", ""),
-                    "liga_id": league.get("id"),
-                    "local": teams.get("home", {}).get("name", ""),
-                    "visitante": teams.get("away", {}).get("name", ""),
-                    "goles_local": goals.get("home"),
-                    "goles_visitante": goals.get("away"),
-                    "estado": fixture.get("status", {}).get("short", ""),
-                    "vivo": es_vivo,
-                })
+                if data and data.get("response"):
+                    for item in data["response"]:
+                        fixture = item.get("fixture", {})
+                        teams = item.get("teams", {})
+                        goals = item.get("goals", {})
+                        
+                        es_vivo = fixture.get("status", {}).get("short") in ["1H", "2H", "HT", "ET", "P", "LIVE", "SUSP", "INT"]
+                        
+                        # Extraer hora de la fecha
+                        fecha_completa = fixture.get("date", "")
+                        hora = fecha_completa[11:16] if fecha_completa and len(fecha_completa) > 16 else "--:--"
+                        
+                        todos_partidos.append({
+                            "id": fixture.get("id"),
+                            "fecha": fecha_completa[:16] if fecha_completa else "",
+                            "hora": hora,
+                            "liga": lname,
+                            "liga_id": lid,
+                            "local": teams.get("home", {}).get("name", ""),
+                            "visitante": teams.get("away", {}).get("name", ""),
+                            "goles_local": goals.get("home"),
+                            "goles_visitante": goals.get("away"),
+                            "estado": fixture.get("status", {}).get("short", ""),
+                            "vivo": es_vivo,
+                        })
+            except Exception as e:
+                continue
         
-        return partidos
+        # Eliminar duplicados por ID
+        seen = set()
+        unique_partidos = []
+        for p in todos_partidos:
+            if p["id"] not in seen:
+                seen.add(p["id"])
+                unique_partidos.append(p)
+        
+        return unique_partidos
     except Exception as e:
         print(f"Error obteniendo partidos: {e}")
         return []
@@ -4419,53 +4500,71 @@ def pantalla_principal():
         
         with cal_tabs[0]:
             st.markdown(f"**{hoy.strftime('%d/%m/%Y')}**")
-            partidos_hoy = obtener_partidos_por_fecha(hoy.strftime("%Y-%m-%d"))
             
-            if partidos_hoy:
-                for p in partidos_hoy[:5]:
-                    local = p.get("local", "")[:15]
-                    visitante = p.get("visitante", "")[:15]
-                    hora = p.get("hora", "")[11:16] if len(p.get("hora", "")) > 16 else p.get("hora", "")
-                    estado = p.get("estado", "")
-                    liga = p.get("liga", "")[:20]
-                    
-                    if estado in ["1H", "2H", "HT", "LIVE"]:
-                        badge = "🔴"
-                    elif estado == "FT":
-                        badge = "✅"
-                    else:
-                        badge = "⏰"
-                    
-                    st.markdown(f"""
-                    <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:8px;margin-bottom:6px;">
-                        <div style="color:#8a6435;font-size:0.7rem;">{liga} {badge}</div>
-                        <div style="color:#dcdcdc;font-size:0.85rem;">{local} vs {visitante}</div>
-                        <div style="color:#dfaf6f;font-size:0.75rem;">{hora}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+            # Usar partidos_scraped que ya se obtienen de Flashscore
+            if 'partidos_scraped' in st.session_state and st.session_state.partidos_scraped:
+                partidos_hoy = st.session_state.partidos_scraped
+                if partidos_hoy:
+                    for p in partidos_hoy[:8]:
+                        local = p.get("local", "")[:18]
+                        visitante = p.get("visitante", "")[:18]
+                        hora = p.get("hora", "--:--")
+                        liga = p.get("liga", "")[:25]
+                        
+                        st.markdown(f"""
+                        <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:10px;margin-bottom:8px;">
+                            <div style="color:#8a6435;font-size:0.75rem;margin-bottom:4px;">{liga}</div>
+                            <div style="color:#dcdcdc;font-size:0.9rem;font-weight:bold;">{local} vs {visitante}</div>
+                            <div style="color:#dfaf6f;font-size:0.8rem;margin-top:4px;">⏰ {hora}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.info("No hay partidos en Flashscore")
             else:
-                st.info("No hay partidos hoy")
+                # Intentar desde API como backup
+                partidos_hoy = obtener_partidos_por_fecha(hoy.strftime("%Y-%m-%d"))
+                if partidos_hoy:
+                    for p in partidos_hoy[:8]:
+                        local = p.get("local", "")[:18]
+                        visitante = p.get("visitante", "")[:18]
+                        hora = p.get("hora", "")[11:16] if len(str(p.get("hora", ""))) > 16 else p.get("hora", "--:--")
+                        liga = p.get("liga", "")[:25]
+                        
+                        st.markdown(f"""
+                        <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:10px;margin-bottom:8px;">
+                            <div style="color:#8a6435;font-size:0.75rem;margin-bottom:4px;">{liga}</div>
+                            <div style="color:#dcdcdc;font-size:0.9rem;font-weight:bold;">{local} vs {visitante}</div>
+                            <div style="color:#dfaf6f;font-size:0.8rem;margin-top:4px;">⏰ {hora}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.warning("⚠️ Cargando partidos...")
         
         with cal_tabs[1]:
             st.markdown(f"**{manana.strftime('%d/%m/%Y')}**")
-            partidos_manana = obtener_partidos_por_fecha(manana.strftime("%Y-%m-%d"))
+            
+            # Intentar obtener partidos de mañana desde API
+            try:
+                partidos_manana = obtener_partidos_por_fecha(manana.strftime("%Y-%m-%d"))
+            except:
+                partidos_manana = []
             
             if partidos_manana:
-                for p in partidos_manana[:5]:
-                    local = p.get("local", "")[:15]
-                    visitante = p.get("visitante", "")[:15]
-                    hora = p.get("hora", "")[11:16] if len(p.get("hora", "")) > 16 else p.get("hora", "")
-                    liga = p.get("liga", "")[:20]
+                for p in partidos_manana[:8]:
+                    local = p.get("local", "")[:18]
+                    visitante = p.get("visitante", "")[:18]
+                    hora = p.get("hora", "")[11:16] if len(str(p.get("hora", ""))) > 16 else p.get("hora", "--:--")
+                    liga = p.get("liga", "")[:25]
                     
                     st.markdown(f"""
-                    <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:8px;margin-bottom:6px;">
-                        <div style="color:#8a6435;font-size:0.7rem;">{liga}</div>
-                        <div style="color:#dcdcdc;font-size:0.85rem;">{local} vs {visitante}</div>
-                        <div style="color:#dfaf6f;font-size:0.75rem;">⏰ {hora}</div>
+                    <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:10px;margin-bottom:8px;">
+                        <div style="color:#8a6435;font-size:0.75rem;margin-bottom:4px;">{liga}</div>
+                        <div style="color:#dcdcdc;font-size:0.9rem;font-weight:bold;">{local} vs {visitante}</div>
+                        <div style="color:#dfaf6f;font-size:0.8rem;margin-top:4px;">⏰ {hora}</div>
                     </div>
                     """, unsafe_allow_html=True)
             else:
-                st.info("No hay partidos mañana")
+                st.info("📅 Revisa mañana para ver partidos")
         
         st.markdown('<p class="section-title">🔥 Picks Recomendados del Día</p>', unsafe_allow_html=True)
         
