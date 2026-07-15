@@ -1,34 +1,43 @@
-/* Scorpion Elite - Diseño Verde Bosque y Cobre */
+/* Scorpion Elite - Diseño Verde Bosque y Oro */
+
+/* Variables CSS */
+:root {
+    --bg-dark-green: #0a2114;
+    --panel-bg: #1b2621;
+    --gold-bright: #dfaf6f;
+    --gold-dark: #8a6435;
+    --text-light: #dcdcdc;
+}
 
 /* 1. CONFIGURACIÓN DE LA PÁGINA */
 .stApp {
-    background-color: #0f1a12;
-    color: #e2ebd5;
+    background-color: var(--bg-dark-green) !important;
+    background-image: radial-gradient(circle, #103020 0%, #050f0a 100%) !important;
+    color: var(--text-light);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* 2. CABECERA PRINCIPAL */
 .header-container {
-    background: linear-gradient(135deg, #142419 0%, #0d160f 100%);
+    background: var(--panel-bg) !important;
     padding: 25px;
-    border-radius: 12px;
-    border: 1px solid #332115;
-    border-left: 5px solid #d48243;
+    border-radius: 6px;
+    border: 1px solid var(--gold-dark);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
     margin-bottom: 25px;
 }
 
 .brand-title {
-    color: #d48243;
+    color: #fff;
     font-family: 'Georgia', serif;
     font-size: 40px;
     font-weight: bold;
     letter-spacing: 2px;
     margin: 0;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
 }
 
 .brand-subtitle {
-    color: #a3b899;
+    color: var(--text-light);
     font-size: 14px;
     margin-top: 5px;
     letter-spacing: 1px;
@@ -36,25 +45,25 @@
 
 /* 3. CAJA DE ACCESO / LOGIN */
 .login-container, .login-box {
-    background-color: #152219;
-    border: 1px solid #d48243;
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.4);
+    background-color: var(--panel-bg);
+    border: 1px solid var(--gold-dark);
+    border-radius: 6px;
+    padding: 20px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
 }
 
 .login-title {
-    color: #d48243;
+    color: var(--gold-bright);
     font-size: 18px;
     font-weight: bold;
     margin-bottom: 10px;
-    border-bottom: 1px solid #332115;
-    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(223, 175, 111, 0.2);
+    padding-bottom: 10px;
 }
 
 /* 4. TÍTULOS DE LAS SECCIONES */
 .section-title {
-    color: #d48243;
+    color: var(--gold-bright);
     font-size: 18px;
     font-weight: bold;
     text-transform: uppercase;
@@ -68,28 +77,22 @@
 
 /* 5. TARJETAS DE PICKS RECOMENDADOS */
 .pick-card {
-    background: linear-gradient(135deg, #16261b 0%, #0f1a12 100%);
-    border: 1.5px solid #332115;
-    border-radius: 10px;
-    padding: 15px;
+    background-color: var(--panel-bg);
+    border: 1px solid var(--gold-dark);
+    border-radius: 6px;
+    padding: 20px;
     margin-bottom: 15px;
-    transition: transform 0.2s;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-}
-
-.pick-card:hover {
-    border-color: #d48243;
-    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
 }
 
 .pick-header {
     font-size: 12px;
-    color: #a3b899;
+    color: var(--gold-bright);
     font-weight: bold;
     text-transform: uppercase;
-    border-bottom: 1px solid #243829;
-    padding-bottom: 5px;
-    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(223, 175, 111, 0.2);
+    padding-bottom: 10px;
+    margin-bottom: 10px;
 }
 
 .pick-match {
@@ -100,7 +103,7 @@
 
 .pick-selection {
     font-size: 13px;
-    color: #cbdcd0;
+    color: var(--text-light);
     margin-top: 4px;
 }
 
@@ -113,75 +116,65 @@
 }
 
 .odds-label {
-    color: #a3b899;
+    color: #888;
 }
 
 .odds-value {
-    color: #d48243;
+    color: var(--gold-bright);
 }
 
-/* 6. TARJETAS DE LA COLUMNA DERECHA (RESUMEN, ALERTAS) */
+/* 6. TARJETAS DE LA COLUMNA DERECHA */
 .sidebar-card, .sidebar-right-card {
-    background-color: #122016;
-    border: 1px solid #243829;
-    border-radius: 10px;
-    padding: 15px;
+    background-color: var(--panel-bg);
+    border: 1px solid var(--gold-dark);
+    border-radius: 6px;
+    padding: 20px;
     margin-bottom: 15px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
 }
 
 .sidebar-card-title {
-    color: #ffffff;
+    color: var(--gold-bright);
     font-size: 16px;
     font-weight: bold;
-    border-bottom: 1.5px solid #d48243;
-    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(223, 175, 111, 0.2);
+    padding-bottom: 10px;
     margin-bottom: 12px;
 }
 
-.sidebar-item {
-    margin-bottom: 10px;
-    font-size: 13px;
-}
-
-.sidebar-label {
-    color: #a3b899;
-    font-weight: bold;
-}
-
-.sidebar-value {
-    color: #ffffff;
-}
-
-/* 7. INPUT Y BOTONES PERSONALIZADOS */
+/* 7. INPUT Y BOTONES */
 .stTextInput > div > div > input {
-    background-color: #0f1a12 !important;
+    background-color: var(--bg-dark-green) !important;
     color: #ffffff !important;
-    border: 1px solid #243829 !important;
+    border: 1px solid var(--gold-dark) !important;
+    border-radius: 4px !important;
 }
 
 .stTextInput > div > div > input:focus {
-    border-color: #d48243 !important;
-    box-shadow: 0 0 0 1px #d48243 !important;
+    border-color: var(--gold-bright) !important;
 }
 
 .stButton > button {
-    background: linear-gradient(90deg, #d48243 0%, #a65d28 100%) !important;
-    color: #ffffff !important;
+    background: linear-gradient(135deg, #b08146 0%, #d8a86a 100%) !important;
     border: none !important;
+    padding: 10px 20px;
+    color: var(--bg-dark-green) !important;
     font-weight: bold !important;
+    cursor: pointer;
     width: 100%;
+    border-radius: 4px;
+    margin-top: 15px;
     transition: all 0.3s ease;
 }
 
 .stButton > button:hover {
-    background: linear-gradient(90deg, #a65d28 0%, #d48243 100%) !important;
-    box-shadow: 0px 0px 8px rgba(212, 130, 67, 0.6) !important;
+    background: linear-gradient(135deg, #d8a86a 0%, #b08146 100%) !important;
 }
 
 /* 8. FOOTER */
 .footer {
     text-align: center;
-    color: #a3b899;
+    color: var(--gold-dark);
     font-size: 12px;
     padding: 20px;
     margin-top: 30px;
@@ -199,18 +192,18 @@
 }
 
 .badge-B {
-    background-color: rgba(212, 130, 67, 0.15);
-    color: #d48243;
-    border: 1px solid #d48243;
+    background-color: rgba(223, 175, 111, 0.15);
+    color: var(--gold-bright);
+    border: 1px solid var(--gold-bright);
     padding: 2px 9px;
     border-radius: 20px;
     font-size: 11px;
 }
 
 .badge-C {
-    background-color: rgba(163, 184, 153, 0.15);
-    color: #a3b899;
-    border: 1px solid #a3b899;
+    background-color: rgba(138, 100, 53, 0.15);
+    color: var(--gold-dark);
+    border: 1px solid var(--gold-dark);
     padding: 2px 9px;
     border-radius: 20px;
     font-size: 11px;
@@ -230,43 +223,44 @@
     display: flex;
     justify-content: space-between;
     padding: 8px 0;
-    border-bottom: 1px solid #243829;
+    border-bottom: 1px solid rgba(223, 175, 111, 0.2);
 }
 
 .goleador-num {
-    color: #d48243;
+    color: var(--gold-bright);
     font-weight: bold;
     width: 30px;
 }
 
 .goleador-nom {
-    color: #ffffff;
+    color: var(--text-light);
     flex: 1;
 }
 
 .goleador-gol {
-    color: #d48243;
+    color: var(--gold-bright);
     font-weight: bold;
 }
 
 /* 11. CARDS DE MÉTRICAS */
 .metric-card {
-    background-color: #122016;
-    border: 1px solid #243829;
-    border-radius: 10px;
+    background-color: var(--panel-bg);
+    border: 1px solid var(--gold-dark);
+    border-radius: 6px;
     padding: 15px;
     text-align: center;
     margin-bottom: 10px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
 }
 
 .metric-value {
-    color: #d48243;
+    color: var(--gold-bright);
     font-size: 28px;
     font-weight: bold;
 }
 
 .metric-label {
-    color: #a3b899;
+    color: var(--text-light);
     font-size: 12px;
     text-transform: uppercase;
     margin-top: 5px;
@@ -274,27 +268,90 @@
 
 /* 12. MATCH ROW */
 .match-row {
-    background: linear-gradient(135deg, #16261b 0%, #0f1a12 100%);
+    background-color: var(--panel-bg);
     padding: 10px;
-    border-radius: 8px;
+    border-radius: 6px;
     margin-bottom: 8px;
-    border-left: 3px solid #d48243;
+    border: 1px solid var(--gold-dark);
     font-size: 13px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
 }
 
-/* 13. TEXTOS DE ALERTAS Y TENDENCIAS */
+/* 13. TEXTOS DE ALERTAS */
 .text-alert {
     font-size: 12px;
-    color: #cbdcd0;
-    background: rgba(212, 130, 67, 0.1);
+    color: var(--text-light);
+    background: rgba(223, 175, 111, 0.1);
     padding: 8px;
     border-radius: 6px;
     margin-bottom: 8px;
-    border-left: 3px solid #d48243;
+    border-left: 3px solid var(--gold-dark);
 }
 
 .text-trend {
     font-size: 13px;
-    color: #e2ebd5;
+    color: var(--text-light);
     margin-bottom: 6px;
+}
+
+/* 14. HDR antigo */
+.hdr {
+    background: var(--panel-bg) !important;
+    border: 1px solid var(--gold-dark) !important;
+    border-radius: 6px !important;
+    padding: 20px !important;
+    text-align: center !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
+}
+
+.hdr h1 {
+    color: #fff !important;
+    font-family: 'Georgia', serif !important;
+    font-size: 2.2rem !important;
+    margin: 0 !important;
+    letter-spacing: 4px !important;
+}
+
+.hdr p {
+    color: var(--text-light) !important;
+    margin: 5px 0 0 !important;
+    font-size: 0.9rem !important;
+}
+
+/* 15. PILLS/BADGES pequeños */
+.pill-ok {
+    background: rgba(57, 255, 20, 0.15) !important;
+    color: #39ff14 !important;
+    border: 1px solid #39ff14 !important;
+    padding: 2px 10px !important;
+    border-radius: 20px !important;
+    font-size: 11px !important;
+}
+
+.pill-v {
+    background: rgba(255, 107, 107, 0.15) !important;
+    color: #ff6b6b !important;
+    border: 1px solid #ff6b6b !important;
+    padding: 2px 10px !important;
+    border-radius: 20px !important;
+    font-size: 11px !important;
+}
+
+.pill-f {
+    background: rgba(223, 175, 111, 0.15) !important;
+    color: var(--gold-bright) !important;
+    border: 1px solid var(--gold-dark) !important;
+    padding: 2px 10px !important;
+    border-radius: 20px !important;
+    font-size: 11px !important;
+}
+
+/* 16. FORZAR h1 */
+h1 {
+    color: #fff !important;
+}
+
+/* 17. Border cards */
+div[data-testid="stHorizontalBlock"] > div {
+    background: transparent;
 }

@@ -2657,7 +2657,7 @@ def exportar_excel(resultados,titulo="Scorpion Elite V4 Pro"):
     buf=io.BytesIO(); wb.save(buf); buf.seek(0); return buf.getvalue()
 
 # ══════════════════════════════════════════════════════════
-# CSS - Verde Bosque y Cobre
+# CSS - Verde Bosque y Oro
 # ══════════════════════════════════════════════════════════
 st.set_page_config(page_title="Scorpion Elite V4",page_icon="🦂",layout="wide")
 
@@ -2669,154 +2669,129 @@ try:
 except:
     pass
 
-# CSS adicional inline para asegurar los colores
+# CSS adicional inline para asegurar los colores exactos
 st.markdown("""<style>
-/* Verde Bosque y Cobre - Scorpion Elite */
+:root {
+    --bg-dark-green: #0a2114;
+    --panel-bg: #1b2621;
+    --gold-bright: #dfaf6f;
+    --gold-dark: #8a6435;
+    --text-light: #dcdcdc;
+}
 .stApp {
-    background-color: #0f1a12 !important;
-    color: #e2ebd5 !important;
+    background-color: var(--bg-dark-green) !important;
+    background-image: radial-gradient(circle, #103020 0%, #050f0a 100%) !important;
+    color: var(--text-light) !important;
 }
 .header-container {
-    background: linear-gradient(135deg, #142419 0%, #0d160f 100%) !important;
-    padding: 25px;
-    border-radius: 12px;
-    border: 1px solid #332115 !important;
-    border-left: 5px solid #d48243 !important;
-    margin-bottom: 25px;
+    background: var(--panel-bg) !important;
+    border: 1px solid var(--gold-dark) !important;
+    border-radius: 6px !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
 }
 .brand-title {
-    color: #d48243 !important;
-    font-family: 'Georgia', serif;
-    font-size: 40px;
-    font-weight: bold;
-    letter-spacing: 2px;
-}
-.brand-subtitle {
-    color: #a3b899 !important;
-}
-.login-container, .login-box {
-    background-color: #152219 !important;
-    border: 1px solid #d48243 !important;
-    border-radius: 10px;
-    padding: 15px;
-}
-.login-title {
-    color: #d48243 !important;
-    font-size: 18px;
-    font-weight: bold;
-}
-.section-title {
-    color: #d48243 !important;
-    font-size: 18px;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-top: 10px;
-    margin-bottom: 15px;
-}
-.pick-card {
-    background: linear-gradient(135deg, #16261b 0%, #0f1a12 100%) !important;
-    border: 1.5px solid #332115 !important;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 15px;
-}
-.pick-header {
-    font-size: 12px;
-    color: #a3b899 !important;
-    font-weight: bold;
-    text-transform: uppercase;
-}
-.sidebar-card {
-    background-color: #122016 !important;
-    border: 1px solid #243829 !important;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 15px;
-}
-.sidebar-card-title {
-    color: #ffffff !important;
-    font-size: 16px;
-    font-weight: bold;
-    border-bottom: 1.5px solid #d48243 !important;
-    padding-bottom: 6px;
-    margin-bottom: 12px;
-}
-.stTextInput > div > div > input {
-    background-color: #0f1a12 !important;
-    color: #ffffff !important;
-    border: 1px solid #243829 !important;
-}
-.stButton > button {
-    background: linear-gradient(90deg, #d48243 0%, #a65d28 100%) !important;
-    color: #ffffff !important;
-    border: none !important;
+    color: #fff !important;
+    font-family: 'Georgia', serif !important;
+    font-size: 40px !important;
     font-weight: bold !important;
 }
+.login-container, .login-box {
+    background-color: var(--panel-bg) !important;
+    border: 1px solid var(--gold-dark) !important;
+    border-radius: 6px !important;
+    padding: 20px !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
+}
+.login-title {
+    color: var(--gold-bright) !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+    border-bottom: 1px solid rgba(223, 175, 111, 0.2) !important;
+    padding-bottom: 10px !important;
+}
+.section-title {
+    color: var(--gold-bright) !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+}
+.pick-card {
+    background-color: var(--panel-bg) !important;
+    border: 1px solid var(--gold-dark) !important;
+    border-radius: 6px !important;
+    padding: 20px !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
+}
+.pick-header {
+    color: var(--gold-bright) !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+    border-bottom: 1px solid rgba(223, 175, 111, 0.2) !important;
+}
+.sidebar-card {
+    background-color: var(--panel-bg) !important;
+    border: 1px solid var(--gold-dark) !important;
+    border-radius: 6px !important;
+    padding: 20px !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
+}
+.sidebar-card-title {
+    color: var(--gold-bright) !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+    border-bottom: 1px solid rgba(223, 175, 111, 0.2) !important;
+}
+.stTextInput > div > div > input {
+    background-color: var(--bg-dark-green) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--gold-dark) !important;
+    border-radius: 4px !important;
+}
+.stButton > button {
+    background: linear-gradient(135deg, #b08146 0%, #d8a86a 100%) !important;
+    color: var(--bg-dark-green) !important;
+    border: none !important;
+    font-weight: bold !important;
+    border-radius: 4px !important;
+}
 .stButton > button:hover {
-    background: linear-gradient(90deg, #a65d28 0%, #d48243 100%) !important;
+    background: linear-gradient(135deg, #d8a86a 0%, #b08146 100%) !important;
 }
-.badge-Aplus {
-    background-color: rgba(57, 255, 20, 0.15) !important;
-    color: #39ff14 !important;
-    border: 1px solid #39ff14 !important;
-}
-.badge-B {
-    background-color: rgba(212, 130, 67, 0.15) !important;
-    color: #d48243 !important;
-    border: 1px solid #d48243 !important;
-}
-.footer {
-    color: #a3b899 !important;
-}
-/* Estilos heredados */
 .hdr {
-    background: linear-gradient(135deg, #142419 0%, #0d160f 100%) !important;
-    border: 1px solid #332115 !important;
-    border-left: 5px solid #d48243 !important;
-    border-radius: 12px !important;
+    background: var(--panel-bg) !important;
+    border: 1px solid var(--gold-dark) !important;
+    border-radius: 6px !important;
     padding: 20px !important;
     text-align: center !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
 }
 .hdr h1 {
-    color: #d48243 !important;
+    color: #fff !important;
     font-family: 'Georgia', serif !important;
     font-size: 2.2rem !important;
     margin: 0 !important;
     letter-spacing: 4px !important;
 }
 .hdr p {
-    color: #a3b899 !important;
-    margin: 5px 0 0 !important;
+    color: var(--text-light) !important;
     font-size: 0.9rem !important;
+}
+h1 {
+    color: #fff !important;
 }
 .pill-ok {
     background: rgba(57, 255, 20, 0.15) !important;
     color: #39ff14 !important;
     border: 1px solid #39ff14 !important;
-    padding: 2px 10px !important;
-    border-radius: 20px !important;
-    font-size: 11px !important;
 }
 .pill-v {
     background: rgba(255, 107, 107, 0.15) !important;
     color: #ff6b6b !important;
     border: 1px solid #ff6b6b !important;
-    padding: 2px 10px !important;
-    border-radius: 20px !important;
-    font-size: 11px !important;
 }
 .pill-f {
-    background: rgba(212, 130, 67, 0.15) !important;
-    color: #d48243 !important;
-    border: 1px solid #d48243 !important;
-    padding: 2px 10px !important;
-    border-radius: 20px !important;
-    font-size: 11px !important;
-}
-/* Forzar h1 a color cobre */
-h1 {
-    color: #d48243 !important;
+    background: rgba(223, 175, 111, 0.15) !important;
+    color: var(--gold-bright) !important;
+    border: 1px solid var(--gold-dark) !important;
 }
 </style>""",unsafe_allow_html=True)
 def hdr(sub="Motor de Analisis Deportivo — 4 Modelos + Datos Reales"):
