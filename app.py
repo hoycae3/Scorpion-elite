@@ -3418,12 +3418,22 @@ def pantalla_principal():
             elif hoy.day in [19, 20]:
                 partidos_hoy = [{"hora": "16:00", "liga": "🏆 Mundial 2026", "local": "Ganador SF1", "visitante": "Ganador SF2", "dia": str(hoy)}]
         
-        # Durante Mundial: solo mostrar partido del día
-        # Fuera de Mundial: usar scraping
-        if es_mundial:
-            todos_partidos = partidos_hoy
-        else:
-            todos_partidos = partidos_scraped if partidos_scraped else []
+        # Combinar evitando duplicados por nombre de equipos
+        def normalizar(nombre):
+            return nombre.lower().strip() if nombre else ""
+        
+        def ya_existe(partido, lista):
+            local = normalizar(partido.get("local", ""))
+            visitante = normalizar(partido.get("visitante", ""))
+            for p in lista:
+                if normalizar(p.get("local", "")) == local and normalizar(p.get("visitante", "")) == visitante:
+                    return True
+            return False
+        
+        todos_partidos = list(partidos_hoy)
+        for p in (partidos_scraped or []):
+            if not ya_existe(p, todos_partidos):
+                todos_partidos.append(p)
         
         if todos_partidos:
             for p in todos_partidos[:8]:
