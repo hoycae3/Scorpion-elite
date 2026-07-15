@@ -1878,15 +1878,40 @@ def obtener_goleadores_api(liga_nombre):
         api = FootballAPI()
         headers = {"x-apisports-key": API_FOOTBALL_KEY}
         
-        # Mapeo de nombre de liga a ID
+        # Mapeo de TODAS las ligas a ID
         liga_ids = {
+            # Europa
             "Premier League": 39,
             "La Liga": 140,
             "Bundesliga": 78,
             "Serie A": 135,
             "Ligue 1": 61,
             "Champions League": 2,
-            "Mundial FIFA 2026": 1,
+            "Europa League": 3,
+            "Eredivisie": 88,
+            "Primeira Liga": 94,
+            "Scottish Premiership": 50,
+            "Super Lig": 203,
+            "Jupiler Pro League": 144,
+            "Swiss Super League": 207,
+            "Austrian Bundesliga": 163,
+            # America
+            "Copa Libertadores": 13,
+            "Copa Sudamericana": 15,
+            "MLS": 17,
+            "Liga MX": 22,
+            "Argentine Liga": 21,
+            "Brasileirão": 24,
+            "Colombian Liga": 239,
+            "Chilean Liga": 42,
+            "Peruvian Liga": 271,
+            # Asia
+            "Saudi Pro League": 306,
+            "J1 League": 98,
+            "K League 1": 292,
+            "Chinese Super League": 169,
+            "Indian Super League": 357,
+            "A-League": 188,
         }
         
         liga_id = liga_ids.get(liga_nombre)
@@ -4800,11 +4825,19 @@ def pantalla_principal():
     with col2:
         st.markdown('<p class="section-title">🏆 Top Goleadores</p>', unsafe_allow_html=True)
         
-        # Selector de liga
-        liga_seleccionada = st.selectbox("Liga", [
-            "Premier League", "La Liga", "Bundesliga", "Serie A", 
-            "Ligue 1", "Champions League"
-        ])
+        # Selector de liga con TODAS las ligas
+        todas_ligas = [
+            # Europa
+            "Premier League", "La Liga", "Bundesliga", "Serie A", "Ligue 1",
+            "Champions League", "Europa League", "Eredivisie", "Primeira Liga",
+            "Scottish Premiership", "Super Lig", "Jupiler Pro League",
+            # America
+            "Copa Libertadores", "Copa Sudamericana", "MLS", "Liga MX",
+            "Argentine Liga", "Brasileirão", "Colombian Liga",
+            # Asia
+            "Saudi Pro League", "J1 League", "K League 1",
+        ]
+        liga_seleccionada = st.selectbox("Liga", todas_ligas)
         
         # Buscar goleadores desde API
         goleadores_api = obtener_goleadores_api(liga_seleccionada)
