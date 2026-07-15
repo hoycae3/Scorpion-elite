@@ -890,18 +890,20 @@ def buscar_equipo_en_todas_fuentes(nombre):
     
     # 1. WIKIPEDIA (siempre funciona)
     try:
-        url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={nombre.replace(' ', '%20')}%20football%20club&format=json"
+        url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={nombre.replace(' ', '%20')}&format=json"
         headers_w = {"User-Agent": "Mozilla/5.0 (compatible; ScorpionBot/1.0)"}
         r = requests.get(url, headers=headers_w, timeout=10)
         if r.status_code == 200:
             data = r.json()
             results = data.get("query", {}).get("search", [])
-            for item in results[:8]:
+            for item in results[:10]:
                 title = item.get("title", "")
                 page_id = item.get("pageid", "")
-                snippet = item.get("snippet", "")[:100]
+                snippet = item.get("snippet", "").replace("<span class=\"searchmatch\">", "").replace("</span>", "")[:100]
                 key = f"wiki_{page_id}"
-                if key not in seen and "football" in title.lower() or "club" in title.lower() or "cf" in title.lower() or "fc" in title.lower():
+                # Filtrar solo equipos de fútbol
+                title_lower = title.lower()
+                if key not in seen:
                     seen.add(key)
                     resultados.append({
                         "id": f"wiki_{page_id}",
@@ -4733,22 +4735,24 @@ def pantalla_principal():
                     resultados = buscar_equipo_en_todas_fuentes(busqueda)
                 
                 if resultados:
-                    st.success(f"✅ {len(resultados)} equipos encontrados")
-                    for eq in resultados[:8]:
+                    st.success(f"✅ {len(resultados)} resultados encontrados")
+                    for i, eq in enumerate(resultados[:10]):
                         fuente = eq.get('fuente', '')
                         nombre = eq.get('nombre', '')
                         tid = eq.get('id', '')
                         info = eq.get('info', '')
                         
-                        col_b1, col_b2 = st.columns([4, 1])
-                        with col_b1:
-                            st.markdown(f"**{nombre}** <span style='color:#888;font-size:0.7rem;'>[{fuente}]</span>", unsafe_allow_html=True)
-                            if info:
-                                st.caption(f"_{info[:80]}..._")
-                        with col_b2:
-                            if st.button("📊", key=f"ver_{tid}"):
-                                st.session_state['equipo_buscado'] = eq
-                                st.rerun()
+                        st.markdown(f"""
+                        <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:8px;margin-bottom:8px;">
+                            <div style="color:#dcdcdc;font-size:0.9rem;font-weight:bold;">{nombre}</div>
+                            <div style="color:#888;font-size:0.7rem;">Fuente: {fuente}</div>
+                            {f'<div style="color:#a3b899;font-size:0.7rem;margin-top:4px;">{info}...</div>' if info else ''}
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        if st.button(f"📊 Ver {nombre[:15]}", key=f"ver_{tid}_{i}"):
+                            st.session_state['equipo_buscado'] = eq
+                            st.rerun()
                 else:
                     st.warning("No se encontraron equipos. Prueba con otro nombre.")
             
@@ -4759,22 +4763,33 @@ def pantalla_principal():
                 fuente = eq.get('fuente', '')
                 
                 st.markdown("---")
-                st.success(f"📊 {nombre} ({fuente})")
+                st.success(f"📊 {nombre}")
+                st.caption(f"Fuente: {fuente}")
                 
                 # Obtener stats desde internet
                 stats = obtener_stats_equipo_fuente(eq)
                 if stats:
-                    col_s1, col_s2, col_s3, col_s4 = st.columns(4)
-                    with col_s1:
-                        st.metric("PJ", stats.get('partidos', stats.get('pj', '?')))
-                    with col_s2:
-                        st.metric("Victorias", stats.get('victorias', stats.get('ganados', '?')))
-                    with col_s3:
-                        st.metric("G/F", stats.get('goles_favor', stats.get('goles', '?')))
-                    with col_s4:
-                        st.metric("G/C", stats.get('goles_contra', stats.get('gc', '?')))
+                    info = stats.get('goles_favor', '')
+                    if info and len(info) > 50:
+                        # Es información de Wikipedia - mostrarla completa
+                        st.markdown(f"""
+                        <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:10px;margin-top:10px;">
+                            <div style="color:#dfaf6f;font-size:0.8rem;font-weight:bold;margin-bottom:5px;">ℹ️ Información:</div>
+                            <div style="color:#dcdcdc;font-size:0.75rem;">{info}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        col_s1, col_s2, col_s3, col_s4 = st.columns(4)
+                        with col_s1:
+                            st.metric("PJ", stats.get('partidos', stats.get('pj', '?')))
+                        with col_s2:
+                            st.metric("Victorias", stats.get('victorias', stats.get('ganados', '?')))
+                        with col_s3:
+                            st.metric("G/F", stats.get('goles_favor', stats.get('goles', '?')))
+                        with col_s4:
+                            st.metric("G/C", stats.get('goles_contra', stats.get('gc', '?')))
                 else:
-                    st.info("Stats no disponibles.")
+                    st.info("Stats no disponibles para este equipo.")
         
         # === CALENDARIO COMPACTO ===
         st.markdown("---")
