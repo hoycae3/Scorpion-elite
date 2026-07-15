@@ -23,6 +23,7 @@ def get_hoy_date():
 # CONFIG
 # ══════════════════════════════════════════════════════════
 API_FOOTBALL_KEY = os.getenv("API_FOOTBALL_KEY", "124c9519df145caf883cd82f0b2a4671")
+FOOTBALL_DATA_KEY = os.getenv("FOOTBALL_DATA_KEY", "21a9a19125f3467c86579b79f71d359c")
 ADMIN_PWD        = os.getenv("ADMIN_PASSWORD",   "scorpion_admin_2025")
 DB_PATH          = "/tmp/scorpion_v4.db"
 
@@ -889,39 +890,80 @@ def buscar_equipo_en_todas_fuentes(nombre):
     seen = set()
     errores = []
     
-    # 1. API-FOOTBALL
-    if API_FOOTBALL_KEY:
+    # 1. FOOTBALL-DATA (PRINCIPAL - funciona!)
+    try:
+        headers_fd = {"X-Auth-Token": FOOTBALL_DATA_KEY}
+        
+        # Buscar en todas las competiciones
+        url_search = f"https://api.football-data.org/v4/teams?search={nombre.replace(' ', '%20')}"
+        r = requests.get(url_search, headers=headers_fd, timeout=15)
+        if r.status_code == 200:
+            data = r.json()
+            teams = data.get("teams", [])
+            if teams:
+                for t in teams[:15]:
+                    tid = t.get("id")
+                    tname = t.get("name", "")
+                    tshort = t.get("shortName", "")
+                    tcountry = t.get("country", "")
+                    tcomp = t.get("runningCompetition", {}).get("name", "") if t.get("runningCompetition") else ""
+                    key = f"fd_{tid}"
+                    if key not in seen and tname:
+                        seen.add(key)
+                        resultados.append({
+                            "id": str(tid),
+                            "nombre": tname,
+                            "short": tshort,
+                            "pais": tcountry,
+                            "liga": tcomp,
+                            "fuente": "Football-Data"
+                        })
+            else:
+                errores.append("Football-Data: Sin resultados en búsqueda")
+        else:
+            errores.append(f"Football-Data: Error {r.status_code}")
+    except Exception as e:
+        errores.append(f"Football-Data: {str(e)[:50]}")
+    
+    # 2. Equipos por competición (si la búsqueda no dio resultados)
+    if not resultados:
         try:
-            headers_af = {"x-apisports-key": API_FOOTBALL_KEY}
-            url = f"https://v3.football.api-sports.io/teams/search/{nombre}"
-            r = requests.get(url, headers=headers_af, timeout=15)
-            if r.status_code == 200:
-                data = r.json()
-                results_count = data.get("results", 0)
-                if data.get("response") and results_count > 0:
-                    for item in data["response"][:10]:
-                        t = item.get("team", {})
+            headers_fd = {"X-Auth-Token": FOOTBALL_DATA_KEY}
+            # Probar equipos de diferentes ligas
+            leagues = [
+                ("PD", "La Liga"),      # España
+                ("PL", "Premier"),      # Inglaterra
+                ("BL1", "Bundesliga"), # Alemania
+                ("SA", "Serie A"),     # Italia
+                ("FL1", "Ligue 1"),    # Francia
+                ("CLI", "Libertadores"), # Copa Libertadores
+                ("PD", "Primera Argentina"), # Argentina
+            ]
+            for league_code, league_name in leagues:
+                url_teams = f"https://api.football-data.org/v4/competitions/{league_code}/teams"
+                r = requests.get(url_teams, headers=headers_fd, timeout=15)
+                if r.status_code == 200:
+                    data = r.json()
+                    teams = data.get("teams", [])
+                    for t in teams:
                         tid = t.get("id")
                         tname = t.get("name", "")
-                        if tname and tid:
-                            key = f"apifootball_{tid}"
-                            if key not in seen:
-                                seen.add(key)
-                                resultados.append({
-                                    "id": str(tid),
-                                    "nombre": tname,
-                                    "pais": t.get("country", ""),
-                                    "liga": "API-Football",
-                                    "fuente": "API-Football"
-                                })
-                else:
-                    errores.append("API-Football: Sin resultados")
-            else:
-                errores.append(f"API-Football: Error {r.status_code}")
+                        tshort = t.get("shortName", "")
+                        key = f"fd_{tid}"
+                        if key not in seen and nombre.lower() in tname.lower():
+                            seen.add(key)
+                            resultados.append({
+                                "id": str(tid),
+                                "nombre": tname,
+                                "short": tshort,
+                                "pais": t.get("country", ""),
+                                "liga": league_name,
+                                "fuente": "Football-Data"
+                            })
         except Exception as e:
-            errores.append(f"API-Football: {str(e)[:50]}")
+            errores.append(f"Football-Data leagues: {str(e)[:50]}")
     
-    # 2. SOFASCORE (API directa)
+    # 3. SOFASCORE (API directa)
     try:
         url = f"https://api.sofascore.com/api/v1/search/teams/{nombre.replace(' ', '%20')}"
         headers_ss = {
@@ -944,104 +986,43 @@ def buscar_equipo_en_todas_fuentes(nombre):
                             resultados.append({
                                 "id": str(tid),
                                 "nombre": tname,
+                                "short": "",
                                 "pais": t.get("country", {}).get("name", ""),
                                 "liga": "Sofascore",
                                 "fuente": "Sofascore"
                             })
-        else:
-            errores.append(f"Sofascore: Error {r.status_code}")
     except Exception as e:
         errores.append(f"Sofascore: {str(e)[:50]}")
     
-    # 3. FLASHCORE (web scraping mejorado)
-    try:
-        # Probar diferentes variaciones del slug
-        slugs = [
-            nombre.lower().replace(" ", "-"),
-            nombre.lower().replace(" ", "-").replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u").replace("ñ", "n"),
-        ]
-        for slug in slugs:
-            url = f"https://www.flashscore.es/equipo/{slug}/"
-            headers_fs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", "Accept-Language": "es-ES,es;q=0.9"}
-            r = requests.get(url, headers=headers_fs, timeout=15)
-            if r.status_code == 200 and "/equipo/" in r.url:
-                from bs4 import BeautifulSoup
-                soup = BeautifulSoup(r.text, "html.parser")
-                title = soup.find("title")
-                if title:
-                    equipo_nombre = title.get_text().replace(" - Flashscore", "").replace(" - Soccer", "").strip()
-                    if nombre.lower() in equipo_nombre.lower() or equipo_nombre.lower() in nombre.lower():
-                        key = f"flashscore_{slug}"
-                        if key not in seen:
-                            seen.add(key)
-                            resultados.append({
-                                "id": slug,
-                                "nombre": equipo_nombre,
-                                "pais": "",
-                                "liga": "Flashscore",
-                                "fuente": "Flashscore"
-                            })
-                break
-    except Exception as e:
-        errores.append(f"Flashscore: {str(e)[:50]}")
+    # 4. API-FOOTBALL (si tiene key válida)
+    if API_FOOTBALL_KEY:
+        try:
+            headers_af = {"x-apisports-key": API_FOOTBALL_KEY}
+            url = f"https://v3.football.api-sports.io/teams/search/{nombre}"
+            r = requests.get(url, headers=headers_af, timeout=15)
+            if r.status_code == 200:
+                data = r.json()
+                if data.get("response") and data.get("results", 0) > 0:
+                    for item in data["response"][:10]:
+                        t = item.get("team", {})
+                        tid = t.get("id")
+                        tname = t.get("name", "")
+                        if tname and tid:
+                            key = f"apifootball_{tid}"
+                            if key not in seen:
+                                seen.add(key)
+                                resultados.append({
+                                    "id": str(tid),
+                                    "nombre": tname,
+                                    "short": "",
+                                    "pais": t.get("country", ""),
+                                    "liga": "API-Football",
+                                    "fuente": "API-Football"
+                                })
+        except Exception as e:
+            errores.append(f"API-Football: {str(e)[:50]}")
     
-    # 4. FBREF (web scraping)
-    try:
-        url = f"https://fbref.com/en/search/search/?q={nombre.replace(' ', '+')}"
-        headers_fb = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-        r = requests.get(url, headers=headers_fb, timeout=15)
-        if r.status_code == 200:
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(r.text, "html.parser")
-            # Buscar en resultados de búsqueda
-            all_links = soup.find_all("a")
-            for link in all_links:
-                href = link.get("href", "")
-                if "/squads/" in href:
-                    team_name = link.get_text(strip=True)
-                    if team_name and len(team_name) > 2:
-                        key = f"fbref_{href}"
-                        if key not in seen:
-                            seen.add(key)
-                            resultados.append({
-                                "id": href,
-                                "nombre": team_name[:60],
-                                "pais": "",
-                                "liga": "FBref",
-                                "fuente": "FBref"
-                            })
-                        if len(resultados) > 15:
-                            break
-    except Exception as e:
-        errores.append(f"FBref: {str(e)[:50]}")
-    
-    # 5. UNDERSTAT (web scraping)
-    try:
-        url = f"https://understat.com/search?q={nombre.replace(' ', '+')}"
-        headers_us = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-        r = requests.get(url, headers=headers_us, timeout=15)
-        if r.status_code == 200:
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(r.text, "html.parser")
-            links = soup.find_all("a", href=lambda h: h and "/team/" in h if h else False)
-            for link in links[:5]:
-                team_name = link.get_text(strip=True)
-                href = link.get("href", "")
-                if team_name and len(team_name) > 2:
-                    key = f"understat_{href}"
-                    if key not in seen:
-                        seen.add(key)
-                        resultados.append({
-                            "id": href,
-                            "nombre": team_name[:50],
-                            "pais": "",
-                            "liga": "Understat",
-                            "fuente": "Understat"
-                        })
-    except Exception as e:
-        errores.append(f"Understat: {str(e)[:50]}")
-    
-    # Guardar errores en session para mostrar al usuario
+    # Guardar errores
     if errores:
         st.session_state['busqueda_errores'] = errores
     
@@ -1054,11 +1035,36 @@ def obtener_stats_equipo_fuente(equipo):
     tid = equipo.get('id')
     nombre = equipo.get('nombre', '')
     
+    # FOOTBALL-DATA
+    if fuente == 'Football-Data' and tid:
+        try:
+            headers_fd = {"X-Auth-Token": FOOTBALL_DATA_KEY}
+            # Obtener información del equipo
+            url = f"https://api.football-data.org/v4/teams/{tid}"
+            r = requests.get(url, headers=headers_fd, timeout=10)
+            if r.status_code == 200:
+                data = r.json()
+                # Obtener Squad (plantilla)
+                squad_url = f"https://api.football-data.org/v4/teams/{tid}/squad"
+                r2 = requests.get(squad_url, headers=headers_fd, timeout=10)
+                squad_count = 0
+                if r2.status_code == 200:
+                    squad_data = r2.json()
+                    squad_count = len(squad_data.get("squad", []))
+                
+                return {
+                    "partidos": "Ver API",
+                    "victorias": nombre,
+                    "goles_favor": f"Comp: {data.get('runningCompetition', {}).get('name', 'N/A')}",
+                    "goles_contra": f"Jugadores: {squad_count}",
+                }
+        except Exception as e:
+            print(f"Error Football-Data stats: {e}")
+    
     # API-FOOTBALL
     if fuente == 'API-Football' and API_FOOTBALL_KEY:
         try:
             headers = {"x-apisports-key": API_FOOTBALL_KEY}
-            # Buscar estadísticas en la liga del equipo
             url = f"https://v3.football.api-sports.io/teams?id={tid}"
             r = requests.get(url, headers=headers, timeout=10)
             if r.status_code == 200:
@@ -1087,98 +1093,22 @@ def obtener_stats_equipo_fuente(equipo):
         except Exception as e:
             print(f"Error API-Football stats: {e}")
     
-    # FBREF - scraping de estadísticas
-    elif fuente == 'FBref' and tid:
-        try:
-            url = f"https://fbref.com{tid}" if tid.startswith("/") else f"https://fbref.com/en/squads/{tid}"
-            headers_fb = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-            r = requests.get(url, headers=headers_fb, timeout=10)
-            if r.status_code == 200:
-                from bs4 import BeautifulSoup
-                soup = BeautifulSoup(r.text, "html.parser")
-                # Buscar estadísticas del equipo
-                stats_table = soup.find("table", {"id": "stats"})
-                if stats_table:
-                    rows = stats_table.find_all("tr")
-                    if rows:
-                        first_row = rows[0]
-                        cells = first_row.find_all("td")
-                        if cells and len(cells) >= 5:
-                            return {
-                                "partidos": cells[2].get_text(strip=True) if len(cells) > 2 else "N/A",
-                                "victorias": cells[3].get_text(strip=True) if len(cells) > 3 else "N/A",
-                                "goles_favor": cells[4].get_text(strip=True) if len(cells) > 4 else "N/A",
-                                "goles_contra": cells[5].get_text(strip=True) if len(cells) > 5 else "N/A",
-                            }
-                return {
-                    "partidos": "Ver FBref",
-                    "victorias": nombre,
-                    "goles_favor": "Estadísticas disponibles en FBref",
-                    "goles_contra": "FBref",
-                }
-        except Exception as e:
-            print(f"Error FBref stats: {e}")
-    
-    # UNDERSTAT - scraping de xG
-    elif fuente == 'Understat' and tid:
-        try:
-            url = f"https://understat.com{tid}" if tid.startswith("/") else f"https://understat.com/team/{tid}"
-            headers_us = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-            r = requests.get(url, headers=headers_us, timeout=10)
-            if r.status_code == 200:
-                from bs4 import BeautifulSoup
-                soup = BeautifulSoup(r.text, "html.parser")
-                # Buscar datos de xG
-                scripts = soup.find_all("script")
-                for script in scripts:
-                    if "xG" in script.get_text():
-                        text = script.get_text()
-                        return {
-                            "partidos": "Ver Understat",
-                            "victorias": nombre,
-                            "goles_favor": "xG y estadísticas avanzadas",
-                            "goles_contra": "Understat",
-                        }
-                return {
-                    "partidos": "Consultar",
-                    "victorias": nombre,
-                    "goles_favor": "Understat ofrece xG",
-                    "goles_contra": "Understat",
-                }
-        except Exception as e:
-            print(f"Error Understat stats: {e}")
-    
-    # FLASHCORE
-    elif fuente == 'Flashscore' and tid:
-        try:
-            url = f"https://www.flashscore.es/equipo/{tid}/"
-            headers_fs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-            r = requests.get(url, headers=headers_fs, timeout=10)
-            if r.status_code == 200:
-                return {
-                    "partidos": "Ver Flashscore",
-                    "victorias": nombre,
-                    "goles_favor": "Estadísticas en Flashscore",
-                    "goles_contra": "Flashscore",
-                }
-        except Exception as e:
-            print(f"Error Flashscore stats: {e}")
-    
     # SOFASCORE
-    elif fuente == 'Sofascore' and tid:
+    if fuente == 'Sofascore' and tid:
         try:
-            url = f"https://www.sofascore.com{tid}" if tid.startswith("/") else f"https://www.sofascore.com/team/{tid}"
-            headers_ss = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+            url = f"https://api.sofascore.com/api/v1/team/{tid}/statistics/overall"
+            headers_ss = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
             r = requests.get(url, headers=headers_ss, timeout=10)
             if r.status_code == 200:
+                data = r.json()
                 return {
-                    "partidos": "Ver Sofascore",
-                    "victorias": nombre,
-                    "goles_favor": "Estadísticas en Sofascore",
-                    "goles_contra": "Sofascore",
+                    "partidos": data.get("matches", {}).get("total", "N/A"),
+                    "victorias": data.get("wins", {}).get("total", "N/A"),
+                    "goles_favor": data.get("goalsScored", {}).get("total", "N/A"),
+                    "goles_contra": data.get("goalsConceded", {}).get("total", "N/A"),
                 }
-        except Exception as e:
-            print(f"Error Sofascore stats: {e}")
+        except:
+            pass
     
     return None
 
