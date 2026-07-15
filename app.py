@@ -2660,40 +2660,53 @@ def exportar_excel(resultados,titulo="Scorpion Elite V4 Pro"):
 # CSS - Verde Bosque y Cobre
 # ══════════════════════════════════════════════════════════
 st.set_page_config(page_title="Scorpion Elite V4",page_icon="🦂",layout="wide")
+
+# Cargar archivo CSS externo
+try:
+    with open("styles.css", "r") as f:
+        css_content = f.read()
+    st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
+except:
+    pass
+
+# CSS adicional inline para asegurar los colores
 st.markdown("""<style>
 /* Verde Bosque y Cobre - Scorpion Elite */
 .stApp {
     background-color: #0f1a12 !important;
-    color: #e2ebd5;
+    color: #e2ebd5 !important;
 }
 .header-container {
-    background: linear-gradient(135deg, #142419 0%, #0d160f 100%);
+    background: linear-gradient(135deg, #142419 0%, #0d160f 100%) !important;
     padding: 25px;
     border-radius: 12px;
-    border: 1px solid #332115;
-    border-left: 5px solid #d48243;
+    border: 1px solid #332115 !important;
+    border-left: 5px solid #d48243 !important;
     margin-bottom: 25px;
 }
 .brand-title {
-    color: #d48243;
+    color: #d48243 !important;
     font-family: 'Georgia', serif;
     font-size: 40px;
     font-weight: bold;
     letter-spacing: 2px;
 }
-.login-container {
-    background-color: #152219;
-    border: 1px solid #d48243;
+.brand-subtitle {
+    color: #a3b899 !important;
+}
+.login-container, .login-box {
+    background-color: #152219 !important;
+    border: 1px solid #d48243 !important;
     border-radius: 10px;
     padding: 15px;
 }
 .login-title {
-    color: #d48243;
+    color: #d48243 !important;
     font-size: 18px;
     font-weight: bold;
 }
 .section-title {
-    color: #d48243;
+    color: #d48243 !important;
     font-size: 18px;
     font-weight: bold;
     text-transform: uppercase;
@@ -2702,30 +2715,30 @@ st.markdown("""<style>
     margin-bottom: 15px;
 }
 .pick-card {
-    background: linear-gradient(135deg, #16261b 0%, #0f1a12 100%);
-    border: 1.5px solid #332115;
+    background: linear-gradient(135deg, #16261b 0%, #0f1a12 100%) !important;
+    border: 1.5px solid #332115 !important;
     border-radius: 10px;
     padding: 15px;
     margin-bottom: 15px;
 }
 .pick-header {
     font-size: 12px;
-    color: #a3b899;
+    color: #a3b899 !important;
     font-weight: bold;
     text-transform: uppercase;
 }
 .sidebar-card {
-    background-color: #122016;
-    border: 1px solid #243829;
+    background-color: #122016 !important;
+    border: 1px solid #243829 !important;
     border-radius: 10px;
     padding: 15px;
     margin-bottom: 15px;
 }
 .sidebar-card-title {
-    color: #ffffff;
+    color: #ffffff !important;
     font-size: 16px;
     font-weight: bold;
-    border-bottom: 1.5px solid #d48243;
+    border-bottom: 1.5px solid #d48243 !important;
     padding-bottom: 6px;
     margin-bottom: 12px;
 }
@@ -2744,20 +2757,17 @@ st.markdown("""<style>
     background: linear-gradient(90deg, #a65d28 0%, #d48243 100%) !important;
 }
 .badge-Aplus {
-    background-color: rgba(57, 255, 20, 0.15);
-    color: #39ff14;
-    border: 1px solid #39ff14;
-    padding: 2px 9px;
-    border-radius: 20px;
-    font-size: 11px;
+    background-color: rgba(57, 255, 20, 0.15) !important;
+    color: #39ff14 !important;
+    border: 1px solid #39ff14 !important;
 }
 .badge-B {
-    background-color: rgba(212, 130, 67, 0.15);
-    color: #d48243;
-    border: 1px solid #d48243;
-    padding: 2px 9px;
-    border-radius: 20px;
-    font-size: 11px;
+    background-color: rgba(212, 130, 67, 0.15) !important;
+    color: #d48243 !important;
+    border: 1px solid #d48243 !important;
+}
+.footer {
+    color: #a3b899 !important;
 }
 </style>""",unsafe_allow_html=True)
 def hdr(sub="Motor de Analisis Deportivo — 4 Modelos + Datos Reales"):
