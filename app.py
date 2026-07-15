@@ -227,7 +227,7 @@ content = html.Div([
                 html.H6("🔍 BUSCAR EQUIPOS", style={'color': '#d97706', 'font-size': '12px', 'font-weight': 'bold'}),
                 dbc.Input(id="input-buscar-equipo", type="text", placeholder="Escribe el nombre del equipo...",
                          style={'background-color': '#161b22', 'color': 'white', 'border-color': '#30363d'}),
-                html.Button("🔍 Buscar", id="btn-buscar-equipo", n_clicks=0, color="warning", className="mt-2"),
+                dbc.Button("🔍 Buscar", id="btn-buscar-equipo", n_clicks=0, color="warning", className="mt-2"),
                 html.Div(id="resultados-equipos", className="mt-3")
             ], style=CARD_STYLE),
         ], width=4),
@@ -245,7 +245,7 @@ content = html.Div([
                 html.H6("🌤️ CLIMA", style={'color': '#d97706', 'font-size': '12px', 'font-weight': 'bold'}),
                 dbc.Input(id="input-ciudad-clima", type="text", placeholder="Ciudad (ej: Madrid, Buenos Aires)",
                          style={'background-color': '#161b22', 'color': 'white', 'border-color': '#30363d'}),
-                html.Button("🌡️ Ver Clima", id="btn-clima", n_clicks=0, color="info", className="mt-2"),
+                dbc.Button("🌡️ Ver Clima", id="btn-clima", n_clicks=0, color="info", className="mt-2"),
                 html.Div(id="resultado-clima", className="mt-3")
             ], style=CARD_STYLE),
         ], width=4),
@@ -261,7 +261,7 @@ page_equipos = html.Div([
             html.H4("🔍 Buscar Equipos", style={'color': 'white'}),
             dbc.Input(id="input-buscar-eq-pag", type="text", placeholder="Nombre del equipo...",
                      style={'background-color': '#161b22', 'color': 'white', 'border-color': '#30363d'}),
-            html.Button("🔍 Buscar", id="btn-buscar-eq-pag", n_clicks=0, color="warning", className="mt-2"),
+            dbc.Button("🔍 Buscar", id="btn-buscar-eq-pag", n_clicks=0, color="warning", className="mt-2"),
         ], width=6),
     ], className="mb-4"),
     
@@ -284,7 +284,7 @@ page_clima = html.Div([
             html.H4("🌤️ Clima", style={'color': 'white'}),
             dbc.Input(id="input-clima-pag", type="text", placeholder="Ciudad...",
                      style={'background-color': '#161b22', 'color': 'white', 'border-color': '#30363d', 'width': '300px'}),
-            html.Button("🌡️ Buscar", id="btn-clima-pag", n_clicks=0, color="info", className="mt-2 ms-2"),
+            dbc.Button("🌡️ Buscar", id="btn-clima-pag", n_clicks=0, color="info", className="mt-2 ms-2"),
         ], width=6),
     ], className="mb-4"),
     
