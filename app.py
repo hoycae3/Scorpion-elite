@@ -892,82 +892,56 @@ def buscar_equipo_en_todas_fuentes(nombre):
     seen = set()
     errores = []
     
-    # 1. FOOTBALL-DATA (PRINCIPAL - funciona!)
+    # Limpiar nombre de búsqueda
+    nombre = nombre.strip()
+    if not nombre or len(nombre) < 2:
+        return resultados
+    
+    # 1. FOOTBALL-DATA - Buscar por ligas específicas
     try:
         headers_fd = {"X-Auth-Token": FOOTBALL_DATA_KEY}
         
-        # Buscar en todas las competiciones
-        url_search = f"https://api.football-data.org/v4/teams?search={nombre.replace(' ', '%20')}"
-        r = requests.get(url_search, headers=headers_fd, timeout=15)
-        if r.status_code == 200:
-            data = r.json()
-            teams = data.get("teams", [])
-            if teams:
-                # Ordenar: primero los que contengan el nombre exacto
-                exact_match = []
-                partial_match = []
-                other = []
-                
+        # Lista de ligas con sus IDs
+        leagues = [
+            ("PD", "La Liga"),
+            ("PL", "Premier League"),
+            ("BL1", "Bundesliga"),
+            ("SA", "Serie A"),
+            ("FL1", "Ligue 1"),
+            ("PPL", "Primeira Liga"),
+            ("DED", "Eredivisie"),
+        ]
+        
+        for league_code, league_name in leagues:
+            url_teams = f"https://api.football-data.org/v4/competitions/{league_code}/teams"
+            r = requests.get(url_teams, headers=headers_fd, timeout=15)
+            if r.status_code == 200:
+                data = r.json()
+                teams = data.get("teams", [])
                 for t in teams:
                     tid = t.get("id")
                     tname = t.get("name", "")
                     tshort = t.get("shortName", "")
-                    tcountry = t.get("country", "")
-                    tcomp = t.get("runningCompetition", {}).get("name", "") if t.get("runningCompetition") else ""
                     key = f"fd_{tid}"
                     
+                    # Buscar coincidencia exacta o parcial
                     if key not in seen and tname:
-                        entry = {
-                            "id": str(tid),
-                            "nombre": tname,
-                            "short": tshort,
-                            "pais": tcountry,
-                            "liga": tcomp,
-                            "fuente": "Football-Data"
-                        }
+                        nombre_lower = nombre.lower()
+                        tname_lower = tname.lower()
                         
-                        # Prioridad: nombre exacto > nombre contiene > otros
-                        if nombre.lower() in tname.lower() or tname.lower() in nombre.lower():
-                            exact_match.append(entry)
-                        else:
-                            partial_match.append(entry)
-                
-                # Combinar: exact primero, luego partial
-                resultados.extend(exact_match)
-                resultados.extend(partial_match[:10])
-            else:
-                errores.append("Football-Data: Sin resultados en búsqueda")
-        else:
-            errores.append(f"Football-Data: Error {r.status_code}")
-    except Exception as e:
-        errores.append(f"Football-Data: {str(e)[:50]}")
-    
-    # 2. Equipos por competición (si la búsqueda no dio resultados)
-    if not resultados:
-        try:
-            headers_fd = {"X-Auth-Token": FOOTBALL_DATA_KEY}
-            # Probar equipos de diferentes ligas
-            leagues = [
-                ("PD", "La Liga"),      # España
-                ("PL", "Premier"),      # Inglaterra
-                ("BL1", "Bundesliga"), # Alemania
-                ("SA", "Serie A"),     # Italia
-                ("FL1", "Ligue 1"),    # Francia
-                ("CLI", "Libertadores"), # Copa Libertadores
-                ("PD", "Primera Argentina"), # Argentina
-            ]
-            for league_code, league_name in leagues:
-                url_teams = f"https://api.football-data.org/v4/competitions/{league_code}/teams"
-                r = requests.get(url_teams, headers=headers_fd, timeout=15)
-                if r.status_code == 200:
-                    data = r.json()
-                    teams = data.get("teams", [])
-                    for t in teams:
-                        tid = t.get("id")
-                        tname = t.get("name", "")
-                        tshort = t.get("shortName", "")
-                        key = f"fd_{tid}"
-                        if key not in seen and nombre.lower() in tname.lower():
+                        # Coincidencia exacta al inicio del nombre
+                        if tname_lower.startswith(nombre_lower):
+                            seen.add(key)
+                            resultados.insert(0, {
+                                "id": str(tid),
+                                "nombre": tname,
+                                "short": tshort,
+                                "pais": t.get("country", ""),
+                                "liga": league_name,
+                                "fuente": "Football-Data"
+                            })
+                        # Coincidencia contiene el nombre
+                        elif nombre_lower in tname_lower:
                             seen.add(key)
                             resultados.append({
                                 "id": str(tid),
@@ -977,8 +951,35 @@ def buscar_equipo_en_todas_fuentes(nombre):
                                 "liga": league_name,
                                 "fuente": "Football-Data"
                             })
-        except Exception as e:
-            errores.append(f"Football-Data leagues: {str(e)[:50]}")
+    except Exception as e:
+        errores.append(f"Football-Data: {str(e)[:50]}")
+    
+    # 2. FBREF
+    try:
+        url = f"https://fbref.com/en/search/search/?q={nombre.replace(' ', '+')}"
+        headers_fb = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        r = requests.get(url, headers=headers_fb, timeout=15)
+        if r.status_code == 200:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(r.text, "html.parser")
+            links = soup.find_all("a", href=lambda h: h and "/squads/" in h if h else False)
+            for link in links[:10]:
+                team_name = link.get_text(strip=True)
+                href = link.get("href", "")
+                if team_name and len(team_name) > 2:
+                    key = f"fbref_{href}"
+                    if key not in seen and nombre.lower() in team_name.lower():
+                        seen.add(key)
+                        resultados.append({
+                            "id": href,
+                            "nombre": team_name[:60],
+                            "short": "",
+                            "pais": "",
+                            "liga": "FBref",
+                            "fuente": "FBref"
+                        })
+    except Exception as e:
+        errores.append(f"FBref: {str(e)[:50]}")
     
     # 3. SOFASCORE (API directa)
     try:
@@ -5094,6 +5095,66 @@ def pantalla_principal():
     except:
         partidos_scraped = st.session_state.get("partidos_scraped", [])
     
+    # ══════════════════════════════════════════════════════════
+    # 💰 CUOTAS DE APUESTAS (visible arriba)
+    # ══════════════════════════════════════════════════════════
+    st.markdown("---")
+    st.markdown('<p style="color:#4ecdc4;font-size:1.2rem;font-weight:bold;">💰 Cuotas de Hoy</p>', unsafe_allow_html=True)
+    
+    # Selector de liga
+    col_odds1, col_odds2 = st.columns([3, 1])
+    with col_odds1:
+        liga_odds = st.selectbox(
+            "🏆 Selecciona una liga:",
+            options=[
+                "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League",
+                "🇪🇸 La Liga",
+                "🇫🇷 Ligue 1",
+                "🇩🇪 Bundesliga",
+                "🇮🇹 Serie A",
+            ],
+            key="liga_cuotas_main"
+        )
+    with col_odds2:
+        ver_cuotas_btn = st.button("Ver Cuotas", key="btn_ver_cuotas", use_container_width=True)
+    
+    # Mapear a keys de API
+    liga_keys_map = {
+        "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League": "soccer_epl",
+        "🇪🇸 La Liga": "soccer_esp La Liga",
+        "🇫🇷 Ligue 1": "soccer_fra Ligue 1",
+        "🇩🇪 Bundesliga": "soccer_deu Bundesliga",
+        "🇮🇹 Serie A": "soccer_ita Serie A",
+    }
+    liga_odds_key = liga_keys_map.get(liga_odds, "soccer_epl")
+    
+    # Mostrar cuotas si se presiona el botón
+    if ver_cuotas_btn:
+        with st.spinner("Obteniendo cuotas..."):
+            cuotas = obtener_cuotas_todos_partidos(liga_odds_key)
+        
+        if cuotas:
+            st.success(f"✅ {len(cuotas)} partidos")
+            for c in cuotas[:8]:
+                home = c.get('home', '')
+                away = c.get('away', '')
+                cuota_l = c.get('cuota_local', 0)
+                cuota_e = c.get('cuota_empate', 0)
+                cuota_v = c.get('cuota_visita', 0)
+                
+                st.markdown(f"""
+                <div style="background:#1b2621;border:1px solid #4ecdc4;border-radius:4px;padding:8px;margin-bottom:4px;">
+                    <div style="color:#dcdcdc;font-size:0.85rem;font-weight:bold;">{home} vs {away}</div>
+                    <div style="display:flex;justify-content:space-around;margin-top:4px;">
+                        <div style="text-align:center;"><div style="color:#888;font-size:0.65rem;">1</div><div style="color:#4ecdc4;font-size:0.95rem;">{cuota_l}</div></div>
+                        <div style="text-align:center;"><div style="color:#888;font-size:0.65rem;">X</div><div style="color:#4ecdc4;font-size:0.95rem;">{cuota_e}</div></div>
+                        <div style="text-align:center;"><div style="color:#888;font-size:0.65rem;">2</div><div style="color:#4ecdc4;font-size:0.95rem;">{cuota_v}</div></div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.warning("No hay cuotas. Intenta con otra liga.")
+    
     # Obtener estadísticas de equipos desde API-Football
     stats_cache_key = f"stats_equipos_{get_hoy()}"
     if stats_cache_key not in st.session_state:
@@ -5134,49 +5195,54 @@ def pantalla_principal():
                 "LA Galaxy", "LAFC", "Inter Miami", "Atlanta United",
             ]
             
-            st.write("Escribe o selecciona un equipo:")
-            busqueda = st.selectbox("Equipo:", options=[""] + sorted(sugerencias), key="busqueda_equipo_main")
-            
-            col_busq1, col_busq2 = st.columns([1, 3])
+            st.write("🔍 Escribe el nombre del equipo:")
+            col_busq1, col_busq2 = st.columns([3, 1])
             with col_busq1:
-                buscar_btn = st.button("🔍 Buscar", key="btn_buscar_eq")
+                busqueda = st.text_input("Equipo:", placeholder="Ej: Barcelona, Real Madrid, Liverpool...", key="busqueda_equipo_main", label_visibility="collapsed")
+            with col_busq2:
+                buscar_btn = st.button("🔍 Buscar", key="btn_buscar_eq", use_container_width=True)
             
-            if buscar_btn and busqueda:
+            if buscar_btn and busqueda and len(busqueda) >= 2:
                 # Limpiar errores anteriores
                 if 'busqueda_errores' in st.session_state:
                     del st.session_state['busqueda_errores']
                 
-                with st.spinner("🔍 Buscando en 5 fuentes..."):
+                with st.spinner("🔍 Buscando equipos..."):
                     resultados = buscar_equipo_en_todas_fuentes(busqueda)
                 
                 if resultados:
-                    st.success(f"✅ {len(resultados)} equipos encontrados")
+                    st.success(f"✅ {len(resultados)} equipos encontrados para '{busqueda}'")
                     
-                    # Mostrar errores si hay
-                    if 'busqueda_errores' in st.session_state:
-                        errores = st.session_state['busqueda_errores']
-                        with st.expander(f"⚠️ {len(errores)} fuentes no funcionaron", expanded=False):
-                            for err in errores:
-                                st.caption(f"• {err}")
-                    
-                    for i, eq in enumerate(resultados[:15]):
+                    for i, eq in enumerate(resultados[:10]):
                         fuente = eq.get('fuente', '')
                         nombre = eq.get('nombre', '')
                         pais = eq.get('pais', '')
+                        liga = eq.get('liga', '')
                         tid = eq.get('id', '')
                         
                         col1, col2 = st.columns([4, 1])
                         with col1:
-                            st.markdown(f"""
-                            <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:8px;margin-bottom:6px;">
-                                <div style="color:#dcdcdc;font-size:0.85rem;font-weight:bold;">{nombre}</div>
-                                <div style="color:#888;font-size:0.65rem;">{pais} • {fuente}</div>
-                            </div>
-                            """, unsafe_allow_html=True)
+                            # Resaltar si coincide exactamente
+                            if busqueda.lower() in nombre.lower():
+                                st.markdown(f"""
+                                <div style="background:#1b2621;border:2px solid #4ecdc4;border-radius:4px;padding:8px;margin-bottom:6px;">
+                                    <div style="color:#4ecdc4;font-size:0.9rem;font-weight:bold;">{nombre}</div>
+                                    <div style="color:#888;font-size:0.65rem;">{liga} • {fuente}</div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                            else:
+                                st.markdown(f"""
+                                <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:8px;margin-bottom:6px;">
+                                    <div style="color:#dcdcdc;font-size:0.85rem;font-weight:bold;">{nombre}</div>
+                                    <div style="color:#888;font-size:0.65rem;">{liga} • {fuente}</div>
+                                </div>
+                                """, unsafe_allow_html=True)
                         with col2:
                             if st.button("📊", key=f"ver_{tid}_{i}"):
                                 st.session_state['equipo_buscado'] = eq
                                 st.rerun()
+                elif resultados == []:
+                    st.warning(f"❌ No se encontró '{busqueda}'. Prueba con otro nombre.")
                 else:
                     st.error("❌ No se encontraron equipos en ninguna fuente")
                     st.info("💡 Prueba con: Barcelona, Real Madrid, River Plate, etc.")
