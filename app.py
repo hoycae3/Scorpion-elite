@@ -840,58 +840,70 @@ def obtener_stats_partido_en_vivo(local_id, visitante_id, liga_id):
 
 
 # ══════════════════════════════════════════════════════════
-# BUSCADOR DE EQUIPOS (PDF 2.0)
+# BUSCADOR DE EQUIPOS (PDF 2.0) - CORREGIDO
 # ══════════════════════════════════════════════════════════
 
-def buscar_equipos_api(query):
-    """
-    Busca equipos por nombre desde API-Football.
-    Retorna lista de equipos con información básica.
-    """
+
+def buscar_equipos_por_liga(liga_id, query):
+    """Busca equipos por nombre dentro de una liga específica."""
     try:
         from scorpion.api.football import FootballAPI
         api = FootballAPI()
         headers = {"x-apisports-key": API_FOOTBALL_KEY}
-        
-        url = "https://v3.football.api-sports.io/teams"
-        data = api._request(url, {"search": query}, headers=headers)
+        temporada = api.get_temporada(liga_id)
+        url = "https://v3.football.api-sports.io/standings"
+        data = api._request(url, {"league": liga_id, "season": temporada}, headers=headers)
         
         equipos = []
         if data and data.get("response"):
-            for item in data["response"][:10]:
-                team = item.get("team", {})
-                venue = item.get("venue", {})
-                equipos.append({
-                    "id": team.get("id"),
-                    "nombre": team.get("name", ""),
-                    "pais": team.get("country", ""),
-                    "logo": team.get("logo", ""),
-                    "fundacion": team.get("founded", ""),
-                    "estadio": venue.get("name", ""),
-                    "ciudad": venue.get("city", ""),
-                })
-        
-        return equipos
+            for response in data["response"]:
+                standings = response.get("league", {}).get("standings", [])
+                for stage in standings:
+                    for row in stage:
+                        team = row.get("team", {})
+                        nombre = team.get("name", "")
+                        if query.lower() in nombre.lower():
+                            equipos.append({
+                                "id": team.get("id"),
+                                "nombre": nombre,
+                                "pais": team.get("country", ""),
+                                "logo": team.get("logo", ""),
+                            })
+        return equipos[:10]
     except Exception as e:
         print(f"Error buscando equipos: {e}")
         return []
 
 
+def buscar_equipos_todas_ligas(query):
+    """Busca equipos en todas las ligas principales."""
+    equipos_dict = {}
+    liga_ids = {
+        39: "Premier League",
+        140: "La Liga",
+        78: "Bundesliga",
+        135: "Serie A",
+        61: "Ligue 1",
+    }
+    
+    for liga_id, liga_nombre in liga_ids.items():
+        equipos = buscar_equipos_por_liga(liga_id, query)
+        for eq in equipos:
+            if eq["id"] not in equipos_dict:
+                eq["liga"] = liga_nombre
+                equipos_dict[eq["id"]] = eq
+    
+    return list(equipos_dict.values())
+
+
 def obtener_estadisticas_equipo(team_id, league_id, season):
-    """
-    Obtiene estadísticas detalladas de un equipo.
-    """
+    """Obtiene estadísticas detalladas de un equipo."""
     try:
         from scorpion.api.football import FootballAPI
         api = FootballAPI()
         headers = {"x-apisports-key": API_FOOTBALL_KEY}
-        
         url = "https://v3.football.api-sports.io/teams/statistics"
-        data = api._request(url, {
-            "team": team_id,
-            "league": league_id,
-            "season": season
-        }, headers=headers)
+        data = api._request(url, {"team": team_id, "league": league_id, "season": season}, headers=headers)
         
         if data and data.get("response"):
             resp = data["response"]
@@ -903,72 +915,52 @@ def obtener_estadisticas_equipo(team_id, league_id, season):
                 "goles_favor": resp.get("goals", {}).get("for", {}).get("total", {}).get("total", 0),
                 "goles_contra": resp.get("goals", {}).get("against", {}).get("total", {}).get("total", 0),
                 "clean_sheet": resp.get("clean_sheet", {}).get("total", 0),
-                "failed_to_score": resp.get("failed_to_score", {}).get("total", 0),
             }
     except Exception as e:
-        print(f"Error estadísticas equipo: {e}")
-    
+        print(f"Error stats equipo: {e}")
     return None
 
 
 def obtener_forma_reciente(team_id, league_id, season):
-    """
-    Obtiene los últimos resultados de un equipo.
-    """
+    """Obtiene los últimos resultados de un equipo."""
     try:
         from scorpion.api.football import FootballAPI
         api = FootballAPI()
         headers = {"x-apisports-key": API_FOOTBALL_KEY}
-        
         url = "https://v3.football.api-sports.io/fixtures"
-        data = api._request(url, {
-            "team": team_id,
-            "league": league_id,
-            "season": season,
-            "last": 10
-        }, headers=headers)
+        data = api._request(url, {"team": team_id, "league": league_id, "season": season, "last": 10}, headers=headers)
         
         resultados = []
         if data and data.get("response"):
             for item in data["response"][:5]:
                 fixture = item.get("fixture", {})
                 goals = item.get("goals", {})
-                
                 es_local = item["teams"]["home"]["id"] == team_id
                 equipo_rival = item["teams"]["away"]["name"] if es_local else item["teams"]["home"]["name"]
-                
                 goles_local = goals.get("home", 0)
                 goles_visitante = goals.get("away", 0)
                 
                 if es_local:
                     if goles_local > goles_visitante:
-                        resultado = "V"
-                        color = "#39ff14"
+                        resultado, color = "V", "#39ff14"
                     elif goles_local < goles_visitante:
-                        resultado = "D"
-                        color = "#ff6b6b"
+                        resultado, color = "D", "#ff6b6b"
                     else:
-                        resultado = "E"
-                        color = "#dfaf6f"
+                        resultado, color = "E", "#dfaf6f"
                 else:
                     if goles_visitante > goles_local:
-                        resultado = "V"
-                        color = "#39ff14"
+                        resultado, color = "V", "#39ff14"
                     elif goles_visitante < goles_local:
-                        resultado = "D"
-                        color = "#ff6b6b"
+                        resultado, color = "D", "#ff6b6b"
                     else:
-                        resultado = "E"
-                        color = "#dfaf6f"
+                        resultado, color = "E", "#dfaf6f"
                 
                 resultados.append({
-                    "resultado": resultado,
-                    "color": color,
+                    "resultado": resultado, "color": color,
                     "goles": f"{goles_local}-{goles_visitante}",
                     "rival": equipo_rival,
                     "fecha": fixture.get("date", "")[:10] if fixture.get("date") else ""
                 })
-        
         return resultados
     except Exception as e:
         print(f"Error forma reciente: {e}")
@@ -976,62 +968,53 @@ def obtener_forma_reciente(team_id, league_id, season):
 
 
 def mostrar_buscador_equipos():
-    """
-    Muestra la interfaz del buscador de equipos.
-    """
+    """Interfaz del buscador de equipos."""
     st.markdown("---")
     st.markdown('<p class="section-title">🔍 Buscador de Equipos</p>', unsafe_allow_html=True)
     
     col1, col2 = st.columns([1, 2])
     
     with col1:
-        busqueda = st.text_input("🔎 Nombre del equipo:", placeholder="Ej: Barcelona, Real Madrid...")
+        busqueda = st.text_input("🔎 Nombre del equipo:", placeholder="Ej: Barcelona, Real Madrid...", key="busqueda_equipo")
         
-        if busqueda and len(busqueda) >= 3:
-            equipos = buscar_equipos_api(busqueda)
+        if busqueda and len(busqueda) >= 2:
+            with st.spinner("Buscando en todas las ligas..."):
+                equipos = buscar_equipos_todas_ligas(busqueda)
             
             if equipos:
-                for eq in equipos[:5]:
-                    if st.button(f"⚽ {eq['nombre']}", key=f"eq_{eq['id']}"):
+                st.success(f"✅ {len(equipos)} equipos encontrados")
+                for eq in equipos[:8]:
+                    liga = eq.get("liga", "")
+                    clave = f"eq_{eq['id']}_{liga.replace(' ', '_')}"
+                    if st.button(f"⚽ {eq['nombre']} ({liga})", key=clave):
                         st.session_state['equipo_seleccionado'] = eq
+                        st.session_state['equipo_liga'] = liga
                         st.rerun()
             else:
-                st.info("No se encontraron equipos")
+                st.warning("No se encontraron equipos. Prueba otro nombre.")
     
     with col2:
         if 'equipo_seleccionado' in st.session_state:
             eq = st.session_state['equipo_seleccionado']
+            liga_default = st.session_state.get('equipo_liga', 'Premier League')
             
             st.markdown(f"""
             <div style="background: #1b2621; border: 1px solid #8a6435; border-radius: 6px; padding: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
                 <h3 style="color: #dfaf6f; margin-top: 0;">{eq['nombre']}</h3>
-                <p style="color: #dcdcdc; margin: 5px 0;">🌍 {eq.get('pais', 'N/A')}</p>
-                <p style="color: #dcdcdc; margin: 5px 0;">🏟️ {eq.get('estadio', 'N/A')}</p>
-                <p style="color: #dcdcdc; margin: 5px 0;">📅 Fundado: {eq.get('fundacion', 'N/A')}</p>
+                <p style="color: #dcdcdc; margin: 5px 0;">📍 Liga: {eq.get('liga', 'N/A')}</p>
             </div>
             """, unsafe_allow_html=True)
             
-            # Selector de liga
-            liga_busqueda = st.selectbox("📊 Selecciona una liga:", [
-                "Premier League", "La Liga", "Bundesliga", "Serie A", "Ligue 1"
-            ], key="liga_equipo")
-            
-            liga_ids = {
-                "Premier League": 39,
-                "La Liga": 140,
-                "Bundesliga": 78,
-                "Serie A": 135,
-                "Ligue 1": 61,
-            }
-            
+            liga_ids = {"Premier League": 39, "La Liga": 140, "Bundesliga": 78, "Serie A": 135, "Ligue 1": 61}
+            liga_busqueda = st.selectbox("📊 Selecciona liga:", list(liga_ids.keys()), key="liga_equipo")
             liga_id = liga_ids.get(liga_busqueda, 39)
             
-            # Obtener estadísticas
-            if st.button("📊 Ver Estadísticas", key="ver_stats"):
-                stats = obtener_estadisticas_equipo(eq['id'], liga_id, 2024)
-                forma = obtener_forma_reciente(eq['id'], liga_id, 2024)
+            if st.button("📊 Ver Estadísticas", key="ver_stats", type="primary"):
+                with st.spinner("Cargando estadísticas..."):
+                    stats = obtener_estadisticas_equipo(eq['id'], liga_id, 2024)
+                    forma = obtener_forma_reciente(eq['id'], liga_id, 2024)
                 
-                if stats:
+                if stats and stats.get('partidos_jugados', 0) > 0:
                     st.markdown("---")
                     st.markdown(f"""
                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0;">
@@ -1052,7 +1035,6 @@ def mostrar_buscador_equipos():
                             <div style="color: #dcdcdc; font-size: 0.75rem;">DERROTAS</div>
                         </div>
                     </div>
-                    
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0;">
                         <div style="background: #1b2621; border: 1px solid #8a6435; border-radius: 6px; padding: 15px; text-align: center;">
                             <div style="color: #dfaf6f; font-size: 1.5rem; font-weight: bold;">{stats.get('goles_favor', 0)}</div>
@@ -1068,26 +1050,201 @@ def mostrar_buscador_equipos():
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
-                
-                # Forma reciente
-                if forma:
-                    st.markdown("""
-                    <div style="background: #1b2621; border: 1px solid #8a6435; border-radius: 6px; padding: 15px; margin-top: 15px;">
-                        <h4 style="color: #dfaf6f; margin-top: 0;">📈 FORMA RECIENTE</h4>
-                        <div style="display: flex; gap: 8px;">
-                    """, unsafe_allow_html=True)
                     
-                    for f in forma:
-                        st.markdown(f"""
-                            <div style="background: rgba(0,0,0,0.3); border-radius: 4px; padding: 8px 12px; text-align: center; min-width: 50px;">
-                                <div style="color: {f['color']}; font-size: 1.2rem; font-weight: bold;">{f['resultado']}</div>
-                                <div style="color: #888; font-size: 0.7rem;">{f['goles']}</div>
-                            </div>
+                    if forma:
+                        st.markdown("""
+                        <div style="background: #1b2621; border: 1px solid #8a6435; border-radius: 6px; padding: 15px; margin-top: 15px;">
+                            <h4 style="color: #dfaf6f; margin-top: 0;">📈 FORMA RECIENTE</h4>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                         """, unsafe_allow_html=True)
-                    
-                    st.markdown("</div></div>", unsafe_allow_html=True)
+                        for f in forma:
+                            st.markdown(f"""
+                                <div style="background: rgba(0,0,0,0.3); border-radius: 4px; padding: 10px 15px; text-align: center; min-width: 60px;">
+                                    <div style="color: {f['color']}; font-size: 1.3rem; font-weight: bold;">{f['resultado']}</div>
+                                    <div style="color: #888; font-size: 0.75rem;">{f['goles']}</div>
+                                </div>
+                            """, unsafe_allow_html=True)
+                        st.markdown("</div></div>", unsafe_allow_html=True)
+                else:
+                    st.warning("⚠️ No hay datos disponibles para este equipo en esta liga.")
         else:
-            st.info("🔍 Busca un equipo para ver sus estadísticas")
+            st.info("🔍 Escribe el nombre de un equipo para buscar")
+
+
+# ══════════════════════════════════════════════════════════
+# CALENDARIO DE PARTIDOS (PDF 2.0)
+# ══════════════════════════════════════════════════════════
+
+
+def obtener_partidos_por_fecha(fecha_str, liga_id=None):
+    """Obtiene partidos para una fecha específica."""
+    try:
+        from scorpion.api.football import FootballAPI
+        api = FootballAPI()
+        headers = {"x-apisports-key": API_FOOTBALL_KEY}
+        
+        params = {"date": fecha_str}
+        if liga_id:
+            params["league"] = liga_id
+        
+        url = "https://v3.football.api-sports.io/fixtures"
+        data = api._request(url, params, headers=headers)
+        
+        partidos = []
+        if data and data.get("response"):
+            for item in data["response"]:
+                fixture = item.get("fixture", {})
+                league = item.get("league", {})
+                teams = item.get("teams", {})
+                goals = item.get("goals", {})
+                
+                es_vivo = fixture.get("status", {}).get("short") in ["1H", "2H", "HT", "ET", "P", "LIVE"]
+                
+                partidos.append({
+                    "id": fixture.get("id"),
+                    "fecha": fixture.get("date", "")[:16] if fixture.get("date") else "",
+                    "hora": fixture.get("time", "")[:5] if fixture.get("time") else "",
+                    "liga": league.get("name", ""),
+                    "liga_id": league.get("id"),
+                    "local": teams.get("home", {}).get("name", ""),
+                    "visitante": teams.get("away", {}).get("name", ""),
+                    "goles_local": goals.get("home"),
+                    "goles_visitante": goals.get("away"),
+                    "estado": fixture.get("status", {}).get("short", ""),
+                    "vivo": es_vivo,
+                })
+        
+        return partidos
+    except Exception as e:
+        print(f"Error obteniendo partidos: {e}")
+        return []
+
+
+def mostrar_calendario_partidos():
+    """Interfaz del calendario de partidos."""
+    st.markdown("---")
+    st.markdown('<p class="section-title">📅 Calendario de Partidos</p>', unsafe_allow_html=True)
+    
+    # Tabs para Hoy, Mañana, En Vivo
+    tab_hoy, tab_manana, tab_vivo = st.tabs(["📅 Hoy", "📆 Mañana", "🔴 En Vivo"])
+    
+    from datetime import date, timedelta
+    
+    hoy = date.today()
+    manana = hoy + timedelta(days=1)
+    
+    with tab_hoy:
+        st.markdown(f"### Partidos de hoy: {hoy.strftime('%d/%m/%Y')}")
+        
+        partidos_hoy = obtener_partidos_por_fecha(hoy.strftime("%Y-%m-%d"))
+        
+        if partidos_hoy:
+            # Agrupar por liga
+            ligas = {}
+            for p in partidos_hoy:
+                liga = p.get("liga", "Otra")
+                if liga not in ligas:
+                    ligas[liga] = []
+                ligas[liga].append(p)
+            
+            for liga, partidos in sorted(ligas.items()):
+                with st.expander(f"🏆 {liga} ({len(partidos)} partidos)"):
+                    for p in partidos:
+                        local = p.get("local", "")
+                        visitante = p.get("visitante", "")
+                        goles_l = p.get("goles_local")
+                        goles_v = p.get("goles_visitante")
+                        estado = p.get("estado", "")
+                        hora = p.get("hora", "")[11:16] if len(p.get("hora", "")) > 16 else p.get("hora", "")
+                        
+                        # Determinar estilo según estado
+                        if estado == "LIVE" or p.get("vivo"):
+                            badge = '<span style="background:#ff4444;color:white;padding:2px 8px;border-radius:10px;font-size:11px;">🔴 EN VIVO</span>'
+                        elif estado in ["1H", "2H", "HT"]:
+                            badge = '<span style="background:#ff4444;color:white;padding:2px 8px;border-radius:10px;font-size:11px;">🔴 EN VIVO</span>'
+                        elif estado == "FT":
+                            badge = '<span style="background:#39ff14;color:#0a2114;padding:2px 8px;border-radius:10px;font-size:11px;">✅ FINAL</span>'
+                        else:
+                            badge = f'<span style="background:#8a6435;color:white;padding:2px 8px;border-radius:10px;font-size:11px;">⏰ {hora}</span>'
+                        
+                        # Mostrar marcador o vs
+                        if goles_l is not None and goles_v is not None:
+                            marcador = f"<span style='color:#dfaf6f;font-weight:bold;font-size:1.2rem;'>{goles_l} - {goles_v}</span>"
+                        else:
+                            marcador = "<span style='color:#888;'>vs</span>"
+                        
+                        st.markdown(f"""
+                        <div style="background:#1b2621;border:1px solid #8a6435;border-radius:6px;padding:12px;margin-bottom:8px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <div style="flex:1;text-align:center;">
+                                    <div style="color:#dcdcdc;font-weight:bold;">{local}</div>
+                                </div>
+                                <div style="padding:0 20px;text-align:center;">
+                                    {marcador} {badge}
+                                </div>
+                                <div style="flex:1;text-align:center;">
+                                    <div style="color:#dcdcdc;font-weight:bold;">{visitante}</div>
+                                </div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+        else:
+            st.info("No hay partidos programados para hoy.")
+    
+    with tab_manana:
+        st.markdown(f"### Partidos de mañana: {manana.strftime('%d/%m/%Y')}")
+        
+        partidos_manana = obtener_partidos_por_fecha(manana.strftime("%Y-%m-%d"))
+        
+        if partidos_manana:
+            for p in partidos_manana[:10]:
+                local = p.get("local", "")
+                visitante = p.get("visitante", "")
+                hora = p.get("hora", "")[11:16] if len(p.get("hora", "")) > 16 else p.get("hora", "")
+                liga = p.get("liga", "")
+                
+                st.markdown(f"""
+                <div style="background:#1b2621;border:1px solid #8a6435;border-radius:6px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+                    <div style="color:#8a6435;font-size:0.8rem;flex:1;">{liga}</div>
+                    <div style="flex:2;text-align:center;color:#dcdcdc;">{local} <span style="color:#8a6435;">vs</span> {visitante}</div>
+                    <div style="flex:1;text-align:right;color:#dfaf6f;font-weight:bold;">{hora}</div>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("No hay partidos programados para mañana.")
+    
+    with tab_vivo:
+        st.markdown("### 🔴 Partidos en Vivo Ahora")
+        
+        partidos_hoy = obtener_partidos_por_fecha(hoy.strftime("%Y-%m-%d"))
+        partidos_vivo = [p for p in partidos_hoy if p.get("vivo") or p.get("estado") in ["1H", "2H", "HT", "ET", "P", "LIVE"]]
+        
+        if partidos_vivo:
+            for p in partidos_vivo:
+                local = p.get("local", "")
+                visitante = p.get("visitante", "")
+                goles_l = p.get("goles_local", 0)
+                goles_v = p.get("goles_visitante", 0)
+                estado = p.get("estado", "")
+                
+                st.markdown(f"""
+                <div style="background:#1b2621;border:2px solid #ff4444;border-radius:6px;padding:15px;margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div style="flex:1;text-align:center;">
+                            <div style="color:#dcdcdc;font-size:1.1rem;font-weight:bold;">{local}</div>
+                        </div>
+                        <div style="padding:0 25px;text-align:center;">
+                            <div style="color:#ff4444;font-size:2rem;font-weight:bold;">{goles_l} - {goles_v}</div>
+                            <div style="color:#ff4444;font-size:0.9rem;">🔴 {estado}</div>
+                        </div>
+                        <div style="flex:1;text-align:center;">
+                            <div style="color:#dcdcdc;font-size:1.1rem;font-weight:bold;">{visitante}</div>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("No hay partidos en vivo ahora. Revisa más tarde.")
 
 
 def enriquecer_partidos_con_stats(partidos, stats):
@@ -3264,7 +3421,7 @@ def pantalla_admin():
     st.info("Analiza partidos, genera picks de valor y publícalos para los usuarios.")
     st.markdown("---")
 
-    tabs=st.tabs(["🔍 Analizar Partido","📊 Picks de Valor","📢 Publicar Picks","👥 Clientes","📊 Escalera"])
+    tabs=st.tabs(["🔍 Analizar Partido","📊 Picks de Valor","📢 Publicar Picks","👥 Clientes","📊 Calendario","📊 Escalera"])
 
     # ── Tab 1: Analizar partido individual ─────────────────
     with tabs[0]:
@@ -3742,6 +3899,14 @@ def pantalla_admin():
                 st.markdown(f'<div class="esc-box"><b>Paso {i}:</b> {p["local"]} vs {p["visitante"]} · <i>{p["liga"]}</i><br>{val_ico} <b>{p["mercado"]}</b> @ {p.get("cuota","?")} · Conf: {p.get("confianza","?")}% {edge_str}</div>',unsafe_allow_html=True)
         else:
             st.info("Publica picks primero para armar la escalera.")
+
+
+    # ── Tab 5: Calendario de Partidos ──────────────────────
+    with tabs[5]:
+        try:
+            mostrar_calendario_partidos()
+        except Exception as e:
+            st.error(f"Error cargando calendario: {e}")
 
     if st.button("🚪 Cerrar sesion",key="logout_admin"): st.session_state.clear(); st.rerun()
 
