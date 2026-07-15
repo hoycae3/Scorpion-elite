@@ -1268,6 +1268,137 @@ def obtener_pronostico(ciudad, pais=""):
         return []
 
 
+def obtener_stats_fbref(team_url):
+    """Obtiene estadísticas detalladas de FBref."""
+    try:
+        url = f"https://fbref.com{team_url}" if team_url.startswith("/") else f"https://fbref.com/en/squads/{team_url}"
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        r = requests.get(url, headers=headers, timeout=15)
+        if r.status_code == 200:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(r.text, "html.parser")
+            
+            stats = {}
+            
+            # Buscar tabla de estadísticas generales
+            tables = soup.find_all("table", {"id": "stats_teams_comps"})
+            if not tables:
+                tables = soup.find_all("table")
+            
+            for table in tables[:3]:
+                rows = table.find_all("tr")
+                for row in rows:
+                    cols = row.find_all(["th", "td"])
+                    if len(cols) >= 5:
+                        stat_name = cols[0].get_text(strip=True)
+                        stat_val = cols[1].get_text(strip=True)
+                        if stat_name and stat_val and stat_name not in stats:
+                            stats[stat_name] = stat_val
+            
+            return stats if stats else None
+        return None
+    except Exception as e:
+        print(f"Error FBref: {e}")
+        return None
+
+
+def obtener_stats_understat(team_url):
+    """Obtiene estadísticas xG de Understat."""
+    try:
+        # Extraer nombre del equipo de la URL
+        team_name = team_url.replace("/team/", "").replace("/", "") if "/team/" in str(team_url) else str(team_url)
+        url = f"https://understat.com/team/{team_name}"
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        r = requests.get(url, headers=headers, timeout=15)
+        if r.status_code == 200:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(r.text, "html.parser")
+            
+            # Buscar datos en scripts JSON
+            scripts = soup.find_all("script")
+            xg_data = {}
+            
+            for script in scripts:
+                text = script.get_text(strip=True)
+                if "xG" in text and len(text) > 50:
+                    # Intentar extraer datos
+                    import re
+                    # Buscar patrones de números
+                    nums = re.findall(r'\d+\.?\d*', text)
+                    if len(nums) > 10:
+                        xg_data = {
+                            "xG": nums[0] if nums else "N/A",
+                            "xGA": nums[1] if len(nums) > 1 else "N/A",
+                            "G": nums[2] if len(nums) > 2 else "N/A",
+                            "GA": nums[3] if len(nums) > 3 else "N/A",
+                        }
+                        break
+            
+            # Buscar título del equipo
+            title = soup.find("title")
+            team_full_name = title.get_text().replace(" - Understat", "").strip() if title else team_name
+            
+            return {"team": team_full_name, "xg_stats": xg_data}
+        return None
+    except Exception as e:
+        print(f"Error Understat: {e}")
+        return None
+
+
+def buscar_stats_equipo(nombre_equipo):
+    """Busca estadísticas de un equipo en FBref y Understat."""
+    resultados = []
+    
+    # FBREF
+    try:
+        url = f"https://fbref.com/en/search/search/?q={nombre_equipo.replace(' ', '+')}"
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        r = requests.get(url, headers=headers, timeout=15)
+        if r.status_code == 200:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(r.text, "html.parser")
+            
+            # Buscar enlaces de equipos
+            links = soup.find_all("a", href=lambda h: h and "/squads/" in h if h else False)
+            for link in links[:5]:
+                team_name = link.get_text(strip=True)
+                href = link.get("href", "")
+                if team_name and nombre_equipo.lower() in team_name.lower():
+                    resultados.append({
+                        "fuente": "FBref",
+                        "nombre": team_name,
+                        "url": href,
+                        "tipo": "stats"
+                    })
+    except Exception as e:
+        print(f"Error búsqueda FBref: {e}")
+    
+    # UNDERSTAT
+    try:
+        url = f"https://understat.com/search?q={nombre_equipo.replace(' ', '+')}"
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        r = requests.get(url, headers=headers, timeout=15)
+        if r.status_code == 200:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(r.text, "html.parser")
+            
+            links = soup.find_all("a", href=lambda h: h and "/team/" in h if h else False)
+            for link in links[:5]:
+                team_name = link.get_text(strip=True)
+                href = link.get("href", "")
+                if team_name and nombre_equipo.lower() in team_name.lower():
+                    resultados.append({
+                        "fuente": "Understat",
+                        "nombre": team_name,
+                        "url": href,
+                        "tipo": "xg"
+                    })
+    except Exception as e:
+        print(f"Error búsqueda Understat: {e}")
+    
+    return resultados
+
+
 def buscar_equipos_por_liga(liga_id, query):
     """Busca equipos por nombre dentro de una liga específica."""
     try:
@@ -5164,6 +5295,78 @@ def pantalla_principal():
                                 st.warning("No se encontró clima. Configura OPENWEATHER_KEY en secrets.")
                         else:
                             st.warning("Ingresa una ciudad")
+                
+                # === ESTADÍSTICAS AVANZADAS (FBref + Understat) ===
+                st.markdown("---")
+                st.markdown('<p style="color:#dfaf6f;font-size:1rem;font-weight:bold;">📊 Stats Avanzadas</p>', unsafe_allow_html=True)
+                
+                with st.expander("🔍 Ver Stats Detalladas", expanded=False):
+                    nom_stats = st.text_input("Equipo para stats:", placeholder="Ej: Barcelona, Liverpool...", key="equipo_stats_input")
+                    
+                    if st.button("📊 Buscar Stats", key="btn_stats"):
+                        if nom_stats:
+                            with st.spinner("Buscando en FBref y Understat..."):
+                                stats_results = buscar_stats_equipo(nom_stats)
+                            
+                            if stats_results:
+                                st.success(f"✅ {len(stats_results)} fuentes encontradas")
+                                
+                                for res in stats_results[:6]:
+                                    fuente = res.get("fuente", "")
+                                    nombre = res.get("nombre", "")
+                                    url = res.get("url", "")
+                                    tipo = res.get("tipo", "")
+                                    
+                                    if fuente == "FBref":
+                                        # Obtener stats de FBref
+                                        with st.spinner(f"Cargando stats de {nombre}..."):
+                                            stats = obtener_stats_fbref(url)
+                                        
+                                        st.markdown(f"""
+                                        <div style="background:#1b2621;border:1px solid #4ecdc4;border-radius:4px;padding:10px;margin-bottom:10px;">
+                                            <div style="color:#4ecdc4;font-size:0.9rem;font-weight:bold;">📊 {nombre}</div>
+                                            <div style="color:#888;font-size:0.7rem;">FBref - Estadísticas Detalladas</div>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                                        
+                                        if stats:
+                                            cols = st.columns(4)
+                                            items = list(stats.items())[:8]
+                                            for i, (k, v) in enumerate(items):
+                                                with cols[i % 4]:
+                                                    st.metric(k[:15], v[:10] if isinstance(v, str) else v)
+                                        else:
+                                            st.info(f"Stats no disponibles. Ver en: https://fbref.com{url}")
+                                    
+                                    elif fuente == "Understat":
+                                        # Obtener stats xG de Understat
+                                        with st.spinner(f"Cargando xG de {nombre}..."):
+                                            xg_stats = obtener_stats_understat(url)
+                                        
+                                        st.markdown(f"""
+                                        <div style="background:#1b2621;border:1px solid #ff6b6b;border-radius:4px;padding:10px;margin-bottom:10px;">
+                                            <div style="color:#ff6b6b;font-size:0.9rem;font-weight:bold;">🎯 {nombre}</div>
+                                            <div style="color:#888;font-size:0.7rem;">Understat - xG y Estadísticas Avanzadas</div>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                                        
+                                        if xg_stats and xg_stats.get("xg_stats"):
+                                            xg = xg_stats.get("xg_stats", {})
+                                            col1, col2, col3, col4 = st.columns(4)
+                                            with col1:
+                                                st.metric("xG", xg.get("xG", "N/A"))
+                                            with col2:
+                                                st.metric("xGA", xg.get("xGA", "N/A"))
+                                            with col3:
+                                                st.metric("Goles", xg.get("G", "N/A"))
+                                            with col4:
+                                                st.metric("Goles C", xg.get("GA", "N/A"))
+                                        else:
+                                            st.info(f"xG no disponible. Ver en: https://understat.com{url}")
+                            else:
+                                st.warning("No se encontraron stats. Prueba con otro nombre.")
+                        else:
+                            st.warning("Ingresa el nombre de un equipo")
         
         # === CALENDARIO COMPACTO ===
         st.markdown("---")
