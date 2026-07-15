@@ -4380,11 +4380,92 @@ def pantalla_principal():
         partidos_scraped = enriquecer_partidos_con_stats(partidos_scraped, stats_equipos)
     
     with col1:
-        # === AGREGAR: Buscador de Equipos (PDF 2.0) ===
-        try:
-            mostrar_buscador_equipos()
-        except Exception as e:
-            print(f"Error buscador equipos: {e}")
+        # === BUSCADOR DE EQUIPOS (PDF 2.0) ===
+        st.markdown("---")
+        st.markdown('<p class="section-title">🔍 Buscador de Equipos</p>', unsafe_allow_html=True)
+        
+        busqueda = st.text_input("🔎 Nombre del equipo:", placeholder="Ej: Barcelona, Real Madrid...", key="busqueda_equipo_main")
+        
+        if busqueda and len(busqueda) >= 2:
+            with st.spinner("Buscando en todas las ligas..."):
+                equipos = buscar_equipos_todas_ligas(busqueda)
+            
+            if equipos:
+                st.success(f"✅ {len(equipos)} equipos encontrados")
+                for eq in equipos[:5]:
+                    liga = eq.get("liga", "")
+                    clave = f"eq_main_{eq['id']}_{liga.replace(' ', '_')}"
+                    if st.button(f"⚽ {eq['nombre']} ({liga})", key=clave):
+                        st.session_state['equipo_seleccionado'] = eq
+                        st.session_state['equipo_liga'] = liga
+                        st.rerun()
+            else:
+                st.warning("No se encontraron equipos. Prueba otro nombre.")
+        else:
+            if busqueda and len(busqueda) < 2:
+                st.info("Escribe al menos 2 letras")
+            else:
+                st.info("🔍 Escribe el nombre de un equipo para buscar")
+        
+        # === CALENDARIO DE PARTIDOS ===
+        st.markdown("---")
+        st.markdown('<p class="section-title">📅 Calendario de Partidos</p>', unsafe_allow_html=True)
+        
+        from datetime import date, timedelta
+        hoy = date.today()
+        manana = hoy + timedelta(days=1)
+        
+        cal_tabs = st.tabs(["📅 Hoy", "📆 Mañana"])
+        
+        with cal_tabs[0]:
+            st.markdown(f"**{hoy.strftime('%d/%m/%Y')}**")
+            partidos_hoy = obtener_partidos_por_fecha(hoy.strftime("%Y-%m-%d"))
+            
+            if partidos_hoy:
+                for p in partidos_hoy[:5]:
+                    local = p.get("local", "")[:15]
+                    visitante = p.get("visitante", "")[:15]
+                    hora = p.get("hora", "")[11:16] if len(p.get("hora", "")) > 16 else p.get("hora", "")
+                    estado = p.get("estado", "")
+                    liga = p.get("liga", "")[:20]
+                    
+                    if estado in ["1H", "2H", "HT", "LIVE"]:
+                        badge = "🔴"
+                    elif estado == "FT":
+                        badge = "✅"
+                    else:
+                        badge = "⏰"
+                    
+                    st.markdown(f"""
+                    <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:8px;margin-bottom:6px;">
+                        <div style="color:#8a6435;font-size:0.7rem;">{liga} {badge}</div>
+                        <div style="color:#dcdcdc;font-size:0.85rem;">{local} vs {visitante}</div>
+                        <div style="color:#dfaf6f;font-size:0.75rem;">{hora}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("No hay partidos hoy")
+        
+        with cal_tabs[1]:
+            st.markdown(f"**{manana.strftime('%d/%m/%Y')}**")
+            partidos_manana = obtener_partidos_por_fecha(manana.strftime("%Y-%m-%d"))
+            
+            if partidos_manana:
+                for p in partidos_manana[:5]:
+                    local = p.get("local", "")[:15]
+                    visitante = p.get("visitante", "")[:15]
+                    hora = p.get("hora", "")[11:16] if len(p.get("hora", "")) > 16 else p.get("hora", "")
+                    liga = p.get("liga", "")[:20]
+                    
+                    st.markdown(f"""
+                    <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:8px;margin-bottom:6px;">
+                        <div style="color:#8a6435;font-size:0.7rem;">{liga}</div>
+                        <div style="color:#dcdcdc;font-size:0.85rem;">{local} vs {visitante}</div>
+                        <div style="color:#dfaf6f;font-size:0.75rem;">⏰ {hora}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("No hay partidos mañana")
         
         st.markdown('<p class="section-title">🔥 Picks Recomendados del Día</p>', unsafe_allow_html=True)
         
