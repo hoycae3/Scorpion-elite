@@ -4552,134 +4552,91 @@ def pantalla_principal():
         partidos_scraped = enriquecer_partidos_con_stats(partidos_scraped, stats_equipos)
     
     with col1:
-        # === BUSCADOR DE EQUIPOS SIMPLE ===
-        st.markdown("---")
-        st.markdown('<p class="section-title">🔍 Buscador de Equipos</p>', unsafe_allow_html=True)
-        
-        # Equipos populares como sugerencias
-        equipos_populares = [
-            "Manchester City", "Liverpool", "Arsenal", "Chelsea", "Manchester United",
-            "Real Madrid", "Barcelona", "Atletico Madrid", "Sevilla", "Real Sociedad",
-            "Bayern Munich", "Borussia Dortmund", "RB Leipzig", "Bayer Leverkusen",
-            "Inter Milan", "AC Milan", "Juventus", "Napoli", "Roma", "Lazio",
-            "PSG", "Marseille", "Monaco", "Lyon", "Lille",
-            "Ajax", "PSV", "Feyenoord",
-            "Porto", "Benfica", "Sporting CP",
-            "Atletico Nacional", "Millonarios", "Santa Fe", "Junior", "America",
-            "River Plate", "Boca Juniors", "Independiente",
-            "Al Hilal", "Al Nassr",
-        ]
-        
-        # Selectbox con sugerencias
-        busqueda = st.selectbox(
-            "🔎 Selecciona un equipo:",
-            options=[""] + sorted(equipos_populares),
-            key="busqueda_equipo_main"
-        )
-        
-        if busqueda:
-            st.session_state['equipo_seleccionado'] = {
-                "id": f"popular_{busqueda[:10]}",
-                "nombre": busqueda,
-                "liga": "Seleccionado",
-                "fuente": "Popular"
-            }
-            st.success(f"✅ Equipo seleccionado: {busqueda}")
-        
-        # Mostrar stats si hay equipo seleccionado
-        if 'equipo_seleccionado' in st.session_state:
-            eq = st.session_state['equipo_seleccionado']
-            nombre = eq.get('nombre', '')
+        # === BUSCADOR COMPACTO EN EXPANDER ===
+        with st.expander("🔍 Buscar Equipo", expanded=False):
+            equipos_populares = [
+                "Manchester City", "Liverpool", "Arsenal", "Chelsea", "Man United",
+                "Real Madrid", "Barcelona", "Atletico Madrid", "Sevilla",
+                "Bayern Munich", "Dortmund", "Leipzig",
+                "Inter Milan", "AC Milan", "Juventus", "Napoli", "Roma",
+                "PSG", "Marseille", "Monaco", "Lyon",
+                "Ajax", "PSV", "Porto", "Benfica", "Sporting",
+                "Atletico Nacional", "Millonarios", "Santa Fe", "Junior",
+                "River Plate", "Boca Juniors", "Al Hilal", "Al Nassr",
+            ]
             
-            if nombre and st.button(f"📊 Ver estadísticas de {nombre}", key="ver_stats_eq"):
-                with st.spinner("Buscando en Sofascore..."):
-                    stats = obtener_stats_desde_sofascore(nombre)
-                
-                if stats:
-                    st.markdown("---")
-                    st.success(f"📊 Estadísticas de {nombre}")
-                    col1, col2, col3, col4 = st.columns(4)
-                    with col1:
-                        st.metric("Partidos", stats.get('partidos', 'N/A'))
-                    with col2:
-                        st.metric("Victorias", stats.get('victorias', 'N/A'))
-                    with col3:
-                        st.metric("Goles", stats.get('goles', 'N/A'))
-                    with col4:
-                        st.metric("Fuente", stats.get('fuente', 'N/A'))
-                else:
-                    st.info("📊 Cargando datos desde API...")
+            col_busq1, col_busq2 = st.columns([3, 1])
+            with col_busq1:
+                busqueda = st.selectbox("Equipo:", options=[""] + sorted(equipos_populares), key="busqueda_equipo_main")
+            with col_busq2:
+                st.write(" ")
+                if st.button("🔍", key="btn_buscar_eq"):
+                    if busqueda:
+                        st.session_state['equipo_buscado'] = busqueda
+            
+            # Stats en expander
+            if 'equipo_buscado' in st.session_state:
+                nombre = st.session_state['equipo_buscado']
+                st.success(f"📊 {nombre}")
+                stats = obtener_stats_desde_sofascore(nombre)
+                col_s1, col_s2, col_s3 = st.columns(3)
+                with col_s1:
+                    st.metric("PJ", stats.get('partidos', '?'))
+                with col_s2:
+                    st.metric("G/F", stats.get('goles', '?'))
+                with col_s3:
+                    st.metric("V", stats.get('victorias', '?'))
         
-        # === CALENDARIO DE PARTIDOS ===
+        # === CALENDARIO COMPACTO ===
         st.markdown("---")
-        st.markdown('<p class="section-title">📅 Calendario de Partidos</p>', unsafe_allow_html=True)
+        st.markdown('<p style="color:#dfaf6f;font-size:1rem;font-weight:bold;">📅 Partidos de Hoy</p>', unsafe_allow_html=True)
         
-        from datetime import date, timedelta
-        hoy = date.today()
-        
-        # Mostrar partidos directamente si están disponibles
         if 'partidos_scraped' in st.session_state:
             partidos = st.session_state.partidos_scraped
             if partidos:
-                st.success(f"✅ {len(partidos)} partidos de hoy")
-                
-                # Mostrar en cards
-                for p in partidos[:12]:
-                    local = p.get("local", "")[:20] or "Equipo Local"
-                    visitante = p.get("visitante", "")[:20] or "Equipo Visitante"
+                for p in partidos[:8]:
+                    local = p.get("local", "")[:16] or "Local"
+                    visitante = p.get("visitante", "")[:16] or "Visita"
                     hora = p.get("hora", "")[:5] or "--:--"
-                    liga = p.get("liga", "")[:30] or "Partido"
+                    liga = p.get("liga", "")[:18] or "Partido"
                     
                     st.markdown(f"""
-                    <div style="background:#1b2621;border:1px solid #8a6435;border-radius:6px;padding:12px;margin-bottom:10px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <div style="flex:1;">
-                                <div style="color:#dfaf6f;font-size:0.7rem;">{liga}</div>
-                                <div style="color:#dcdcdc;font-size:0.95rem;font-weight:bold;margin-top:4px;">{local}</div>
-                            </div>
-                            <div style="padding:0 15px;text-align:center;">
-                                <div style="color:#dfaf6f;font-size:1.2rem;font-weight:bold;">{hora}</div>
-                            </div>
-                            <div style="flex:1;text-align:right;">
-                                <div style="color:#dcdcdc;font-size:0.95rem;font-weight:bold;">{visitante}</div>
-                            </div>
-                        </div>
+                    <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:6px;margin-bottom:4px;display:flex;align-items:center;">
+                        <div style="color:#8a6435;font-size:0.6rem;width:70px;">{liga}</div>
+                        <div style="color:#dcdcdc;font-size:0.75rem;flex:1;text-align:center;">{local} vs {visitante}</div>
+                        <div style="color:#dfaf6f;font-size:0.7rem;width:40px;text-align:right;">{hora}</div>
                     </div>
                     """, unsafe_allow_html=True)
             else:
-                st.info("📅 Cargando partidos...")
+                st.info("Cargando...")
         else:
-            st.info("📅 Cargando partidos...")
+            st.info("Cargando...")
         
-        st.markdown('<p class="section-title">🔥 Picks Recomendados del Día</p>', unsafe_allow_html=True)
+        # === PICKS COMPACTOS ===
+        st.markdown('<p style="color:#dfaf6f;font-size:1rem;font-weight:bold;">🔥 Picks del Día</p>', unsafe_allow_html=True)
         
         if picks_hoy:
             real_picks = [p for p in picks_hoy if "🔒" not in str(p.get("mercado",""))]
             if real_picks:
-                sub_c1, sub_c2, sub_c3 = st.columns(3)
-                for i, (pick, col) in enumerate(zip(real_picks[:3], [sub_c1, sub_c2, sub_c3]), 1):
-                    with col:
-                        cls = "ap" if pick.get("rango") == "A+" else "b"
-                        st.markdown(f"""
-                        <div style="background: #1b2621; border-left: 4px solid {'#39ff14' if cls=='ap' else '#dfaf6f'}; padding: 12px; border-radius: 5px; margin-bottom: 10px;">
-                            <div style="color: #dfaf6f; font-size: 0.8rem;">{pick.get('liga', '')}</div>
-                            <div style="color: #fff; font-weight: bold; font-size: 0.9rem;">{pick.get('local', '')} vs {pick.get('visitante', '')}</div>
-                            <div style="color: #39ff14; font-size: 0.85rem;">{pick.get('mercado', '')}</div>
-                            <div style="color: #888; font-size: 0.75rem;">Cuota: {pick.get('cuota', '?')} · Conf: {pick.get('confianza', 0)}%</div>
-                        </div>
-                        """, unsafe_allow_html=True)
+                for pick in real_picks[:3]:
+                    liga = pick.get('liga', '')[:16]
+                    local = pick.get('local', '')[:13]
+                    visitante = pick.get('visitante', '')[:13]
+                    mercado = pick.get('mercado', '')[:18]
+                    cuota = pick.get('cuota', '?')
+                    conf = pick.get('confianza', 0)
+                    
+                    st.markdown(f"""
+                    <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:6px;margin-bottom:4px;">
+                        <div style="color:#dfaf6f;font-size:0.65rem;">{liga}</div>
+                        <div style="color:#dcdcdc;font-size:0.8rem;font-weight:bold;">{local} vs {visitante}</div>
+                        <div style="color:#39ff14;font-size:0.75rem;">{mercado} @{cuota} <span style="color:#888;">[{conf}%]</span></div>
+                    </div>
+                    """, unsafe_allow_html=True)
             else:
-                st.info("📢 No hay picks publicados hoy.")
+                st.info("Sin picks hoy")
         else:
-            st.info("📢 No hay picks publicados hoy.")
-        
-        # Partidos del día
-        st.markdown("---")
-        st.markdown('<p class="section-title">⚽ Partidos del Día</p>', unsafe_allow_html=True)
-        
-        # MUNDIAL 2026 - Solo el partido del día
-        from datetime import date, timedelta, datetime
-        hoy = get_hoy_date()
+            st.info("Sin picks hoy")
         
         partidos_hoy = []
         es_mundial = 8 <= hoy.day <= 20 and hoy.month == 7 and hoy.year == 2026
