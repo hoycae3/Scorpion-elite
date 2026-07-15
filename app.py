@@ -2657,47 +2657,109 @@ def exportar_excel(resultados,titulo="Scorpion Elite V4 Pro"):
     buf=io.BytesIO(); wb.save(buf); buf.seek(0); return buf.getvalue()
 
 # ══════════════════════════════════════════════════════════
-# CSS
+# CSS - Verde Bosque y Cobre
 # ══════════════════════════════════════════════════════════
 st.set_page_config(page_title="Scorpion Elite V4",page_icon="🦂",layout="wide")
 st.markdown("""<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-html,body,[class*="css"]{font-family:'Inter',sans-serif}
-.stApp{background:#07070e}
-.hdr{background:linear-gradient(135deg,#08102a,#10102e,#181838);
-  border:1px solid #cc9900;border-radius:16px;padding:1.5rem 2rem;
-  text-align:center;margin-bottom:1.5rem}
-.hdr h1{color:#ffd700;font-size:2.2rem;margin:0;letter-spacing:4px;text-shadow:0 0 30px #ffd70055}
-.hdr p{color:#888;margin:.3rem 0 0;font-size:.88rem}
-.lbox{background:#0e0e22;border:1px solid #cc9900;border-radius:16px;padding:2.5rem;max-width:440px;margin:1.5rem auto}
-.mc{background:#0e0e22;border:1px solid #1a2a44;border-radius:10px;padding:1rem;text-align:center;margin:.3rem 0}
-.mc .v{color:#ffd700;font-size:1.8rem;font-weight:700}
-.mc .l{color:#555;font-size:.7rem;margin-top:3px;text-transform:uppercase;letter-spacing:1px}
-.badge-AP{background:#082a12;color:#00ee66;border:1px solid #00aa44;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
-.badge-B{background:#081840;color:#44aaff;border:1px solid #2255aa;padding:2px 9px;border-radius:20px;font-size:11px}
-.badge-C{background:#1a1200;color:#ccaa00;border:1px solid #886600;padding:2px 9px;border-radius:20px;font-size:11px}
-.badge-D{background:#200a0a;color:#ee4444;border:1px solid #882222;padding:2px 9px;border-radius:20px;font-size:11px}
-.pill-ok{background:#082a12;color:#00ee66;padding:2px 10px;border-radius:20px;font-size:11px}
-.pill-v{background:#2a0808;color:#ee4444;padding:2px 10px;border-radius:20px;font-size:11px}
-.pill-f{background:#1a1500;color:#ccaa00;padding:2px 10px;border-radius:20px;font-size:11px}
-.pick-box{background:#0e0e22;border:1px solid #1a2a44;border-radius:10px;padding:.9rem 1rem;margin:.4rem 0}
-.pick-box.ap{border-color:#00aa44;background:#081a10}
-.pick-box.b{border-color:#2255aa;background:#08101a}
-.mkt-row{background:#0a0a1e;border-radius:8px;padding:.5rem .9rem;margin:.2rem 0;
-  display:flex;justify-content:space-between;align-items:center}
-.mkt-name{color:#cccccc;font-size:.88rem}
-.mkt-prob{color:#ffd700;font-weight:700;font-size:.95rem}
-.mkt-edge-pos{color:#00ee66;font-size:.8rem}
-.mkt-edge-neg{color:#ee4444;font-size:.8rem}
-.pub-btn{background:#ffd700;color:#000;border:none;border-radius:6px;padding:4px 14px;
-  font-size:.8rem;font-weight:700;cursor:pointer}
-.esc-box{background:#081a10;border:1px solid #00aa44;border-radius:10px;padding:.8rem 1rem;margin:.3rem 0}
-.comb-box{background:#0a101a;border:1px solid #2255aa;border-radius:10px;padding:.8rem 1rem;margin:.3rem 0}
-.ft{text-align:center;color:#1e1e2e;font-size:.68rem;margin-top:2rem;padding-top:.8rem;border-top:1px solid #10102a}
-div[data-testid="stButton"] button{background:linear-gradient(135deg,#ffd700,#cc7700)!important;
-  color:#000!important;font-weight:700!important;border:none!important;border-radius:8px!important;width:100%}
+/* Verde Bosque y Cobre - Scorpion Elite */
+.stApp {
+    background-color: #0f1a12 !important;
+    color: #e2ebd5;
+}
+.header-container {
+    background: linear-gradient(135deg, #142419 0%, #0d160f 100%);
+    padding: 25px;
+    border-radius: 12px;
+    border: 1px solid #332115;
+    border-left: 5px solid #d48243;
+    margin-bottom: 25px;
+}
+.brand-title {
+    color: #d48243;
+    font-family: 'Georgia', serif;
+    font-size: 40px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+.login-container {
+    background-color: #152219;
+    border: 1px solid #d48243;
+    border-radius: 10px;
+    padding: 15px;
+}
+.login-title {
+    color: #d48243;
+    font-size: 18px;
+    font-weight: bold;
+}
+.section-title {
+    color: #d48243;
+    font-size: 18px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 10px;
+    margin-bottom: 15px;
+}
+.pick-card {
+    background: linear-gradient(135deg, #16261b 0%, #0f1a12 100%);
+    border: 1.5px solid #332115;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+.pick-header {
+    font-size: 12px;
+    color: #a3b899;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+.sidebar-card {
+    background-color: #122016;
+    border: 1px solid #243829;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+.sidebar-card-title {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: bold;
+    border-bottom: 1.5px solid #d48243;
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+}
+.stTextInput > div > div > input {
+    background-color: #0f1a12 !important;
+    color: #ffffff !important;
+    border: 1px solid #243829 !important;
+}
+.stButton > button {
+    background: linear-gradient(90deg, #d48243 0%, #a65d28 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: bold !important;
+}
+.stButton > button:hover {
+    background: linear-gradient(90deg, #a65d28 0%, #d48243 100%) !important;
+}
+.badge-Aplus {
+    background-color: rgba(57, 255, 20, 0.15);
+    color: #39ff14;
+    border: 1px solid #39ff14;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+}
+.badge-B {
+    background-color: rgba(212, 130, 67, 0.15);
+    color: #d48243;
+    border: 1px solid #d48243;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+}
 </style>""",unsafe_allow_html=True)
-
 def hdr(sub="Motor de Analisis Deportivo — 4 Modelos + Datos Reales"):
     st.markdown(f'<div class="hdr"><h1>🦂 SCORPION ELITE</h1><p>{sub}</p></div>',unsafe_allow_html=True)
 
@@ -4078,63 +4140,136 @@ def pantalla_principal():
         
         st.markdown("</div>")
         
-        # Panel de alertas
+        # ══════════════════════════════════════════════════════════
+        # 📊 COMPARADOR DE CUOTAS (EJEMPLO VISUAL)
+        # ══════════════════════════════════════════════════════════
+        st.markdown("---")
+        st.markdown('<p class="section-title">📊 Comparador de Cuotas</p>', unsafe_allow_html=True)
+        
+        # Selector de partido
+        if 'partidos_scraped' in st.session_state and st.session_state.partidos_scraped:
+            opciones_partidos = [f"{p.get('local','')} vs {p.get('visitante','')}" for p in st.session_state.partidos_scraped[:5]]
+            partido_seleccionado = st.selectbox("Selecciona un partido:", opciones_partidos, key="odds_selector")
+            
+            if partido_seleccionado:
+                idx = opciones_partidos.index(partido_seleccionado)
+                partido = st.session_state.partidos_scraped[idx]
+                
+                # Intentar obtener cuotas reales
+                cuotas = obtener_mejores_cuotas(
+                    partido.get("local", ""),
+                    partido.get("visitante", ""),
+                    39
+                )
+                
+                if cuotas:
+                    # Mostrar cuotas con estilo Verde Cobre
+                    col1, col2, col3 = st.columns(3)
+                    opciones = {"1": "🏠 Local", "X": "🤝 Empate", "2": "✈️ Visita"}
+                    colores = {"1": "#d48243", "X": "#a3b899", "2": "#d48243"}
+                    
+                    for i, cuota in enumerate(cuotas):
+                        col = [col1, col2, col3][i]
+                        with col:
+                            label = opciones.get(cuota["opcion"], cuota["opcion"])
+                            color = colores.get(cuota["opcion"], "#d48243")
+                            st.markdown(f"""
+                            <div style="text-align: center; padding: 15px; background: #122016; border-radius: 8px; border: 2px solid {color}; margin: 5px;">
+                                <div style="color: #a3b899; font-size: 0.8rem;">{label}</div>
+                                <div style="color: {color}; font-size: 2rem; font-weight: bold; margin: 8px 0;">{cuota['cuota']}</div>
+                                <div style="color: #888; font-size: 0.7rem;">{cuota['casa']}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                    
+                    mejor = max(cuotas, key=lambda x: x["cuota"])
+                    st.success(f"💰 Mejor cuota: **{opciones.get(mejor['opcion'], mejor['opcion'])}** @ **{mejor['cuota']}** en {mejor['casa']}")
+                else:
+                    # Ejemplo visual cuando no hay datos
+                    st.info("📡 Cargando cuotas en tiempo real...")
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.markdown("""
+                        <div style="text-align: center; padding: 15px; background: #122016; border-radius: 8px; border: 2px solid #d48243; margin: 5px;">
+                            <div style="color: #a3b899; font-size: 0.8rem;">🏠 Local</div>
+                            <div style="color: #d48243; font-size: 2rem; font-weight: bold; margin: 8px 0;">1.85</div>
+                            <div style="color: #888; font-size: 0.7rem;">Bet365</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    with col2:
+                        st.markdown("""
+                        <div style="text-align: center; padding: 15px; background: #122016; border-radius: 8px; border: 2px solid #a3b899; margin: 5px;">
+                            <div style="color: #a3b899; font-size: 0.8rem;">🤝 Empate</div>
+                            <div style="color: #a3b899; font-size: 2rem; font-weight: bold; margin: 8px 0;">3.40</div>
+                            <div style="color: #888; font-size: 0.7rem;">Betfair</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    with col3:
+                        st.markdown("""
+                        <div style="text-align: center; padding: 15px; background: #122016; border-radius: 8px; border: 2px solid #d48243; margin: 5px;">
+                            <div style="color: #a3b899; font-size: 0.8rem;">✈️ Visita</div>
+                            <div style="color: #d48243; font-size: 2rem; font-weight: bold; margin: 8px 0;">4.20</div>
+                            <div style="color: #888; font-size: 0.7rem;">Bet365</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    st.caption("⚠️ Ejemplo - Las cuotas reales se muestran cuando hay partidos en vivo")
+        else:
+            st.info("Cargando partidos para comparar cuotas...")
+        
+        # ══════════════════════════════════════════════════════════
+        # 🔔 SISTEMA DE ALERTAS (EJEMPLO VISUAL)
+        # ══════════════════════════════════════════════════════════
+        st.markdown("---")
+        st.markdown('<p class="section-title">🔔 Alertas y Notificaciones</p>', unsafe_allow_html=True)
+        
+        # Panel de alertas del usuario
         cedula = st.session_state.get("ced", "")
         if cedula:
             alertas = obtener_alertas(cedula)
             if alertas:
                 st.markdown("""
-                <div style="background: linear-gradient(135deg, #122016 0%, #0f1a12 100%); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #d48243;">
-                    <div style="color: #d48243; font-weight: bold; margin-bottom: 10px;">🔔 Alertas Recientes</div>
+                <div style="background: #122016; padding: 15px; border-radius: 10px; border: 1px solid #d48243; margin-bottom: 15px;">
+                    <div style="color: #d48243; font-weight: bold; font-size: 16px; margin-bottom: 12px;">🔔 Tus Alertas</div>
                 """, unsafe_allow_html=True)
                 
                 for alerta in alertas[:3]:
-                    tipo_icono = "🔥" if alerta["tipo"] == "pick_top" else "📢"
-                    st.markdown(f'<div style="color: #e0e0e0; font-size: 0.8rem; margin: 5px 0; padding: 5px; background: rgba(255,255,255,0.05); border-radius: 4px;">{tipo_icono} {alerta["mensaje"][:50]}...</div>', unsafe_allow_html=True)
+                    tipo_icono = "🔥" if alerta["tipo"] == "pick_top" else "📢" if alerta["tipo"] == "pick_nuevo" else "⚠️"
+                    st.markdown(f"""
+                    <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #d48243;">
+                        <span style="color: #e2ebd5; font-size: 0.9rem;">{tipo_icono} {alerta['mensaje']}</span>
+                        <div style="color: #666; font-size: 0.7rem; margin-top: 3px;">{alerta.get('fecha', 'Ahora')}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 st.markdown("</div>")
-        
-        # Comparador de Odds rápido
-        if 'partidos_scraped' in st.session_state and st.session_state.partidos_scraped:
-            with st.expander("📊 Comparador de Cuotas"):
-                partido_seleccionado = st.selectbox(
-                    "Selecciona partido:", 
-                    [f"{p.get('local','')} vs {p.get('visitante','')}" for p in st.session_state.partidos_scraped[:5]],
-                    key="odds_selector"
-                )
-                
-                if partido_seleccionado:
-                    idx = list(range(len(st.session_state.partidos_scraped[:5])))[list([f"{p.get('local','')} vs {p.get('visitante','')}" for p in st.session_state.partidos_scraped[:5]]).index(partido_seleccionado)]
-                    partido = st.session_state.partidos_scraped[idx]
+            else:
+                # Ejemplo visual de alertas
+                st.markdown("""
+                <div style="background: #122016; padding: 15px; border-radius: 10px; border: 1px solid #243829; margin-bottom: 15px;">
+                    <div style="color: #d48243; font-weight: bold; font-size: 16px; margin-bottom: 12px;">🔔 Alertas Recientes</div>
                     
-                    cuotas = obtener_mejores_cuotas(
-                        partido.get("local", ""),
-                        partido.get("visitante", ""),
-                        39  # Premier League por defecto
-                    )
+                    <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #d48243;">
+                        <div style="color: #e2ebd5; font-size: 0.9rem;">🔥 <b>NUEVO PICK A+:</b> Liverpool vs Arsenal - Over 2.5 Goles @ 1.95</div>
+                        <div style="color: #666; font-size: 0.7rem; margin-top: 3px;">Hace 2 minutos</div>
+                    </div>
                     
-                    if cuotas:
-                        col_odds1, col_odds2, col_odds3 = st.columns(3)
-                        opciones = {"1": "Local", "X": "Empate", "2": "Visita"}
-                        colores = {"1": "#d48243", "X": "#ffd700", "2": "#d48243"}
-                        
-                        for i, cuota in enumerate(cuotas):
-                            col = [col_odds1, col_odds2, col_odds3][i]
-                            with col:
-                                label = opciones.get(cuota["opcion"], cuota["opcion"])
-                                color = colores.get(cuota["opcion"], "#fff")
-                                st.markdown(f"""
-                                <div style="text-align: center; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 6px; border: 1px solid {color};">
-                                    <div style="color: #a3b899; font-size: 0.7rem;">{label}</div>
-                                    <div style="color: {color}; font-size: 1.4rem; font-weight: bold;">{cuota['cuota']}</div>
-                                    <div style="color: #666; font-size: 0.55rem;">{cuota['casa']}</div>
-                                </div>
-                                """, unsafe_allow_html=True)
-                        
-                        mejor = max(cuotas, key=lambda x: x["cuota"])
-                        st.success(f"💰 Mejor: {opciones.get(mejor['opcion'], mejor['opcion'])} @ {mejor['cuota']} en {mejor['casa']}")
-                    else:
-                        st.info("Cuotas no disponibles para este partido.")
+                    <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #a3b899;">
+                        <div style="color: #e2ebd5; font-size: 0.9rem;">📢 <b>Partido empezando:</b> Barcelona vs Real Madrid - La Liga</div>
+                        <div style="color: #666; font-size: 0.7rem; margin-top: 3px;">Hace 15 minutos</div>
+                    </div>
+                    
+                    <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; border-left: 3px solid #39ff14;">
+                        <div style="color: #39ff14; font-size: 0.9rem;">✅ <b>Pick acertado:</b> Manchester City -1.5 @ 2.10</div>
+                        <div style="color: #666; font-size: 0.7rem; margin-top: 3px;">Ayer 23:45</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                st.caption("💡 Las alertas reales aparecen cuando hay picks nuevos o cambios importantes")
+        else:
+            st.markdown("""
+            <div style="background: #122016; padding: 15px; border-radius: 10px; border: 1px solid #243829; text-align: center;">
+                <div style="color: #a3b899; font-size: 0.9rem;">🔔 Inicia sesión para recibir alertas personalizadas</div>
+            </div>
+            """, unsafe_allow_html=True)
     
     # Footer
     st.markdown("---")
