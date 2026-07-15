@@ -887,72 +887,142 @@ def buscar_equipo_en_todas_fuentes(nombre):
     """Busca equipos en TODAS las fuentes disponibles."""
     resultados = []
     seen = set()
+    errores = []
     
     # 1. API-FOOTBALL
     if API_FOOTBALL_KEY:
         try:
             headers_af = {"x-apisports-key": API_FOOTBALL_KEY}
             url = f"https://v3.football.api-sports.io/teams/search/{nombre}"
-            r = requests.get(url, headers=headers_af, timeout=10)
+            r = requests.get(url, headers=headers_af, timeout=15)
             if r.status_code == 200:
                 data = r.json()
-                if data.get("response"):
+                results_count = data.get("results", 0)
+                if data.get("response") and results_count > 0:
                     for item in data["response"][:10]:
                         t = item.get("team", {})
-                        key = f"apifootball_{t.get('id')}"
+                        tid = t.get("id")
+                        tname = t.get("name", "")
+                        if tname and tid:
+                            key = f"apifootball_{tid}"
+                            if key not in seen:
+                                seen.add(key)
+                                resultados.append({
+                                    "id": str(tid),
+                                    "nombre": tname,
+                                    "pais": t.get("country", ""),
+                                    "liga": "API-Football",
+                                    "fuente": "API-Football"
+                                })
+                else:
+                    errores.append("API-Football: Sin resultados")
+            else:
+                errores.append(f"API-Football: Error {r.status_code}")
+        except Exception as e:
+            errores.append(f"API-Football: {str(e)[:50]}")
+    
+    # 2. SOFASCORE (API directa)
+    try:
+        url = f"https://api.sofascore.com/api/v1/search/teams/{nombre.replace(' ', '%20')}"
+        headers_ss = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json",
+            "Origin": "https://www.sofascore.com",
+            "Referer": "https://www.sofascore.com/"
+        }
+        r = requests.get(url, headers=headers_ss, timeout=15)
+        if r.status_code == 200:
+            data = r.json()
+            if data.get("results", 0) > 0:
+                for t in data["results"][:10]:
+                    tid = t.get("id")
+                    tname = t.get("name", "")
+                    if tname and tid:
+                        key = f"sofascore_{tid}"
                         if key not in seen:
                             seen.add(key)
                             resultados.append({
-                                "id": t.get("id"),
-                                "nombre": t.get("name"),
-                                "pais": t.get("country", ""),
-                                "liga": "API-Football",
-                                "fuente": "API-Football"
+                                "id": str(tid),
+                                "nombre": tname,
+                                "pais": t.get("country", {}).get("name", ""),
+                                "liga": "Sofascore",
+                                "fuente": "Sofascore"
                             })
-        except Exception as e:
-            print(f"Error API-Football: {e}")
+        else:
+            errores.append(f"Sofascore: Error {r.status_code}")
+    except Exception as e:
+        errores.append(f"Sofascore: {str(e)[:50]}")
     
-    # 2. FBREF (web scraping)
+    # 3. FLASHCORE (web scraping mejorado)
+    try:
+        # Probar diferentes variaciones del slug
+        slugs = [
+            nombre.lower().replace(" ", "-"),
+            nombre.lower().replace(" ", "-").replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u").replace("ñ", "n"),
+        ]
+        for slug in slugs:
+            url = f"https://www.flashscore.es/equipo/{slug}/"
+            headers_fs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", "Accept-Language": "es-ES,es;q=0.9"}
+            r = requests.get(url, headers=headers_fs, timeout=15)
+            if r.status_code == 200 and "/equipo/" in r.url:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(r.text, "html.parser")
+                title = soup.find("title")
+                if title:
+                    equipo_nombre = title.get_text().replace(" - Flashscore", "").replace(" - Soccer", "").strip()
+                    if nombre.lower() in equipo_nombre.lower() or equipo_nombre.lower() in nombre.lower():
+                        key = f"flashscore_{slug}"
+                        if key not in seen:
+                            seen.add(key)
+                            resultados.append({
+                                "id": slug,
+                                "nombre": equipo_nombre,
+                                "pais": "",
+                                "liga": "Flashscore",
+                                "fuente": "Flashscore"
+                            })
+                break
+    except Exception as e:
+        errores.append(f"Flashscore: {str(e)[:50]}")
+    
+    # 4. FBREF (web scraping)
     try:
         url = f"https://fbref.com/en/search/search/?q={nombre.replace(' ', '+')}"
         headers_fb = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-        r = requests.get(url, headers=headers_fb, timeout=10)
+        r = requests.get(url, headers=headers_fb, timeout=15)
         if r.status_code == 200:
             from bs4 import BeautifulSoup
             soup = BeautifulSoup(r.text, "html.parser")
-            # Buscar equipos en resultados de búsqueda
-            search_results = soup.find_all("div", class_="search-item")
-            if not search_results:
-                search_results = soup.find_all("a", href=lambda h: h and "/squads/" in h if h else False)
-            for item in search_results[:8]:
-                if hasattr(item, 'get_text'):
-                    team_name = item.get_text(strip=True)
-                else:
-                    team_name = item.get_text(strip=True) if item else ""
-                href = item.get("href", "") if hasattr(item, 'get') else ""
-                if team_name and len(team_name) > 2:
-                    key = f"fbref_{href}"
-                    if key not in seen and "/squads/" in href:
-                        seen.add(key)
-                        resultados.append({
-                            "id": href,
-                            "nombre": team_name[:50],
-                            "pais": "",
-                            "liga": "FBref",
-                            "fuente": "FBref"
-                        })
+            # Buscar en resultados de búsqueda
+            all_links = soup.find_all("a")
+            for link in all_links:
+                href = link.get("href", "")
+                if "/squads/" in href:
+                    team_name = link.get_text(strip=True)
+                    if team_name and len(team_name) > 2:
+                        key = f"fbref_{href}"
+                        if key not in seen:
+                            seen.add(key)
+                            resultados.append({
+                                "id": href,
+                                "nombre": team_name[:60],
+                                "pais": "",
+                                "liga": "FBref",
+                                "fuente": "FBref"
+                            })
+                        if len(resultados) > 15:
+                            break
     except Exception as e:
-        print(f"Error FBref: {e}")
+        errores.append(f"FBref: {str(e)[:50]}")
     
-    # 3. UNDERSTAT (web scraping)
+    # 5. UNDERSTAT (web scraping)
     try:
         url = f"https://understat.com/search?q={nombre.replace(' ', '+')}"
         headers_us = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-        r = requests.get(url, headers=headers_us, timeout=10)
+        r = requests.get(url, headers=headers_us, timeout=15)
         if r.status_code == 200:
             from bs4 import BeautifulSoup
             soup = BeautifulSoup(r.text, "html.parser")
-            # Buscar equipos
             links = soup.find_all("a", href=lambda h: h and "/team/" in h if h else False)
             for link in links[:5]:
                 team_name = link.get_text(strip=True)
@@ -969,59 +1039,11 @@ def buscar_equipo_en_todas_fuentes(nombre):
                             "fuente": "Understat"
                         })
     except Exception as e:
-        print(f"Error Understat: {e}")
+        errores.append(f"Understat: {str(e)[:50]}")
     
-    # 4. FLASHCORE (web scraping)
-    try:
-        slug = nombre.lower().replace(" ", "-").replace("'", "").replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
-        url = f"https://www.flashscore.es/equipo/{slug}/"
-        headers_fs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-        r = requests.get(url, headers=headers_fs, timeout=10)
-        if r.status_code == 200 and "/equipo/" in r.url:
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(r.text, "html.parser")
-            title = soup.find("title")
-            if title:
-                equipo_nombre = title.get_text().replace(" - Flashscore", "").strip()
-                if nombre.lower() in equipo_nombre.lower():
-                    key = f"flashscore_{slug}"
-                    if key not in seen:
-                        seen.add(key)
-                        resultados.append({
-                            "id": slug,
-                            "nombre": equipo_nombre,
-                            "pais": "",
-                            "liga": "Flashscore",
-                            "fuente": "Flashscore"
-                        })
-    except Exception as e:
-        print(f"Error Flashscore: {e}")
-    
-    # 5. SOFASCORE (web scraping)
-    try:
-        url = f"https://www.sofascore.com/search/{nombre.replace(' ', '+')}"
-        headers_ss = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-        r = requests.get(url, headers=headers_ss, timeout=10)
-        if r.status_code == 200:
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(r.text, "html.parser")
-            links = soup.find_all("a", href=lambda h: h and "/team/" in h if h else False)
-            for link in links[:5]:
-                team_name = link.get_text(strip=True)
-                href = link.get("href", "")
-                if team_name and len(team_name) > 2:
-                    key = f"sofascore_{href}"
-                    if key not in seen:
-                        seen.add(key)
-                        resultados.append({
-                            "id": href,
-                            "nombre": team_name[:50],
-                            "pais": "",
-                            "liga": "Sofascore",
-                            "fuente": "Sofascore"
-                        })
-    except Exception as e:
-        print(f"Error Sofascore: {e}")
+    # Guardar errores en session para mostrar al usuario
+    if errores:
+        st.session_state['busqueda_errores'] = errores
     
     return resultados
 
@@ -4889,30 +4911,44 @@ def pantalla_principal():
                 buscar_btn = st.button("🔍 Buscar", key="btn_buscar_eq")
             
             if buscar_btn and busqueda:
-                with st.spinner("Buscando en internet..."):
+                # Limpiar errores anteriores
+                if 'busqueda_errores' in st.session_state:
+                    del st.session_state['busqueda_errores']
+                
+                with st.spinner("🔍 Buscando en 5 fuentes..."):
                     resultados = buscar_equipo_en_todas_fuentes(busqueda)
                 
                 if resultados:
-                    st.success(f"✅ {len(resultados)} resultados encontrados")
-                    for i, eq in enumerate(resultados[:10]):
+                    st.success(f"✅ {len(resultados)} equipos encontrados")
+                    
+                    # Mostrar errores si hay
+                    if 'busqueda_errores' in st.session_state:
+                        errores = st.session_state['busqueda_errores']
+                        with st.expander(f"⚠️ {len(errores)} fuentes no funcionaron", expanded=False):
+                            for err in errores:
+                                st.caption(f"• {err}")
+                    
+                    for i, eq in enumerate(resultados[:15]):
                         fuente = eq.get('fuente', '')
                         nombre = eq.get('nombre', '')
+                        pais = eq.get('pais', '')
                         tid = eq.get('id', '')
-                        info = eq.get('info', '')
                         
-                        st.markdown(f"""
-                        <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:8px;margin-bottom:8px;">
-                            <div style="color:#dcdcdc;font-size:0.9rem;font-weight:bold;">{nombre}</div>
-                            <div style="color:#888;font-size:0.7rem;">Fuente: {fuente}</div>
-                            {f'<div style="color:#a3b899;font-size:0.7rem;margin-top:4px;">{info}...</div>' if info else ''}
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                        if st.button(f"📊 Ver {nombre[:15]}", key=f"ver_{tid}_{i}"):
-                            st.session_state['equipo_buscado'] = eq
-                            st.rerun()
+                        col1, col2 = st.columns([4, 1])
+                        with col1:
+                            st.markdown(f"""
+                            <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:8px;margin-bottom:6px;">
+                                <div style="color:#dcdcdc;font-size:0.85rem;font-weight:bold;">{nombre}</div>
+                                <div style="color:#888;font-size:0.65rem;">{pais} • {fuente}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        with col2:
+                            if st.button("📊", key=f"ver_{tid}_{i}"):
+                                st.session_state['equipo_buscado'] = eq
+                                st.rerun()
                 else:
-                    st.warning("No se encontraron equipos. Prueba con otro nombre.")
+                    st.error("❌ No se encontraron equipos en ninguna fuente")
+                    st.info("💡 Prueba con: Barcelona, Real Madrid, River Plate, etc.")
             
             # Mostrar stats si hay equipo seleccionado
             if 'equipo_buscado' in st.session_state:
