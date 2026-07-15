@@ -22,9 +22,10 @@ def get_hoy_date():
 # ══════════════════════════════════════════════════════════
 # CONFIG
 # ══════════════════════════════════════════════════════════
-API_FOOTBALL_KEY = os.getenv("API_FOOTBALL_KEY", "124c9519df145caf883cd82f0b2a4671")
+API_FOOTBALL_KEY = os.getenv("API_FOOTBALL_KEY", "")
 FOOTBALL_DATA_KEY = os.getenv("FOOTBALL_DATA_KEY", "21a9a19125f3467c86579b79f71d359c")
 ODDS_API_KEY = os.getenv("ODDS_API_KEY", "83d471fa5b5989dbd21b05fa0212e495")
+OPENWEATHER_KEY = os.getenv("OPENWEATHER_KEY", "")
 ADMIN_PWD        = os.getenv("ADMIN_PASSWORD",   "scorpion_admin_2025")
 DB_PATH          = "/tmp/scorpion_v4.db"
 
@@ -1212,6 +1213,58 @@ def obtener_cuotas_todos_partidos(league_key="soccer_epl"):
         return []
     except Exception as e:
         print(f"Error cuotas: {e}")
+        return []
+
+
+def obtener_clima(ciudad, pais=""):
+    """Obtiene el clima actual de una ciudad."""
+    if not OPENWEATHER_KEY:
+        return None
+    try:
+        q = f"{ciudad},{pais}" if pais else ciudad
+        url = "https://api.openweathermap.org/data/2.5/weather"
+        params = {"q": q, "appid": OPENWEATHER_KEY, "units": "metric", "lang": "es"}
+        r = requests.get(url, params=params, timeout=10)
+        if r.status_code == 200:
+            data = r.json()
+            return {
+                "ciudad": data.get("name", ""),
+                "pais": data.get("sys", {}).get("country", ""),
+                "temp": data.get("main", {}).get("temp", 0),
+                "temp_min": data.get("main", {}).get("temp_min", 0),
+                "temp_max": data.get("main", {}).get("temp_max", 0),
+                "humedad": data.get("main", {}).get("humidity", 0),
+                "clima": data.get("weather", [{}])[0].get("description", ""),
+                "viento": data.get("wind", {}).get("speed", 0),
+            }
+        return None
+    except Exception as e:
+        print(f"Error clima: {e}")
+        return None
+
+
+def obtener_pronostico(ciudad, pais=""):
+    """Obtiene el pronóstico de 5 días."""
+    if not OPENWEATHER_KEY:
+        return []
+    try:
+        q = f"{ciudad},{pais}" if pais else ciudad
+        url = "https://api.openweathermap.org/data/2.5/forecast"
+        params = {"q": q, "appid": OPENWEATHER_KEY, "units": "metric", "lang": "es"}
+        r = requests.get(url, params=params, timeout=10)
+        if r.status_code == 200:
+            data = r.json()
+            pronostico = []
+            for item in data.get("list", [])[:40:8]:
+                pronostico.append({
+                    "fecha": item.get("dt_txt", "")[:10],
+                    "temp": item.get("main", {}).get("temp", 0),
+                    "clima": item.get("weather", [{}])[0].get("description", ""),
+                })
+            return pronostico
+        return []
+    except Exception as e:
+        print(f"Error pronostico: {e}")
         return []
 
 
@@ -5062,6 +5115,55 @@ def pantalla_principal():
                                 """, unsafe_allow_html=True)
                         else:
                             st.warning("No hay cuotas disponibles para esta liga")
+                
+                # === SECCIÓN DE CLIMA ===
+                st.markdown("---")
+                st.markdown('<p style="color:#dfaf6f;font-size:1rem;font-weight:bold;">🌤️ Clima</p>', unsafe_allow_html=True)
+                
+                with st.expander("🌡️ Ver Clima", expanded=False):
+                    ciudad_clima = st.text_input("Ciudad:", placeholder="Ej: Madrid, Buenos Aires...", key="ciudad_clima_input")
+                    
+                    if st.button("🔍 Buscar Clima", key="btn_clima"):
+                        if ciudad_clima:
+                            with st.spinner("Obteniendo clima..."):
+                                clima = obtener_clima(ciudad_clima)
+                                pronostico = obtener_pronostico(ciudad_clima)
+                            
+                            if clima:
+                                temp = clima.get('temp', 0)
+                                temp_min = clima.get('temp_min', 0)
+                                temp_max = clima.get('temp_max', 0)
+                                humedad = clima.get('humedad', 0)
+                                desc = clima.get('clima', '')
+                                viento = clima.get('viento', 0)
+                                ciudad = clima.get('ciudad', '')
+                                pais = clima.get('pais', '')
+                                
+                                st.success(f"📍 {ciudad}, {pais}")
+                                
+                                col_c1, col_c2, col_c3 = st.columns(3)
+                                with col_c1:
+                                    st.metric("🌡️ Temp", f"{temp:.1f}°C", f"Mín: {temp_min:.0f}° / Máx: {temp_max:.0f}°")
+                                with col_c2:
+                                    st.metric("💧 Humedad", f"{humedad}%")
+                                with col_c3:
+                                    st.metric("💨 Viento", f"{viento} m/s")
+                                
+                                st.info(f"☁️ {desc.capitalize()}")
+                                
+                                if pronostico:
+                                    st.markdown("**📅 Pronóstico 5 días:**")
+                                    cols = st.columns(len(pronostico))
+                                    for i, p in enumerate(pronostico[:5]):
+                                        with cols[i]:
+                                            fecha = p.get('fecha', '')[5:]
+                                            temp_p = p.get('temp', 0)
+                                            desc_p = p.get('clima', '')
+                                            st.markdown(f"**{fecha}**\n{temp_p:.0f}°\n{desc_p[:12]}")
+                            else:
+                                st.warning("No se encontró clima. Configura OPENWEATHER_KEY en secrets.")
+                        else:
+                            st.warning("Ingresa una ciudad")
         
         # === CALENDARIO COMPACTO ===
         st.markdown("---")
