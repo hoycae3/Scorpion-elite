@@ -3406,7 +3406,9 @@ def pantalla_principal():
         hoy = get_hoy_date()
         
         partidos_hoy = []
-        if 8 <= hoy.day <= 20 and hoy.month == 7 and hoy.year == 2026:
+        es_mundial = 8 <= hoy.day <= 20 and hoy.month == 7 and hoy.year == 2026
+        
+        if es_mundial:
             if hoy.day == 14:
                 partidos_hoy = [{"hora": "13:00", "liga": "🏆 Mundial 2026", "local": "Francia", "visitante": "España", "dia": str(hoy)}]
             elif hoy.day == 15:
@@ -3416,8 +3418,12 @@ def pantalla_principal():
             elif hoy.day in [19, 20]:
                 partidos_hoy = [{"hora": "16:00", "liga": "🏆 Mundial 2026", "local": "Ganador SF1", "visitante": "Ganador SF2", "dia": str(hoy)}]
         
-        # Combinar con scraping
-        todos_partidos = partidos_hoy + (partidos_scraped if partidos_scraped else [])
+        # Durante Mundial: solo mostrar partido del día
+        # Fuera de Mundial: usar scraping
+        if es_mundial:
+            todos_partidos = partidos_hoy
+        else:
+            todos_partidos = partidos_scraped if partidos_scraped else []
         
         if todos_partidos:
             for p in todos_partidos[:8]:
