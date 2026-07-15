@@ -24,6 +24,7 @@ def get_hoy_date():
 # ══════════════════════════════════════════════════════════
 API_FOOTBALL_KEY = os.getenv("API_FOOTBALL_KEY", "124c9519df145caf883cd82f0b2a4671")
 FOOTBALL_DATA_KEY = os.getenv("FOOTBALL_DATA_KEY", "21a9a19125f3467c86579b79f71d359c")
+ODDS_API_KEY = os.getenv("ODDS_API_KEY", "83d471fa5b5989dbd21b05fa0212e495")
 ADMIN_PWD        = os.getenv("ADMIN_PASSWORD",   "scorpion_admin_2025")
 DB_PATH          = "/tmp/scorpion_v4.db"
 
@@ -1111,6 +1112,107 @@ def obtener_stats_equipo_fuente(equipo):
             pass
     
     return None
+
+
+def obtener_cuotas_partido(home_team, away_team, league_key="soccer_epl"):
+    """Obtiene cuotas de apuestas para un partido."""
+    try:
+        url = f"https://api.the-odds-api.com/v4/sports/{league_key}/odds"
+        params = {
+            "apiKey": ODDS_API_KEY,
+            "regions": "eu,us,uk",
+            "markets": "h2h,spreads,totals",
+        }
+        r = requests.get(url, params=params, timeout=15)
+        if r.status_code == 200:
+            matches = r.json()
+            for match in matches:
+                ht = match.get("home_team", "").lower()
+                at = match.get("away_team", "").lower()
+                if home_team.lower() in ht or away_team.lower() in at:
+                    bookmakers = match.get("bookmakers", [])
+                    cuotas = []
+                    for bm in bookmakers[:5]:
+                        bm_name = bm.get("title", "")
+                        markets = bm.get("markets", [])
+                        for market in markets:
+                            market_key = market.get("key", "")
+                            outcomes = market.get("outcomes", [])
+                            odds_list = []
+                            for o in outcomes:
+                                odds_list.append({
+                                    "nombre": o.get("name", ""),
+                                    "cuota": o.get("price", 0),
+                                    "linea": o.get("point", "")
+                                })
+                            cuotas.append({
+                                "casa": bm_name,
+                                "mercado": market_key,
+                                "opciones": odds_list
+                            })
+                    return cuotas
+        return []
+    except Exception as e:
+        print(f"Error cuotas: {e}")
+        return []
+
+
+def obtener_cuotas_todos_partidos(league_key="soccer_epl"):
+    """Obtiene cuotas de TODOS los partidos de una liga."""
+    try:
+        url = f"https://api.the-odds-api.com/v4/sports/{league_key}/odds"
+        params = {
+            "apiKey": ODDS_API_KEY,
+            "regions": "eu,us,uk",
+            "markets": "h2h",
+        }
+        r = requests.get(url, params=params, timeout=15)
+        if r.status_code == 200:
+            matches = r.json()
+            resultados = []
+            for match in matches[:20]:
+                home = match.get("home_team", "")
+                away = match.get("away_team", "")
+                bookmakers = match.get("bookmakers", [])
+                
+                mejor_local = 0
+                mejor_empate = 0
+                mejor_visita = 0
+                mejor_casa = ""
+                
+                for bm in bookmakers[:3]:
+                    markets = bm.get("markets", [])
+                    for market in markets:
+                        if market.get("key") == "h2h":
+                            outcomes = market.get("outcomes", [])
+                            for o in outcomes:
+                                name = o.get("name", "")
+                                price = o.get("price", 0)
+                                if "Home" in name or home in name:
+                                    if price > mejor_local:
+                                        mejor_local = price
+                                elif "Draw" in name:
+                                    if price > mejor_empate:
+                                        mejor_empate = price
+                                else:
+                                    if price > mejor_visita:
+                                        mejor_visita = price
+                                        mejor_casa = bm.get("title", "")
+                
+                if mejor_local > 0:
+                    resultados.append({
+                        "home": home,
+                        "away": away,
+                        "cuota_local": mejor_local,
+                        "cuota_empate": mejor_empate,
+                        "cuota_visita": mejor_visita,
+                        "casa": mejor_casa,
+                    })
+            return resultados
+        return []
+    except Exception as e:
+        print(f"Error cuotas: {e}")
+        return []
 
 
 def buscar_equipos_por_liga(liga_id, query):
@@ -4895,7 +4997,6 @@ def pantalla_principal():
                 if stats:
                     info = stats.get('goles_favor', '')
                     if info and len(info) > 50:
-                        # Es información de Wikipedia - mostrarla completa
                         st.markdown(f"""
                         <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:10px;margin-top:10px;">
                             <div style="color:#dfaf6f;font-size:0.8rem;font-weight:bold;margin-bottom:5px;">ℹ️ Información:</div>
@@ -4914,6 +5015,53 @@ def pantalla_principal():
                             st.metric("G/C", stats.get('goles_contra', stats.get('gc', '?')))
                 else:
                     st.info("Stats no disponibles para este equipo.")
+                
+                # === SECCIÓN DE CUOTAS ===
+                st.markdown("---")
+                st.markdown('<p style="color:#dfaf6f;font-size:1rem;font-weight:bold;">💰 Cuotas de Apuestas</p>', unsafe_allow_html=True)
+                
+                with st.expander("📊 Ver Cuotas", expanded=False):
+                    # Selector de liga para cuotas
+                    liga_cuotas = st.selectbox(
+                        "Liga:",
+                        options=[
+                            ("soccer_epl", "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League"),
+                            ("soccer_esp Primera División", "🇪🇸 La Liga"),
+                            ("soccer_fra Ligue 1", "🇫🇷 Ligue 1"),
+                            ("soccer_deu Bundesliga", "🇩🇪 Bundesliga"),
+                            ("soccer_ita Serie A", "🇮🇹 Serie A"),
+                        ],
+                        key="liga_cuotas_selector"
+                    )
+                    liga_key = liga_cuotas[0] if isinstance(liga_cuotas, tuple) else liga_cuotas
+                    
+                    if st.button("🔍 Buscar Cuotas", key="btn_cuotas"):
+                        with st.spinner("Obteniendo cuotas..."):
+                            cuotas = obtener_cuotas_todos_partidos(liga_key)
+                        
+                        if cuotas:
+                            st.success(f"✅ {len(cuotas)} partidos con cuotas")
+                            for c in cuotas[:10]:
+                                home = c.get('home', '')
+                                away = c.get('away', '')
+                                cuota_l = c.get('cuota_local', 0)
+                                cuota_e = c.get('cuota_empate', 0)
+                                cuota_v = c.get('cuota_visita', 0)
+                                casa = c.get('casa', '')
+                                
+                                st.markdown(f"""
+                                <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:8px;margin-bottom:6px;">
+                                    <div style="color:#dcdcdc;font-size:0.85rem;font-weight:bold;">{home} vs {away}</div>
+                                    <div style="display:flex;justify-content:space-around;margin-top:6px;">
+                                        <div style="text-align:center;"><div style="color:#dfaf6f;font-size:0.7rem;">Local</div><div style="color:#4ecdc4;font-size:1rem;">{cuota_l}</div></div>
+                                        <div style="text-align:center;"><div style="color:#dfaf6f;font-size:0.7rem;">Empate</div><div style="color:#4ecdc4;font-size:1rem;">{cuota_e}</div></div>
+                                        <div style="text-align:center;"><div style="color:#dfaf6f;font-size:0.7rem;">Visita</div><div style="color:#4ecdc4;font-size:1rem;">{cuota_v}</div></div>
+                                    </div>
+                                    <div style="color:#888;font-size:0.6rem;text-align:right;margin-top:4px;">📌 {casa}</div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                        else:
+                            st.warning("No hay cuotas disponibles para esta liga")
         
         # === CALENDARIO COMPACTO ===
         st.markdown("---")
