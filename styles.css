@@ -11,19 +11,19 @@
 
 /* 1. CONFIGURACIÓN DE LA PÁGINA */
 .stApp {
-    background-color: var(--bg-dark-green) !important;
-    background-image: radial-gradient(circle, #103020 0%, #050f0a 100%) !important;
+    background-color: #001a00 !important;
+    background-image: radial-gradient(circle, #003300 0%, #001100 50%, #000500 100%) !important;
     color: var(--text-light);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* 2. CABECERA PRINCIPAL */
 .header-container {
-    background: var(--panel-bg) !important;
+    background: linear-gradient(135deg, #003300 0%, #001a00 100%) !important;
     padding: 25px;
     border-radius: 6px;
-    border: 1px solid var(--gold-dark);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    border: 2px solid #00ff88;
+    box-shadow: 0 10px 20px rgba(0,255,136,0.2);
     margin-bottom: 25px;
 }
 
@@ -45,8 +45,8 @@
 
 /* 3. CAJA DE ACCESO / LOGIN */
 .login-container, .login-box {
-    background-color: var(--panel-bg);
-    border: 1px solid var(--gold-dark);
+    background-color: rgba(0, 40, 0, 0.8);
+    border: 2px solid #00ff88;
     border-radius: 6px;
     padding: 20px;
     box-shadow: 0 10px 20px rgba(0,0,0,0.5);
