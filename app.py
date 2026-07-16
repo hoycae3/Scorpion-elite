@@ -5758,75 +5758,65 @@ def pantalla_principal_unificada():
     )
     
     # ══════════════════════════════════════════════════════════
-    # SIDEBAR: LOGIN
+    # HEADER: 🦂 SCORPION ELITE + LOGIN
     # ══════════════════════════════════════════════════════════
-    with st.sidebar:
-        st.markdown("### 🔐 Acceder")
+    
+    # Si NO está logueado, mostrar login en header
+    if not st.session_state.get("logged_in", False):
+        col_logo, col_login, col_btn = st.columns([3, 2, 1])
         
-        # Si no está logueado, mostrar formulario
-        if not st.session_state.get("logged_in", False):
-            username_input = st.text_input("Usuario", placeholder="Tu usuario")
-            password_input = st.text_input("Contraseña", type="password", placeholder="Tu contraseña")
-            
+        with col_logo:
+            st.markdown('''
+            <div style="display: flex; align-items: center; gap: 15px; padding: 15px 20px; background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%); border-radius: 12px; box-shadow: 0 4px 20px rgba(255,153,0,0.4);">
+                <span style="font-size: 2.5rem;">🦂</span>
+                <span style="font-size: 1.8rem; font-weight: bold; color: #003300; letter-spacing: 2px;">SCORPION ELITE</span>
+            </div>
+            ''', unsafe_allow_html=True)
+        
+        with col_login:
+            st.markdown("<div style='padding-top: 15px;'></div>", unsafe_allow_html=True)
+            usr = st.text_input("Usuario", placeholder="Tu usuario", label_visibility="collapsed", key="login_user_h")
+            pwd = st.text_input("Contraseña", type="password", placeholder="Contraseña", label_visibility="collapsed", key="login_pass_h")
+        
+        with col_btn:
+            st.markdown("<div style='padding-top: 28px;'></div>", unsafe_allow_html=True)
             if st.button("🎯 Entrar", use_container_width=True):
-                # Aquí agregar validación real de usuarios
-                # Por ahora, acepta cualquier usuario con contraseña "scorpion"
-                if password_input == "scorpion" and username_input:
+                if pwd == "scorpion" and usr:
                     st.session_state.logged_in = True
-                    st.session_state.user_name = username_input
+                    st.session_state.user_name = usr
                     st.session_state.user_plan = "PREMIUM"
-                    st.success(f"¡Bienvenido, {username_input}! 🎉")
                     st.rerun()
-                elif not username_input or not password_input:
-                    st.error("⚠️ Ingresa usuario y contraseña")
                 else:
-                    st.error("❌ Contraseña incorrecta")
-            
-            st.markdown("---")
-            st.markdown("**Planes disponibles:**")
-            st.info("🆓 **Gratis** - Picks limitados\n📅 **Día** - Acceso 24h\n👑 **Mes** - Ilimitado")
-        else:
-            # Usuario logueado
-            st.success(f"👤 {st.session_state.get('user_name', 'Usuario')}")
-            st.markdown(f"**Plan:** {st.session_state.get('user_plan', 'GRATIS')}")
-            
-            if st.button("🚪 Cerrar sesión", use_container_width=True):
+                    st.error("❌ Credenciales incorrectas")
+    else:
+        # Usuario logueado
+        col_logo, col_info, col_logout = st.columns([3, 2, 1])
+        
+        with col_logo:
+            st.markdown('''
+            <div style="display: flex; align-items: center; gap: 15px; padding: 15px 20px; background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%); border-radius: 12px; box-shadow: 0 4px 20px rgba(255,153,0,0.4);">
+                <span style="font-size: 2.5rem;">🦂</span>
+                <span style="font-size: 1.8rem; font-weight: bold; color: #003300; letter-spacing: 2px;">SCORPION ELITE</span>
+            </div>
+            ''', unsafe_allow_html=True)
+        
+        with col_info:
+            username = st.session_state.get("user_name", "Usuario")
+            plan = st.session_state.get("user_plan", "GRATIS")
+            st.markdown(f'''
+            <div style="padding: 25px 20px; text-align: right;">
+                <div style="font-size: 1.1rem; color: #fff; font-weight: bold;">👤 {username}</div>
+                <div style="font-size: 0.85rem; color: rgba(255,255,255,0.8);">{plan}</div>
+            </div>
+            ''', unsafe_allow_html=True)
+        
+        with col_logout:
+            st.markdown("<div style='padding-top: 28px;'></div>", unsafe_allow_html=True)
+            if st.button("🚪 Salir", use_container_width=True):
                 st.session_state.logged_in = False
                 st.session_state.user_name = "Invitado"
                 st.session_state.user_plan = ""
                 st.rerun()
-    
-    # ══════════════════════════════════════════════════════════
-    # HEADER: 🦂 SCORPION ELITE | Usuario | ⚙️
-    # ══════════════════════════════════════════════════════════
-    col_user, col_settings = st.columns([6, 1])
-    
-    with col_user:
-        username = st.session_state.get("user_name", "Invitado")
-        plan = st.session_state.get("user_plan", "")
-        st.markdown(f'''
-        <div style="background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%); border-radius: 12px; padding: 20px 30px; margin-bottom: 0; box-shadow: 0 4px 20px rgba(255,153,0,0.4);">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <span style="font-size: 2.5rem;">🦂</span>
-                    <span style="font-size: 2rem; font-weight: bold; color: #003300; letter-spacing: 2px; font-family: 'Segoe UI', sans-serif;">SCORPION ELITE</span>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 1rem; color: #003300; font-weight: 600;">👤 {username}</div>
-                    <div style="font-size: 0.85rem; color: #004400;">{plan.upper() if plan else 'GRATIS'}</div>
-                </div>
-            </div>
-        </div>
-        ''', unsafe_allow_html=True)
-    
-    with col_settings:
-        st.markdown("""
-        <div style="text-align: center; padding-top: 20px;">
-            <span style="font-size: 2rem; cursor: pointer;">⚙️</span>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("")  # Espacio
     
     # ══════════════════════════════════════════════════════════
     # NAVEGACIÓN: Hoy | Mañana | En vivo | Fútbol | NBA | MLB | Tenis | Favoritos | Buscar
