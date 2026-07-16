@@ -12,14 +12,14 @@
 
 /* 1. CONFIGURACIÓN DE LA PÁGINA */
 .stApp {
-    background: linear-gradient(135deg, #e8eef4 0%, #f5f7fa 50%, #e8eef4 100%) !important;
-    color: var(--text-dark);
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%) !important;
+    color: #ecf0f1;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Forzar fondo profesional */
 body, .stApp > div, main {
-    background: linear-gradient(135deg, #e8eef4 0%, #f5f7fa 50%, #e8eef4 100%) !important;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%) !important;
 }
 
 /* 2. CABECERA PRINCIPAL */
@@ -424,20 +424,20 @@ div[data-testid="stHorizontalBlock"] > div {
 .dash-nav {
     display: flex;
     gap: 8px;
-    background: #ffffff;
-    border: 1px solid #e0e0e0;
+    background: #3d566e;
+    border: 1px solid #4a6278;
     border-radius: 12px;
     padding: 8px 12px;
     margin-bottom: 20px;
     overflow-x: auto;
     flex-wrap: nowrap;
-    box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 15px rgba(0,0,0,0.2);
 }
 
 .nav-tab {
-    background: #f5f7fa;
-    border: 1px solid #e0e0e0;
-    color: #2c3e50;
+    background: #4a6278;
+    border: 1px solid #5a7288;
+    color: #ecf0f1;
     padding: 10px 20px;
     border-radius: 8px;
     cursor: pointer;
@@ -452,14 +452,15 @@ div[data-testid="stHorizontalBlock"] > div {
     color: #ffffff;
     border-color: #00aa55;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,170,85,0.25);
+    box-shadow: 0 4px 12px rgba(0,170,85,0.3);
 }
 
 .nav-tab.nav-active {
     background: #00aa55;
     color: #ffffff;
-    border-color: #00aa55;
+    border-color: #00ff88;
     font-weight: bold;
+    box-shadow: 0 4px 15px rgba(0,170,85,0.4);
 }
 
 /* Layout de 2 columnas */
@@ -478,15 +479,15 @@ div[data-testid="stHorizontalBlock"] > div {
 
 /* Cajas del dashboard */
 .dash-box {
-    background: #ffffff;
-    border: 1px solid #e0e0e0;
+    background: #3d566e;
+    border: 1px solid #4a6278;
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
 
 .dash-box-title {
-    color: #00aa55;
+    color: #00ff88;
     font-size: 0.95rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -497,7 +498,7 @@ div[data-testid="stHorizontalBlock"] > div {
 }
 
 .dash-box-content {
-    color: #2c3e50;
+    color: #ecf0f1;
     font-size: 0.95rem;
 }
 
