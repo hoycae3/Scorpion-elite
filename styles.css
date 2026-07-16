@@ -1,35 +1,35 @@
-/* Scorpion Elite - Diseño Verde y Oro */
+/* Scorpion Elite - Fondo Blanco */
 
 /* Variables CSS */
 :root {
-    --bg-dark-green: #003300;
-    --panel-bg: #004400;
-    --gold-bright: #ffcc00;
-    --gold-dark: #ff9900;
-    --text-light: #ffffff;
+    --bg-dark-green: #f5f5f5;
+    --panel-bg: #ffffff;
+    --gold-bright: #00aa55;
+    --gold-dark: #008844;
+    --text-light: #333333;
 }
 
 /* 1. CONFIGURACIÓN DE LA PÁGINA */
 .stApp {
-    background-color: #004400 !important;
-    background: #004400 !important;
-    color: var(--text-light);
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #333333;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Forzar fondo verde en todo el body */
+/* Forzar fondo blanco en todo el body */
 body, .stApp > div, main {
-    background-color: #004400 !important;
-    background: #004400 !important;
+    background-color: #ffffff !important;
+    background: #ffffff !important;
 }
 
 /* 2. CABECERA PRINCIPAL */
 .header-container {
-    background: #006600 !important;
+    background: #00aa55 !important;
     padding: 25px;
-    border-radius: 6px;
-    border: 2px solid #00ff88;
-    box-shadow: 0 10px 20px rgba(0,255,136,0.2);
+    border-radius: 15px;
+    border: 3px solid #008844;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     margin-bottom: 25px;
 }
 
@@ -51,11 +51,11 @@ body, .stApp > div, main {
 
 /* 3. CAJA DE ACCESO / LOGIN */
 .login-container, .login-box {
-    background-color: #006600;
-    border: 2px solid #00ff88;
-    border-radius: 6px;
+    background-color: #ffffff;
+    border: 2px solid #00aa55;
+    border-radius: 10px;
     padding: 20px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 .login-title {
@@ -83,12 +83,12 @@ body, .stApp > div, main {
 
 /* 5. TARJETAS DE PICKS RECOMENDADOS */
 .pick-card {
-    background-color: #006600;
-    border: 2px solid #00ff88;
-    border-radius: 6px;
+    background-color: #ffffff;
+    border: 2px solid #00aa55;
+    border-radius: 10px;
     padding: 20px;
     margin-bottom: 15px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 .pick-header {
@@ -131,12 +131,12 @@ body, .stApp > div, main {
 
 /* 6. TARJETAS DE LA COLUMNA DERECHA */
 .sidebar-card, .sidebar-right-card {
-    background-color: #006600;
-    border: 2px solid #00ff88;
-    border-radius: 6px;
+    background-color: #ffffff;
+    border: 2px solid #00aa55;
+    border-radius: 10px;
     padding: 20px;
     margin-bottom: 15px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 .sidebar-card-title {
@@ -150,31 +150,31 @@ body, .stApp > div, main {
 
 /* 7. INPUT Y BOTONES */
 .stTextInput > div > div > input {
-    background-color: #003300 !important;
-    color: #ffffff !important;
-    border: 2px solid #00ff88 !important;
-    border-radius: 4px !important;
+    background-color: #ffffff !important;
+    color: #333 !important;
+    border: 2px solid #00aa55 !important;
+    border-radius: 8px !important;
 }
 
 .stTextInput > div > div > input:focus {
-    border-color: #00ff88 !important;
+    border-color: #008844 !important;
 }
 
 .stButton > button {
-    background: linear-gradient(135deg, #00cc66 0%, #00ff88 100%) !important;
+    background: #00aa55 !important;
     border: none !important;
-    padding: 10px 20px;
-    color: #000000 !important;
+    padding: 12px 24px;
+    color: #ffffff !important;
     font-weight: bold !important;
     cursor: pointer;
     width: 100%;
-    border-radius: 4px;
+    border-radius: 8px;
     margin-top: 15px;
     transition: all 0.3s ease;
 }
 
 .stButton > button:hover {
-    background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%) !important;
+    background: #008844 !important;
 }
 
 /* 8. FOOTER */
@@ -250,23 +250,23 @@ body, .stApp > div, main {
 
 /* 11. CARDS DE MÉTRICAS */
 .metric-card {
-    background-color: #006600;
-    border: 2px solid #00ff88;
-    border-radius: 6px;
+    background-color: #ffffff;
+    border: 2px solid #00aa55;
+    border-radius: 10px;
     padding: 15px;
     text-align: center;
     margin-bottom: 10px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 .metric-value {
-    color: #00ff88;
+    color: #00aa55;
     font-size: 28px;
     font-weight: bold;
 }
 
 .metric-label {
-    color: var(--text-light);
+    color: #666;
     font-size: 12px;
     text-transform: uppercase;
     margin-top: 5px;
@@ -274,24 +274,24 @@ body, .stApp > div, main {
 
 /* 12. MATCH ROW */
 .match-row {
-    background-color: #006600;
-    padding: 10px;
-    border-radius: 6px;
+    background-color: #ffffff;
+    padding: 12px;
+    border-radius: 8px;
     margin-bottom: 8px;
-    border: 2px solid #00ff88;
-    font-size: 13px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    border: 1px solid #ddd;
+    font-size: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 /* 13. TEXTOS DE ALERTAS */
 .text-alert {
     font-size: 12px;
-    color: var(--text-light);
-    background: rgba(0, 255, 136, 0.1);
-    padding: 8px;
-    border-radius: 6px;
+    color: #333;
+    background: #f5f5f5;
+    padding: 10px;
+    border-radius: 8px;
     margin-bottom: 8px;
-    border-left: 3px solid #00ff88;
+    border-left: 4px solid #00aa55;
 }
 
 .text-trend {
@@ -302,12 +302,12 @@ body, .stApp > div, main {
 
 /* 14. HDR antigo */
 .hdr {
-    background: #006600 !important;
-    border: 2px solid #00ff88 !important;
-    border-radius: 6px !important;
+    background: #00aa55 !important;
+    border: 2px solid #008844 !important;
+    border-radius: 10px !important;
     padding: 20px !important;
     text-align: center !important;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.3) !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important;
 }
 
 .hdr h1 {
@@ -319,16 +319,16 @@ body, .stApp > div, main {
 }
 
 .hdr p {
-    color: var(--text-light) !important;
+    color: #fff !important;
     margin: 5px 0 0 !important;
     font-size: 0.9rem !important;
 }
 
 /* 15. PILLS/BADGES pequeños */
 .pill-ok {
-    background: rgba(57, 255, 20, 0.15) !important;
-    color: #39ff14 !important;
-    border: 1px solid #39ff14 !important;
+    background: rgba(0, 170, 85, 0.15) !important;
+    color: #00aa55 !important;
+    border: 1px solid #00aa55 !important;
     padding: 2px 10px !important;
     border-radius: 20px !important;
     font-size: 11px !important;
@@ -425,44 +425,43 @@ div[data-testid="stHorizontalBlock"] > div {
 .dash-nav {
     display: flex;
     gap: 10px;
-    background: #005500;
-    border: 3px solid #00ff88;
-    border-radius: 15px;
-    padding: 15px 20px;
+    background: #f0f0f0;
+    border: 2px solid #00aa55;
+    border-radius: 10px;
+    padding: 10px 15px;
     margin-bottom: 20px;
     overflow-x: auto;
     flex-wrap: nowrap;
-    box-shadow: 0 0 25px rgba(0, 255, 136, 0.4);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 .nav-tab {
-    background: linear-gradient(135deg, #00aa55 0%, #008844 100%);
-    border: 2px solid #00ff88;
-    color: #ffffff;
-    padding: 15px 28px;
-    border-radius: 10px;
+    background: #ffffff;
+    border: 2px solid #00aa55;
+    color: #00aa55;
+    padding: 12px 24px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: bold;
     white-space: nowrap;
     transition: all 0.3s ease;
-    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .nav-tab:hover {
-    background: linear-gradient(135deg, #00cc66 0%, #00aa55 100%);
+    background: #00aa55;
     color: #ffffff;
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+    box-shadow: 0 4px 12px rgba(0,170,85,0.3);
 }
 
 .nav-tab.nav-active {
-    background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
-    color: #000000;
+    background: #00aa55;
+    color: #ffffff;
     font-weight: bold;
     text-shadow: none;
-    box-shadow: 0 0 25px rgba(0, 255, 136, 0.6);
+    box-shadow: 0 4px 15px rgba(0,170,85,0.4);
 }
 
 /* Layout de 2 columnas */
@@ -481,27 +480,26 @@ div[data-testid="stHorizontalBlock"] > div {
 
 /* Cajas del dashboard */
 .dash-box {
-    background: linear-gradient(135deg, #1a2a1f 0%, #0d1a12 100%);
-    border: 2px solid #00ff88;
+    background: #ffffff;
+    border: 2px solid #00aa55;
     border-radius: 12px;
     padding: 18px;
-    box-shadow: 0 0 20px rgba(0, 255, 136, 0.15), 0 4px 15px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 .dash-box-title {
-    color: #00ff88;
+    color: #00aa55;
     font-size: 1rem;
     font-weight: bold;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    border-bottom: 2px solid rgba(0, 255, 136, 0.3);
-    padding-bottom: 12px;
+    letter-spacing: 1px;
+    border-bottom: 2px solid #00aa55;
+    padding-bottom: 10px;
     margin-bottom: 15px;
-    text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
 }
 
 .dash-box-content {
-    color: #ffffff;
+    color: #333;
     font-size: 0.95rem;
 }
 
