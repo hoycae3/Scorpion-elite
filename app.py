@@ -5761,73 +5761,7 @@ def pantalla_principal_unificada():
     # HEADER: 🦂 SCORPION ELITE + LOGIN
     # ══════════════════════════════════════════════════════════
     
-    # CSS para el modal/popup
-    st.markdown("""
-    <style>
-    .login-btn {
-        background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%);
-        color: #003300 !important;
-        border: none;
-        padding: 8px 20px;
-        border-radius: 20px;
-        font-weight: 600;
-        cursor: pointer;
-        font-size: 0.85rem;
-    }
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.7);
-        z-index: 1000;
-        justify-content: center;
-        align-items: center;
-    }
-    .modal-overlay.active {
-        display: flex;
-    }
-    .modal-content {
-        background: #003300;
-        border: 2px solid #ffcc00;
-        border-radius: 16px;
-        padding: 30px;
-        width: 350px;
-        max-width: 90%;
-        box-shadow: 0 10px 40px rgba(255,153,0,0.3);
-    }
-    .modal-close {
-        float: right;
-        cursor: pointer;
-        font-size: 1.5rem;
-        color: #888;
-    }
-    .modal-close:hover { color: #ffcc00; }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Inicializar estado del modal
-    if "show_login_modal" not in st.session_state:
-        st.session_state.show_login_modal = False
-    
-    # Mostrar/ocultar modal según estado
-    if st.session_state.show_login_modal:
-        login_html = f"""
-        <div class="modal-overlay active" id="loginModal">
-            <div class="modal-content">
-                <span class="modal-close" onclick="document.getElementById('loginModal').style.display='none'">×</span>
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <span style="font-size: 2rem;">🦂</span>
-                    <h3 style="color: #ffcc00; margin: 10px 0;">SCORPION ELITE</h3>
-                </div>
-            </div>
-        </div>
-        """
-        st.markdown(login_html, unsafe_allow_html=True)
-    
-    # Título pequeño
+    # Título pequeño con logo
     col_titulo, col_login_btn = st.columns([4, 1])
     with col_titulo:
         st.markdown('''
@@ -5839,35 +5773,67 @@ def pantalla_principal_unificada():
     with col_login_btn:
         st.markdown("<div style='padding-top: 10px;'></div>", unsafe_allow_html=True)
         if st.button("🔐 Iniciar sesión"):
-            st.session_state.show_login_modal = True
-            st.rerun()
+            st.session_state.show_login = True
     
-    # Modal de login (usando columnas de Streamlit)
-    if st.session_state.show_login_modal:
-        st.markdown("---")
-        st.markdown("### 🔐 Iniciar sesión")
-        
-        usr = st.text_input("Usuario", placeholder="Ingresa tu usuario", key="login_user")
-        pwd = st.text_input("Contraseña", type="password", placeholder="Ingresa tu contraseña", key="login_pass")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("🎯 Entrar", use_container_width=True):
-                if pwd == "scorpion" and usr:
-                    st.session_state.logged_in = True
-                    st.session_state.user_name = usr
-                    st.session_state.user_plan = "PREMIUM"
-                    st.session_state.show_login_modal = False
+    # Modal/Popup de Login
+    if st.session_state.get("show_login", False):
+        with st.container():
+            col_m1, col_m2, col_m3 = st.columns([1, 2, 1])
+            with col_m2:
+                st.markdown("""
+                <div style="
+                    background: linear-gradient(135deg, #004400 0%, #003300 100%);
+                    border: 2px solid #ffcc00;
+                    border-radius: 20px;
+                    padding: 30px;
+                    margin: 20px 0;
+                    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+                ">
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <span style="font-size: 3rem;">🦂</span>
+                        <h2 style="color: #ffcc00; margin: 10px 0;">SCORPION ELITE</h2>
+                        <p style="color: #888; font-size: 0.9rem;">Ingresa tus credenciales</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                usr = st.text_input("Usuario", placeholder="Tu usuario", label_visibility="collapsed", key="modal_user")
+                pwd = st.text_input("Contraseña", type="password", placeholder="Tu contraseña", label_visibility="collapsed", key="modal_pass")
+                
+                if st.button("🎯 INGRESAR", use_container_width=True, type="primary"):
+                    if usr and pwd:
+                        if pwd == "admin":
+                            st.session_state.logged_in = True
+                            st.session_state.is_admin = True
+                            st.session_state.user_name = usr
+                            st.session_state.user_plan = "ADMIN"
+                            st.session_state.show_login = False
+                            st.rerun()
+                        elif pwd == "scorpion":
+                            st.session_state.logged_in = True
+                            st.session_state.is_admin = False
+                            st.session_state.user_name = usr
+                            st.session_state.user_plan = "PREMIUM"
+                            st.session_state.show_login = False
+                            st.rerun()
+                        else:
+                            st.error("❌ Contraseña incorrecta")
+                    else:
+                        st.warning("⚠️ Ingresa usuario y contraseña")
+                
+                st.markdown("""
+                <div style="text-align: center; margin-top: 20px;">
+                    <small style="color: #666; font-size: 0.8rem;">
+                        Demo Admin: cualquier usuario + contraseña <b style="color:#ffcc00;">admin</b><br>
+                        Demo Usuario: cualquier usuario + contraseña <b style="color:#ffcc00;">scorpion</b>
+                    </small>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                if st.button("✖ Cancelar"):
+                    st.session_state.show_login = False
                     st.rerun()
-                else:
-                    st.error("❌ Credenciales incorrectas")
-        with col2:
-            if st.button("✖ Cancelar"):
-                st.session_state.show_login_modal = False
-                st.rerun()
-        
-        st.markdown("<small style='color: #888;'>Demo: contraseña = scorpion</small>", unsafe_allow_html=True)
-        st.markdown("---")
+                
+                st.markdown("</div>", unsafe_allow_html=True)
     
     # Si está logueado
     if st.session_state.get("logged_in", False):
@@ -5876,124 +5842,204 @@ def pantalla_principal_unificada():
             st.markdown("<div style='padding-top: 10px;'></div>", unsafe_allow_html=True)
         with col_info:
             username = st.session_state.get("user_name", "Usuario")
+            plan = st.session_state.get("user_plan", "GRATIS")
+            emoji = "👑" if plan == "ADMIN" else "👤"
             st.markdown(f'''
             <div style="text-align: right; padding: 10px 0;">
-                <span style="color: #ffcc00; font-size: 0.9rem;">👤 {username}</span>
-                <span style="color: #888; font-size: 0.8rem;"> | {st.session_state.get('user_plan', 'GRATIS')}</span>
+                <span style="color: #ffcc00; font-size: 0.9rem;">{emoji} {username}</span>
+                <span style="color: #888; font-size: 0.8rem;"> | {plan}</span>
             </div>
             ''', unsafe_allow_html=True)
         with col_b:
             if st.button("Salir"):
                 st.session_state.logged_in = False
+                st.session_state.is_admin = False
                 st.session_state.user_name = "Invitado"
                 st.session_state.user_plan = ""
                 st.rerun()
     
     # ══════════════════════════════════════════════════════════
-    # NAVEGACIÓN: Hoy | Mañana | En vivo | Fútbol | NBA | MLB | Tenis | Favoritos | Buscar
+    # SI ES ADMIN - MOSTRAR PANEL DE ADMIN
     # ══════════════════════════════════════════════════════════
-    tabs_nav = st.tabs(["📊 Dashboard", "🏆 Picks", "📈 Análisis", "💰 Cuotas", "⚙️ Config"])
-    
-    # ══════════════════════════════════════════════════════════
-    # PESTAÑA DASHBOARD
-    # ══════════════════════════════════════════════════════════
-    with tabs_nav[0]:
-        # Mostrar navegación secundaria si existe
-        st.markdown(render_nav_bar(active_tab="hoy"), unsafe_allow_html=True)
+    if st.session_state.get("is_admin", False):
+        st.markdown("---")
+        st.markdown("### 👑 Panel de Administrador")
         
-        # Datos de ejemplo
-        partidos_ejemplo = [
-            {"local": "Man City", "visitante": "Chelsea", "hora": "15:00", "rango": "A+"},
-            {"local": "Barcelona", "visitante": "Real Madrid", "hora": "21:00", "rango": "A+"},
-            {"local": "Inter", "visitante": "Milan", "hora": "20:45", "rango": "B"},
-            {"local": "Bayern", "visitante": "Dortmund", "hora": "18:30", "rango": "B"},
-            {"local": "PSG", "visitante": "Lyon", "hora": "21:00", "rango": "A+"},
-        ]
+        admin_tabs = st.tabs(["🔍 Analizar Partido", "📊 Picks de Valor", "📢 Publicar Picks", "👥 Clientes", "📊 Calendario"])
         
-        analisis_ejemplo = {
-            "prob_local": 72,
-            "valor": "SI",
-            "riesgo": "Bajo",
-            "confianza": 91
-        }
+        with admin_tabs[0]:
+            st.markdown("#### 📊 Analizar Partido")
+            st.info("Escribe cualquier partido para analizar con los 4 modelos matemáticos.")
+            
+            col_l, col_v = st.columns(2)
+            with col_l:
+                local_i = st.text_input("⚽ Equipo Local", placeholder="ej: Barcelona")
+                visita_i = st.text_input("⚽ Equipo Visitante", placeholder="ej: Real Madrid")
+                liga_i = st.text_input("🏆 Liga", placeholder="ej: España - La Liga")
+            with col_v:
+                fecha_i = st.date_input("📅 Fecha")
+                hora_i = st.text_input("🕐 Hora", "21:00")
+            
+            umbral = st.slider("🎯 Umbral de Valor (%)", 0, 15, 5)
+            
+            if st.button("🔍 ANALIZAR", type="primary"):
+                if local_i and visita_i:
+                    st.success(f"Analizando {local_i} vs {visita_i}...")
+                    st.markdown(f"""
+                    <div style="background: rgba(0,68,0,0.5); border: 1px solid #ffcc00; border-radius: 12px; padding: 20px; margin: 20px 0;">
+                        <h4 style="color: #ffcc00;">📊 Resultados del Análisis</h4>
+                        <p style="color: #ccc;">Análisis en tiempo real requiere conexión a APIs externas.</p>
+                        <p style="color: #888; font-size: 0.85rem;">Funcionalidad completa en producción.</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.warning("⚠️ Ingresa ambos equipos")
         
-        cuotas_ejemplo = [
-            {"book": "Bet365", "value": 1.82, "best": False},
-            {"book": "Betano", "value": 1.88, "best": False},
-            {"book": "Pinnacle", "value": 1.90, "best": True},
-            {"book": "Stake", "value": 1.87, "best": False},
-        ]
+        with admin_tabs[1]:
+            st.markdown("#### 📊 Picks de Valor")
+            st.info("Picks generados automáticamente con edge > 5%")
+            st.markdown("""
+            <div style="background: rgba(0,68,0,0.5); border: 1px solid #ffcc00; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center;">
+                <p style="color: #888;">Los picks de valor aparecerán aquí cuando se detecten oportunidades.</p>
+            </div>
+            """, unsafe_allow_html=True)
         
-        stats_ejemplo = {
-            "xg": "1.8 - 1.2",
-            "tiros": "15 - 9",
-            "corners": "6 - 4",
-            "posesion": "58% - 42%"
-        }
+        with admin_tabs[2]:
+            st.markdown("#### 📢 Publicar Picks")
+            st.info("Selecciona picks para publicar a los usuarios.")
+            st.markdown("""
+            <div style="background: rgba(0,68,0,0.5); border: 1px solid #ffcc00; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center;">
+                <p style="color: #888;">Panel de publicación de picks.</p>
+            </div>
+            """, unsafe_allow_html=True)
         
-        alertas_ejemplo = [
-            {"tipo": "warning", "mensaje": "⚠️ Lesiones importantes"},
-            {"tipo": "info", "mensaje": "📊 Cambio de cuota -5%"},
-            {"tipo": "success", "mensaje": "💰 Dinero inteligente"},
-            {"tipo": "fire", "mensaje": "🔥 Pick con Value +4.2%"},
-        ]
+        with admin_tabs[3]:
+            st.markdown("#### 👥 Gestión de Clientes")
+            st.markdown("""
+            <div style="background: rgba(0,68,0,0.5); border: 1px solid #ffcc00; border-radius: 12px; padding: 20px; margin: 20px 0;">
+                <h4 style="color: #ffcc00;">👥 Clientes Registrados</h4>
+                <table style="width: 100%; color: #ccc; font-size: 0.9rem;">
+                    <tr style="border-bottom: 1px solid #333;">
+                        <th style="padding: 8px; text-align: left;">Usuario</th>
+                        <th style="padding: 8px; text-align: left;">Plan</th>
+                        <th style="padding: 8px; text-align: left;">Estado</th>
+                    </tr>
+                    <tr><td style="padding: 8px;">demo</td><td>PREMIUM</td><td style="color: #39ff14;">● Activo</td></tr>
+                    <tr><td style="padding: 8px;">admin</td><td>ADMIN</td><td style="color: #39ff14;">● Activo</td></tr>
+                </table>
+            </div>
+            """, unsafe_allow_html=True)
         
-        # Layout de 2 columnas
-        col1, col2 = st.columns(2)
+        with admin_tabs[4]:
+            st.markdown("#### 📊 Calendario de Partidos")
+            st.markdown("""
+            <div style="background: rgba(0,68,0,0.5); border: 1px solid #ffcc00; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center;">
+                <p style="color: #888;">Calendario de partidos programados.</p>
+            </div>
+            """, unsafe_allow_html=True)
         
-        with col1:
-            st.markdown(render_dashboard_box("⚽ Partidos del Día", render_match_list(partidos_ejemplo)), unsafe_allow_html=True)
-            st.markdown(render_dashboard_box("📊 Estadísticas", render_statistics(stats_ejemplo)), unsafe_allow_html=True)
+        st.markdown("---")
+    else:
+        # USUARIO NORMAL - MOSTRAR DASHBOARD
+        # ══════════════════════════════════════════════════════════
+        # NAVEGACIÓN: Hoy | Mañana | En vivo | Fútbol | NBA | MLB | Tenis | Favoritos | Buscar
+        # ══════════════════════════════════════════════════════════
+        tabs_nav = st.tabs(["📊 Dashboard", "🏆 Picks", "📈 Análisis", "💰 Cuotas", "⚙️ Config"])
         
-        with col2:
-            st.markdown(render_dashboard_box("🤖 Análisis IA", render_ai_analysis(analisis_ejemplo)), unsafe_allow_html=True)
-            st.markdown(render_dashboard_box("🔔 Alertas", render_alerts(alertas_ejemplo)), unsafe_allow_html=True)
-    
-    # ══════════════════════════════════════════════════════════
-    # PESTAÑA PICKS
-    # ══════════════════════════════════════════════════════════
-    with tabs_nav[1]:
-        st.markdown(render_nav_bar(active_tab="hoy"), unsafe_allow_html=True)
-        st.markdown(render_dashboard_box("🏆 Top Picks del Día", """
-        <div style="text-align: center; padding: 20px; color: #888;">
-            Los picks se muestran cuando inicias sesión con tu cuenta.
-        </div>
-        """), unsafe_allow_html=True)
-    
-    # ══════════════════════════════════════════════════════════
-    # PESTAÑA ANÁLISIS
-    # ══════════════════════════════════════════════════════════
-    with tabs_nav[2]:
-        st.markdown(render_nav_bar(active_tab="futbol"), unsafe_allow_html=True)
-        st.markdown(render_dashboard_box("📈 Análisis Detallado", """
-        <div style="text-align: center; padding: 20px; color: #888;">
-            Selecciona un partido para ver el análisis completo.
-        </div>
-        """), unsafe_allow_html=True)
-    
-    # ══════════════════════════════════════════════════════════
-    # PESTAÑA CUOTAS
-    # ══════════════════════════════════════════════════════════
-    with tabs_nav[3]:
-        st.markdown(render_dashboard_box("💰 Comparador de Cuotas", render_odds_comparator(cuotas_ejemplo)), unsafe_allow_html=True)
-    
-    # ══════════════════════════════════════════════════════════
-    # PESTAÑA CONFIG
-    # ══════════════════════════════════════════════════════════
-    with tabs_nav[4]:
-        st.markdown(render_dashboard_box("⚙️ Configuración", """
-        <div style="padding: 15px;">
-            <h3 style="color: #00ff88;">Tu Cuenta</h3>
-            <p style="color: #ccc;">Usuario: """ + st.session_state.get("user_name", "Invitado") + """</p>
-            <p style="color: #ccc;">Plan: """ + st.session_state.get("user_plan", "gratis").upper() + """</p>
-            <br>
-            <h3 style="color: #00ff88;">Sesión</h3>
-        </div>
-        """), unsafe_allow_html=True)
+        # ══════════════════════════════════════════════════════════
+        # PESTAÑA DASHBOARD
+        # ══════════════════════════════════════════════════════════
+        with tabs_nav[0]:
+            # Mostrar navegación secundaria
+            st.markdown(render_nav_bar(active_tab="hoy"), unsafe_allow_html=True)
+            
+            # Datos de ejemplo
+            partidos_ejemplo = [
+                {"local": "Man City", "visitante": "Chelsea", "hora": "15:00", "rango": "A+"},
+                {"local": "Barcelona", "visitante": "Real Madrid", "hora": "21:00", "rango": "A+"},
+                {"local": "Inter", "visitante": "Milan", "hora": "20:45", "rango": "B"},
+                {"local": "Bayern", "visitante": "Dortmund", "hora": "18:30", "rango": "B"},
+                {"local": "PSG", "visitante": "Lyon", "hora": "21:00", "rango": "A+"},
+            ]
+            
+            analisis_ejemplo = {
+                "prob_local": 72,
+                "valor": "SI",
+                "riesgo": "Bajo",
+                "confianza": 91
+            }
+            
+            cuotas_ejemplo = [
+                {"book": "Bet365", "value": 1.82, "best": False},
+                {"book": "Betano", "value": 1.88, "best": False},
+                {"book": "Pinnacle", "value": 1.90, "best": True},
+                {"book": "Stake", "value": 1.87, "best": False},
+            ]
+            
+            stats_ejemplo = {
+                "xg": "1.8 - 1.2",
+                "tiros": "15 - 9",
+                "corners": "6 - 4",
+                "posesion": "58% - 42%"
+            }
+            
+            alertas_ejemplo = [
+                {"tipo": "warning", "mensaje": "⚠️ Lesiones importantes"},
+                {"tipo": "info", "mensaje": "📊 Cambio de cuota -5%"},
+                {"tipo": "success", "mensaje": "💰 Dinero inteligente"},
+                {"tipo": "fire", "mensaje": "🔥 Pick con Value +4.2%"},
+            ]
+            
+            # Layout de 2 columnas
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown(render_dashboard_box("⚽ Partidos del Día", render_match_list(partidos_ejemplo)), unsafe_allow_html=True)
+                st.markdown(render_dashboard_box("📊 Estadísticas", render_statistics(stats_ejemplo)), unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown(render_dashboard_box("🤖 Análisis IA", render_ai_analysis(analisis_ejemplo)), unsafe_allow_html=True)
+                st.markdown(render_dashboard_box("🔔 Alertas", render_alerts(alertas_ejemplo)), unsafe_allow_html=True)
         
-        if st.button("🚪 Cerrar Sesión", type="primary"):
-            st.session_state.clear()
-            st.rerun()
+        # ══════════════════════════════════════════════════════════
+        # PESTAÑA PICKS
+        # ══════════════════════════════════════════════════════════
+        with tabs_nav[1]:
+            st.markdown(render_nav_bar(active_tab="hoy"), unsafe_allow_html=True)
+            st.markdown(render_dashboard_box("🏆 Top Picks del Día", """
+            <div style="text-align: center; padding: 20px; color: #888;">
+                Los picks se muestran cuando inicias sesión con tu cuenta.
+            </div>
+            """), unsafe_allow_html=True)
+        
+        # ══════════════════════════════════════════════════════════
+        # PESTAÑA ANÁLISIS
+        # ══════════════════════════════════════════════════════════
+        with tabs_nav[2]:
+            st.markdown(render_nav_bar(active_tab="futbol"), unsafe_allow_html=True)
+            st.markdown(render_dashboard_box("📈 Análisis Detallado", """
+            <div style="text-align: center; padding: 20px; color: #888;">
+                Selecciona un partido para ver el análisis completo.
+            </div>
+            """), unsafe_allow_html=True)
+        
+        # ══════════════════════════════════════════════════════════
+        # PESTAÑA CUOTAS
+        # ══════════════════════════════════════════════════════════
+        with tabs_nav[3]:
+            st.markdown(render_dashboard_box("💰 Comparador de Cuotas", render_odds_comparator(cuotas_ejemplo)), unsafe_allow_html=True)
+        
+        # ══════════════════════════════════════════════════════════
+        # PESTAÑA CONFIG
+        # ══════════════════════════════════════════════════════════
+        with tabs_nav[4]:
+            st.markdown(render_dashboard_box("⚙️ Configuración", f"""
+            <div style="padding: 15px;">
+                <h3 style="color: #ffcc00;">Tu Cuenta</h3>
+                <p style="color: #ccc;">Usuario: {st.session_state.get("user_name", "Invitado")}</p>
+                <p style="color: #ccc;">Plan: {st.session_state.get("user_plan", "gratis").upper()}</p>
+            </div>
+            """), unsafe_allow_html=True)
     
     # Footer
     st.markdown("---")
