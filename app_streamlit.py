@@ -4106,39 +4106,6 @@ def mostrar_mercados_con_publicar(calc, partido, umbral_valor=3):
 # ══════════════════════════════════════════════════════════
 # PANTALLA LOGIN
 # ══════════════════════════════════════════════════════════
-def pantalla_login():
-    hdr()
-    st.markdown('<div class="lbox">',unsafe_allow_html=True)
-    st.markdown("### 🔐 Acceder")
-    ced=st.text_input("Cedula / DNI",placeholder="Tu cedula o 'admin'")
-    es_adm=ced.strip().lower()=="admin"
-    pwd=st.text_input("Contrasena admin",type="password") if es_adm else ""
-    if st.button("Entrar →"):
-        if not ced.strip(): st.error("Ingresa tu cedula."); return
-        if es_adm:
-            if db_login_admin(pwd.strip()):
-                u=db_get("admin")
-                st.session_state.update({"li":True,"u":u,"ced":ced.strip(),"picks_sel":[]}); st.rerun()
-            else: st.error("Contrasena incorrecta.")
-        else:
-            u=db_get(ced.strip())
-            if not u:
-                db_guardar_usuario(ced.strip(),f"Usuario {ced.strip()[:6]}","gratis",36500,get_hoy())
-                u=db_get(ced.strip())
-            ok,plan,dr=db_acceso(ced.strip())
-            if not ok: st.error("Acceso vencido o inactivo. Contacta al administrador.")
-            else: st.session_state.update({"li":True,"u":u,"ced":ced.strip()}); st.rerun()
-    st.markdown('</div>',unsafe_allow_html=True)
-    st.markdown("---")
-    c1,c2,c3,c4=st.columns(4)
-    infos=[("🆓 Gratis","Sube Excel/imagen\nMax 5 partidos/dia\nPicks del dia (limitados)"),
-           ("📅 Plan Dia","Liga a eleccion\nPartidos del dia\nExcel con 4 modelos"),
-           ("📆 Plan Semana","Semana completa\nDias especificos\nMulti-liga + Escalera"),
-           ("👑 Plan Mes","Todo ilimitado\nTodas las ligas\nHistorial + Combinadas")]
-    for col,(t,d) in zip([c1,c2,c3,c4],infos):
-        with col: st.info(f"**{t}**\n\n{d}")
-    st.markdown('<div class="ft">🦂 Scorpion Elite V4 Pro 2025 · Solo uso informativo · Las apuestas implican riesgo real de perdida</div>',unsafe_allow_html=True)
-
 # ══════════════════════════════════════════════════════════
 # PANTALLA ADMIN
 # ══════════════════════════════════════════════════════════
@@ -5084,27 +5051,8 @@ def pantalla_pago(u,plan):
 
 
 # ══════════════════════════════════════════════════════════
-# PANTALLA PRINCIPAL - DASHBOARD
+# PANTALLA PRINCIPAL ÚNICA - SCORPION ELITE
 # ══════════════════════════════════════════════════════════
-def pantalla_principal():
-    """Dashboard principal con login en header."""
-    st.markdown("""
-    <style>
-    .main-header {background: linear-gradient(135deg, #1b2621 0%, #1b2621 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px;}
-    .section-title {color: #dfaf6f; font-size: 1.3rem; font-weight: bold; margin: 15px 0 10px;}
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Header con logo y login
-    col_header_left, col_header_right = st.columns([4, 1])
-    
-    with col_header_left:
-        st.markdown("""
-        <div style="background: #1b2621; border: 1px solid #8a6435; border-radius: 6px; padding: 20px 25px; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
-            <h1 style="color: #fff; margin: 0; font-size: 2rem; letter-spacing: 2px;">🦂 SCORPION <span style="color: #dfaf6f;">ELITE</span></h1>
-            <p style="color: #dcdcdc; margin: 8px 0 0; font-size: 0.9rem;">Dashboard Analítico · 4 Modelos Matemáticos</p>
-        </div>
-        """, unsafe_allow_html=True)
     
     with col_header_right:
         if st.session_state.get("logged_in"):
