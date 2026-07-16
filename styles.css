@@ -1,25 +1,31 @@
-/* Scorpion Elite - Diseño Verde Bosque y Oro */
+/* Scorpion Elite - Diseño Verde y Oro */
 
 /* Variables CSS */
 :root {
-    --bg-dark-green: #0a2114;
-    --panel-bg: #1b2621;
-    --gold-bright: #dfaf6f;
-    --gold-dark: #8a6435;
-    --text-light: #dcdcdc;
+    --bg-dark-green: #003300;
+    --panel-bg: #004400;
+    --gold-bright: #ffcc00;
+    --gold-dark: #ff9900;
+    --text-light: #ffffff;
 }
 
 /* 1. CONFIGURACIÓN DE LA PÁGINA */
 .stApp {
-    background-color: #001a00 !important;
-    background-image: radial-gradient(circle, #003300 0%, #001100 50%, #000500 100%) !important;
+    background-color: #004400 !important;
+    background: #004400 !important;
     color: var(--text-light);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Forzar fondo verde en todo el body */
+body, .stApp > div, main {
+    background-color: #004400 !important;
+    background: #004400 !important;
+}
+
 /* 2. CABECERA PRINCIPAL */
 .header-container {
-    background: linear-gradient(135deg, #003300 0%, #001a00 100%) !important;
+    background: #006600 !important;
     padding: 25px;
     border-radius: 6px;
     border: 2px solid #00ff88;
@@ -45,11 +51,11 @@
 
 /* 3. CAJA DE ACCESO / LOGIN */
 .login-container, .login-box {
-    background-color: rgba(0, 40, 0, 0.8);
+    background-color: #006600;
     border: 2px solid #00ff88;
     border-radius: 6px;
     padding: 20px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
 }
 
 .login-title {
@@ -77,12 +83,12 @@
 
 /* 5. TARJETAS DE PICKS RECOMENDADOS */
 .pick-card {
-    background-color: var(--panel-bg);
-    border: 1px solid var(--gold-dark);
+    background-color: #006600;
+    border: 2px solid #00ff88;
     border-radius: 6px;
     padding: 20px;
     margin-bottom: 15px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
 }
 
 .pick-header {
@@ -125,12 +131,12 @@
 
 /* 6. TARJETAS DE LA COLUMNA DERECHA */
 .sidebar-card, .sidebar-right-card {
-    background-color: var(--panel-bg);
-    border: 1px solid var(--gold-dark);
+    background-color: #006600;
+    border: 2px solid #00ff88;
     border-radius: 6px;
     padding: 20px;
     margin-bottom: 15px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
 }
 
 .sidebar-card-title {
@@ -144,21 +150,21 @@
 
 /* 7. INPUT Y BOTONES */
 .stTextInput > div > div > input {
-    background-color: var(--bg-dark-green) !important;
+    background-color: #003300 !important;
     color: #ffffff !important;
-    border: 1px solid var(--gold-dark) !important;
+    border: 2px solid #00ff88 !important;
     border-radius: 4px !important;
 }
 
 .stTextInput > div > div > input:focus {
-    border-color: var(--gold-bright) !important;
+    border-color: #00ff88 !important;
 }
 
 .stButton > button {
-    background: linear-gradient(135deg, #b08146 0%, #d8a86a 100%) !important;
+    background: linear-gradient(135deg, #00cc66 0%, #00ff88 100%) !important;
     border: none !important;
     padding: 10px 20px;
-    color: var(--bg-dark-green) !important;
+    color: #000000 !important;
     font-weight: bold !important;
     cursor: pointer;
     width: 100%;
@@ -168,7 +174,7 @@
 }
 
 .stButton > button:hover {
-    background: linear-gradient(135deg, #d8a86a 0%, #b08146 100%) !important;
+    background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%) !important;
 }
 
 /* 8. FOOTER */
@@ -244,17 +250,17 @@
 
 /* 11. CARDS DE MÉTRICAS */
 .metric-card {
-    background-color: var(--panel-bg);
-    border: 1px solid var(--gold-dark);
+    background-color: #006600;
+    border: 2px solid #00ff88;
     border-radius: 6px;
     padding: 15px;
     text-align: center;
     margin-bottom: 10px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
 }
 
 .metric-value {
-    color: var(--gold-bright);
+    color: #00ff88;
     font-size: 28px;
     font-weight: bold;
 }
@@ -268,24 +274,24 @@
 
 /* 12. MATCH ROW */
 .match-row {
-    background-color: var(--panel-bg);
+    background-color: #006600;
     padding: 10px;
     border-radius: 6px;
     margin-bottom: 8px;
-    border: 1px solid var(--gold-dark);
+    border: 2px solid #00ff88;
     font-size: 13px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
 }
 
 /* 13. TEXTOS DE ALERTAS */
 .text-alert {
     font-size: 12px;
     color: var(--text-light);
-    background: rgba(223, 175, 111, 0.1);
+    background: rgba(0, 255, 136, 0.1);
     padding: 8px;
     border-radius: 6px;
     margin-bottom: 8px;
-    border-left: 3px solid var(--gold-dark);
+    border-left: 3px solid #00ff88;
 }
 
 .text-trend {
@@ -296,12 +302,12 @@
 
 /* 14. HDR antigo */
 .hdr {
-    background: var(--panel-bg) !important;
-    border: 1px solid var(--gold-dark) !important;
+    background: #006600 !important;
+    border: 2px solid #00ff88 !important;
     border-radius: 6px !important;
     padding: 20px !important;
     text-align: center !important;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3) !important;
 }
 
 .hdr h1 {
