@@ -5798,36 +5798,166 @@ def pantalla_principal():
 
 # ══════════════════════════════════════════════════════════
 # ══════════════════════════════════════════════════════════
+# PANTALLA PRINCIPAL ÚNICA - SCORPION ELITE
+# ══════════════════════════════════════════════════════════
+
+def pantalla_principal_unificada():
+    """Pantalla principal unificada con header y navegación."""
+    from scorpion.ui.components import (
+        render_nav_bar, render_dashboard_box,
+        render_match_list, render_ai_analysis, render_markets,
+        render_odds_comparator, render_statistics, render_alerts
+    )
+    
+    # ══════════════════════════════════════════════════════════
+    # HEADER: 🦂 SCORPION ELITE | Usuario | ⚙️
+    # ══════════════════════════════════════════════════════════
+    col_user, col_settings = st.columns([6, 1])
+    
+    with col_user:
+        username = st.session_state.get("user_name", "Invitado")
+        plan = st.session_state.get("user_plan", "")
+        st.markdown(f'''
+        <div style="background: linear-gradient(135deg, #00aa55 0%, #006600 100%); border: 3px solid #00ff88; border-radius: 15px; padding: 20px 30px; margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-size: 3rem;">🦂</span>
+                    <span style="font-size: 2.5rem; font-weight: bold; color: #fff; letter-spacing: 3px; text-shadow: 0 0 20px rgba(0,255,136,0.5);">SCORPION ELITE</span>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 1.2rem; color: #fff; font-weight: bold;">👤 {username}</div>
+                    <div style="font-size: 0.9rem; color: #00ff88;">{plan.upper() if plan else 'GRATIS'}</div>
+                </div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+    
+    with col_settings:
+        st.markdown("""
+        <div style="text-align: center; padding-top: 20px;">
+            <span style="font-size: 2rem; cursor: pointer;">⚙️</span>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("")  # Espacio
+    
+    # ══════════════════════════════════════════════════════════
+    # NAVEGACIÓN: Hoy | Mañana | En vivo | Fútbol | NBA | MLB | Tenis | Favoritos | Buscar
+    # ══════════════════════════════════════════════════════════
+    tabs_nav = st.tabs(["📊 Dashboard", "🏆 Picks", "📈 Análisis", "💰 Cuotas", "⚙️ Config"])
+    
+    # ══════════════════════════════════════════════════════════
+    # PESTAÑA DASHBOARD
+    # ══════════════════════════════════════════════════════════
+    with tabs_nav[0]:
+        # Mostrar navegación secundaria si existe
+        st.markdown(render_nav_bar(active_tab="hoy"), unsafe_allow_html=True)
+        
+        # Datos de ejemplo
+        partidos_ejemplo = [
+            {"local": "Man City", "visitante": "Chelsea", "hora": "15:00", "rango": "A+"},
+            {"local": "Barcelona", "visitante": "Real Madrid", "hora": "21:00", "rango": "A+"},
+            {"local": "Inter", "visitante": "Milan", "hora": "20:45", "rango": "B"},
+            {"local": "Bayern", "visitante": "Dortmund", "hora": "18:30", "rango": "B"},
+            {"local": "PSG", "visitante": "Lyon", "hora": "21:00", "rango": "A+"},
+        ]
+        
+        analisis_ejemplo = {
+            "prob_local": 72,
+            "valor": "SI",
+            "riesgo": "Bajo",
+            "confianza": 91
+        }
+        
+        cuotas_ejemplo = [
+            {"book": "Bet365", "value": 1.82, "best": False},
+            {"book": "Betano", "value": 1.88, "best": False},
+            {"book": "Pinnacle", "value": 1.90, "best": True},
+            {"book": "Stake", "value": 1.87, "best": False},
+        ]
+        
+        stats_ejemplo = {
+            "xg": "1.8 - 1.2",
+            "tiros": "15 - 9",
+            "corners": "6 - 4",
+            "posesion": "58% - 42%"
+        }
+        
+        alertas_ejemplo = [
+            {"tipo": "warning", "mensaje": "⚠️ Lesiones importantes"},
+            {"tipo": "info", "mensaje": "📊 Cambio de cuota -5%"},
+            {"tipo": "success", "mensaje": "💰 Dinero inteligente"},
+            {"tipo": "fire", "mensaje": "🔥 Pick con Value +4.2%"},
+        ]
+        
+        # Layout de 2 columnas
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown(render_dashboard_box("⚽ Partidos del Día", render_match_list(partidos_ejemplo)), unsafe_allow_html=True)
+            st.markdown(render_dashboard_box("📊 Estadísticas", render_statistics(stats_ejemplo)), unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown(render_dashboard_box("🤖 Análisis IA", render_ai_analysis(analisis_ejemplo)), unsafe_allow_html=True)
+            st.markdown(render_dashboard_box("🔔 Alertas", render_alerts(alertas_ejemplo)), unsafe_allow_html=True)
+    
+    # ══════════════════════════════════════════════════════════
+    # PESTAÑA PICKS
+    # ══════════════════════════════════════════════════════════
+    with tabs_nav[1]:
+        st.markdown(render_nav_bar(active_tab="hoy"), unsafe_allow_html=True)
+        st.markdown(render_dashboard_box("🏆 Top Picks del Día", """
+        <div style="text-align: center; padding: 20px; color: #888;">
+            Los picks se muestran cuando inicias sesión con tu cuenta.
+        </div>
+        """), unsafe_allow_html=True)
+    
+    # ══════════════════════════════════════════════════════════
+    # PESTAÑA ANÁLISIS
+    # ══════════════════════════════════════════════════════════
+    with tabs_nav[2]:
+        st.markdown(render_nav_bar(active_tab="futbol"), unsafe_allow_html=True)
+        st.markdown(render_dashboard_box("📈 Análisis Detallado", """
+        <div style="text-align: center; padding: 20px; color: #888;">
+            Selecciona un partido para ver el análisis completo.
+        </div>
+        """), unsafe_allow_html=True)
+    
+    # ══════════════════════════════════════════════════════════
+    # PESTAÑA CUOTAS
+    # ══════════════════════════════════════════════════════════
+    with tabs_nav[3]:
+        st.markdown(render_dashboard_box("💰 Comparador de Cuotas", render_odds_comparator(cuotas_ejemplo)), unsafe_allow_html=True)
+    
+    # ══════════════════════════════════════════════════════════
+    # PESTAÑA CONFIG
+    # ══════════════════════════════════════════════════════════
+    with tabs_nav[4]:
+        st.markdown(render_dashboard_box("⚙️ Configuración", """
+        <div style="padding: 15px;">
+            <h3 style="color: #00ff88;">Tu Cuenta</h3>
+            <p style="color: #ccc;">Usuario: """ + st.session_state.get("user_name", "Invitado") + """</p>
+            <p style="color: #ccc;">Plan: """ + st.session_state.get("user_plan", "gratis").upper() + """</p>
+            <br>
+            <h3 style="color: #00ff88;">Sesión</h3>
+        </div>
+        """), unsafe_allow_html=True)
+        
+        if st.button("🚪 Cerrar Sesión", type="primary"):
+            st.session_state.clear()
+            st.rerun()
+    
+    # Footer
+    st.markdown("---")
+    st.markdown('<div style="text-align: center; color: #00ff88; font-size: 0.9rem;">🦂 Scorpion Elite V4 Pro · Solo uso informativo</div>', unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════
 # ROUTER
 # ══════════════════════════════════════════════════════════
 init_db()
 if "li" not in st.session_state: st.session_state.li=False
 
-# Navegación según estado de login
-if not st.session_state.li:
-    # NO logueado → mostrar dashboard con login
-    pantalla_principal()
-else:
-    # Logueado → mostrar pantalla según plan
-    u = st.session_state.get("u", {})
-    ced = st.session_state.get("ced", "")
-    ok, plan, dr = db_acceso(ced)
-    
-    # Verificar is_admin en session_state
-    is_admin = st.session_state.get("is_admin", False) or plan == "admin"
-    
-    if is_admin:
-        # Admin → pantalla_admin() directamente
-        pantalla_admin()
-    elif plan == "gratis":
-        # Usuario gratis → pantalla_gratis()
-        pantalla_gratis(u)
-    elif plan in ("dia", "semana", "mes"):
-        # Usuario pago → pantalla_pago()
-        pantalla_pago(u, plan)
-    else:
-        # Plan no reconocido
-        st.error("Plan no reconocido. Contacta al administrador.")
-        if st.button("Cerrar sesion"):
-            st.session_state.clear()
-            st.rerun()
+# Siempre mostrar la pantalla principal unificada
+pantalla_principal_unificada()
