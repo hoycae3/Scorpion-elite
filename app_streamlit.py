@@ -4686,11 +4686,115 @@ def pantalla_pago(u,plan):
     pl_lbl={"dia":"📅 Plan Dia","semana":"📆 Plan Semana","mes":"👑 Plan Mes"}.get(plan,plan)
     st.markdown(f'👋 Hola **{u["nombre"]}** {pll(plan,dr)}',unsafe_allow_html=True)
     st.markdown("---")
-    tl=["🏟️ Por Liga","📁 Subir Archivo","📢 Picks","🏆 Escalera"]
+    tl=["📊 Dashboard"]  # Nueva pestaña Dashboard V2
+    tl+=["🏟️ Por Liga","📁 Subir Archivo","📢 Picks","🏆 Escalera"]
     if plan=="mes": tl.append("🔗 Combinadas"); tl.append("📈 Historial")
     tabs=st.tabs(tl)
 
+    # ══════════════════════════════════════════════════════════
+    # PESTAÑA DASHBOARD V2 - Nueva interfaz compacta
+    # ══════════════════════════════════════════════════════════
     with tabs[0]:
+        from scorpion.ui.components import (
+            render_dashboard_header, render_nav_bar, render_dashboard_box,
+            render_match_list, render_ai_analysis, render_markets,
+            render_odds_comparator, render_statistics, render_alerts
+        )
+        
+        # Header con usuario y saldo
+        saldo = st.session_state.get("user_saldo", "$1,000.00")
+        username = u.get("nombre", "Usuario")
+        st.markdown(render_dashboard_header(username=username, saldo=saldo), unsafe_allow_html=True)
+        
+        # Navegación
+        nav_tab = st.radio(
+            "Navegación",
+            ["Hoy", "Mañana", "En vivo", "Fútbol", "NBA", "MLB", "Tenis", "Favoritos"],
+            horizontal=True,
+            label_visibility="collapsed"
+        )
+        st.markdown(render_nav_bar(active_tab=nav_tab.lower()), unsafe_allow_html=True)
+        
+        # Cargar partidos de ejemplo (reemplazar con datos reales)
+        # Esta sección se puede expandir con datos de la API
+        partidos_ejemplo = [
+            {"local": "Man City", "visitante": "Chelsea", "hora": "15:00", "rango": "A+"},
+            {"local": "Barcelona", "visitante": "Real Madrid", "hora": "21:00", "rango": "A+"},
+            {"local": "Inter", "visitante": "Milan", "hora": "20:45", "rango": "B"},
+            {"local": "Bayern", "visitante": "Dortmund", "hora": "18:30", "rango": "B"},
+        ]
+        
+        analisis_ejemplo = {
+            "prob_local": 72,
+            "valor": "SI",
+            "riesgo": "Bajo",
+            "confianza": 91
+        }
+        
+        mercados_ejemplo = ["Ganador", "Over/Under 2.5", "Ambos marcan", "Hándicap Asiático"]
+        
+        cuotas_ejemplo = [
+            {"book": "Bet365", "value": 1.82, "best": False},
+            {"book": "Betano", "value": 1.88, "best": False},
+            {"book": "Pinnacle", "value": 1.90, "best": True},
+            {"book": "Stake", "value": 1.87, "best": False},
+        ]
+        
+        stats_ejemplo = {
+            "xg": "1.8 - 1.2",
+            "tiros": "15 - 9",
+            "corners": "6 - 4",
+            "posesion": "58% - 42%"
+        }
+        
+        alertas_ejemplo = [
+            {"tipo": "warning", "mensaje": "⚠️ Lesiones importantes detectadas"},
+            {"tipo": "info", "mensaje": "📊 Cambio de cuota -5%"},
+            {"tipo": "success", "mensaje": "💰 Dinero inteligente detectado"},
+            {"tipo": "fire", "mensaje": "🔥 Pick con Value +4.2%"},
+        ]
+        
+        # Layout de 2 columnas usando st.columns
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Columna izquierda
+            st.markdown(render_dashboard_box(
+                "⚽ Partidos del Día",
+                render_match_list(partidos_ejemplo)
+            ), unsafe_allow_html=True)
+            
+            st.markdown(render_dashboard_box(
+                "📈 Mercados Disponibles",
+                render_markets(mercados_ejemplo)
+            ), unsafe_allow_html=True)
+            
+            st.markdown(render_dashboard_box(
+                "📊 Estadísticas",
+                render_statistics(stats_ejemplo)
+            ), unsafe_allow_html=True)
+        
+        with col2:
+            # Columna derecha
+            st.markdown(render_dashboard_box(
+                "🤖 Análisis IA",
+                render_ai_analysis(analisis_ejemplo)
+            ), unsafe_allow_html=True)
+            
+            st.markdown(render_dashboard_box(
+                "💰 Comparador de Cuotas",
+                render_odds_comparator(cuotas_ejemplo)
+            ), unsafe_allow_html=True)
+            
+            st.markdown(render_dashboard_box(
+                "🔔 Alertas",
+                render_alerts(alertas_ejemplo)
+            ), unsafe_allow_html=True)
+        
+        st.markdown("---")
+        st.caption("🦂 Scorpion Elite V4 Pro · Dashboard V2 · Solo uso informativo")
+
+    with tabs[1]:
         st.markdown("### Selecciona liga y periodo")
 
         # Mostrar ligas activas hoy (con lógica del Mundial)
