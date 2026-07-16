@@ -5787,10 +5787,13 @@ def pantalla_principal_unificada():
         </div>
         """, unsafe_allow_html=True)
     
-    st.markdown("")  # Espacio
+    # ══════════════════════════════════════════════════════════
+    # NAVEGACIÓN PRINCIPAL: Hoy | Mañana | En vivo | Fútbol | NBA | MLB | Tenis | Favoritos | Buscar
+    # ══════════════════════════════════════════════════════════
+    st.markdown(render_nav_bar(active_tab="hoy"), unsafe_allow_html=True)
     
     # ══════════════════════════════════════════════════════════
-    # NAVEGACIÓN: Hoy | Mañana | En vivo | Fútbol | NBA | MLB | Tenis | Favoritos | Buscar
+    # PESTAÑAS SECUNDARIAS
     # ══════════════════════════════════════════════════════════
     tabs_nav = st.tabs(["📊 Dashboard", "🏆 Picks", "📈 Análisis", "💰 Cuotas", "⚙️ Config"])
     
@@ -5798,9 +5801,6 @@ def pantalla_principal_unificada():
     # PESTAÑA DASHBOARD
     # ══════════════════════════════════════════════════════════
     with tabs_nav[0]:
-        # Mostrar navegación secundaria si existe
-        st.markdown(render_nav_bar(active_tab="hoy"), unsafe_allow_html=True)
-        
         # Datos de ejemplo
         partidos_ejemplo = [
             {"local": "Man City", "visitante": "Chelsea", "hora": "15:00", "rango": "A+"},
@@ -5853,7 +5853,6 @@ def pantalla_principal_unificada():
     # PESTAÑA PICKS
     # ══════════════════════════════════════════════════════════
     with tabs_nav[1]:
-        st.markdown(render_nav_bar(active_tab="hoy"), unsafe_allow_html=True)
         st.markdown(render_dashboard_box("🏆 Top Picks del Día", """
         <div style="text-align: center; padding: 20px; color: #888;">
             Los picks se muestran cuando inicias sesión con tu cuenta.
@@ -5864,7 +5863,6 @@ def pantalla_principal_unificada():
     # PESTAÑA ANÁLISIS
     # ══════════════════════════════════════════════════════════
     with tabs_nav[2]:
-        st.markdown(render_nav_bar(active_tab="futbol"), unsafe_allow_html=True)
         st.markdown(render_dashboard_box("📈 Análisis Detallado", """
         <div style="text-align: center; padding: 20px; color: #888;">
             Selecciona un partido para ver el análisis completo.
