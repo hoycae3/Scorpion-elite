@@ -5761,11 +5761,11 @@ def pantalla_principal_unificada():
     # HEADER: 🦂 SCORPION ELITE + LOGIN
     # ══════════════════════════════════════════════════════════
     
-    # Título grande y visible
+    # Título pequeño
     st.markdown('''
-    <div style="text-align: center; padding: 20px 0 10px 0;">
-        <span style="font-size: 3rem;">🦂</span>
-        <h1 style="margin: 5px 0; color: #ffcc00; font-size: 2.5rem; letter-spacing: 3px;">SCORPION ELITE</h1>
+    <div style="text-align: center; padding: 10px 0 5px 0;">
+        <span style="font-size: 1.5rem;">🦂</span>
+        <span style="color: #ffcc00; font-size: 1.1rem; font-weight: bold; letter-spacing: 2px; margin-left: 8px;">SCORPION ELITE</span>
     </div>
     ''', unsafe_allow_html=True)
     
@@ -5791,9 +5791,9 @@ def pantalla_principal_unificada():
         with col_info:
             username = st.session_state.get("user_name", "Usuario")
             st.markdown(f'''
-            <div style="text-align: center; padding: 10px;">
-                <span style="color: #ffcc00; font-size: 1.2rem;">👤 {username}</span>
-                <span style="color: #888; font-size: 0.9rem;"> | {st.session_state.get('user_plan', 'GRATIS')}</span>
+            <div style="text-align: center; padding: 5px;">
+                <span style="color: #ffcc00; font-size: 0.9rem;">👤 {username}</span>
+                <span style="color: #888; font-size: 0.8rem;"> | {st.session_state.get('user_plan', 'GRATIS')}</span>
             </div>
             ''', unsafe_allow_html=True)
         with col_b:
