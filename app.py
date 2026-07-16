@@ -1634,14 +1634,14 @@ def obtener_forma_reciente(team_id, league_id, season):
                     elif goles_local < goles_visitante:
                         resultado, color = "D", "#ff6b6b"
                     else:
-                        resultado, color = "E", "#10b981"
+                        resultado, color = "E", "#dfaf6f"
                 else:
                     if goles_visitante > goles_local:
                         resultado, color = "V", "#39ff14"
                     elif goles_visitante < goles_local:
                         resultado, color = "D", "#ff6b6b"
                     else:
-                        resultado, color = "E", "#10b981"
+                        resultado, color = "E", "#dfaf6f"
                 
                 resultados.append({
                     "resultado": resultado, "color": color,
@@ -1687,8 +1687,8 @@ def mostrar_buscador_equipos():
             liga_default = st.session_state.get('equipo_liga', 'Premier League')
             
             st.markdown(f"""
-            <div style="background: #1b2621; border: 1px solid #10b981; border-radius: 6px; padding: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
-                <h3 style="color: #10b981; margin-top: 0;">{eq['nombre']}</h3>
+            <div style="background: #1b2621; border: 1px solid #8a6435; border-radius: 6px; padding: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
+                <h3 style="color: #dfaf6f; margin-top: 0;">{eq['nombre']}</h3>
                 <p style="color: #dcdcdc; margin: 5px 0;">📍 Liga: {eq.get('liga', 'N/A')}</p>
             </div>
             """, unsafe_allow_html=True)
@@ -1707,16 +1707,16 @@ def mostrar_buscador_equipos():
                     st.success(f"📊 Estadísticas de {eq['nombre']} (Fuente: {stats.get('fuente', 'N/A')})")
                     st.markdown(f"""
                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0;">
-                        <div style="background: #1b2621; border: 1px solid #10b981; border-radius: 6px; padding: 15px; text-align: center;">
-                            <div style="color: #10b981; font-size: 1.5rem; font-weight: bold;">{stats.get('partidos_jugados', 0)}</div>
+                        <div style="background: #1b2621; border: 1px solid #8a6435; border-radius: 6px; padding: 15px; text-align: center;">
+                            <div style="color: #dfaf6f; font-size: 1.5rem; font-weight: bold;">{stats.get('partidos_jugados', 0)}</div>
                             <div style="color: #dcdcdc; font-size: 0.75rem;">PARTIDOS</div>
                         </div>
                         <div style="background: #1b2621; border: 1px solid #39ff14; border-radius: 6px; padding: 15px; text-align: center;">
                             <div style="color: #39ff14; font-size: 1.5rem; font-weight: bold;">{stats.get('victorias', 0)}</div>
                             <div style="color: #dcdcdc; font-size: 0.75rem;">VICTORIAS</div>
                         </div>
-                        <div style="background: #1b2621; border: 1px solid #10b981; border-radius: 6px; padding: 15px; text-align: center;">
-                            <div style="color: #10b981; font-size: 1.5rem; font-weight: bold;">{stats.get('empates', 0)}</div>
+                        <div style="background: #1b2621; border: 1px solid #dfaf6f; border-radius: 6px; padding: 15px; text-align: center;">
+                            <div style="color: #dfaf6f; font-size: 1.5rem; font-weight: bold;">{stats.get('empates', 0)}</div>
                             <div style="color: #dcdcdc; font-size: 0.75rem;">EMPATES</div>
                         </div>
                         <div style="background: #1b2621; border: 1px solid #ff6b6b; border-radius: 6px; padding: 15px; text-align: center;">
@@ -1725,16 +1725,16 @@ def mostrar_buscador_equipos():
                         </div>
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0;">
-                        <div style="background: #1b2621; border: 1px solid #10b981; border-radius: 6px; padding: 15px; text-align: center;">
-                            <div style="color: #10b981; font-size: 1.5rem; font-weight: bold;">{stats.get('goles_favor', 0)}</div>
+                        <div style="background: #1b2621; border: 1px solid #8a6435; border-radius: 6px; padding: 15px; text-align: center;">
+                            <div style="color: #dfaf6f; font-size: 1.5rem; font-weight: bold;">{stats.get('goles_favor', 0)}</div>
                             <div style="color: #dcdcdc; font-size: 0.75rem;">GOLES A FAVOR</div>
                         </div>
-                        <div style="background: #1b2621; border: 1px solid #10b981; border-radius: 6px; padding: 15px; text-align: center;">
-                            <div style="color: #10b981; font-size: 1.5rem; font-weight: bold;">{stats.get('goles_contra', 0)}</div>
+                        <div style="background: #1b2621; border: 1px solid #8a6435; border-radius: 6px; padding: 15px; text-align: center;">
+                            <div style="color: #dfaf6f; font-size: 1.5rem; font-weight: bold;">{stats.get('goles_contra', 0)}</div>
                             <div style="color: #dcdcdc; font-size: 0.75rem;">GOLES EN CONTRA</div>
                         </div>
-                        <div style="background: #1b2621; border: 1px solid #10b981; border-radius: 6px; padding: 15px; text-align: center;">
-                            <div style="color: #10b981; font-size: 1.5rem; font-weight: bold;">{stats.get('clean_sheet', 0)}</div>
+                        <div style="background: #1b2621; border: 1px solid #8a6435; border-radius: 6px; padding: 15px; text-align: center;">
+                            <div style="color: #dfaf6f; font-size: 1.5rem; font-weight: bold;">{stats.get('clean_sheet', 0)}</div>
                             <div style="color: #dcdcdc; font-size: 0.75rem;">VALLAS CLEAN</div>
                         </div>
                     </div>
@@ -1869,16 +1869,16 @@ def mostrar_calendario_partidos():
                         elif estado == "FT":
                             badge = '<span style="background:#39ff14;color:#0a2114;padding:2px 8px;border-radius:10px;font-size:11px;">✅ FINAL</span>'
                         else:
-                            badge = f'<span style="background:#10b981;color:white;padding:2px 8px;border-radius:10px;font-size:11px;">⏰ {hora}</span>'
+                            badge = f'<span style="background:#8a6435;color:white;padding:2px 8px;border-radius:10px;font-size:11px;">⏰ {hora}</span>'
                         
                         # Mostrar marcador o vs
                         if goles_l is not None and goles_v is not None:
-                            marcador = f"<span style='color:#10b981;font-weight:bold;font-size:1.2rem;'>{goles_l} - {goles_v}</span>"
+                            marcador = f"<span style='color:#dfaf6f;font-weight:bold;font-size:1.2rem;'>{goles_l} - {goles_v}</span>"
                         else:
                             marcador = "<span style='color:#888;'>vs</span>"
                         
                         st.markdown(f"""
-                        <div style="background:#1b2621;border:1px solid #10b981;border-radius:6px;padding:12px;margin-bottom:8px;">
+                        <div style="background:#1b2621;border:1px solid #8a6435;border-radius:6px;padding:12px;margin-bottom:8px;">
                             <div style="display:flex;justify-content:space-between;align-items:center;">
                                 <div style="flex:1;text-align:center;">
                                     <div style="color:#dcdcdc;font-weight:bold;">{local}</div>
@@ -1908,10 +1908,10 @@ def mostrar_calendario_partidos():
                 liga = p.get("liga", "")
                 
                 st.markdown(f"""
-                <div style="background:#1b2621;border:1px solid #10b981;border-radius:6px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
-                    <div style="color:#10b981;font-size:0.8rem;flex:1;">{liga}</div>
-                    <div style="flex:2;text-align:center;color:#dcdcdc;">{local} <span style="color:#10b981;">vs</span> {visitante}</div>
-                    <div style="flex:1;text-align:right;color:#10b981;font-weight:bold;">{hora}</div>
+                <div style="background:#1b2621;border:1px solid #8a6435;border-radius:6px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+                    <div style="color:#8a6435;font-size:0.8rem;flex:1;">{liga}</div>
+                    <div style="flex:2;text-align:center;color:#dcdcdc;">{local} <span style="color:#8a6435;">vs</span> {visitante}</div>
+                    <div style="flex:1;text-align:right;color:#dfaf6f;font-weight:bold;">{hora}</div>
                 </div>
                 """, unsafe_allow_html=True)
         else:
@@ -2114,7 +2114,7 @@ def mostrar_comparador_odds():
                             color = "#d48243"
                         elif cuota["opcion"] == "X":
                             label = "Empate"
-                            color = "#10b981"
+                            color = "#dfaf6f"
                         else:
                             label = "Visita"
                             color = "#d48243"
@@ -3811,8 +3811,8 @@ st.markdown("""<style>
 :root {
     --bg-dark-green: #0a2114;
     --panel-bg: #1b2621;
-    --gold-bright: #10b981;
-    --gold-dark: #10b981;
+    --gold-bright: #dfaf6f;
+    --gold-dark: #8a6435;
     --text-light: #dcdcdc;
 }
 .stApp {
@@ -4025,13 +4025,13 @@ def mostrar_mercados_con_publicar(calc, partido, umbral_valor=3):
 
     st.markdown("""
     <style>
-    .mkt-cat{color:#10b981;font-weight:600;font-size:.85rem;margin:12px 0 4px;
-      border-bottom:1px solid #10b98133;padding-bottom:4px}
+    .mkt-cat{color:#dfaf6f;font-weight:600;font-size:.85rem;margin:12px 0 4px;
+      border-bottom:1px solid #dfaf6f33;padding-bottom:4px}
     .mkt-row2{display:grid;grid-template-columns:3fr 1fr 1.2fr 1.2fr 1.5fr;
       align-items:center;background:#1b2621;border-radius:8px;
       padding:7px 10px;margin:3px 0;gap:8px}
     .mkt-n{color:#ddd;font-size:.85rem}
-    .mkt-p{color:#10b981;font-weight:700;font-size:.95rem;text-align:center}
+    .mkt-p{color:#dfaf6f;font-weight:700;font-size:.95rem;text-align:center}
     .mkt-c{color:#888;font-size:.78rem;text-align:center}
     .mkt-ep{color:#39ff14;font-size:.8rem;font-weight:600;text-align:center}
     .mkt-en{color:#ff4444;font-size:.8rem;font-weight:600;text-align:center}
@@ -4106,39 +4106,6 @@ def mostrar_mercados_con_publicar(calc, partido, umbral_valor=3):
 # ══════════════════════════════════════════════════════════
 # PANTALLA LOGIN
 # ══════════════════════════════════════════════════════════
-def pantalla_login():
-    hdr()
-    st.markdown('<div class="lbox">',unsafe_allow_html=True)
-    st.markdown("### 🔐 Acceder")
-    ced=st.text_input("Cedula / DNI",placeholder="Tu cedula o 'admin'")
-    es_adm=ced.strip().lower()=="admin"
-    pwd=st.text_input("Contrasena admin",type="password") if es_adm else ""
-    if st.button("Entrar →"):
-        if not ced.strip(): st.error("Ingresa tu cedula."); return
-        if es_adm:
-            if db_login_admin(pwd.strip()):
-                u=db_get("admin")
-                st.session_state.update({"li":True,"u":u,"ced":ced.strip(),"picks_sel":[]}); st.rerun()
-            else: st.error("Contrasena incorrecta.")
-        else:
-            u=db_get(ced.strip())
-            if not u:
-                db_guardar_usuario(ced.strip(),f"Usuario {ced.strip()[:6]}","gratis",36500,get_hoy())
-                u=db_get(ced.strip())
-            ok,plan,dr=db_acceso(ced.strip())
-            if not ok: st.error("Acceso vencido o inactivo. Contacta al administrador.")
-            else: st.session_state.update({"li":True,"u":u,"ced":ced.strip()}); st.rerun()
-    st.markdown('</div>',unsafe_allow_html=True)
-    st.markdown("---")
-    c1,c2,c3,c4=st.columns(4)
-    infos=[("🆓 Gratis","Sube Excel/imagen\nMax 5 partidos/dia\nPicks del dia (limitados)"),
-           ("📅 Plan Dia","Liga a eleccion\nPartidos del dia\nExcel con 4 modelos"),
-           ("📆 Plan Semana","Semana completa\nDias especificos\nMulti-liga + Escalera"),
-           ("👑 Plan Mes","Todo ilimitado\nTodas las ligas\nHistorial + Combinadas")]
-    for col,(t,d) in zip([c1,c2,c3,c4],infos):
-        with col: st.info(f"**{t}**\n\n{d}")
-    st.markdown('<div class="ft">🦂 Scorpion Elite V4 Pro 2025 · Solo uso informativo · Las apuestas implican riesgo real de perdida</div>',unsafe_allow_html=True)
-
 # ══════════════════════════════════════════════════════════
 # PANTALLA ADMIN
 # ══════════════════════════════════════════════════════════
@@ -4236,11 +4203,11 @@ def pantalla_admin():
                 ("Elo",           r["p1_el"], r["px_el"], r["p2_el"]),
                 ("⭐ FINAL",      r["p1"],    r["px"],    r["p2"]),
             ]
-            tbl = f'<table style="width:100%;border-collapse:collapse;font-size:.84rem;margin:8px 0"><thead><tr style="background:#1b2621;color:#10b981"><th style="padding:8px 12px;text-align:left">Modelo</th><th style="padding:8px 12px;text-align:center">{lbl_l} (P1)%</th><th style="padding:8px 12px;text-align:center">Empate%</th><th style="padding:8px 12px;text-align:center">{lbl_v} (P2)%</th></tr></thead><tbody>'
+            tbl = f'<table style="width:100%;border-collapse:collapse;font-size:.84rem;margin:8px 0"><thead><tr style="background:#1b2621;color:#dfaf6f"><th style="padding:8px 12px;text-align:left">Modelo</th><th style="padding:8px 12px;text-align:center">{lbl_l} (P1)%</th><th style="padding:8px 12px;text-align:center">Empate%</th><th style="padding:8px 12px;text-align:center">{lbl_v} (P2)%</th></tr></thead><tbody>'
             for i,(mod,p1v,pxv,p2v) in enumerate(filas_m):
                 bg="#0d1e0d" if mod.startswith("⭐") else ("#1b2621" if i%2==0 else "#1b2621")
                 fw="700" if mod.startswith("⭐") else "400"
-                clr="#10b981" if mod.startswith("⭐") else "#fff"
+                clr="#dfaf6f" if mod.startswith("⭐") else "#fff"
                 mx=max(p1v,pxv,p2v)
                 def c(v,mx=mx,clr=clr): return f'<td style="padding:7px 12px;text-align:center;{"color:#39ff14;font-weight:700" if v==mx else f"color:{clr}"}">{ v:.1f}%</td>'
                 tbl+=f'<tr style="background:{bg};font-weight:{fw}"><td style="padding:7px 12px;color:{clr}">{mod}</td>{c(p1v)}{c(pxv)}{c(p2v)}</tr>'
@@ -4251,7 +4218,7 @@ def pantalla_admin():
             st.markdown("**📊 Estadisticas del partido**")
             local_n = r["local"][:16]; visita_n = r["visitante"][:16]
             tbl_stats = f"""<table style="width:100%;border-collapse:collapse;font-size:.83rem;margin:6px 0">
-              <thead><tr style="background:#1b2621;color:#10b981">
+              <thead><tr style="background:#1b2621;color:#dfaf6f">
                 <th style="padding:6px 12px;text-align:left">Metrica</th>
                 <th style="padding:6px 12px;text-align:center">{local_n}</th>
                 <th style="padding:6px 12px;text-align:center">Total</th>
@@ -4279,11 +4246,11 @@ def pantalla_admin():
               </tr>
               <tr style="background:#1b2621">
                 <td style="padding:5px 12px;color:#aaa">Over 1.5 / 2.5 / 3.5</td>
-                <td style="padding:5px 12px;text-align:center;color:#10b981;font-weight:700" colspan="3">{r.get("over15",0)}% / {r.get("over25",0)}% / {r.get("over35",0)}%</td>
+                <td style="padding:5px 12px;text-align:center;color:#dfaf6f;font-weight:700" colspan="3">{r.get("over15",0)}% / {r.get("over25",0)}% / {r.get("over35",0)}%</td>
               </tr>
               <tr style="background:#1b2621">
                 <td style="padding:5px 12px;color:#aaa">BTTS (Ambos Marcan)</td>
-                <td style="padding:5px 12px;text-align:center;color:#10b981;font-weight:700" colspan="3">{r.get("btts_si",0)}% Si / {r.get("btts_no",0)}% No</td>
+                <td style="padding:5px 12px;text-align:center;color:#dfaf6f;font-weight:700" colspan="3">{r.get("btts_si",0)}% Si / {r.get("btts_no",0)}% No</td>
               </tr>
             </tbody></table>"""
             st.markdown(tbl_stats, unsafe_allow_html=True)
@@ -4320,13 +4287,13 @@ def pantalla_admin():
                                 ("🥅 Goles concedidos/partido", f"{gc:.2f}" if gc else "N/D",   "#ff6666"),
                                 ("🎯 xG por partido",           f"{xg:.2f}" if xg else "N/D",   "#00ddff"),
                                 ("🔫 Tiros al arco/partido",    f"{tiros:.1f}" if tiros else "N/D","#ffaa00"),
-                                ("🟨 Tarjetas amarillas/partido",f"{tarj:.2f}" if tarj else "N/D","#10b981"),
-                                ("🏆 ELO Rating",               f"{int(elo)}" if elo else "N/D", "#10b981"),
+                                ("🟨 Tarjetas amarillas/partido",f"{tarj:.2f}" if tarj else "N/D","#dfaf6f"),
+                                ("🏆 ELO Rating",               f"{int(elo)}" if elo else "N/D", "#dfaf6f"),
                                 ("📊 Ultimos 5 (G/E/P)",        f"{g5}G / {e5}E / {p5}P",       "#ffffff"),
                                 ("⚽ Goles U5",                 f"{gf5} a favor / {gc5} en contra","#aaaaaa"),
                             ]
                             tbl_eq = '<table style="width:100%;border-collapse:collapse;font-size:.82rem;margin:6px 0">'
-                            tbl_eq += '<thead><tr style="background:#1b2621;color:#10b981"><th style="padding:6px 10px;text-align:left">Estadistica</th><th style="padding:6px 10px;text-align:center">Valor</th></tr></thead><tbody>'
+                            tbl_eq += '<thead><tr style="background:#1b2621;color:#dfaf6f"><th style="padding:6px 10px;text-align:left">Estadistica</th><th style="padding:6px 10px;text-align:center">Valor</th></tr></thead><tbody>'
                             for i_r,(stat,val,clr) in enumerate(rows):
                                 bg_r="#1b2621" if i_r%2==0 else "#1b2621"
                                 tbl_eq+=f'<tr style="background:{bg_r}"><td style="padding:5px 10px;color:#aaa">{stat}</td><td style="padding:5px 10px;text-align:center;color:{clr};font-weight:700">{val}</td></tr>'
@@ -4337,7 +4304,7 @@ def pantalla_admin():
                             if u5:
                                 st.markdown("**🕐 Ultimos 5 partidos:**")
                                 tbl_u5='<table style="width:100%;border-collapse:collapse;font-size:.8rem;margin:4px 0">'
-                                tbl_u5+='<thead><tr style="background:#1b2621;color:#10b981"><th style="padding:5px 8px;text-align:left">Rival</th><th style="padding:5px 8px;text-align:center">Cond.</th><th style="padding:5px 8px;text-align:center">Marcador</th><th style="padding:5px 8px;text-align:center">Res</th></tr></thead><tbody>'
+                                tbl_u5+='<thead><tr style="background:#1b2621;color:#dfaf6f"><th style="padding:5px 8px;text-align:left">Rival</th><th style="padding:5px 8px;text-align:center">Cond.</th><th style="padding:5px 8px;text-align:center">Marcador</th><th style="padding:5px 8px;text-align:center">Res</th></tr></thead><tbody>'
                                 for i_u,pu in enumerate(u5):
                                     bg_u="#1b2621" if i_u%2==0 else "#1b2621"
                                     rc={"G":"#39ff14","E":"#ffaa00","P":"#ff4444"}.get(pu["res"],"#fff")
@@ -4681,16 +4648,113 @@ def pantalla_gratis(u):
 # PANTALLA PAGO
 # ══════════════════════════════════════════════════════════
 def pantalla_pago(u,plan):
-    hdr()
+    # Sin hdr() duplicado - solo el dashboard header
     ok,pv,dr=db_acceso(u["cedula"])
     pl_lbl={"dia":"📅 Plan Dia","semana":"📆 Plan Semana","mes":"👑 Plan Mes"}.get(plan,plan)
     st.markdown(f'👋 Hola **{u["nombre"]}** {pll(plan,dr)}',unsafe_allow_html=True)
     st.markdown("---")
-    tl=["🏟️ Por Liga","📁 Subir Archivo","📢 Picks","🏆 Escalera"]
+    tl=["📊 Dashboard"]  # Nueva pestaña Dashboard V2
+    tl+=["🏟️ Por Liga","📁 Subir Archivo","📢 Picks","🏆 Escalera"]
     if plan=="mes": tl.append("🔗 Combinadas"); tl.append("📈 Historial")
     tabs=st.tabs(tl)
 
+    # ══════════════════════════════════════════════════════════
+    # PESTAÑA DASHBOARD V2 - Nueva interfaz compacta
+    # ══════════════════════════════════════════════════════════
     with tabs[0]:
+        from scorpion.ui.components import (
+            render_dashboard_header, render_nav_bar, render_dashboard_box,
+            render_match_list, render_ai_analysis, render_markets,
+            render_odds_comparator, render_statistics, render_alerts
+        )
+        
+        # 1. NAVEGACIÓN ARRIBA DE TODO
+        st.markdown(render_nav_bar(active_tab="hoy"), unsafe_allow_html=True)
+        
+        # 2. Header con usuario y saldo (debajo de navegación)
+        saldo = st.session_state.get("user_saldo", "$1,000.00")
+        username = u.get("nombre", "Usuario")
+        st.markdown(render_dashboard_header(username=username, saldo=saldo), unsafe_allow_html=True)
+        
+        # Cargar partidos de ejemplo (reemplazar con datos reales)
+        partidos_ejemplo = [
+            {"local": "Man City", "visitante": "Chelsea", "hora": "15:00", "rango": "A+"},
+            {"local": "Barcelona", "visitante": "Real Madrid", "hora": "21:00", "rango": "A+"},
+            {"local": "Inter", "visitante": "Milan", "hora": "20:45", "rango": "B"},
+            {"local": "Bayern", "visitante": "Dortmund", "hora": "18:30", "rango": "B"},
+        ]
+        
+        analisis_ejemplo = {
+            "prob_local": 72,
+            "valor": "SI",
+            "riesgo": "Bajo",
+            "confianza": 91
+        }
+        
+        mercados_ejemplo = ["Ganador", "Over/Under 2.5", "Ambos marcan", "Hándicap Asiático"]
+        
+        cuotas_ejemplo = [
+            {"book": "Bet365", "value": 1.82, "best": False},
+            {"book": "Betano", "value": 1.88, "best": False},
+            {"book": "Pinnacle", "value": 1.90, "best": True},
+            {"book": "Stake", "value": 1.87, "best": False},
+        ]
+        
+        stats_ejemplo = {
+            "xg": "1.8 - 1.2",
+            "tiros": "15 - 9",
+            "corners": "6 - 4",
+            "posesion": "58% - 42%"
+        }
+        
+        alertas_ejemplo = [
+            {"tipo": "warning", "mensaje": "⚠️ Lesiones importantes detectadas"},
+            {"tipo": "info", "mensaje": "📊 Cambio de cuota -5%"},
+            {"tipo": "success", "mensaje": "💰 Dinero inteligente detectado"},
+            {"tipo": "fire", "mensaje": "🔥 Pick con Value +4.2%"},
+        ]
+        
+        # Layout de 2 columnas usando st.columns
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Columna izquierda
+            st.markdown(render_dashboard_box(
+                "⚽ Partidos del Día",
+                render_match_list(partidos_ejemplo)
+            ), unsafe_allow_html=True)
+            
+            st.markdown(render_dashboard_box(
+                "📈 Mercados Disponibles",
+                render_markets(mercados_ejemplo)
+            ), unsafe_allow_html=True)
+            
+            st.markdown(render_dashboard_box(
+                "📊 Estadísticas",
+                render_statistics(stats_ejemplo)
+            ), unsafe_allow_html=True)
+        
+        with col2:
+            # Columna derecha
+            st.markdown(render_dashboard_box(
+                "🤖 Análisis IA",
+                render_ai_analysis(analisis_ejemplo)
+            ), unsafe_allow_html=True)
+            
+            st.markdown(render_dashboard_box(
+                "💰 Comparador de Cuotas",
+                render_odds_comparator(cuotas_ejemplo)
+            ), unsafe_allow_html=True)
+            
+            st.markdown(render_dashboard_box(
+                "🔔 Alertas",
+                render_alerts(alertas_ejemplo)
+            ), unsafe_allow_html=True)
+        
+        st.markdown("---")
+        st.caption("🦂 Scorpion Elite V4 Pro · Dashboard V2 · Solo uso informativo")
+
+    with tabs[1]:
         st.markdown("### Selecciona liga y periodo")
 
         # Mostrar ligas activas hoy (con lógica del Mundial)
@@ -4922,16 +4986,16 @@ def pantalla_pago(u,plan):
                     st.markdown("### 📊 Tu Combinada")
 
                     # Tabla de picks seleccionados
-                    tbl_comb='<table style="width:100%;border-collapse:collapse;font-size:.83rem;margin:8px 0"><thead><tr style="background:#1b2621;color:#10b981"><th style="padding:6px 12px;text-align:left">Partido</th><th style="padding:6px 12px;text-align:left">Pick</th><th style="padding:6px 12px;text-align:center">Cuota</th><th style="padding:6px 12px;text-align:center">Confianza</th></tr></thead><tbody>'
+                    tbl_comb='<table style="width:100%;border-collapse:collapse;font-size:.83rem;margin:8px 0"><thead><tr style="background:#1b2621;color:#dfaf6f"><th style="padding:6px 12px;text-align:left">Partido</th><th style="padding:6px 12px;text-align:left">Pick</th><th style="padding:6px 12px;text-align:center">Cuota</th><th style="padding:6px 12px;text-align:center">Confianza</th></tr></thead><tbody>'
                     for i_c,s in enumerate(sel_comb):
                         bg_c="#1b2621" if i_c%2==0 else "#1b2621"
-                        tbl_comb+=f'<tr style="background:{bg_c}"><td style="padding:5px 12px;color:#ccc">{s["local"][:12]} vs {s["visitante"][:12]}</td><td style="padding:5px 12px;color:#10b981;font-weight:600">{s["mercado"]}</td><td style="padding:5px 12px;text-align:center;color:#fff">{s.get("cuota","?")}</td><td style="padding:5px 12px;text-align:center;color:#39ff14">{s.get("confianza","?")}%</td></tr>'
+                        tbl_comb+=f'<tr style="background:{bg_c}"><td style="padding:5px 12px;color:#ccc">{s["local"][:12]} vs {s["visitante"][:12]}</td><td style="padding:5px 12px;color:#dfaf6f;font-weight:600">{s["mercado"]}</td><td style="padding:5px 12px;text-align:center;color:#fff">{s.get("cuota","?")}</td><td style="padding:5px 12px;text-align:center;color:#39ff14">{s.get("confianza","?")}%</td></tr>'
                     tbl_comb+="</tbody></table>"
                     st.markdown(tbl_comb, unsafe_allow_html=True)
 
                     # Resumen de metricas con explicacion
                     tbl_res=f'''<table style="width:100%;border-collapse:collapse;font-size:.85rem;margin:10px 0">
-                      <thead><tr style="background:#0a1e0a;color:#10b981">
+                      <thead><tr style="background:#0a1e0a;color:#dfaf6f">
                         <th style="padding:7px 14px;text-align:left">Metrica</th>
                         <th style="padding:7px 14px;text-align:center">Valor</th>
                         <th style="padding:7px 14px;text-align:left">Que significa</th>
@@ -4943,7 +5007,7 @@ def pantalla_pago(u,plan):
                       </tr>
                       <tr style="background:#0a1a0a">
                         <td style="padding:6px 14px;color:#aaa">Cuota total combinada</td>
-                        <td style="padding:6px 14px;text-align:center;color:#10b981;font-weight:700">{cuota_c}x</td>
+                        <td style="padding:6px 14px;text-align:center;color:#dfaf6f;font-weight:700">{cuota_c}x</td>
                         <td style="padding:6px 14px;color:#888">Multiplica tu apuesta por {cuota_c}</td>
                       </tr>
                       <tr style="background:#0d1e0d">
@@ -4958,7 +5022,7 @@ def pantalla_pago(u,plan):
                       </tr>
                       <tr style="background:#0d1e0d">
                         <td style="padding:6px 14px;color:#aaa">Kelly recomendado</td>
-                        <td style="padding:6px 14px;text-align:center;color:#10b981;font-weight:700">{kelly_pct}% del bankroll</td>
+                        <td style="padding:6px 14px;text-align:center;color:#dfaf6f;font-weight:700">{kelly_pct}% del bankroll</td>
                         <td style="padding:6px 14px;color:#888">Si tienes $1000, apuesta maximo ${round(kelly_pct*10,0)}</td>
                       </tr>
                     </tbody></table>'''
@@ -4987,33 +5051,14 @@ def pantalla_pago(u,plan):
 
 
 # ══════════════════════════════════════════════════════════
-# PANTALLA PRINCIPAL - DASHBOARD
+# PANTALLA PRINCIPAL ÚNICA - SCORPION ELITE
 # ══════════════════════════════════════════════════════════
-def pantalla_principal():
-    """Dashboard principal con login en header."""
-    st.markdown("""
-    <style>
-    .main-header {background: linear-gradient(135deg, #1b2621 0%, #1b2621 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px;}
-    .section-title {color: #10b981; font-size: 1.3rem; font-weight: bold; margin: 15px 0 10px;}
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Header con logo y login
-    col_header_left, col_header_right = st.columns([4, 1])
-    
-    with col_header_left:
-        st.markdown("""
-        <div style="background: #1b2621; border: 1px solid #10b981; border-radius: 6px; padding: 20px 25px; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
-            <h1 style="color: #fff; margin: 0; font-size: 2rem; letter-spacing: 2px;">🦂 SCORPION <span style="color: #10b981;">ELITE</span></h1>
-            <p style="color: #dcdcdc; margin: 8px 0 0; font-size: 0.9rem;">Dashboard Analítico · 4 Modelos Matemáticos</p>
-        </div>
-        """, unsafe_allow_html=True)
     
     with col_header_right:
         if st.session_state.get("logged_in"):
             st.markdown(f"""
             <div style="text-align: right; padding: 15px; background: #0f1a12; border-radius: 8px; margin-top: 15px;">
-                <div style="color: #10b981; font-weight: bold; font-size: 1.1rem;">👤 {st.session_state.get('user_name', 'Usuario')}</div>
+                <div style="color: #dfaf6f; font-weight: bold; font-size: 1.1rem;">👤 {st.session_state.get('user_name', 'Usuario')}</div>
                 <div style="color: #888; font-size: 0.85rem;">Plan: {st.session_state.get('user_plan', 'gratis').upper()}</div>
             </div>
             """, unsafe_allow_html=True)
@@ -5022,7 +5067,7 @@ def pantalla_principal():
                 st.rerun()
         else:
             with st.form("login_form_dashboard", clear_on_submit=True):
-                st.markdown('<p style="color:#10b981; text-align: right; font-weight: bold; margin-bottom: 5px;">Acceso</p>', unsafe_allow_html=True)
+                st.markdown('<p style="color:#dfaf6f; text-align: right; font-weight: bold; margin-bottom: 5px;">Acceso</p>', unsafe_allow_html=True)
                 user_input = st.text_input("Usuario", placeholder="Tu cédula o 'admin'", label_visibility="collapsed", key="user_dash")
                 password_input = st.text_input("Contraseña", type="password", placeholder="Contraseña", label_visibility="collapsed", key="pass_dash")
                 submit_btn = st.form_submit_button("Entrar →")
@@ -5096,31 +5141,14 @@ def pantalla_principal():
         partidos_scraped = st.session_state.get("partidos_scraped", [])
     
     # ══════════════════════════════════════════════════════════
-    # 🎨 HEADER PRINCIPAL (igual que tu estructura)
+    # 💰 CUOTAS DE APUESTAS (visible arriba)
     # ══════════════════════════════════════════════════════════
-    col_header1, col_header2, col_header3 = st.columns([3, 1, 1])
-    with col_header1:
-        st.markdown('<h1 style="color:#10b981;margin:0;">🦂 SCORPION ELITE</h1>', unsafe_allow_html=True)
-    with col_header2:
-        st.markdown(f'<p style="color:#10b981;margin:20px 0 0 0;">{st.session_state.get("user_name", "Usuario")} | <span style="color:#39ff14;">$1,000</span></p>', unsafe_allow_html=True)
-    with col_header3:
-        if st.button("⚙️", use_container_width=True):
-            st.session_state.ver_admin = True
+    st.markdown("---")
+    st.markdown('<p style="color:#4ecdc4;font-size:1.2rem;font-weight:bold;">💰 Cuotas de Hoy</p>', unsafe_allow_html=True)
     
-    st.markdown('<hr style="border-color:#30363d;">', unsafe_allow_html=True)
-    
-    # ══════════════════════════════════════════════════════════
-    # 📋 NAVEGACIÓN (igual que tu estructura)
-    # ══════════════════════════════════════════════════════════
-    tab_hoy, tab_manana, tab_vivo, tab_futbol, tab_nba, tab_tenis, tab_fav = st.tabs(["📅 Hoy", "📆 Mañana", "🔴 En Vivo", "⚽ Fútbol", "🏀 NBA", "🎾 Tenis", "⭐ Favoritos"])
-    
-    # ══════════════════════════════════════════════════════════
-    # 📊 DASHBOARD 2 COLUMNAS (igual que tu estructura)
-    # ══════════════════════════════════════════════════════════
-    col_main, col_side = st.columns([2, 1])
-    
-    with col_main:
-        # Selector de liga
+    # Selector de liga
+    col_odds1, col_odds2 = st.columns([3, 1])
+    with col_odds1:
         liga_odds = st.selectbox(
             "🏆 Selecciona una liga:",
             options=[
@@ -5132,24 +5160,26 @@ def pantalla_principal():
             ],
             key="liga_cuotas_main"
         )
-        
-        # Mapear a keys de API
-        liga_keys_map = {
-            "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League": "soccer_epl",
-            "🇪🇸 La Liga": "soccer_esp La Liga",
-            "🇫🇷 Ligue 1": "soccer_fra Ligue 1",
-            "🇩🇪 Bundesliga": "soccer_deu Bundesliga",
-            "🇮🇹 Serie A": "soccer_ita Serie A",
-        }
-        liga_odds_key = liga_keys_map.get(liga_odds, "soccer_epl")
-        
-        with st.spinner("Cargando partidos..."):
+    with col_odds2:
+        ver_cuotas_btn = st.button("Ver Cuotas", key="btn_ver_cuotas", use_container_width=True)
+    
+    # Mapear a keys de API
+    liga_keys_map = {
+        "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League": "soccer_epl",
+        "🇪🇸 La Liga": "soccer_esp La Liga",
+        "🇫🇷 Ligue 1": "soccer_fra Ligue 1",
+        "🇩🇪 Bundesliga": "soccer_deu Bundesliga",
+        "🇮🇹 Serie A": "soccer_ita Serie A",
+    }
+    liga_odds_key = liga_keys_map.get(liga_odds, "soccer_epl")
+    
+    # Mostrar cuotas si se presiona el botón
+    if ver_cuotas_btn:
+        with st.spinner("Obteniendo cuotas..."):
             cuotas = obtener_cuotas_todos_partidos(liga_odds_key)
         
         if cuotas:
-            st.success(f"📊 {len(cuotas)} partidos - {liga_odds}")
-            
-            # Partidos del día (columna izquierda)
+            st.success(f"✅ {len(cuotas)} partidos")
             for c in cuotas[:8]:
                 home = c.get('home', '')
                 away = c.get('away', '')
@@ -5158,83 +5188,17 @@ def pantalla_principal():
                 cuota_v = c.get('cuota_visita', 0)
                 
                 st.markdown(f"""
-                <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px;margin-bottom:8px;">
-                    <div style="color:#e6edf3;font-size:0.95rem;font-weight:bold;margin-bottom:8px;">{home} <span style="color:#10b981;">vs</span> {away}</div>
-                    <div style="display:flex;justify-content:space-around;">
-                        <div style="text-align:center;"><div style="color:#8b949e;font-size:0.7rem;">LOCAL</div><div style="color:#10b981;font-size:1.1rem;font-weight:bold;">{cuota_l}</div></div>
-                        <div style="text-align:center;"><div style="color:#8b949e;font-size:0.7rem;">EMPATE</div><div style="color:#8b949e;font-size:1.1rem;font-weight:bold;">{cuota_e}</div></div>
-                        <div style="text-align:center;"><div style="color:#8b949e;font-size:0.7rem;">VISITA</div><div style="color:#10b981;font-size:1.1rem;font-weight:bold;">{cuota_v}</div></div>
+                <div style="background:#1b2621;border:1px solid #4ecdc4;border-radius:4px;padding:8px;margin-bottom:4px;">
+                    <div style="color:#dcdcdc;font-size:0.85rem;font-weight:bold;">{home} vs {away}</div>
+                    <div style="display:flex;justify-content:space-around;margin-top:4px;">
+                        <div style="text-align:center;"><div style="color:#888;font-size:0.65rem;">1</div><div style="color:#4ecdc4;font-size:0.95rem;">{cuota_l}</div></div>
+                        <div style="text-align:center;"><div style="color:#888;font-size:0.65rem;">X</div><div style="color:#4ecdc4;font-size:0.95rem;">{cuota_e}</div></div>
+                        <div style="text-align:center;"><div style="color:#888;font-size:0.65rem;">2</div><div style="color:#4ecdc4;font-size:0.95rem;">{cuota_v}</div></div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
         else:
-            st.info("📭 No hay partidos con cuotas disponibles para esta liga")
-    
-    with col_side:
-        # Análisis IA (columna derecha)
-        st.markdown("### 📊 Análisis IA")
-        
-        # Simulación de análisis
-        if cuotas:
-            for c in cuotas[:3]:
-                home = c.get('home', '')
-                away = c.get('away', '')
-                st.markdown(f"""
-                <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px;margin-bottom:10px;">
-                    <p style="color:#e6edf3;font-size:0.85rem;font-weight:bold;">{home} vs {away}</p>
-                    <p style="color:#39ff14;font-size:0.8rem;">Probabilidad Local: 65-75%</p>
-                    <p style="color:#10b981;font-size:0.8rem;">Valor encontrado: SI</p>
-                    <p style="color:#8b949e;font-size:0.8rem;">Riesgo: Bajo</p>
-                    <p style="color:#39ff14;font-size:0.85rem;font-weight:bold;">Confianza: 88%</p>
-                </div>
-                """, unsafe_allow_html=True)
-        
-        st.markdown("---")
-        
-        # Comparador de cuotas
-        st.markdown("### 💰 Comparador")
-        st.markdown("""
-        <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:10px;margin-bottom:5px;">
-            <div style="display:flex;justify-content:space-between;"><span style="color:#8b949e;">Bet365</span><span style="color:#10b981;font-weight:bold;">1.82</span></div>
-        </div>
-        <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:10px;margin-bottom:5px;">
-            <div style="display:flex;justify-content:space-between;"><span style="color:#8b949e;">Betano</span><span style="color:#e6edf3;">1.88</span></div>
-        </div>
-        <div style="background:#161b22;border:1px solid #10b981;border-radius:8px;padding:10px;margin-bottom:5px;">
-            <div style="display:flex;justify-content:space-between;"><span style="color:#10b981;font-weight:bold;">Pinnacle ⭐</span><span style="color:#10b981;font-weight:bold;">1.90</span></div>
-        </div>
-        <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:10px;">
-            <div style="display:flex;justify-content:space-between;"><span style="color:#8b949e;">Stake</span><span style="color:#e6edf3;">1.87</span></div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("---")
-        
-        # Mercados
-        st.markdown("### 📋 Mercados")
-        st.checkbox("✔ Ganador", value=True)
-        st.checkbox("✔ Over/Under")
-        st.checkbox("✔ Ambos marcan")
-        st.checkbox("✔ Hándicap")
-        
-        st.markdown("---")
-        
-        # Estadísticas
-        st.markdown("### 📈 Estadísticas")
-        st.checkbox("xG", value=True)
-        st.checkbox("Tiros")
-        st.checkbox("Corners")
-        st.checkbox("Posesión")
-        
-        st.markdown("---")
-        
-        # Alertas
-        st.markdown("### 🔔 Alertas")
-        st.markdown("""
-        <p style="color:#ff6b6b;font-size:0.8rem;">⚠️ Lesiones detectadas</p>
-        <p style="color:#dfaf6f;font-size:0.8rem;">📉 Cambio de cuota -5%</p>
-        <p style="color:#39ff14;font-size:0.8rem;">💰 Pick con Value +12%</p>
-        """, unsafe_allow_html=True)
+            st.warning("No hay cuotas. Intenta con otra liga.")
     
     # Obtener estadísticas de equipos desde API-Football
     stats_cache_key = f"stats_equipos_{get_hoy()}"
@@ -5313,7 +5277,7 @@ def pantalla_principal():
                                 """, unsafe_allow_html=True)
                             else:
                                 st.markdown(f"""
-                                <div style="background:#1b2621;border:1px solid #10b981;border-radius:4px;padding:8px;margin-bottom:6px;">
+                                <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:8px;margin-bottom:6px;">
                                     <div style="color:#dcdcdc;font-size:0.85rem;font-weight:bold;">{nombre}</div>
                                     <div style="color:#888;font-size:0.65rem;">{liga} • {fuente}</div>
                                 </div>
@@ -5344,8 +5308,8 @@ def pantalla_principal():
                     info = stats.get('goles_favor', '')
                     if info and len(info) > 50:
                         st.markdown(f"""
-                        <div style="background:#1b2621;border:1px solid #10b981;border-radius:4px;padding:10px;margin-top:10px;">
-                            <div style="color:#10b981;font-size:0.8rem;font-weight:bold;margin-bottom:5px;">ℹ️ Información:</div>
+                        <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:10px;margin-top:10px;">
+                            <div style="color:#dfaf6f;font-size:0.8rem;font-weight:bold;margin-bottom:5px;">ℹ️ Información:</div>
                             <div style="color:#dcdcdc;font-size:0.75rem;">{info}</div>
                         </div>
                         """, unsafe_allow_html=True)
@@ -5364,7 +5328,7 @@ def pantalla_principal():
                 
                 # === SECCIÓN DE CUOTAS ===
                 st.markdown("---")
-                st.markdown('<p style="color:#10b981;font-size:1rem;font-weight:bold;">💰 Cuotas de Apuestas</p>', unsafe_allow_html=True)
+                st.markdown('<p style="color:#dfaf6f;font-size:1rem;font-weight:bold;">💰 Cuotas de Apuestas</p>', unsafe_allow_html=True)
                 
                 with st.expander("💰 Ver Cuotas de Hoy", expanded=False):
                     st.markdown("**Selecciona una liga:**")
@@ -5409,12 +5373,12 @@ def pantalla_principal():
                                 casa = c.get('casa', '')
                                 
                                 st.markdown(f"""
-                                <div style="background:#1b2621;border:1px solid #10b981;border-radius:4px;padding:8px;margin-bottom:6px;">
+                                <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:8px;margin-bottom:6px;">
                                     <div style="color:#dcdcdc;font-size:0.85rem;font-weight:bold;">{home} vs {away}</div>
                                     <div style="display:flex;justify-content:space-around;margin-top:6px;">
-                                        <div style="text-align:center;"><div style="color:#10b981;font-size:0.7rem;">1 (Local)</div><div style="color:#4ecdc4;font-size:1rem;">{cuota_l}</div></div>
-                                        <div style="text-align:center;"><div style="color:#10b981;font-size:0.7rem;">X (Empate)</div><div style="color:#4ecdc4;font-size:1rem;">{cuota_e}</div></div>
-                                        <div style="text-align:center;"><div style="color:#10b981;font-size:0.7rem;">2 (Visita)</div><div style="color:#4ecdc4;font-size:1rem;">{cuota_v}</div></div>
+                                        <div style="text-align:center;"><div style="color:#dfaf6f;font-size:0.7rem;">1 (Local)</div><div style="color:#4ecdc4;font-size:1rem;">{cuota_l}</div></div>
+                                        <div style="text-align:center;"><div style="color:#dfaf6f;font-size:0.7rem;">X (Empate)</div><div style="color:#4ecdc4;font-size:1rem;">{cuota_e}</div></div>
+                                        <div style="text-align:center;"><div style="color:#dfaf6f;font-size:0.7rem;">2 (Visita)</div><div style="color:#4ecdc4;font-size:1rem;">{cuota_v}</div></div>
                                     </div>
                                     <div style="color:#888;font-size:0.6rem;text-align:right;margin-top:4px;">📌 {casa}</div>
                                 </div>
@@ -5424,7 +5388,7 @@ def pantalla_principal():
                 
                 # === SECCIÓN DE CLIMA ===
                 st.markdown("---")
-                st.markdown('<p style="color:#10b981;font-size:1rem;font-weight:bold;">🌤️ Clima</p>', unsafe_allow_html=True)
+                st.markdown('<p style="color:#dfaf6f;font-size:1rem;font-weight:bold;">🌤️ Clima</p>', unsafe_allow_html=True)
                 
                 with st.expander("🌡️ Ver Clima", expanded=False):
                     ciudad_clima = st.text_input("Ciudad:", placeholder="Ej: Madrid, Buenos Aires...", key="ciudad_clima_input")
@@ -5473,7 +5437,7 @@ def pantalla_principal():
                 
                 # === ESTADÍSTICAS AVANZADAS (FBref + Understat) ===
                 st.markdown("---")
-                st.markdown('<p style="color:#10b981;font-size:1rem;font-weight:bold;">📊 Stats Avanzadas</p>', unsafe_allow_html=True)
+                st.markdown('<p style="color:#dfaf6f;font-size:1rem;font-weight:bold;">📊 Stats Avanzadas</p>', unsafe_allow_html=True)
                 
                 with st.expander("🔍 Ver Stats Detalladas", expanded=False):
                     nom_stats = st.text_input("Equipo para stats:", placeholder="Ej: Barcelona, Liverpool...", key="equipo_stats_input")
@@ -5545,7 +5509,7 @@ def pantalla_principal():
         
         # === CALENDARIO COMPACTO ===
         st.markdown("---")
-        st.markdown('<p style="color:#10b981;font-size:1rem;font-weight:bold;">📅 Partidos de Hoy</p>', unsafe_allow_html=True)
+        st.markdown('<p style="color:#dfaf6f;font-size:1rem;font-weight:bold;">📅 Partidos de Hoy</p>', unsafe_allow_html=True)
         
         if 'partidos_scraped' in st.session_state:
             partidos = st.session_state.partidos_scraped
@@ -5557,10 +5521,10 @@ def pantalla_principal():
                     liga = p.get("liga", "")[:18] or "Partido"
                     
                     st.markdown(f"""
-                    <div style="background:#1b2621;border:1px solid #10b981;border-radius:4px;padding:6px;margin-bottom:4px;display:flex;align-items:center;">
-                        <div style="color:#10b981;font-size:0.6rem;width:70px;">{liga}</div>
+                    <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:6px;margin-bottom:4px;display:flex;align-items:center;">
+                        <div style="color:#8a6435;font-size:0.6rem;width:70px;">{liga}</div>
                         <div style="color:#dcdcdc;font-size:0.75rem;flex:1;text-align:center;">{local} vs {visitante}</div>
-                        <div style="color:#10b981;font-size:0.7rem;width:40px;text-align:right;">{hora}</div>
+                        <div style="color:#dfaf6f;font-size:0.7rem;width:40px;text-align:right;">{hora}</div>
                     </div>
                     """, unsafe_allow_html=True)
             else:
@@ -5569,7 +5533,7 @@ def pantalla_principal():
             st.info("Cargando...")
         
         # === PICKS COMPACTOS ===
-        st.markdown('<p style="color:#10b981;font-size:1rem;font-weight:bold;">🔥 Picks del Día</p>', unsafe_allow_html=True)
+        st.markdown('<p style="color:#dfaf6f;font-size:1rem;font-weight:bold;">🔥 Picks del Día</p>', unsafe_allow_html=True)
         
         if picks_hoy:
             real_picks = [p for p in picks_hoy if "🔒" not in str(p.get("mercado",""))]
@@ -5583,8 +5547,8 @@ def pantalla_principal():
                     conf = pick.get('confianza', 0)
                     
                     st.markdown(f"""
-                    <div style="background:#1b2621;border:1px solid #10b981;border-radius:4px;padding:6px;margin-bottom:4px;">
-                        <div style="color:#10b981;font-size:0.65rem;">{liga}</div>
+                    <div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:6px;margin-bottom:4px;">
+                        <div style="color:#dfaf6f;font-size:0.65rem;">{liga}</div>
                         <div style="color:#dcdcdc;font-size:0.8rem;font-weight:bold;">{local} vs {visitante}</div>
                         <div style="color:#39ff14;font-size:0.75rem;">{mercado} @{cuota} <span style="color:#888;">[{conf}%]</span></div>
                     </div>
@@ -5621,7 +5585,7 @@ def pantalla_principal():
                 goles = g.get("goles", 0)
                 equipo = g.get("equipo", "")[:12]
                 
-                st.markdown(f'<div style="background:#1b2621;border:1px solid #10b981;border-radius:4px;padding:5px;margin-bottom:4px;display:flex;justify-content:space-between;"><span style="color:#dcdcdc;font-size:0.75rem;">{nombre} <span style="color:#888;">({equipo})</span></span><span style="color:#10b981;font-size:0.8rem;font-weight:bold;">{goles}⚽</span></div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="background:#1b2621;border:1px solid #8a6435;border-radius:4px;padding:5px;margin-bottom:4px;display:flex;justify-content:space-between;"><span style="color:#dcdcdc;font-size:0.75rem;">{nombre} <span style="color:#888;">({equipo})</span></span><span style="color:#dfaf6f;font-size:0.8rem;font-weight:bold;">{goles}⚽</span></div>', unsafe_allow_html=True)
         else:
             st.info("Cargando goleadores...")
     
@@ -5637,7 +5601,7 @@ def pantalla_principal():
             real_picks = [p for p in picks_hoy if "🔒" not in str(p.get("mercado",""))]
             for p in real_picks[:3]:
                 conf = p.get("confianza", 0)
-                conf_color = "#d48243" if conf >= 70 else "#10b981" if conf >= 50 else "#ff6b6b"
+                conf_color = "#d48243" if conf >= 70 else "#dfaf6f" if conf >= 50 else "#ff6b6b"
                 st.markdown(f'<div style="color: #ccc; margin: 5px 0;">• {p.get("mercado", "N/A")[:25]}<br><span style="color: {conf_color};">@{p.get("cuota", "?")} [{conf}%]</span></div>', unsafe_allow_html=True)
         else:
             st.markdown('<div style="color: #888;">• Sin picks publicados</div>', unsafe_allow_html=True)
@@ -5782,36 +5746,164 @@ def pantalla_principal():
 
 # ══════════════════════════════════════════════════════════
 # ══════════════════════════════════════════════════════════
+# PANTALLA PRINCIPAL ÚNICA - SCORPION ELITE
+# ══════════════════════════════════════════════════════════
+
+def pantalla_principal_unificada():
+    """Pantalla principal unificada con header y navegación."""
+    from scorpion.ui.components import (
+        render_nav_bar, render_dashboard_box,
+        render_match_list, render_ai_analysis, render_markets,
+        render_odds_comparator, render_statistics, render_alerts
+    )
+    
+    # ══════════════════════════════════════════════════════════
+    # HEADER: 🦂 SCORPION ELITE | Usuario | ⚙️
+    # ══════════════════════════════════════════════════════════
+    col_user, col_settings = st.columns([6, 1])
+    
+    with col_user:
+        username = st.session_state.get("user_name", "Invitado")
+        plan = st.session_state.get("user_plan", "")
+        st.markdown(f'''
+        <div style="background: linear-gradient(135deg, #00aa55 0%, #008844 100%); border-radius: 12px; padding: 20px 30px; margin-bottom: 0; box-shadow: 0 4px 20px rgba(0,136,68,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="font-size: 2.5rem;">🦂</span>
+                    <span style="font-size: 2rem; font-weight: bold; color: #fff; letter-spacing: 2px; font-family: 'Segoe UI', sans-serif;">SCORPION ELITE</span>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 1rem; color: #fff; font-weight: 600;">👤 {username}</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.85);">{plan.upper() if plan else 'GRATIS'}</div>
+                </div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+    
+    with col_settings:
+        st.markdown("""
+        <div style="text-align: center; padding-top: 20px;">
+            <span style="font-size: 2rem; cursor: pointer;">⚙️</span>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # ══════════════════════════════════════════════════════════
+    # NAVEGACIÓN PRINCIPAL: Hoy | Mañana | En vivo | Fútbol | NBA | MLB | Tenis | Favoritos | Buscar
+    # ══════════════════════════════════════════════════════════
+    st.markdown(render_nav_bar(active_tab="hoy"), unsafe_allow_html=True)
+    
+    # ══════════════════════════════════════════════════════════
+    # PESTAÑAS SECUNDARIAS
+    # ══════════════════════════════════════════════════════════
+    tabs_nav = st.tabs(["📊 Dashboard", "🏆 Picks", "📈 Análisis", "💰 Cuotas", "⚙️ Config"])
+    
+    # ══════════════════════════════════════════════════════════
+    # PESTAÑA DASHBOARD
+    # ══════════════════════════════════════════════════════════
+    with tabs_nav[0]:
+        # Datos de ejemplo
+        partidos_ejemplo = [
+            {"local": "Man City", "visitante": "Chelsea", "hora": "15:00", "rango": "A+"},
+            {"local": "Barcelona", "visitante": "Real Madrid", "hora": "21:00", "rango": "A+"},
+            {"local": "Inter", "visitante": "Milan", "hora": "20:45", "rango": "B"},
+            {"local": "Bayern", "visitante": "Dortmund", "hora": "18:30", "rango": "B"},
+            {"local": "PSG", "visitante": "Lyon", "hora": "21:00", "rango": "A+"},
+        ]
+        
+        analisis_ejemplo = {
+            "prob_local": 72,
+            "valor": "SI",
+            "riesgo": "Bajo",
+            "confianza": 91
+        }
+        
+        cuotas_ejemplo = [
+            {"book": "Bet365", "value": 1.82, "best": False},
+            {"book": "Betano", "value": 1.88, "best": False},
+            {"book": "Pinnacle", "value": 1.90, "best": True},
+            {"book": "Stake", "value": 1.87, "best": False},
+        ]
+        
+        stats_ejemplo = {
+            "xg": "1.8 - 1.2",
+            "tiros": "15 - 9",
+            "corners": "6 - 4",
+            "posesion": "58% - 42%"
+        }
+        
+        alertas_ejemplo = [
+            {"tipo": "warning", "mensaje": "⚠️ Lesiones importantes"},
+            {"tipo": "info", "mensaje": "📊 Cambio de cuota -5%"},
+            {"tipo": "success", "mensaje": "💰 Dinero inteligente"},
+            {"tipo": "fire", "mensaje": "🔥 Pick con Value +4.2%"},
+        ]
+        
+        # Layout de 2 columnas
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown(render_dashboard_box("⚽ Partidos del Día", render_match_list(partidos_ejemplo)), unsafe_allow_html=True)
+            st.markdown(render_dashboard_box("📊 Estadísticas", render_statistics(stats_ejemplo)), unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown(render_dashboard_box("🤖 Análisis IA", render_ai_analysis(analisis_ejemplo)), unsafe_allow_html=True)
+            st.markdown(render_dashboard_box("🔔 Alertas", render_alerts(alertas_ejemplo)), unsafe_allow_html=True)
+    
+    # ══════════════════════════════════════════════════════════
+    # PESTAÑA PICKS
+    # ══════════════════════════════════════════════════════════
+    with tabs_nav[1]:
+        st.markdown(render_dashboard_box("🏆 Top Picks del Día", """
+        <div style="text-align: center; padding: 20px; color: #888;">
+            Los picks se muestran cuando inicias sesión con tu cuenta.
+        </div>
+        """), unsafe_allow_html=True)
+    
+    # ══════════════════════════════════════════════════════════
+    # PESTAÑA ANÁLISIS
+    # ══════════════════════════════════════════════════════════
+    with tabs_nav[2]:
+        st.markdown(render_dashboard_box("📈 Análisis Detallado", """
+        <div style="text-align: center; padding: 20px; color: #888;">
+            Selecciona un partido para ver el análisis completo.
+        </div>
+        """), unsafe_allow_html=True)
+    
+    # ══════════════════════════════════════════════════════════
+    # PESTAÑA CUOTAS
+    # ══════════════════════════════════════════════════════════
+    with tabs_nav[3]:
+        st.markdown(render_dashboard_box("💰 Comparador de Cuotas", render_odds_comparator(cuotas_ejemplo)), unsafe_allow_html=True)
+    
+    # ══════════════════════════════════════════════════════════
+    # PESTAÑA CONFIG
+    # ══════════════════════════════════════════════════════════
+    with tabs_nav[4]:
+        st.markdown(render_dashboard_box("⚙️ Configuración", """
+        <div style="padding: 15px;">
+            <h3 style="color: #00ff88;">Tu Cuenta</h3>
+            <p style="color: #ccc;">Usuario: """ + st.session_state.get("user_name", "Invitado") + """</p>
+            <p style="color: #ccc;">Plan: """ + st.session_state.get("user_plan", "gratis").upper() + """</p>
+            <br>
+            <h3 style="color: #00ff88;">Sesión</h3>
+        </div>
+        """), unsafe_allow_html=True)
+        
+        if st.button("🚪 Cerrar Sesión", type="primary"):
+            st.session_state.clear()
+            st.rerun()
+    
+    # Footer
+    st.markdown("---")
+    st.markdown('<div style="text-align: center; color: #00ff88; font-size: 0.9rem;">🦂 Scorpion Elite V4 Pro · Solo uso informativo</div>', unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════
 # ROUTER
 # ══════════════════════════════════════════════════════════
 init_db()
 if "li" not in st.session_state: st.session_state.li=False
 
-# Navegación según estado de login
-if not st.session_state.li:
-    # NO logueado → mostrar dashboard con login
-    pantalla_principal()
-else:
-    # Logueado → mostrar pantalla según plan
-    u = st.session_state.get("u", {})
-    ced = st.session_state.get("ced", "")
-    ok, plan, dr = db_acceso(ced)
-    
-    # Verificar is_admin en session_state
-    is_admin = st.session_state.get("is_admin", False) or plan == "admin"
-    
-    if is_admin:
-        # Admin → pantalla_admin() directamente
-        pantalla_admin()
-    elif plan == "gratis":
-        # Usuario gratis → pantalla_gratis()
-        pantalla_gratis(u)
-    elif plan in ("dia", "semana", "mes"):
-        # Usuario pago → pantalla_pago()
-        pantalla_pago(u, plan)
-    else:
-        # Plan no reconocido
-        st.error("Plan no reconocido. Contacta al administrador.")
-        if st.button("Cerrar sesion"):
-            st.session_state.clear()
-            st.rerun()
+# Siempre mostrar la pantalla principal unificada
+pantalla_principal_unificada()
