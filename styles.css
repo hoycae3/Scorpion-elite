@@ -1,39 +1,40 @@
-/* Scorpion Elite - Diseño Profesional */
+/* Scorpion Elite - Verde y Dorado */
 
 /* Variables CSS */
 :root {
-    --bg-main: #f8f9fa;
-    --panel-bg: #ffffff;
-    --accent-green: #00aa55;
-    --accent-dark: #008844;
-    --text-dark: #2c3e50;
-    --text-light: #7f8c8d;
+    --bg-dark-green: #003300;
+    --panel-bg: #004400;
+    --gold-bright: #ffcc00;
+    --gold-dark: #ff9900;
+    --text-light: #ffffff;
 }
 
 /* 1. CONFIGURACIÓN DE LA PÁGINA */
 .stApp {
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%) !important;
-    color: #ecf0f1;
+    background-color: #003300 !important;
+    background: #003300 !important;
+    color: var(--text-light);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Forzar fondo profesional */
+/* Forzar fondo verde en todo el body */
 body, .stApp > div, main {
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%) !important;
+    background-color: #003300 !important;
+    background: #003300 !important;
 }
 
 /* 2. CABECERA PRINCIPAL */
 .header-container {
-    background: #00aa55 !important;
+    background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%) !important;
     padding: 25px;
     border-radius: 15px;
-    border: 3px solid #008844;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    border: 3px solid #ff9900;
+    box-shadow: 0 4px 20px rgba(255,153,0,0.4);
     margin-bottom: 25px;
 }
 
 .brand-title {
-    color: #fff;
+    color: #003300;
     font-family: 'Georgia', serif;
     font-size: 40px;
     font-weight: bold;
@@ -42,7 +43,7 @@ body, .stApp > div, main {
 }
 
 .brand-subtitle {
-    color: var(--text-light);
+    color: #003300;
     font-size: 14px;
     margin-top: 5px;
     letter-spacing: 1px;
@@ -50,11 +51,11 @@ body, .stApp > div, main {
 
 /* 3. CAJA DE ACCESO / LOGIN */
 .login-container, .login-box {
-    background-color: #ffffff;
-    border: 2px solid #00aa55;
+    background-color: #004400;
+    border: 2px solid #ffcc00;
     border-radius: 12px;
     padding: 25px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    box-shadow: 0 8px 30px rgba(255,153,0,0.2);
 }
 
 .login-title {
@@ -82,12 +83,12 @@ body, .stApp > div, main {
 
 /* 5. TARJETAS DE PICKS RECOMENDADOS */
 .pick-card {
-    background-color: #ffffff;
-    border: 2px solid #00aa55;
+    background-color: #004400;
+    border: 2px solid #ffcc00;
     border-radius: 10px;
     padding: 20px;
     margin-bottom: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 15px rgba(255,153,0,0.2);
 }
 
 .pick-header {
@@ -130,37 +131,37 @@ body, .stApp > div, main {
 
 /* 6. TARJETAS DE LA COLUMNA DERECHA */
 .sidebar-card, .sidebar-right-card {
-    background-color: #ffffff;
-    border: 2px solid #00aa55;
+    background-color: #004400;
+    border: 2px solid #ffcc00;
     border-radius: 10px;
     padding: 20px;
     margin-bottom: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 15px rgba(255,153,0,0.2);
 }
 
 .sidebar-card-title {
     color: var(--gold-bright);
     font-size: 16px;
     font-weight: bold;
-    border-bottom: 1px solid rgba(223, 175, 111, 0.2);
+    border-bottom: 1px solid rgba(255,204,0,0.3);
     padding-bottom: 10px;
     margin-bottom: 12px;
 }
 
 /* 7. INPUT Y BOTONES */
 .stTextInput > div > div > input {
-    background-color: #ffffff !important;
-    color: #333 !important;
-    border: 2px solid #00aa55 !important;
+    background-color: #003300 !important;
+    color: #ffcc00 !important;
+    border: 2px solid #ffcc00 !important;
     border-radius: 8px !important;
 }
 
 .stTextInput > div > div > input:focus {
-    border-color: #008844 !important;
+    border-color: #ff9900 !important;
 }
 
 .stButton > button {
-    background: #00aa55 !important;
+    background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%) !important;
     border: none !important;
     padding: 12px 24px;
     color: #ffffff !important;
@@ -173,7 +174,7 @@ body, .stApp > div, main {
 }
 
 .stButton > button:hover {
-    background: #008844 !important;
+    background: linear-gradient(135deg, #ff9900 0%, #ffcc00 100%) !important;
 }
 
 /* 8. FOOTER */
@@ -187,9 +188,9 @@ body, .stApp > div, main {
 
 /* 9. BADGES DE RANGO */
 .badge-Aplus {
-    background-color: rgba(57, 255, 20, 0.15);
-    color: #39ff14;
-    border: 1px solid #39ff14;
+    background-color: rgba(255, 204, 0, 0.15);
+    color: #ffcc00;
+    border: 1px solid #ffcc00;
     padding: 2px 9px;
     border-radius: 20px;
     font-size: 11px;
@@ -424,20 +425,20 @@ div[data-testid="stHorizontalBlock"] > div {
 .dash-nav {
     display: flex;
     gap: 8px;
-    background: #3d566e;
-    border: 1px solid #4a6278;
+    background: #004400;
+    border: 2px solid #ffcc00;
     border-radius: 12px;
     padding: 8px 12px;
     margin-bottom: 20px;
     overflow-x: auto;
     flex-wrap: nowrap;
-    box-shadow: 0 2px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 20px rgba(255,153,0,0.3);
 }
 
 .nav-tab {
-    background: #4a6278;
-    border: 1px solid #5a7288;
-    color: #ecf0f1;
+    background: #005500;
+    border: 1px solid #ffcc00;
+    color: #ffcc00;
     padding: 10px 20px;
     border-radius: 8px;
     cursor: pointer;
@@ -448,19 +449,19 @@ div[data-testid="stHorizontalBlock"] > div {
 }
 
 .nav-tab:hover {
-    background: #00aa55;
-    color: #ffffff;
-    border-color: #00aa55;
+    background: #ffcc00;
+    color: #003300;
+    border-color: #ff9900;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,170,85,0.3);
+    box-shadow: 0 4px 12px rgba(255,153,0,0.4);
 }
 
 .nav-tab.nav-active {
-    background: #00aa55;
-    color: #ffffff;
-    border-color: #00ff88;
+    background: #ffcc00;
+    color: #003300;
+    border-color: #ff9900;
     font-weight: bold;
-    box-shadow: 0 4px 15px rgba(0,170,85,0.4);
+    box-shadow: 0 4px 15px rgba(255,153,0,0.4);
 }
 
 /* Layout de 2 columnas */
@@ -479,26 +480,26 @@ div[data-testid="stHorizontalBlock"] > div {
 
 /* Cajas del dashboard */
 .dash-box {
-    background: #3d566e;
-    border: 1px solid #4a6278;
+    background: #004400;
+    border: 2px solid #ffcc00;
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 20px rgba(255,153,0,0.2);
 }
 
 .dash-box-title {
-    color: #00ff88;
+    color: #ffcc00;
     font-size: 0.95rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    border-bottom: 2px solid #00aa55;
+    border-bottom: 2px solid #ffcc00;
     padding-bottom: 12px;
     margin-bottom: 15px;
 }
 
 .dash-box-content {
-    color: #ecf0f1;
+    color: #ffffff;
     font-size: 0.95rem;
 }
 

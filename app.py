@@ -5766,15 +5766,15 @@ def pantalla_principal_unificada():
         username = st.session_state.get("user_name", "Invitado")
         plan = st.session_state.get("user_plan", "")
         st.markdown(f'''
-        <div style="background: linear-gradient(135deg, #00aa55 0%, #008844 100%); border-radius: 12px; padding: 20px 30px; margin-bottom: 0; box-shadow: 0 4px 20px rgba(0,136,68,0.3);">
+        <div style="background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%); border-radius: 12px; padding: 20px 30px; margin-bottom: 0; box-shadow: 0 4px 20px rgba(255,153,0,0.4);">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <span style="font-size: 2.5rem;">🦂</span>
-                    <span style="font-size: 2rem; font-weight: bold; color: #fff; letter-spacing: 2px; font-family: 'Segoe UI', sans-serif;">SCORPION ELITE</span>
+                    <span style="font-size: 2rem; font-weight: bold; color: #003300; letter-spacing: 2px; font-family: 'Segoe UI', sans-serif;">SCORPION ELITE</span>
                 </div>
                 <div style="text-align: right;">
-                    <div style="font-size: 1rem; color: #fff; font-weight: 600;">👤 {username}</div>
-                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.85);">{plan.upper() if plan else 'GRATIS'}</div>
+                    <div style="font-size: 1rem; color: #003300; font-weight: 600;">👤 {username}</div>
+                    <div style="font-size: 0.85rem; color: #004400;">{plan.upper() if plan else 'GRATIS'}</div>
                 </div>
             </div>
         </div>
