@@ -10,7 +10,7 @@ from typing import List, Dict, Any, Optional
 
 def render_dashboard_header(username: str = "Usuario", saldo: str = "$0.00", show_settings: bool = True) -> str:
     """Renderiza el header principal del dashboard con usuario, saldo y configuración."""
-    settings_btn = '<span style="color: #d4af37; cursor: pointer; font-size: 1.2rem;">⚙️</span>' if show_settings else ''
+    settings_btn = '<span style="color: #ffcc00; cursor: pointer; font-size: 1.2rem;">⚙️</span>' if show_settings else ''
     return f'''
     <div class="dash-header">
         <div class="dash-logo">

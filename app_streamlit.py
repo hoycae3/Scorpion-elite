@@ -4681,7 +4681,7 @@ def pantalla_gratis(u):
 # PANTALLA PAGO
 # ══════════════════════════════════════════════════════════
 def pantalla_pago(u,plan):
-    hdr()
+    # Sin hdr() duplicado - solo el dashboard header
     ok,pv,dr=db_acceso(u["cedula"])
     pl_lbl={"dia":"📅 Plan Dia","semana":"📆 Plan Semana","mes":"👑 Plan Mes"}.get(plan,plan)
     st.markdown(f'👋 Hola **{u["nombre"]}** {pll(plan,dr)}',unsafe_allow_html=True)
@@ -4701,22 +4701,21 @@ def pantalla_pago(u,plan):
             render_odds_comparator, render_statistics, render_alerts
         )
         
-        # Header con usuario y saldo
-        saldo = st.session_state.get("user_saldo", "$1,000.00")
-        username = u.get("nombre", "Usuario")
-        st.markdown(render_dashboard_header(username=username, saldo=saldo), unsafe_allow_html=True)
-        
-        # Navegación
+        # NAVEGACIÓN ARRIBA DE TODO
         nav_tab = st.radio(
             "Navegación",
-            ["Hoy", "Mañana", "En vivo", "Fútbol", "NBA", "MLB", "Tenis", "Favoritos"],
+            ["Hoy", "Mañana", "En vivo", "Fútbol", "NBA", "MLB", "Tenis", "Favoritos", "🔍 Buscar"],
             horizontal=True,
             label_visibility="collapsed"
         )
         st.markdown(render_nav_bar(active_tab=nav_tab.lower()), unsafe_allow_html=True)
         
+        # Header con usuario y saldo (debajo de navegación)
+        saldo = st.session_state.get("user_saldo", "$1,000.00")
+        username = u.get("nombre", "Usuario")
+        st.markdown(render_dashboard_header(username=username, saldo=saldo), unsafe_allow_html=True)
+        
         # Cargar partidos de ejemplo (reemplazar con datos reales)
-        # Esta sección se puede expandir con datos de la API
         partidos_ejemplo = [
             {"local": "Man City", "visitante": "Chelsea", "hora": "15:00", "rango": "A+"},
             {"local": "Barcelona", "visitante": "Real Madrid", "hora": "21:00", "rango": "A+"},
