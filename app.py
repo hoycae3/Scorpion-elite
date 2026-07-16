@@ -5761,47 +5761,123 @@ def pantalla_principal_unificada():
     # HEADER: 🦂 SCORPION ELITE + LOGIN
     # ══════════════════════════════════════════════════════════
     
-    # Título pequeño
-    st.markdown('''
-    <div style="text-align: center; padding: 10px 0 5px 0;">
-        <span style="font-size: 1.5rem;">🦂</span>
-        <span style="color: #ffcc00; font-size: 1.1rem; font-weight: bold; letter-spacing: 2px; margin-left: 8px;">SCORPION ELITE</span>
-    </div>
-    ''', unsafe_allow_html=True)
+    # CSS para el modal/popup
+    st.markdown("""
+    <style>
+    .login-btn {
+        background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%);
+        color: #003300 !important;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.85rem;
+    }
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+    .modal-overlay.active {
+        display: flex;
+    }
+    .modal-content {
+        background: #003300;
+        border: 2px solid #ffcc00;
+        border-radius: 16px;
+        padding: 30px;
+        width: 350px;
+        max-width: 90%;
+        box-shadow: 0 10px 40px rgba(255,153,0,0.3);
+    }
+    .modal-close {
+        float: right;
+        cursor: pointer;
+        font-size: 1.5rem;
+        color: #888;
+    }
+    .modal-close:hover { color: #ffcc00; }
+    </style>
+    """, unsafe_allow_html=True)
     
-    # Login estilo Sofascore
-    if not st.session_state.get("logged_in", False):
-        col_titulo, col_login = st.columns([3, 1])
+    # Inicializar estado del modal
+    if "show_login_modal" not in st.session_state:
+        st.session_state.show_login_modal = False
+    
+    # Mostrar/ocultar modal según estado
+    if st.session_state.show_login_modal:
+        login_html = f"""
+        <div class="modal-overlay active" id="loginModal">
+            <div class="modal-content">
+                <span class="modal-close" onclick="document.getElementById('loginModal').style.display='none'">×</span>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <span style="font-size: 2rem;">🦂</span>
+                    <h3 style="color: #ffcc00; margin: 10px 0;">SCORPION ELITE</h3>
+                </div>
+            </div>
+        </div>
+        """
+        st.markdown(login_html, unsafe_allow_html=True)
+    
+    # Título pequeño
+    col_titulo, col_login_btn = st.columns([4, 1])
+    with col_titulo:
+        st.markdown('''
+        <div style="padding: 10px 0 5px 0;">
+            <span style="font-size: 1.5rem;">🦂</span>
+            <span style="color: #ffcc00; font-size: 1.1rem; font-weight: bold; letter-spacing: 2px; margin-left: 8px;">SCORPION ELITE</span>
+        </div>
+        ''', unsafe_allow_html=True)
+    with col_login_btn:
+        st.markdown("<div style='padding-top: 10px;'></div>", unsafe_allow_html=True)
+        if st.button("🔐 Iniciar sesión"):
+            st.session_state.show_login_modal = True
+            st.rerun()
+    
+    # Modal de login (usando columnas de Streamlit)
+    if st.session_state.show_login_modal:
+        st.markdown("---")
+        st.markdown("### 🔐 Iniciar sesión")
+        
+        usr = st.text_input("Usuario", placeholder="Ingresa tu usuario", key="login_user")
+        pwd = st.text_input("Contraseña", type="password", placeholder="Ingresa tu contraseña", key="login_pass")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🎯 Entrar", use_container_width=True):
+                if pwd == "scorpion" and usr:
+                    st.session_state.logged_in = True
+                    st.session_state.user_name = usr
+                    st.session_state.user_plan = "PREMIUM"
+                    st.session_state.show_login_modal = False
+                    st.rerun()
+                else:
+                    st.error("❌ Credenciales incorrectas")
+        with col2:
+            if st.button("✖ Cancelar"):
+                st.session_state.show_login_modal = False
+                st.rerun()
+        
+        st.markdown("<small style='color: #888;'>Demo: contraseña = scorpion</small>", unsafe_allow_html=True)
+        st.markdown("---")
+    
+    # Si está logueado
+    if st.session_state.get("logged_in", False):
+        col_titulo, col_info, col_b = st.columns([4, 1, 0.5])
         with col_titulo:
-            st.markdown("<div></div>", unsafe_allow_html=True)
-        with col_login:
-            with st.expander("🔐 Iniciar sesión", expanded=False):
-                usr = st.text_input("Usuario", placeholder="Ingresa tu usuario")
-                pwd = st.text_input("Contraseña", type="password", placeholder="Ingresa tu contraseña")
-                col1, col2 = st.columns(2)
-                with col1:
-                    if st.button("Entrar", use_container_width=True):
-                        if pwd == "scorpion" and usr:
-                            st.session_state.logged_in = True
-                            st.session_state.user_name = usr
-                            st.session_state.user_plan = "PREMIUM"
-                            st.rerun()
-                        else:
-                            st.error("❌ Credenciales incorrectas")
-                with col2:
-                    st.markdown("""
-                    <div style="padding-top: 5px; text-align: center;">
-                        <span style="color: #888; font-size: 0.75rem;">Demo: scorpion</span>
-                    </div>
-                    """, unsafe_allow_html=True)
-    else:
-        col_titulo, col_info, col_b = st.columns([3, 1, 0.5])
-        with col_titulo:
-            st.markdown("<div></div>", unsafe_allow_html=True)
+            st.markdown("<div style='padding-top: 10px;'></div>", unsafe_allow_html=True)
         with col_info:
             username = st.session_state.get("user_name", "Usuario")
             st.markdown(f'''
-            <div style="text-align: right; padding: 5px;">
+            <div style="text-align: right; padding: 10px 0;">
                 <span style="color: #ffcc00; font-size: 0.9rem;">👤 {username}</span>
                 <span style="color: #888; font-size: 0.8rem;"> | {st.session_state.get('user_plan', 'GRATIS')}</span>
             </div>
