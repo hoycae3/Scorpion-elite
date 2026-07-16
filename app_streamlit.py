@@ -4701,16 +4701,10 @@ def pantalla_pago(u,plan):
             render_odds_comparator, render_statistics, render_alerts
         )
         
-        # NAVEGACIÓN ARRIBA DE TODO
-        nav_tab = st.radio(
-            "Navegación",
-            ["Hoy", "Mañana", "En vivo", "Fútbol", "NBA", "MLB", "Tenis", "Favoritos", "🔍 Buscar"],
-            horizontal=True,
-            label_visibility="collapsed"
-        )
-        st.markdown(render_nav_bar(active_tab=nav_tab.lower()), unsafe_allow_html=True)
+        # 1. NAVEGACIÓN ARRIBA DE TODO
+        st.markdown(render_nav_bar(active_tab="hoy"), unsafe_allow_html=True)
         
-        # Header con usuario y saldo (debajo de navegación)
+        # 2. Header con usuario y saldo (debajo de navegación)
         saldo = st.session_state.get("user_saldo", "$1,000.00")
         username = u.get("nombre", "Usuario")
         st.markdown(render_dashboard_header(username=username, saldo=saldo), unsafe_allow_html=True)

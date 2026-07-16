@@ -424,35 +424,37 @@ div[data-testid="stHorizontalBlock"] > div {
 /* Barra de navegación */
 .dash-nav {
     display: flex;
-    gap: 8px;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border: 2px solid #00ff88;
-    border-radius: 12px;
-    padding: 10px;
-    margin-bottom: 15px;
+    gap: 10px;
+    background: #005500;
+    border: 3px solid #00ff88;
+    border-radius: 15px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
     overflow-x: auto;
     flex-wrap: nowrap;
-    box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+    box-shadow: 0 0 25px rgba(0, 255, 136, 0.4);
 }
 
 .nav-tab {
-    background: transparent;
-    border: none;
-    color: #00ff88;
-    padding: 12px 22px;
-    border-radius: 8px;
+    background: linear-gradient(135deg, #00aa55 0%, #008844 100%);
+    border: 2px solid #00ff88;
+    color: #ffffff;
+    padding: 15px 28px;
+    border-radius: 10px;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: bold;
     white-space: nowrap;
     transition: all 0.3s ease;
-    text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .nav-tab:hover {
-    background: rgba(0, 255, 136, 0.2);
+    background: linear-gradient(135deg, #00cc66 0%, #00aa55 100%);
     color: #ffffff;
-    text-shadow: 0 0 15px rgba(0, 255, 136, 0.8);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
 }
 
 .nav-tab.nav-active {
@@ -460,7 +462,7 @@ div[data-testid="stHorizontalBlock"] > div {
     color: #000000;
     font-weight: bold;
     text-shadow: none;
-    box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+    box-shadow: 0 0 25px rgba(0, 255, 136, 0.6);
 }
 
 /* Layout de 2 columnas */
