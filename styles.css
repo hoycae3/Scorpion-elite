@@ -150,31 +150,34 @@ body, .stApp > div, main {
 
 /* 7. INPUT Y BOTONES */
 .stTextInput > div > div > input {
-    background-color: #003300 !important;
+    background-color: rgba(0, 51, 0, 0.6) !important;
     color: #ffcc00 !important;
-    border: 2px solid #ffcc00 !important;
-    border-radius: 8px !important;
+    border: 1px solid rgba(255, 204, 0, 0.3) !important;
+    border-radius: 20px !important;
+    padding: 8px 15px !important;
 }
 
 .stTextInput > div > div > input:focus {
-    border-color: #ff9900 !important;
+    border-color: #ffcc00 !important;
+    box-shadow: 0 0 10px rgba(255, 204, 0, 0.3) !important;
 }
 
 .stButton > button {
     background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%) !important;
     border: none !important;
-    padding: 12px 24px;
-    color: #ffffff !important;
-    font-weight: bold !important;
+    padding: 8px 20px !important;
+    color: #003300 !important;
+    font-weight: 600 !important;
     cursor: pointer;
-    width: 100%;
-    border-radius: 8px;
-    margin-top: 15px;
+    border-radius: 20px !important;
     transition: all 0.3s ease;
+    font-size: 0.85rem !important;
 }
 
 .stButton > button:hover {
     background: linear-gradient(135deg, #ff9900 0%, #ffcc00 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(255, 153, 0, 0.4);
 }
 
 /* 8. FOOTER */
@@ -424,44 +427,42 @@ div[data-testid="stHorizontalBlock"] > div {
 /* Barra de navegación */
 .dash-nav {
     display: flex;
-    gap: 8px;
-    background: #004400;
-    border: 2px solid #ffcc00;
-    border-radius: 12px;
-    padding: 8px 12px;
-    margin-bottom: 20px;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    border-radius: 25px;
+    padding: 0;
+    margin: 15px 0 20px 0;
     overflow-x: auto;
     flex-wrap: nowrap;
-    box-shadow: 0 4px 20px rgba(255,153,0,0.3);
+    box-shadow: none;
 }
 
 .nav-tab {
-    background: #005500;
-    border: 1px solid #ffcc00;
-    color: #ffcc00;
-    padding: 10px 20px;
-    border-radius: 8px;
+    background: rgba(255, 204, 0, 0.1);
+    border: 1px solid rgba(255, 204, 0, 0.3);
+    color: rgba(255, 204, 0, 0.8);
+    padding: 8px 16px;
+    border-radius: 20px;
     cursor: pointer;
-    font-size: 0.95rem;
-    font-weight: 600;
+    font-size: 0.85rem;
+    font-weight: 500;
     white-space: nowrap;
     transition: all 0.25s ease;
 }
 
 .nav-tab:hover {
-    background: #ffcc00;
-    color: #003300;
-    border-color: #ff9900;
+    background: rgba(255, 204, 0, 0.2);
+    color: #ffcc00;
+    border-color: #ffcc00;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(255,153,0,0.4);
 }
 
 .nav-tab.nav-active {
-    background: #ffcc00;
+    background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%);
     color: #003300;
-    border-color: #ff9900;
-    font-weight: bold;
-    box-shadow: 0 4px 15px rgba(255,153,0,0.4);
+    border-color: #ffcc00;
+    font-weight: 600;
 }
 
 /* Layout de 2 columnas */
@@ -480,21 +481,22 @@ div[data-testid="stHorizontalBlock"] > div {
 
 /* Cajas del dashboard */
 .dash-box {
-    background: #004400;
-    border: 2px solid #ffcc00;
-    border-radius: 12px;
+    background: rgba(0, 68, 0, 0.4);
+    border: 1px solid rgba(255, 204, 0, 0.2);
+    border-radius: 16px;
     padding: 20px;
-    box-shadow: 0 4px 20px rgba(255,153,0,0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
 }
 
 .dash-box-title {
     color: #ffcc00;
-    font-size: 0.95rem;
-    font-weight: 700;
+    font-size: 0.85rem;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    border-bottom: 2px solid #ffcc00;
-    padding-bottom: 12px;
+    letter-spacing: 1.5px;
+    border-bottom: 1px solid rgba(255, 204, 0, 0.2);
+    padding-bottom: 10px;
     margin-bottom: 15px;
 }
 

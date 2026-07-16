@@ -5763,40 +5763,41 @@ def pantalla_principal_unificada():
     
     # Si NO está logueado, mostrar login en header
     if not st.session_state.get("logged_in", False):
-        col_logo, col_login, col_btn = st.columns([3, 2, 1])
+        col_logo, col_login = st.columns([1, 3])
         
         with col_logo:
             st.markdown('''
-            <div style="display: flex; align-items: center; gap: 15px; padding: 15px 20px; background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%); border-radius: 12px; box-shadow: 0 4px 20px rgba(255,153,0,0.4);">
-                <span style="font-size: 2.5rem;">🦂</span>
-                <span style="font-size: 1.8rem; font-weight: bold; color: #003300; letter-spacing: 2px;">SCORPION ELITE</span>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 16px; background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%); border-radius: 25px; box-shadow: 0 2px 10px rgba(255,153,0,0.3);">
+                <span style="font-size: 1.5rem;">🦂</span>
+                <span style="font-size: 1.1rem; font-weight: bold; color: #003300; letter-spacing: 1px;">SCORPION ELITE</span>
             </div>
             ''', unsafe_allow_html=True)
         
         with col_login:
-            st.markdown("<div style='padding-top: 15px;'></div>", unsafe_allow_html=True)
-            usr = st.text_input("Usuario", placeholder="Tu usuario", label_visibility="collapsed", key="login_user_h")
-            pwd = st.text_input("Contraseña", type="password", placeholder="Contraseña", label_visibility="collapsed", key="login_pass_h")
-        
-        with col_btn:
-            st.markdown("<div style='padding-top: 28px;'></div>", unsafe_allow_html=True)
-            if st.button("🎯 Entrar", use_container_width=True):
-                if pwd == "scorpion" and usr:
-                    st.session_state.logged_in = True
-                    st.session_state.user_name = usr
-                    st.session_state.user_plan = "PREMIUM"
-                    st.rerun()
-                else:
-                    st.error("❌ Credenciales incorrectas")
+            col_u, col_p, col_b = st.columns([1, 1, 0.5])
+            with col_u:
+                usr = st.text_input("Usuario", placeholder="Usuario", label_visibility="collapsed", key="login_user_h")
+            with col_p:
+                pwd = st.text_input("Contraseña", type="password", placeholder="Contraseña", label_visibility="collapsed", key="login_pass_h")
+            with col_b:
+                st.markdown("<div style='padding-top: 5px;'></div>", unsafe_allow_html=True)
+                if st.button("Entrar", use_container_width=True):
+                    if pwd == "scorpion" and usr:
+                        st.session_state.logged_in = True
+                        st.session_state.user_name = usr
+                        st.session_state.user_plan = "PREMIUM"
+                        st.rerun()
+                    else:
+                        st.error("❌ Credenciales incorrectas")
     else:
         # Usuario logueado
-        col_logo, col_info, col_logout = st.columns([3, 2, 1])
+        col_logo, col_info, col_logout = st.columns([1, 2, 0.5])
         
         with col_logo:
             st.markdown('''
-            <div style="display: flex; align-items: center; gap: 15px; padding: 15px 20px; background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%); border-radius: 12px; box-shadow: 0 4px 20px rgba(255,153,0,0.4);">
-                <span style="font-size: 2.5rem;">🦂</span>
-                <span style="font-size: 1.8rem; font-weight: bold; color: #003300; letter-spacing: 2px;">SCORPION ELITE</span>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 16px; background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%); border-radius: 25px; box-shadow: 0 2px 10px rgba(255,153,0,0.3);">
+                <span style="font-size: 1.5rem;">🦂</span>
+                <span style="font-size: 1.1rem; font-weight: bold; color: #003300; letter-spacing: 1px;">SCORPION ELITE</span>
             </div>
             ''', unsafe_allow_html=True)
         
@@ -5804,15 +5805,15 @@ def pantalla_principal_unificada():
             username = st.session_state.get("user_name", "Usuario")
             plan = st.session_state.get("user_plan", "GRATIS")
             st.markdown(f'''
-            <div style="padding: 25px 20px; text-align: right;">
-                <div style="font-size: 1.1rem; color: #fff; font-weight: bold;">👤 {username}</div>
-                <div style="font-size: 0.85rem; color: rgba(255,255,255,0.8);">{plan}</div>
+            <div style="text-align: right; padding-top: 5px;">
+                <span style="font-size: 0.9rem; color: #ffcc00; font-weight: 600;">👤 {username}</span>
+                <span style="font-size: 0.75rem; color: #888; margin-left: 10px;">{plan}</span>
             </div>
             ''', unsafe_allow_html=True)
         
         with col_logout:
-            st.markdown("<div style='padding-top: 28px;'></div>", unsafe_allow_html=True)
-            if st.button("🚪 Salir", use_container_width=True):
+            st.markdown("<div style='padding-top: 5px;'></div>", unsafe_allow_html=True)
+            if st.button("Salir", use_container_width=True):
                 st.session_state.logged_in = False
                 st.session_state.user_name = "Invitado"
                 st.session_state.user_plan = ""
