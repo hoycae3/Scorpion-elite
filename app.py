@@ -5096,31 +5096,26 @@ def pantalla_principal():
         partidos_scraped = st.session_state.get("partidos_scraped", [])
     
     # ══════════════════════════════════════════════════════════
-    # 🎨 HEADER PRINCIPAL
+    # 🎨 HEADER PRINCIPAL (igual que tu estructura)
     # ══════════════════════════════════════════════════════════
-    st.markdown("""
-    <div style="background: linear-gradient(90deg, #0d1117 0%, #161b22 100%); padding: 15px 20px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #10b981;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h1 style="color: #10b981; margin: 0; font-size: 1.5rem;">🦂 SCORPION ELITE</h1>
-            </div>
-            <div style="text-align: right;">
-                <span style="color: #10b981; font-weight: bold;">{user_name}</span> 
-                <span style="color: #8b949e;">|</span>
-                <span style="color: #39ff14;">Saldo: $1,000</span>
-                <span style="color: #8b949e; margin-left: 10px;">⚙️</span>
-            </div>
-        </div>
-    </div>
-    """.format(user_name=st.session_state.get('user_name', 'Usuario')), unsafe_allow_html=True)
+    col_header1, col_header2, col_header3 = st.columns([3, 1, 1])
+    with col_header1:
+        st.markdown('<h1 style="color:#10b981;margin:0;">🦂 SCORPION ELITE</h1>', unsafe_allow_html=True)
+    with col_header2:
+        st.markdown(f'<p style="color:#10b981;margin:20px 0 0 0;">{st.session_state.get("user_name", "Usuario")} | <span style="color:#39ff14;">$1,000</span></p>', unsafe_allow_html=True)
+    with col_header3:
+        if st.button("⚙️", use_container_width=True):
+            st.session_state.ver_admin = True
+    
+    st.markdown('<hr style="border-color:#30363d;">', unsafe_allow_html=True)
     
     # ══════════════════════════════════════════════════════════
-    # 📋 NAVEGACIÓN
+    # 📋 NAVEGACIÓN (igual que tu estructura)
     # ══════════════════════════════════════════════════════════
-    tabs_nav = st.tabs(["📅 Hoy", "📆 Mañana", "🔴 En Vivo", "⚽ Fútbol", "🏀 NBA", "🎾 Tenis", "⭐ Favoritos"])
+    tab_hoy, tab_manana, tab_vivo, tab_futbol, tab_nba, tab_tenis, tab_fav = st.tabs(["📅 Hoy", "📆 Mañana", "🔴 En Vivo", "⚽ Fútbol", "🏀 NBA", "🎾 Tenis", "⭐ Favoritos"])
     
     # ══════════════════════════════════════════════════════════
-    # 📊 DASHBOARD 2 COLUMNAS
+    # 📊 DASHBOARD 2 COLUMNAS (igual que tu estructura)
     # ══════════════════════════════════════════════════════════
     col_main, col_side = st.columns([2, 1])
     
@@ -5154,8 +5149,8 @@ def pantalla_principal():
         if cuotas:
             st.success(f"📊 {len(cuotas)} partidos - {liga_odds}")
             
-            # Mostrar partidos en tarjetas
-            for c in cuotas[:10]:
+            # Partidos del día (columna izquierda)
+            for c in cuotas[:8]:
                 home = c.get('home', '')
                 away = c.get('away', '')
                 cuota_l = c.get('cuota_local', 0)
@@ -5176,25 +5171,69 @@ def pantalla_principal():
             st.info("📭 No hay partidos con cuotas disponibles para esta liga")
     
     with col_side:
-        # Panel de análisis rápido
-        st.markdown("### 📊 Análisis Rápido")
+        # Análisis IA (columna derecha)
+        st.markdown("### 📊 Análisis IA")
         
+        # Simulación de análisis
+        if cuotas:
+            for c in cuotas[:3]:
+                home = c.get('home', '')
+                away = c.get('away', '')
+                st.markdown(f"""
+                <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px;margin-bottom:10px;">
+                    <p style="color:#e6edf3;font-size:0.85rem;font-weight:bold;">{home} vs {away}</p>
+                    <p style="color:#39ff14;font-size:0.8rem;">Probabilidad Local: 65-75%</p>
+                    <p style="color:#10b981;font-size:0.8rem;">Valor encontrado: SI</p>
+                    <p style="color:#8b949e;font-size:0.8rem;">Riesgo: Bajo</p>
+                    <p style="color:#39ff14;font-size:0.85rem;font-weight:bold;">Confianza: 88%</p>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # Comparador de cuotas
+        st.markdown("### 💰 Comparador")
         st.markdown("""
-        <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:15px;margin-bottom:10px;">
-            <h4 style="color:#10b981;margin:0 0 10px 0;">🎯 Pick Destacado</h4>
-            <p style="color:#e6edf3;font-size:0.85rem;">Man City vs Arsenal</p>
-            <p style="color:#10b981;font-size:1.2rem;font-weight:bold;">Cuota: 1.91</p>
-            <p style="color:#39ff14;font-size:0.85rem;">✅ Prob: 72% | Valor: +19%</p>
+        <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:10px;margin-bottom:5px;">
+            <div style="display:flex;justify-content:space-between;"><span style="color:#8b949e;">Bet365</span><span style="color:#10b981;font-weight:bold;">1.82</span></div>
+        </div>
+        <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:10px;margin-bottom:5px;">
+            <div style="display:flex;justify-content:space-between;"><span style="color:#8b949e;">Betano</span><span style="color:#e6edf3;">1.88</span></div>
+        </div>
+        <div style="background:#161b22;border:1px solid #10b981;border-radius:8px;padding:10px;margin-bottom:5px;">
+            <div style="display:flex;justify-content:space-between;"><span style="color:#10b981;font-weight:bold;">Pinnacle ⭐</span><span style="color:#10b981;font-weight:bold;">1.90</span></div>
+        </div>
+        <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:10px;">
+            <div style="display:flex;justify-content:space-between;"><span style="color:#8b949e;">Stake</span><span style="color:#e6edf3;">1.87</span></div>
         </div>
         """, unsafe_allow_html=True)
         
+        st.markdown("---")
+        
+        # Mercados
+        st.markdown("### 📋 Mercados")
+        st.checkbox("✔ Ganador", value=True)
+        st.checkbox("✔ Over/Under")
+        st.checkbox("✔ Ambos marcan")
+        st.checkbox("✔ Hándicap")
+        
+        st.markdown("---")
+        
+        # Estadísticas
+        st.markdown("### 📈 Estadísticas")
+        st.checkbox("xG", value=True)
+        st.checkbox("Tiros")
+        st.checkbox("Corners")
+        st.checkbox("Posesión")
+        
+        st.markdown("---")
+        
+        # Alertas
+        st.markdown("### 🔔 Alertas")
         st.markdown("""
-        <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:15px;">
-            <h4 style="color:#10b981;margin:0 0 10px 0;">💰 Value Bets</h4>
-            <p style="color:#39ff14;font-size:0.85rem;">• Man City: +19%</p>
-            <p style="color:#39ff14;font-size:0.85rem;">• Over 2.5: +12%</p>
-            <p style="color:#39ff14;font-size:0.85rem;">• Ambos Marcan: +8%</p>
-        </div>
+        <p style="color:#ff6b6b;font-size:0.8rem;">⚠️ Lesiones detectadas</p>
+        <p style="color:#dfaf6f;font-size:0.8rem;">📉 Cambio de cuota -5%</p>
+        <p style="color:#39ff14;font-size:0.8rem;">💰 Pick con Value +12%</p>
         """, unsafe_allow_html=True)
     
     # Obtener estadísticas de equipos desde API-Football
