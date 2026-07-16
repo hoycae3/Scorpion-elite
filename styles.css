@@ -1,26 +1,25 @@
-/* Scorpion Elite - Fondo Blanco */
+/* Scorpion Elite - Diseño Profesional */
 
 /* Variables CSS */
 :root {
-    --bg-dark-green: #f5f5f5;
+    --bg-main: #f8f9fa;
     --panel-bg: #ffffff;
-    --gold-bright: #00aa55;
-    --gold-dark: #008844;
-    --text-light: #333333;
+    --accent-green: #00aa55;
+    --accent-dark: #008844;
+    --text-dark: #2c3e50;
+    --text-light: #7f8c8d;
 }
 
 /* 1. CONFIGURACIÓN DE LA PÁGINA */
 .stApp {
-    background-color: #ffffff !important;
-    background: #ffffff !important;
-    color: #333333;
+    background: linear-gradient(135deg, #e8eef4 0%, #f5f7fa 50%, #e8eef4 100%) !important;
+    color: var(--text-dark);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Forzar fondo blanco en todo el body */
+/* Forzar fondo profesional */
 body, .stApp > div, main {
-    background-color: #ffffff !important;
-    background: #ffffff !important;
+    background: linear-gradient(135deg, #e8eef4 0%, #f5f7fa 50%, #e8eef4 100%) !important;
 }
 
 /* 2. CABECERA PRINCIPAL */
@@ -53,9 +52,9 @@ body, .stApp > div, main {
 .login-container, .login-box {
     background-color: #ffffff;
     border: 2px solid #00aa55;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
 }
 
 .login-title {
@@ -424,44 +423,43 @@ div[data-testid="stHorizontalBlock"] > div {
 /* Barra de navegación */
 .dash-nav {
     display: flex;
-    gap: 10px;
-    background: #f0f0f0;
-    border: 2px solid #00aa55;
-    border-radius: 10px;
-    padding: 10px 15px;
+    gap: 8px;
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 8px 12px;
     margin-bottom: 20px;
     overflow-x: auto;
     flex-wrap: nowrap;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 15px rgba(0,0,0,0.08);
 }
 
 .nav-tab {
-    background: #ffffff;
-    border: 2px solid #00aa55;
-    color: #00aa55;
-    padding: 12px 24px;
+    background: #f5f7fa;
+    border: 1px solid #e0e0e0;
+    color: #2c3e50;
+    padding: 10px 20px;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 1rem;
-    font-weight: bold;
+    font-size: 0.95rem;
+    font-weight: 600;
     white-space: nowrap;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.25s ease;
 }
 
 .nav-tab:hover {
     background: #00aa55;
     color: #ffffff;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,170,85,0.3);
+    border-color: #00aa55;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,170,85,0.25);
 }
 
 .nav-tab.nav-active {
     background: #00aa55;
     color: #ffffff;
+    border-color: #00aa55;
     font-weight: bold;
-    text-shadow: none;
-    box-shadow: 0 4px 15px rgba(0,170,85,0.4);
 }
 
 /* Layout de 2 columnas */
@@ -481,25 +479,25 @@ div[data-testid="stHorizontalBlock"] > div {
 /* Cajas del dashboard */
 .dash-box {
     background: #ffffff;
-    border: 2px solid #00aa55;
+    border: 1px solid #e0e0e0;
     border-radius: 12px;
-    padding: 18px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
 .dash-box-title {
     color: #00aa55;
-    font-size: 1rem;
-    font-weight: bold;
+    font-size: 0.95rem;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
     border-bottom: 2px solid #00aa55;
-    padding-bottom: 10px;
+    padding-bottom: 12px;
     margin-bottom: 15px;
 }
 
 .dash-box-content {
-    color: #333;
+    color: #2c3e50;
     font-size: 0.95rem;
 }
 
