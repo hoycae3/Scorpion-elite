@@ -5769,29 +5769,39 @@ def pantalla_principal_unificada():
     </div>
     ''', unsafe_allow_html=True)
     
-    # Login compacto
+    # Login estilo Sofascore
     if not st.session_state.get("logged_in", False):
-        col_u, col_p, col_b = st.columns([1, 1, 0.3])
-        with col_u:
-            usr = st.text_input("Usuario", placeholder="Usuario", label_visibility="collapsed")
-        with col_p:
-            pwd = st.text_input("Contraseña", type="password", placeholder="Contraseña", label_visibility="collapsed")
-        with col_b:
-            st.markdown("<div style='padding-top: 5px;'></div>", unsafe_allow_html=True)
-            if st.button("Entrar", use_container_width=True):
-                if pwd == "scorpion" and usr:
-                    st.session_state.logged_in = True
-                    st.session_state.user_name = usr
-                    st.session_state.user_plan = "PREMIUM"
-                    st.rerun()
-                else:
-                    st.error("❌ Credenciales incorrectas")
+        col_titulo, col_login = st.columns([3, 1])
+        with col_titulo:
+            st.markdown("<div></div>", unsafe_allow_html=True)
+        with col_login:
+            with st.expander("🔐 Iniciar sesión", expanded=False):
+                usr = st.text_input("Usuario", placeholder="Ingresa tu usuario")
+                pwd = st.text_input("Contraseña", type="password", placeholder="Ingresa tu contraseña")
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("Entrar", use_container_width=True):
+                        if pwd == "scorpion" and usr:
+                            st.session_state.logged_in = True
+                            st.session_state.user_name = usr
+                            st.session_state.user_plan = "PREMIUM"
+                            st.rerun()
+                        else:
+                            st.error("❌ Credenciales incorrectas")
+                with col2:
+                    st.markdown("""
+                    <div style="padding-top: 5px; text-align: center;">
+                        <span style="color: #888; font-size: 0.75rem;">Demo: scorpion</span>
+                    </div>
+                    """, unsafe_allow_html=True)
     else:
-        col_info, col_b = st.columns([4, 1])
+        col_titulo, col_info, col_b = st.columns([3, 1, 0.5])
+        with col_titulo:
+            st.markdown("<div></div>", unsafe_allow_html=True)
         with col_info:
             username = st.session_state.get("user_name", "Usuario")
             st.markdown(f'''
-            <div style="text-align: center; padding: 5px;">
+            <div style="text-align: right; padding: 5px;">
                 <span style="color: #ffcc00; font-size: 0.9rem;">👤 {username}</span>
                 <span style="color: #888; font-size: 0.8rem;"> | {st.session_state.get('user_plan', 'GRATIS')}</span>
             </div>
