@@ -6046,201 +6046,153 @@ def pantalla_principal_unificada():
     else:
         # USUARIO NORMAL - MOSTRAR DASHBOARD
         # ══════════════════════════════════════════════════════════
-        # NAVEGACIÓN: Hoy | Mañana | En vivo | Fútbol | NBA | MLB | Tenis | Favoritos | Buscar
+        # DASHBOARD TAL CUAL LA IMAGEN
         # ══════════════════════════════════════════════════════════
-        tabs_nav = st.tabs(["📊 Dashboard", "🏆 Picks", "📈 Análisis", "💰 Cuotas", "⚙️ Config"])
+        
+        # CSS específico para dashboard imagen
+        st.markdown("""
+        <style>
+        .dashboard-container {max-width: 1200px; margin: 0 auto;}
+        .dash-section {background: #1a1a2e; border-radius: 10px; padding: 15px; margin-bottom: 15px;}
+        .section-title {color: #ff8c00; font-size: 14px; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 8px;}
+        .match-row {background: #252540; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #ff8c00;}
+        .match-teams {color: #fff; font-size: 13px; font-weight: bold;}
+        .match-time {color: #888; font-size: 11px;}
+        .match-range {color: #ff8c00; font-size: 10px;}
+        .ai-label {color: #888; font-size: 12px;}
+        .ai-value {color: #00ff88; font-weight: bold;}
+        .odds-book {color: #ccc; font-size: 12px;}
+        .odds-val {color: #00ff88; font-weight: bold;}
+        .odds-best {color: #ffcc00; font-weight: bold;}
+        .market-item {color: #ccc; font-size: 12px; padding: 5px 0;}
+        .alert-item {background: #252540; padding: 8px; border-radius: 6px; margin-bottom: 5px; font-size: 11px; color: #ccc;}
+        .stat-row {display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #252540; color: #ccc; font-size: 12px;}
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Navegación horizontal
+        nav = st.columns(9)
+        nav_items = ["Hoy", "Mañana", "En vivo", "Fútbol", "NBA", "MLB", "Tenis", "Favoritos", "🔍"]
+        for i, item in enumerate(nav_items):
+            with nav[i]:
+                st.button(item, key=f"nav_{i}")
+        
+        st.markdown("<hr style='border-color: #333; margin: 10px 0;'>", unsafe_allow_html=True)
         
         # ══════════════════════════════════════════════════════════
-        # PESTAÑA DASHBOARD
+        # FILA 1: Partidos del Día | Análisis IA
         # ══════════════════════════════════════════════════════════
-        with tabs_nav[0]:
-            # Mostrar navegación secundaria
-            st.markdown(render_nav_bar(active_tab="hoy"), unsafe_allow_html=True)
+        col_partidos, col_analisis = st.columns(2)
+        
+        with col_partidos:
+            st.markdown('<div class="dash-section">', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">⚽ Partidos del Día</div>', unsafe_allow_html=True)
             
-            # Datos de ejemplo
-            partidos_ejemplo = [
-                {"local": "Man City", "visitante": "Chelsea", "hora": "15:00", "rango": "A+"},
-                {"local": "Barcelona", "visitante": "Real Madrid", "hora": "21:00", "rango": "A+"},
-                {"local": "Inter", "visitante": "Milan", "hora": "20:45", "rango": "B"},
-                {"local": "Bayern", "visitante": "Dortmund", "hora": "18:30", "rango": "B"},
-                {"local": "PSG", "visitante": "Lyon", "hora": "21:00", "rango": "A+"},
+            partidos = [
+                ("Man City vs Chelsea", "15:00", "A+"),
+                ("Barcelona vs Real Madrid", "21:00", "A+"),
+                ("Inter vs Milan", "20:45", "B"),
             ]
-            
-            analisis_ejemplo = {
-                "prob_local": 72,
-                "valor": "SI",
-                "riesgo": "Bajo",
-                "confianza": 91
-            }
-            
-            cuotas_ejemplo = [
-                {"book": "Bet365", "value": 1.82, "best": False},
-                {"book": "Betano", "value": 1.88, "best": False},
-                {"book": "Pinnacle", "value": 1.90, "best": True},
-                {"book": "Stake", "value": 1.87, "best": False},
-            ]
-            
-            stats_ejemplo = {
-                "xg": "1.8 - 1.2",
-                "tiros": "15 - 9",
-                "corners": "6 - 4",
-                "posesion": "58% - 42%"
-            }
-            
-            alertas_ejemplo = [
-                {"tipo": "warning", "mensaje": "⚠️ Lesiones importantes"},
-                {"tipo": "info", "mensaje": "📊 Cambio de cuota -5%"},
-                {"tipo": "success", "mensaje": "💰 Dinero inteligente"},
-                {"tipo": "fire", "mensaje": "🔥 Pick con Value +4.2%"},
-            ]
-            
-            # Navegación tipo imagen
-            nav_options = ["Hoy", "Mañana", "En vivo", "Fútbol", "NBA", "MLB", "Tenis", "Favoritos"]
-            cols_nav = st.columns(len(nav_options))
-            selected_nav = None
-            for i, opt in enumerate(nav_options):
-                with cols_nav[i]:
-                    if st.button(opt, use_container_width=True):
-                        selected_nav = opt
-            
-            st.markdown("<hr style='margin: 10px 0; border-color: #333;'>", unsafe_allow_html=True)
-            
-            # Layout de 2 columnas como en la imagen
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                # Partidos del día
-                st.markdown("""
-                <div class="dash-box">
-                    <div class="dash-box-title">⚽ Partidos del Día</div>
-                """, unsafe_allow_html=True)
-                
-                for p in partidos_ejemplo:
-                    st.markdown(f"""
-                    <div class="match-item">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: #fff; font-size: 12px;">{p['local']} vs {p['visitante']}</span>
-                            <span style="color: #888; font-size: 10px;">{p['hora']}</span>
-                        </div>
-                        <div style="color: #ff8c00; font-size: 10px; margin-top: 3px;">Rango: {p['rango']}</div>
+            for p in partidos:
+                st.markdown(f'''
+                <div class="match-row">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span class="match-teams">{p[0]}</span>
+                        <span class="match-time">{p[1]}</span>
                     </div>
-                    """, unsafe_allow_html=True)
-                
-                st.markdown("</div>", unsafe_allow_html=True)
-                
-                # Mercados
-                st.markdown("""
-                <div class="dash-box">
-                    <div class="dash-box-title">📋 Mercados</div>
-                """, unsafe_allow_html=True)
-                
-                mercados = ["Ganador", "Over/Under", "Ambos marcan", "Hándicap"]
-                for m in mercados:
-                    st.checkbox(f"✔ {m}")
-                
-                st.markdown("</div>", unsafe_allow_html=True)
-            
-            with col2:
-                # Análisis IA
-                st.markdown("""
-                <div class="dash-box">
-                    <div class="dash-box-title">🤖 Análisis IA</div>
-                    <div class="analysis-item">
-                        <span class="analysis-label">Probabilidad Local: </span>
-                        <span class="analysis-value">72%</span>
-                    </div>
-                    <div class="analysis-item">
-                        <span class="analysis-label">Valor encontrado: </span>
-                        <span class="analysis-value" style="color: #00ff88;">SI</span>
-                    </div>
-                    <div class="analysis-item">
-                        <span class="analysis-label">Riesgo: </span>
-                        <span class="analysis-value" style="color: #ffcc00;">Bajo</span>
-                    </div>
-                    <div class="analysis-item">
-                        <span class="analysis-label">Confianza: </span>
-                        <span class="analysis-value" style="color: #00ff88;">91%</span>
-                    </div>
+                    <div class="match-range">Rango: {p[2]}</div>
                 </div>
-                """, unsafe_allow_html=True)
-                
-                # Comparador de cuotas
-                st.markdown("""
-                <div class="dash-box">
-                    <div class="dash-box-title">💰 Comparador de Cuotas</div>
-                """, unsafe_allow_html=True)
-                
-                for c in cuotas_ejemplo:
-                    star = " ⭐" if c['best'] else ""
-                    color_class = "odds-best" if c['best'] else "odds-value"
-                    st.markdown(f"""
-                    <div class="odds-row">
-                        <span class="odds-book">{c['book']}</span>
-                        <span class="{color_class}">{c['value']}{star}</span>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                st.markdown("</div>", unsafe_allow_html=True)
-                
-                # Alertas
-                st.markdown("""
-                <div class="dash-box">
-                    <div class="dash-box-title">🔔 Alertas</div>
-                """, unsafe_allow_html=True)
-                
-                for a in alertas_ejemplo:
-                    emoji = "⚠️" if a['tipo'] == 'warning' else "📊" if a['tipo'] == 'info' else "💰" if a['tipo'] == 'success' else "🔥"
-                    st.markdown(f"""
-                    <div style="padding: 6px 10px; background: #252525; border-radius: 6px; margin-bottom: 5px; font-size: 11px;">
-                        {emoji} {a['mensaje']}
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                st.markdown("</div>", unsafe_allow_html=True)
+                ''', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        with col_analisis:
+            st.markdown('<div class="dash-section">', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">🤖 Análisis IA</div>', unsafe_allow_html=True)
+            
+            st.markdown('''
+            <div style="padding: 5px 0;"><span class="ai-label">Probabilidad Local:</span> <span class="ai-value">72%</span></div>
+            <div style="padding: 5px 0;"><span class="ai-label">Valor encontrado:</span> <span class="ai-value">SI</span></div>
+            <div style="padding: 5px 0;"><span class="ai-label">Riesgo:</span> <span style="color:#ffcc00; font-weight:bold;">Bajo</span></div>
+            <div style="padding: 5px 0;"><span class="ai-label">Confianza:</span> <span class="ai-value">91%</span></div>
+            ''', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
         
         # ══════════════════════════════════════════════════════════
-        # PESTAÑA PICKS
+        # FILA 2: Mercados | Comparador de Cuotas
         # ══════════════════════════════════════════════════════════
-        with tabs_nav[1]:
-            st.markdown(render_nav_bar(active_tab="hoy"), unsafe_allow_html=True)
-            st.markdown(render_dashboard_box("🏆 Top Picks del Día", """
-            <div style="text-align: center; padding: 20px; color: #888;">
-                Los picks se muestran cuando inicias sesión con tu cuenta.
-            </div>
-            """), unsafe_allow_html=True)
+        col_mercados, col_cuotas = st.columns(2)
+        
+        with col_mercados:
+            st.markdown('<div class="dash-section">', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">📋 Mercados</div>', unsafe_allow_html=True)
+            
+            mercados = ["✔ Ganador", "✔ Over/Under", "✔ Ambos marcan", "✔ Hándicap"]
+            for m in mercados:
+                st.markdown(f'<div class="market-item">{m}</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        with col_cuotas:
+            st.markdown('<div class="dash-section">', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">💰 Comparador de Cuotas</div>', unsafe_allow_html=True)
+            
+            cuotas = [
+                ("Bet365", "1.82", False),
+                ("Betano", "1.88", False),
+                ("Pinnacle", "1.90", True),
+                ("Stake", "1.87", False),
+            ]
+            for c in cuotas:
+                cls = "odds-best" if c[2] else "odds-val"
+                star = " ⭐" if c[2] else ""
+                st.markdown(f'''
+                <div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #252540;">
+                    <span class="odds-book">{c[0]}</span>
+                    <span class="{cls}">{c[1]}{star}</span>
+                </div>
+                ''', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
         
         # ══════════════════════════════════════════════════════════
-        # PESTAÑA ANÁLISIS
+        # FILA 3: Estadísticas | Alertas
         # ══════════════════════════════════════════════════════════
-        with tabs_nav[2]:
-            st.markdown(render_nav_bar(active_tab="futbol"), unsafe_allow_html=True)
-            st.markdown(render_dashboard_box("📈 Análisis Detallado", """
-            <div style="text-align: center; padding: 20px; color: #888;">
-                Selecciona un partido para ver el análisis completo.
-            </div>
-            """), unsafe_allow_html=True)
+        col_stats, col_alertas = st.columns(2)
         
-        # ══════════════════════════════════════════════════════════
-        # PESTAÑA CUOTAS
-        # ══════════════════════════════════════════════════════════
-        with tabs_nav[3]:
-            st.markdown(render_dashboard_box("💰 Comparador de Cuotas", render_odds_comparator(cuotas_ejemplo)), unsafe_allow_html=True)
+        with col_stats:
+            st.markdown('<div class="dash-section">', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">📊 Estadísticas</div>', unsafe_allow_html=True)
+            
+            stats = [
+                ("xG", "1.8 - 1.2"),
+                ("Tiros", "15 - 9"),
+                ("Corners", "6 - 4"),
+                ("Posesión", "58% - 42%"),
+            ]
+            for s in stats:
+                st.markdown(f'''
+                <div class="stat-row">
+                    <span>{s[0]}</span>
+                    <span style="color:#00ff88;">{s[1]}</span>
+                </div>
+                ''', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
         
-        # ══════════════════════════════════════════════════════════
-        # PESTAÑA CONFIG
-        # ══════════════════════════════════════════════════════════
-        with tabs_nav[4]:
-            st.markdown(render_dashboard_box("⚙️ Configuración", f"""
-            <div style="padding: 15px;">
-                <h3 style="color: #ffcc00;">Tu Cuenta</h3>
-                <p style="color: #ccc;">Usuario: {st.session_state.get("user_name", "Invitado")}</p>
-                <p style="color: #ccc;">Plan: {st.session_state.get("user_plan", "gratis").upper()}</p>
-            </div>
-            """), unsafe_allow_html=True)
+        with col_alertas:
+            st.markdown('<div class="dash-section">', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">🔔 Alertas</div>', unsafe_allow_html=True)
+            
+            alertas = [
+                ("⚠️", "Lesiones importantes"),
+                ("📊", "Cambio de cuota -5%"),
+                ("💰", "Dinero inteligente"),
+                ("🔥", "Pick con Value +4.2%"),
+            ]
+            for a in alertas:
+                st.markdown(f'<div class="alert-item">{a[0]} {a[1]}</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
     
     # Footer
     st.markdown("---")
-    st.markdown('<div style="text-align: center; color: #00ff88; font-size: 0.9rem;">🦂 Scorpion Elite V4 Pro · Solo uso informativo</div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align: center; color: #ff8c00; font-size: 0.9rem;">🦂 Scorpion Elite V4 Pro · Solo uso informativo</div>', unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════
