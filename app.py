@@ -5777,7 +5777,7 @@ def pantalla_principal_unificada():
         st.markdown("""
         <style>
         [data-testid="stPopover"] {
-            width: 120px !important;
+            width: 50px !important;
             background: transparent !important;
             border: none !important;
         }
