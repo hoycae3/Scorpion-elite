@@ -180,8 +180,40 @@ DEPORTE_ICONS = {
     "TENIS": "🎾"
 }
 
-# API Keys
-API_FOOTBALL_KEY = "e3926f829cd848f4b2b54d722ca29701"  # API-Football (nueva key funciona)
+# API Keys - Múltiples para mayor cobertura
+API_KEYS = [
+    "e3926f829cd848f4b2b54d722ca29701",  # API-Football key 1
+    "124c9519df145caf883cd82f0b2a4671",  # API-Football key 2
+]
+
+def obtener_partidos_todas_apis(fecha_str):
+    """Obtiene partidos de TODAS las APIs disponibles"""
+    import requests
+    all_partidos = []
+    
+    for api_key in API_KEYS:
+        try:
+            url = f"https://v3.football.api-sports.io/fixtures?date={fecha_str}"
+            headers = {"x-apisports-key": api_key}
+            response = requests.get(url, headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("response"):
+                    all_partidos.extend(data["response"])
+        except:
+            continue
+    
+    # Eliminar duplicados por fixture_id
+    seen_ids = set()
+    unique_partidos = []
+    for p in all_partidos:
+        fixture_id = p["fixture"]["id"]
+        if fixture_id not in seen_ids:
+            seen_ids.add(fixture_id)
+            unique_partidos.append(p)
+    
+    return unique_partidos
 
 # Prioridad de ligas segun interes mundial
 LIGAS_PRIORIDAD = {
@@ -234,7 +266,7 @@ LIGAS_PRIORIDAD = {
 }
 
 def obtener_partidos_futbol(todos=False):
-    """Obtiene partidos de futbol para hoy desde API-Football
+    """Obtiene partidos de futbol para hoy desde TODAS las APIs
     
     Args:
         todos: Si True, retorna todos los partidos. Si False, solo los 3 mas importantes.
@@ -244,58 +276,54 @@ def obtener_partidos_futbol(todos=False):
     
     partidos = []
     
-    # Fuente: API-Football
+    # Buscar en TODAS las APIs
     try:
         hoy = datetime.now()
         fecha_str = hoy.strftime("%Y-%m-%d")
         
-        url = f"https://v3.football.api-sports.io/fixtures?date={fecha_str}"
-        headers = {"x-apisports-key": API_FOOTBALL_KEY}
-        response = requests.get(url, headers=headers, timeout=15)
+        # Usar función que busca en todas las APIs
+        todos_fixture = obtener_partidos_todas_apis(fecha_str)
         
-        if response.status_code == 200:
-            data = response.json()
-            
-            if data.get("response"):
-                for fixture in data["response"]:
+        if todos_fixture:
+            for fixture in todos_fixture:
+                try:
+                    home = fixture["teams"]["home"]["name"]
+                    away = fixture["teams"]["away"]["name"]
+                    league = fixture["league"]["name"].lower()
+                    country = fixture["league"]["country"]
+                    hora = fixture["fixture"]["date"][11:16]
+                    
+                    # Convertir UTC a UTC-3 (America)
                     try:
-                        home = fixture["teams"]["home"]["name"]
-                        away = fixture["teams"]["away"]["name"]
-                        league = fixture["league"]["name"].lower()
-                        country = fixture["league"]["country"]
-                        hora = fixture["fixture"]["date"][11:16]
-                        
-                        # Convertir UTC a UTC-3 (America)
-                        try:
-                            dt = datetime.strptime(hora, "%H:%M")
-                            dt = dt + timedelta(hours=-3)
-                            hora_local = dt.strftime("%H:%M")
-                        except:
-                            hora_local = hora
-                        
-                        # Calcular prioridad
-                        prioridad = 0
-                        for nombre_liga, prio in LIGAS_PRIORIDAD.items():
-                            if nombre_liga in league:
-                                prioridad = prio
-                                break
-                        
-                        # Combinar liga + pais
-                        liga_completa = fixture["league"]["name"]
-                        if country:
-                            liga_completa = f"{liga_completa} ({country})"
-                        
-                        partidos.append({
-                            "equipo": f"{home} vs {away}",
-                            "hora": hora_local,
-                            "liga": liga_completa,
-                            "prioridad": prioridad,
-                            "league_lower": league
-                        })
+                        dt = datetime.strptime(hora, "%H:%M")
+                        dt = dt + timedelta(hours=-3)
+                        hora_local = dt.strftime("%H:%M")
                     except:
-                        continue
+                        hora_local = hora
+                    
+                    # Calcular prioridad
+                    prioridad = 0
+                    for nombre_liga, prio in LIGAS_PRIORIDAD.items():
+                        if nombre_liga in league:
+                            prioridad = prio
+                            break
+                    
+                    # Combinar liga + pais
+                    liga_completa = fixture["league"]["name"]
+                    if country:
+                        liga_completa = f"{liga_completa} ({country})"
+                    
+                    partidos.append({
+                        "equipo": f"{home} vs {away}",
+                        "hora": hora_local,
+                        "liga": liga_completa,
+                        "prioridad": prioridad,
+                        "league_lower": league
+                    })
+                except:
+                    continue
     except Exception as e:
-        print(f"Error API-Football: {e}")
+        print(f"Error buscando partidos: {e}")
     
     # Eliminar duplicados
     seen = set()
@@ -327,60 +355,56 @@ def obtener_mejor_pick():
     mejor_partido = None
     mejor_prioridad = 0
     
-    # Fuente: API-Football - buscar TODOS los partidos para encontrar el mejor
+    # Buscar en TODAS las APIs disponibles
     try:
         hoy = datetime.now()
         fecha_str = hoy.strftime("%Y-%m-%d")
         
-        url = f"https://v3.football.api-sports.io/fixtures?date={fecha_str}"
-        headers = {"x-apisports-key": API_FOOTBALL_KEY}
-        response = requests.get(url, headers=headers, timeout=15)
+        # Usar función que busca en todas las APIs
+        todos_fixture = obtener_partidos_todas_apis(fecha_str)
         
-        if response.status_code == 200:
-            data = response.json()
-            
-            if data.get("response"):
-                for fixture in data["response"]:
+        if todos_fixture:
+            for fixture in todos_fixture:
+                try:
+                    home = fixture["teams"]["home"]["name"]
+                    away = fixture["teams"]["away"]["name"]
+                    league = fixture["league"]["name"].lower()
+                    country = fixture["league"]["country"]
+                    fixture_id = fixture["fixture"]["id"]
+                    hora = fixture["fixture"]["date"][11:16]
+                    
+                    # Convertir UTC a UTC-3 (America)
                     try:
-                        home = fixture["teams"]["home"]["name"]
-                        away = fixture["teams"]["away"]["name"]
-                        league = fixture["league"]["name"].lower()
-                        country = fixture["league"]["country"]
-                        fixture_id = fixture["fixture"]["id"]
-                        hora = fixture["fixture"]["date"][11:16]
-                        
-                        # Convertir UTC a UTC-3 (America)
-                        try:
-                            dt = datetime.strptime(hora, "%H:%M")
-                            dt = dt + timedelta(hours=-3)
-                            hora_local = dt.strftime("%H:%M")
-                        except:
-                            hora_local = hora
-                        
-                        # Calcular prioridad
-                        prioridad = 0
-                        for nombre_liga, prio in LIGAS_PRIORIDAD.items():
-                            if nombre_liga in league:
-                                prioridad = prio
-                                break
-                        
-                        # Seleccionar el de mayor prioridad
-                        if prioridad > mejor_prioridad:
-                            mejor_prioridad = prioridad
-                            liga_completa = fixture["league"]["name"]
-                            if country:
-                                liga_completa = f"{liga_completa} ({country})"
-                            
-                            mejor_partido = {
-                                "home": home,
-                                "away": away,
-                                "liga": liga_completa,
-                                "hora": hora_local,
-                                "prioridad": prioridad,
-                                "fixture_id": fixture_id
-                            }
+                        dt = datetime.strptime(hora, "%H:%M")
+                        dt = dt + timedelta(hours=-3)
+                        hora_local = dt.strftime("%H:%M")
                     except:
-                        continue
+                        hora_local = hora
+                    
+                    # Calcular prioridad
+                    prioridad = 0
+                    for nombre_liga, prio in LIGAS_PRIORIDAD.items():
+                        if nombre_liga in league:
+                            prioridad = prio
+                            break
+                    
+                    # Seleccionar el de mayor prioridad
+                    if prioridad > mejor_prioridad:
+                        mejor_prioridad = prioridad
+                        liga_completa = fixture["league"]["name"]
+                        if country:
+                            liga_completa = f"{liga_completa} ({country})"
+                        
+                        mejor_partido = {
+                            "home": home,
+                            "away": away,
+                            "liga": liga_completa,
+                            "hora": hora_local,
+                            "prioridad": prioridad,
+                            "fixture_id": fixture_id
+                        }
+                except:
+                    continue
     except Exception as e:
         print(f"Error obteniendo mejor pick: {e}")
     
@@ -393,7 +417,7 @@ def obtener_mejor_pick():
         
         # Obtener predictions reales
         url_pred = f"https://v3.football.api-sports.io/predictions?fixture={fixture_id}"
-        response_pred = requests.get(url_pred, headers={"x-apisports-key": API_FOOTBALL_KEY}, timeout=15)
+        response_pred = requests.get(url_pred, headers={"x-apisports-key": API_KEYS[0]}, timeout=15)
         
         prob_home = 50
         prob_draw = 30
@@ -421,7 +445,7 @@ def obtener_mejor_pick():
         
         # Obtener cuotas reales del mercado
         url_odds = f"https://v3.football.api-sports.io/odds?fixture={fixture_id}"
-        response_odds = requests.get(url_odds, headers={"x-apisports-key": API_FOOTBALL_KEY}, timeout=15)
+        response_odds = requests.get(url_odds, headers={"x-apisports-key": API_KEYS[0]}, timeout=15)
         
         cuota_1 = 1.90
         cuota_x = 3.50
