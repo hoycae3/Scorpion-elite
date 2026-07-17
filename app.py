@@ -124,13 +124,13 @@ if st.session_state.is_admin:
     st.stop()
 
 # HEADER con columnas
-col_left, col_center, col_right = st.columns([2, 4, 2])
+col_left, col_center, col_right = st.columns([2.5, 4, 2])
 
 with col_left:
     st.markdown(f'''
-    <div style="display:flex; align-items:center; gap:6px;">
-        <span style="font-size:20px;">🦂</span>
-        <div style="font-size:14px; font-weight:bold;">
+    <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:22px;">🦂</span>
+        <div style="font-size:16px; font-weight:bold;">
             <span style="color:white;">SCORPION</span><span style="color:{ORANGE};"> ELITE</span>
         </div>
     </div>
@@ -149,12 +149,12 @@ with col_center:
             st.session_state.deporte = "TENIS"
 
 with col_right:
-    c1, c2 = st.columns([1, 1])
+    c1, c2 = st.columns([1.2, 1])
     with c1:
         fecha = st.date_input("", value=st.session_state.fecha_seleccionada, key="calendario", help="Seleccionar fecha", label_visibility="collapsed")
         st.session_state.fecha_seleccionada = fecha
     with c2:
-        if st.button("🔓", key="login_btn"):
+        if st.button("LOGIN", key="login_btn"):
             st.session_state.show_login = True
             st.rerun()
 
