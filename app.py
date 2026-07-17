@@ -5774,8 +5774,8 @@ def pantalla_principal_unificada():
         st.markdown("<div style='padding-top: 5px;'></div>", unsafe_allow_html=True)
         
         with st.popover("Login"):
-            usr = st.text_input("Usuario", placeholder="admin", label_visibility="collapsed")
-            pwd = st.text_input("Contraseña", type="password", placeholder="********", label_visibility="collapsed")
+            usr = st.text_input("", placeholder="usuario", label_visibility="collapsed")
+            pwd = st.text_input("", type="password", placeholder="contraseña", label_visibility="collapsed")
             if st.button("Entrar", use_container_width=True):
                 if usr and pwd:
                     if usr.lower() == "admin" and pwd == "scorpion_admin_2025":
