@@ -175,16 +175,29 @@ c1, c2, c3 = st.columns(3)
 
 with c1:
     st.markdown(f'''
-    <div style="background:{BG}; border:2px solid {TITLE}; border-radius:10px; padding:12px; position:relative;">
-        <div style="color:{TITLE}; font-size:12px; font-weight:bold; display:flex; align-items:center; gap:6px;">
+    <div style="background:{BG}; border:2px solid {TITLE}; border-radius:10px; padding:12px;">
+        <div style="color:{TITLE}; font-size:12px; font-weight:bold; display:flex; align-items:center; gap:6px; margin-bottom:10px;">
             ⚽ PARTIDOS DESTACADOS
         </div>
+        <table style="width:100%; border-collapse:collapse;">
+        <tr style="border-bottom:1px solid {BORDER};">
+            <th style="color:{MUTED}; font-size:9px; text-align:left; padding:4px 6px; width:50%;">EQUIPO</th>
+            <th style="color:{MUTED}; font-size:9px; text-align:center; padding:4px 6px; width:20%;">HORA</th>
+            <th style="color:{MUTED}; font-size:9px; text-align:center; padding:4px 6px; width:30%;">LIGA</th>
+        </tr>
+        <tr>
+            <td style="padding:8px 6px; color:white; font-size:10px;">Man City vs Arsenal</td>
+            <td style="padding:8px 6px; color:{ORANGE}; font-size:10px; text-align:center; font-weight:bold;">16:00</td>
+            <td style="padding:8px 6px; color:{MUTED}; font-size:9px; text-align:center;">🏴󠁧󠁢󠁥󠁮󠁧󠁿</td>
+        </tr>
+        <tr style="border-top:1px solid {BORDER};">
+            <td style="padding:8px 6px; color:white; font-size:10px;">Real Madrid vs Barcelona</td>
+            <td style="padding:8px 6px; color:{ORANGE}; font-size:10px; text-align:center; font-weight:bold;">17:30</td>
+            <td style="padding:8px 6px; color:{MUTED}; font-size:9px; text-align:center;">🇪🇸</td>
+        </tr>
+        </table>
     </div>
     ''', unsafe_allow_html=True)
-    st.markdown(f'''<table style="width:100%; border-collapse:collapse;">
-<tr><td style="padding:8px; color:white; font-size:10px;">Manchester City vs Arsenal</td><td style="padding:8px; color:{ORANGE}; font-size:10px; text-align:center;">16:00</td><td style="padding:8px; color:{MUTED}; font-size:9px;">🏴󠁧󠁢󠁥󠁮󠁧󠁿</td></tr>
-<tr><td style="padding:8px; color:white; font-size:10px; border-top:1px solid {BORDER};">Real Madrid vs Barcelona</td><td style="padding:8px; color:{ORANGE}; font-size:10px; text-align:center; border-top:1px solid {BORDER};">17:30</td><td style="padding:8px; color:{MUTED}; font-size:9px; border-top:1px solid {BORDER};">🇪🇸</td></tr>
-</table>''', unsafe_allow_html=True)
 
 with c2:
     st.markdown(f'''
