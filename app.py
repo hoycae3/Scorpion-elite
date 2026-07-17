@@ -5773,53 +5773,93 @@ def pantalla_principal_unificada():
     with col_login_btn:
         st.markdown("<div style='padding-top: 5px;'></div>", unsafe_allow_html=True)
         
-        # CSS minimalista y elegante
+        # CSS estilo login con iconos
         st.markdown("""
         <style>
         [data-testid="stPopover"] {
-            width: 150px !important;
+            width: 220px !important;
             background: transparent !important;
             border: none !important;
         }
-        .mini-login {
-            background: #1a1a2e;
+        .login-container {
+            background: #111;
             border-radius: 8px;
-            padding: 6px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            padding: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
         }
-        .mini-login input {
-            background: #0f3460 !important;
-            border: 1px solid #16213e !important;
-            border-radius: 4px !important;
+        .login-title {
+            color: #fff;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .login-subtitle {
+            color: #666;
+            font-size: 10px;
+            text-align: center;
+            margin-top: -10px;
+            margin-bottom: 15px;
+        }
+        .input-wrapper {
+            position: relative;
+            margin-bottom: 8px;
+        }
+        .input-icon {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            font-size: 12px;
+        }
+        .login-input {
+            width: 100%;
+            background: #1a1a1a !important;
+            border: 1px solid #333 !important;
+            border-radius: 6px !important;
             color: #fff !important;
-            font-size: 9px !important;
-            padding: 4px 6px !important;
-            margin-bottom: 4px !important;
+            font-size: 11px !important;
+            padding: 8px 8px 8px 28px !important;
+            box-sizing: border-box;
         }
-        .mini-login input::placeholder {
-            color: #888 !important;
+        .login-input:focus {
+            border-color: #e94560 !important;
+            outline: none;
         }
-        .mini-login button {
+        .login-btn {
+            width: 100%;
             background: #e94560 !important;
             border: none !important;
-            border-radius: 4px !important;
+            border-radius: 6px !important;
             color: #fff !important;
-            font-size: 9px !important;
+            font-size: 11px !important;
             font-weight: bold !important;
-            padding: 4px 6px !important;
-            width: 100%;
+            padding: 10px !important;
+            margin-top: 5px;
+            cursor: pointer;
         }
-        .mini-login button:hover {
+        .login-btn:hover {
             background: #c23a51 !important;
         }
         </style>
         """, unsafe_allow_html=True)
         
         with st.popover("Login"):
-            st.markdown('<div class="mini-login">', unsafe_allow_html=True)
-            usr = st.text_input("", placeholder="usuario", label_visibility="collapsed")
-            pwd = st.text_input("", type="password", placeholder="contraseña", label_visibility="collapsed")
-            if st.button("Entrar"):
+            st.markdown('<div class="login-container">', unsafe_allow_html=True)
+            st.markdown('<div class="login-title">Iniciar Sesión</div>', unsafe_allow_html=True)
+            st.markdown('<div class="login-subtitle">Ingresa tus credenciales</div>', unsafe_allow_html=True)
+            
+            # Iconos usando HTML
+            st.markdown('<div class="input-wrapper"><span class="input-icon">👤</span>', unsafe_allow_html=True)
+            usr = st.text_input("", placeholder="", label_visibility="collapsed", key="usr_login")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            st.markdown('<div class="input-wrapper"><span class="input-icon">🔒</span>', unsafe_allow_html=True)
+            pwd = st.text_input("", type="password", placeholder="", label_visibility="collapsed", key="pwd_login")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            if st.button("INICIAR SESIÓN", use_container_width=True):
                 if usr and pwd:
                     if usr.lower() == "admin" and pwd == "scorpion_admin_2025":
                         st.session_state.logged_in = True
@@ -5828,7 +5868,8 @@ def pantalla_principal_unificada():
                         st.session_state.user_plan = "ADMIN"
                         st.rerun()
                     else:
-                        st.error("❌")
+                        st.error("❌ Credenciales incorrectas")
+            
             st.markdown('</div>', unsafe_allow_html=True)
     
     # Si está logueado
