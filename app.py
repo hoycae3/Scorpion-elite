@@ -3796,7 +3796,20 @@ def exportar_excel(resultados,titulo="Scorpion Elite V4 Pro"):
 # ══════════════════════════════════════════════════════════
 # CSS - Verde Bosque y Oro
 # ══════════════════════════════════════════════════════════
-st.set_page_config(page_title="Scorpion Elite V4",page_icon="🦂",layout="wide")
+st.set_page_config(page_title="Scorpion Elite V4",page_icon="🦂",layout="wide", menu_items={
+    "About": "🦂 Scorpion Elite V4 Pro"
+})
+
+# Configurar tema oscuro personalizado
+st.markdown("""
+<style>
+/* Quitar color verde del tema Streamlit */
+[data-testid="stMainBlockContainer"] {background-color: #000 !important;}
+.stApp {background-color: #000 !important;}
+/* Quitar acentos verdes */
+::selection {background: #ff8c00; color: #000;}
+</style>
+""", unsafe_allow_html=True)
 
 # Cargar archivo CSS externo
 try:
