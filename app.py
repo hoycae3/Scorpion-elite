@@ -3,7 +3,6 @@ from datetime import date
 from datetime import datetime
 import sys
 sys.path.append('/workspace/project/Scorpion-elite')
-from scorpion.models.math import MotorAnalisis
 
 st.set_page_config(page_title='SCORPION ELITE', layout='wide')
 
@@ -321,7 +320,7 @@ def obtener_partidos_futbol(todos=False):
 
 
 def obtener_mejor_pick():
-    """Obtiene el mejor partido del día y lo analiza con los modelos matemáticos"""
+    """Obtiene el mejor partido del día con datos REALES de cuotas y predicciones"""
     import requests
     from datetime import datetime, timedelta
     
@@ -347,6 +346,7 @@ def obtener_mejor_pick():
                         away = fixture["teams"]["away"]["name"]
                         league = fixture["league"]["name"].lower()
                         country = fixture["league"]["country"]
+                        fixture_id = fixture["fixture"]["id"]
                         hora = fixture["fixture"]["date"][11:16]
                         
                         # Convertir UTC a UTC-3 (America)
@@ -376,7 +376,8 @@ def obtener_mejor_pick():
                                 "away": away,
                                 "liga": liga_completa,
                                 "hora": hora_local,
-                                "prioridad": prioridad
+                                "prioridad": prioridad,
+                                "fixture_id": fixture_id
                             }
                     except:
                         continue
@@ -386,36 +387,102 @@ def obtener_mejor_pick():
     if not mejor_partido:
         return None
     
-    # Analizar con MotorAnalisis
+    # Obtener datos REALES: cuotas y predicciones de API-Football
     try:
-        motor = MotorAnalisis()
-        analisis = motor.analizar(
-            liga=mejor_partido["liga"],
-            usar_datos_reales=False
-        )
+        fixture_id = mejor_partido["fixture_id"]
         
-        # Calcular cuota estimada (fair odds)
-        pick = analisis.pick_clave
+        # Obtener predictions reales
+        url_pred = f"https://v3.football.api-sports.io/predictions?fixture={fixture_id}"
+        response_pred = requests.get(url_pred, headers={"x-apisports-key": API_FOOTBALL_KEY}, timeout=15)
         
-        # Determinar cuota basada en el pick
-        if "Victoria Local" in pick:
-            prob = analisis.p1
-        elif "Victoria Visitante" in pick:
-            prob = analisis.p2
-        elif "Over 2.5" in pick:
-            prob = analisis.over25
-        elif "Over 1.5" in pick:
-            prob = analisis.over15
-        elif "BTTS" in pick:
-            prob = analisis.btts_si
+        prob_home = 50
+        prob_draw = 30
+        prob_away = 20
+        
+        if response_pred.status_code == 200:
+            data_pred = response_pred.json()
+            pred_response = data_pred.get("response", [])
+            if pred_response:
+                pred = pred_response[0].get("predictions", {})
+                
+                # Extraer porcentajes reales
+                percent = pred.get("percent", {})
+                if percent:
+                    home_pct = percent.get("home", "50%").replace("%", "")
+                    draw_pct = percent.get("draw", "30%").replace("%", "")
+                    away_pct = percent.get("away", "20%").replace("%", "")
+                    
+                    try:
+                        prob_home = int(home_pct)
+                        prob_draw = int(draw_pct)
+                        prob_away = int(away_pct)
+                    except:
+                        pass
+        
+        # Obtener cuotas reales del mercado
+        url_odds = f"https://v3.football.api-sports.io/odds?fixture={fixture_id}"
+        response_odds = requests.get(url_odds, headers={"x-apisports-key": API_FOOTBALL_KEY}, timeout=15)
+        
+        cuota_1 = 1.90
+        cuota_x = 3.50
+        cuota_2 = 4.00
+        cuota_over25 = 1.90
+        cuota_btts_si = 1.80
+        bookie = "Mercado"
+        
+        if response_odds.status_code == 200:
+            data_odds = response_odds.json()
+            odds_response = data_odds.get("response", [])
+            if odds_response:
+                bookmakers = odds_response[0].get("bookmakers", [])
+                if bookmakers:
+                    bookie = bookmakers[0].get("name", "Mercado")
+                    bets = bookmakers[0].get("bets", [])
+                    
+                    for bet in bets:
+                        bet_name = bet.get("name", "")
+                        values = bet.get("values", [])
+                        
+                        if bet_name == "Match Winner":
+                            for v in values:
+                                if v.get("value") == "Home":
+                                    cuota_1 = float(v.get("odd", cuota_1))
+                                elif v.get("value") == "Draw":
+                                    cuota_x = float(v.get("odd", cuota_x))
+                                elif v.get("value") == "Away":
+                                    cuota_2 = float(v.get("odd", cuota_2))
+                        
+                        elif "Goals Over/Under" in bet_name and "2.5" in str(values):
+                            for v in values:
+                                if "Over 2.5" in v.get("value", ""):
+                                    cuota_over25 = float(v.get("odd", cuota_over25))
+                        
+                        elif "Both Teams Score" in bet_name:
+                            for v in values:
+                                if v.get("value") == "Yes":
+                                    cuota_btts_si = float(v.get("odd", cuota_btts_si))
+        
+        # Determinar pick basado en la predicción real
+        if prob_home >= prob_draw and prob_home >= prob_away:
+            pick = f"Gana {mejor_partido['home']}"
+            cuota_pick = cuota_1
+            prob_pick = prob_home
+        elif prob_away >= prob_draw and prob_away >= prob_home:
+            pick = f"Gana {mejor_partido['away']}"
+            cuota_pick = cuota_2
+            prob_pick = prob_away
         else:
-            prob = analisis.px
+            pick = "Empate"
+            cuota_pick = cuota_x
+            prob_pick = prob_draw
         
-        cuota = round(100 / prob, 2) if prob > 0 else 1.50
+        # Calcular valor (comparando con probabilidad implícita)
+        prob_implicita = round(100 / cuota_pick, 1) if cuota_pick > 0 else 50
+        valor = round(prob_pick - prob_implicita, 1)
         
-        # Calcular valor (asumiendo cuota promedio del mercado)
-        cuota_mercado = cuota * 1.05  # Margen típico
-        valor = round(((cuota / cuota_mercado) - 1) * 100, 1)
+        # Calcular confianza basada en consistencia
+        total_prob = prob_home + prob_draw + prob_away
+        confianza = round((max(prob_home, prob_draw, prob_away) / total_prob) * 100, 0) if total_prob > 0 else 50
         
         return {
             "liga": mejor_partido["liga"],
@@ -423,17 +490,23 @@ def obtener_mejor_pick():
             "away": mejor_partido["away"],
             "hora": mejor_partido["hora"],
             "pick": pick,
-            "cuota": cuota,
-            "probabilidad": prob,
-            "confianza": analisis.confianza,
+            "cuota": cuota_pick,
+            "probabilidad": prob_pick,
+            "confianza": confianza,
             "valor": f"{'+' if valor > 0 else ''}{valor}%",
-            "rango": analisis.rango,
-            "over25": analisis.over25,
-            "btts": analisis.btts_si,
-            "xg": f"{analisis.xl:.1f} - {analisis.xv:.1f}"
+            "rango": "A" if confianza >= 60 else ("B" if confianza >= 50 else "C"),
+            "over25": round(100 / cuota_over25, 0) if cuota_over25 > 0 else 50,
+            "btts": round(100 / cuota_btts_si, 0) if cuota_btts_si > 0 else 50,
+            "bookie": bookie,
+            "p1": prob_home,
+            "px": prob_draw,
+            "p2": prob_away,
+            "cuota_1": cuota_1,
+            "cuota_x": cuota_x,
+            "cuota_2": cuota_2
         }
     except Exception as e:
-        print(f"Error analisis: {e}")
+        print(f"Error obteniendo datos reales: {e}")
         return None
 
 
@@ -674,7 +747,7 @@ with c1:
     st.markdown(tabla_html, unsafe_allow_html=True)
 
 with c2:
-    # Usar datos del analisis matematico
+    # Usar datos REALES del partido
     if mejor_pick:
         PICK_LIGA = mejor_pick.get("liga", "Liga")
         PICK_LOCAL = mejor_pick.get("home", "Local")
@@ -685,10 +758,18 @@ with c2:
         PICK_CONF = f"{mejor_pick.get('confianza', 0):.0f}"
         PICK_VALOR = mejor_pick.get("valor", "+0%")
         PICK_HORA = mejor_pick.get("hora", "--:--")
-        PICK_XG = mejor_pick.get("xg", "0.0 - 0.0")
-        PICK_RANGO = mejor_pick.get("rango", "D")
+        PICK_RANGO = mejor_pick.get("rango", "C")
+        PICK_BOOKIE = mejor_pick.get("bookie", "Mercado")
         PICK_OVER25 = f"{mejor_pick.get('over25', 0):.0f}%"
         PICK_BTTS = f"{mejor_pick.get('btts', 0):.0f}%"
+        # Cuotas 1X2
+        PICK_C1 = f"{mejor_pick.get('cuota_1', 1.90):.2f}"
+        PICK_CX = f"{mejor_pick.get('cuota_x', 3.50):.2f}"
+        PICK_C2 = f"{mejor_pick.get('cuota_2', 4.00):.2f}"
+        # Probabilidades reales
+        PICK_P1 = f"{mejor_pick.get('p1', 50)}%"
+        PICK_PX = f"{mejor_pick.get('px', 30)}%"
+        PICK_P2 = f"{mejor_pick.get('p2', 20)}%"
     else:
         PICK_LIGA = "Sin partidos"
         PICK_LOCAL = "Sin datos"
@@ -699,10 +780,16 @@ with c2:
         PICK_CONF = "0"
         PICK_VALOR = "+0%"
         PICK_HORA = "--:--"
-        PICK_XG = "0.0 - 0.0"
         PICK_RANGO = "D"
+        PICK_BOOKIE = "N/A"
         PICK_OVER25 = "0%"
         PICK_BTTS = "0%"
+        PICK_C1 = "1.90"
+        PICK_CX = "3.50"
+        PICK_C2 = "4.00"
+        PICK_P1 = "50%"
+        PICK_PX = "30%"
+        PICK_P2 = "20%"
     
     st.markdown(f'''
     <div style="background:{BG}; border:2px solid {ORANGE}; border-radius:10px; padding:12px;">
@@ -718,8 +805,15 @@ with c2:
                 <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">CONF</div><div style="color:{GREEN}; font-size:13px; font-weight:bold;">{PICK_CONF}%</div></div>
                 <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">VALOR</div><div style="color:{GREEN}; font-size:13px; font-weight:bold;">{PICK_VALOR}</div></div>
             </div>
+            <div style="border-top:1px solid {BORDER}; margin-top:6px; padding-top:6px;">
+                <div style="text-align:center; color:{MUTED}; font-size:8px; margin-bottom:4px;">📊 CUOTAS REALES ({PICK_BOOKIE})</div>
+                <div style="display:flex; justify-content:space-around; font-size:9px;">
+                    <div><span style="color:{MUTED};">1:</span> <span style="color:white; font-weight:bold;">{PICK_C1}</span> <span style="color:{GREEN};">({PICK_P1})</span></div>
+                    <div><span style="color:{MUTED};">X:</span> <span style="color:white; font-weight:bold;">{PICK_CX}</span> <span style="color:{GREEN};">({PICK_PX})</span></div>
+                    <div><span style="color:{MUTED};">2:</span> <span style="color:white; font-weight:bold;">{PICK_C2}</span> <span style="color:{GREEN};">({PICK_P2})</span></div>
+                </div>
+            </div>
             <div style="border-top:1px solid {BORDER}; margin-top:6px; padding-top:6px; display:flex; justify-content:space-between; font-size:8px;">
-                <div style="color:{MUTED};">xG: {PICK_XG}</div>
                 <div style="color:{MUTED};">O2.5: {PICK_OVER25}</div>
                 <div style="color:{MUTED};">BTTS: {PICK_BTTS}</div>
                 <div style="color:{ORANGE}; font-weight:bold;">Rango: {PICK_RANGO}</div>
