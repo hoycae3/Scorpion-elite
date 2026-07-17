@@ -207,11 +207,11 @@ LIGAS_PRIORIDAD = {
     "euro": 8,
     "world cup": 8,
     
-    # THIRD TIER - Medio interes
+    # THIRD TIER - Medio interes (ligas con muchos goles)
     "brasileiro": 7,
+    "eredivisie": 7,  # Liga holandesa - muchos goles
     "liga mx": 6,
     "major league soccer": 5,
-    "eredivisie": 5,
     "primeira liga": 5,
     "super lig": 5,
     "copa argentina": 5,
