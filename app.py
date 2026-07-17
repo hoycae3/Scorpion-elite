@@ -173,11 +173,53 @@ st.markdown(f'<div style="background:{CARD}; border:2px solid {BORDER}; border-r
 # 3 COLUMNAS - TARJETAS COMPACTAS
 c1, c2, c3 = st.columns(3)
 
+# Iconos por deporte
+DEPORTE_ICONS = {
+    "FUTBOL": "⚽",
+    "BALONCESTO": "🏀",
+    "TENIS": "🎾"
+}
+
+# Datos de partidos por deporte (conectar con API/DB)
+PARTIDOS = {
+    "FUTBOL": [
+        {"equipo": "Man City vs Arsenal", "hora": "16:00", "liga": "Premier League"},
+        {"equipo": "Real Madrid vs Barcelona", "hora": "17:30", "liga": "LaLiga"},
+        {"equipo": "Bayern vs Dortmund", "hora": "18:30", "liga": "Bundesliga"},
+    ],
+    "BALONCESTO": [
+        {"equipo": "Lakers vs Celtics", "hora": "21:00", "liga": "NBA"},
+        {"equipo": "Warriors vs Nets", "hora": "22:30", "liga": "NBA"},
+        {"equipo": "Real Madrid vs Barcelona", "hora": "20:00", "liga": "Euroleague"},
+    ],
+    "TENIS": [
+        {"equipo": "Djokovic vs Alcaraz", "hora": "15:00", "liga": "ATP"},
+        {"equipo": "Nadal vs Medvedev", "hora": "17:00", "liga": "ATP"},
+        {"equipo": "Sinner vs Zverev", "hora": "19:00", "liga": "ATP"},
+    ]
+}
+
+deporte = st.session_state.deporte
+icono = DEPORTE_ICONS.get(deporte, "⚽")
+partidos = PARTIDOS.get(deporte, [])
+
 with c1:
+    # Construir filas de la tabla
+    filas_html = ""
+    for i, p in enumerate(partidos):
+        borde = f"border-top:1px solid {BORDER};" if i > 0 else ""
+        filas_html += f'''
+        <tr style="{borde}">
+            <td style="padding:8px 6px; color:white; font-size:10px;">{p["equipo"]}</td>
+            <td style="padding:8px 6px; color:{ORANGE}; font-size:10px; text-align:center; font-weight:bold;">{p["hora"]}</td>
+            <td style="padding:8px 6px; color:{MUTED}; font-size:9px; text-align:center;" title="{p["liga"]}">{p["liga"]}</td>
+        </tr>
+        '''
+    
     st.markdown(f'''
     <div style="background:{BG}; border:2px solid {TITLE}; border-radius:10px; padding:12px;">
         <div style="color:{TITLE}; font-size:12px; font-weight:bold; display:flex; align-items:center; gap:6px; margin-bottom:10px;">
-            ⚽ PARTIDOS DESTACADOS
+            {icono} PARTIDOS DESTACADOS
         </div>
         <table style="width:100%; border-collapse:collapse;">
         <tr style="border-bottom:1px solid {BORDER};">
@@ -185,16 +227,7 @@ with c1:
             <th style="color:{MUTED}; font-size:9px; text-align:center; padding:4px 6px; width:20%;">HORA</th>
             <th style="color:{MUTED}; font-size:9px; text-align:center; padding:4px 6px; width:30%;">LIGA</th>
         </tr>
-        <tr>
-            <td style="padding:8px 6px; color:white; font-size:10px;">Man City vs Arsenal</td>
-            <td style="padding:8px 6px; color:{ORANGE}; font-size:10px; text-align:center; font-weight:bold;">16:00</td>
-            <td style="padding:8px 6px; color:{MUTED}; font-size:9px; text-align:center;" title="Premier League">Premier League</td>
-        </tr>
-        <tr style="border-top:1px solid {BORDER};">
-            <td style="padding:8px 6px; color:white; font-size:10px;">Real Madrid vs Barcelona</td>
-            <td style="padding:8px 6px; color:{ORANGE}; font-size:10px; text-align:center; font-weight:bold;">17:30</td>
-            <td style="padding:8px 6px; color:{MUTED}; font-size:9px; text-align:center;" title="LaLiga">LaLiga</td>
-        </tr>
+        {filas_html}
         </table>
     </div>
     ''', unsafe_allow_html=True)
