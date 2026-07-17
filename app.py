@@ -5786,7 +5786,7 @@ def pantalla_principal_unificada():
         with st.popover("Login"):
             usr = st.text_input("", placeholder="user", label_visibility="collapsed")
             pwd = st.text_input("", type="password", placeholder="pass", label_visibility="collapsed")
-            if st.button("→", use_container_width=True):
+            if st.button("Entrar", use_container_width=True):
                 if usr and pwd:
                     if usr.lower() == "admin" and pwd == "scorpion_admin_2025":
                         st.session_state.logged_in = True
