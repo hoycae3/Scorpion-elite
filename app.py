@@ -35,37 +35,6 @@ th, td {{border: none;}}
 </style>
 ''', unsafe_allow_html=True)
 
-# LOGIN MODAL
-if st.session_state.show_login:
-    with st.container():
-        col1, col2, col3 = st.columns([1,2,1])
-        with col2:
-            st.markdown(f'<div style="background:{CARD}; border:1px solid {BORDER}; border-radius:12px; padding:30px; margin-top:60px; text-align:center;">', unsafe_allow_html=True)
-            st.markdown(f'<div style="color:{ORANGE}; font-size:24px; font-weight:bold; margin-bottom:5px;">INICIAR SESION</div>', unsafe_allow_html=True)
-            
-            username = st.text_input("Usuario", placeholder="Ingrese usuario", key="user_input")
-            password = st.text_input("Contrasena", type="password", placeholder="Ingrese contrasena", key="pass_input")
-            
-            col_a, col_b = st.columns(2)
-            with col_a:
-                if st.button("ENTRAR", use_container_width=True):
-                    if username == ADMIN_USER and password == ADMIN_PASS:
-                        st.session_state.logged_in = True
-                        st.session_state.is_admin = True
-                        st.session_state.user_name = username
-                        st.session_state.show_login = False
-                        st.rerun()
-                    else:
-                        st.error("Datos incorrectos")
-            with col_b:
-                if st.button("CANCELAR", use_container_width=True):
-                    st.session_state.show_login = False
-                    st.rerun()
-            
-            st.markdown(f'<div style="color:{MUTED}; font-size:9px; margin-top:10px;">Scorpion Elite 2025</div>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-    st.stop()
-
 # ADMIN VIEW
 if st.session_state.is_admin:
     st.markdown(f'''
