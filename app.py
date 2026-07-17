@@ -48,10 +48,11 @@ matches = [
 
 with c1:
     st.markdown(f'<div style="background:{CARD}; border:1px solid {BORDER}; border-radius:8px; padding:14px; margin:8px;">', unsafe_allow_html=True)
-    st.markdown(f'<div style="color:{TITLE}; font-size:12px; font-weight:bold; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid {BORDER};">PARTIDO HORA Y LIGA</div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="color:{TITLE}; font-size:12px; font-weight:bold; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid {BORDER};">PARTIDOS DESTACADOS</div>', unsafe_allow_html=True)
+    st.markdown(f'<table style="width:100%;"><tr style="border-bottom:1px solid {BORDER};"><th style="color:{MUTED}; font-size:9px; text-align:left; padding:6px;">PARTIDO</th><th style="color:{MUTED}; font-size:9px; text-align:center; padding:6px;">HORA</th><th style="color:{MUTED}; font-size:9px; text-align:center; padding:6px;">LIGA</th></tr>', unsafe_allow_html=True)
     for m in matches:
-        st.markdown(f'<div style="background:{BG}; padding:8px; margin-bottom:6px; border-radius:4px; border-left:3px solid {ORANGE};"><div style="font-weight:bold; font-size:11px; color:white;">{m[0]}</div><div style="display:flex; justify-content:space-between; margin-top:3px;"><span style="color:{MUTED}; font-size:9px;">{m[2]}</span><span style="color:{MUTED}; font-size:9px;">{m[1]}</span></div></div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown(f'<tr style="border-bottom:1px solid {BORDER};"><td style="padding:8px; color:white; font-weight:bold; font-size:11px;">{m[0]}</td><td style="text-align:center; padding:8px; color:{MUTED}; font-size:10px;">{m[1]}</td><td style="text-align:center; padding:8px; color:{MUTED}; font-size:10px;">{m[2]}</td></tr>', unsafe_allow_html=True)
+    st.markdown('</table></div>', unsafe_allow_html=True)
 
 with c2:
     st.markdown(f'<div style="background:{CARD}; border:1px solid {BORDER}; border-radius:8px; padding:14px; margin:8px;">', unsafe_allow_html=True)
