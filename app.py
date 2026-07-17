@@ -32,8 +32,41 @@ header {{display:none !important;}}
 [data-testid="stMain"] {{padding:0; background:{BG};}}
 table {{border-collapse: collapse; width: 100%;}}
 th, td {{border: none;}}
+.header-row {{display:flex; justify-content:space-between; align-items:center; padding:12px 30px; background:{CARD}; border-bottom:1px solid {BORDER};}}
+.header-center {{display:flex; gap:6px;}}
 </style>
 ''', unsafe_allow_html=True)
+
+# LOGIN MODAL
+if st.session_state.show_login:
+    with st.container():
+        col1, col2, col3 = st.columns([1,2,1])
+        with col2:
+            st.markdown(f'<div style="background:{CARD}; border:1px solid {BORDER}; border-radius:12px; padding:30px; margin-top:60px; text-align:center;">', unsafe_allow_html=True)
+            st.markdown(f'<div style="color:{ORANGE}; font-size:24px; font-weight:bold; margin-bottom:5px;">INICIAR SESION</div>', unsafe_allow_html=True)
+            
+            username = st.text_input("Usuario", placeholder="Ingrese usuario", key="user_input")
+            password = st.text_input("Contrasena", type="password", placeholder="Ingrese contrasena", key="pass_input")
+            
+            col_a, col_b = st.columns(2)
+            with col_a:
+                if st.button("ENTRAR", use_container_width=True):
+                    if username == ADMIN_USER and password == ADMIN_PASS:
+                        st.session_state.logged_in = True
+                        st.session_state.is_admin = True
+                        st.session_state.user_name = username
+                        st.session_state.show_login = False
+                        st.rerun()
+                    else:
+                        st.error("Datos incorrectos")
+            with col_b:
+                if st.button("CANCELAR", use_container_width=True):
+                    st.session_state.show_login = False
+                    st.rerun()
+            
+            st.markdown(f'<div style="color:{MUTED}; font-size:9px; margin-top:10px;">Scorpion Elite 2025</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+    st.stop()
 
 # ADMIN VIEW
 if st.session_state.is_admin:
@@ -86,21 +119,30 @@ if st.session_state.is_admin:
         st.rerun()
     st.stop()
 
-# HEADER
-st.markdown(f'''
-<div style="background:{CARD}; padding:12px 30px; border-bottom:1px solid {BORDER}; display:flex; justify-content:space-between; align-items:center;">
-    <div><div style="color:{ORANGE}; font-size:22px; font-weight:bold;">SCORPION ELITE</div><div style="color:{MUTED}; font-size:9px; letter-spacing:2px;">ANALISIS Y TENDENCIAS DEPORTIVAS</div></div>
-    <div style="display:flex; gap:6px; align-items:center;">
-        <span style="background:{GREEN}; color:{BG}; padding:6px 14px; border-radius:4px; font-size:11px; font-weight:bold;"> FUTBOL</span>
-        <span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 14px; border-radius:4px; font-size:11px;"> BALONCESTO</span>
-        <span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 14px; border-radius:4px; font-size:11px;"> TENIS</span>
-    </div>
-    <div style="display:flex; gap:8px; align-items:center;">
-        <input type="text" placeholder="Buscar..." style="background:{BG}; border:1px solid {BORDER}; color:white; padding:6px 10px; border-radius:4px; font-size:11px; width:140px;">
-        <span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 10px; border-radius:4px; font-size:11px;">HOY</span>
-    </div>
-</div>
-''', unsafe_allow_html=True)
+# HEADER con columnas
+col_left, col_center, col_right = st.columns([3, 3, 2])
+
+with col_left:
+    st.markdown(f'<div style="color:{ORANGE}; font-size:22px; font-weight:bold;">SCORPION ELITE</div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="color:{MUTED}; font-size:9px; letter-spacing:2px;">ANALISIS Y TENDENCIAS DEPORTIVAS</div>', unsafe_allow_html=True)
+
+with col_center:
+    s1, s2, s3 = st.columns(3)
+    with s1:
+        st.markdown(f'<span style="background:{GREEN}; color:{BG}; padding:6px 14px; border-radius:4px; font-size:11px; font-weight:bold;">FUTBOL</span>', unsafe_allow_html=True)
+    with s2:
+        st.markdown(f'<span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 14px; border-radius:4px; font-size:11px;">BALONCESTO</span>', unsafe_allow_html=True)
+    with s3:
+        st.markdown(f'<span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 14px; border-radius:4px; font-size:11px;">TENIS</span>', unsafe_allow_html=True)
+
+with col_right:
+    b1, b2 = st.columns(2)
+    with b1:
+        st.markdown(f'<span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 10px; border-radius:4px; font-size:11px;">HOY</span>', unsafe_allow_html=True)
+    with b2:
+        if st.button("LOGIN", key="login_btn"):
+            st.session_state.show_login = True
+            st.rerun()
 
 # 3 COLUMNAS
 c1, c2, c3 = st.columns(3)
