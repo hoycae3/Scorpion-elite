@@ -123,43 +123,47 @@ if st.session_state.is_admin:
         st.rerun()
     st.stop()
 
-# HEADER con columnas - COMPACTO
-col_left, col_center, col_right = st.columns([2.5, 4, 1.5])
-
-with col_left:
-    st.markdown(f'''
+# HEADER - TODO EN UNA LINEA
+st.markdown(f'''
+<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 16px; background:{CARD}; border-bottom:1px solid {BORDER};">
     <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:24px;">🦂</span>
+        <span style="font-size:22px;">🦂</span>
         <div>
-            <div style="font-size:18px; font-weight:bold;">
+            <div style="font-size:16px; font-weight:bold;">
                 <span style="color:white;">SCORPION</span><span style="color:{ORANGE};"> ELITE</span>
             </div>
-            <div style="color:{MUTED}; font-size:8px; letter-spacing:1px;">ANALISIS Y TENDENCIAS</div>
         </div>
     </div>
-    ''', unsafe_allow_html=True)
+    <div style="display:flex; gap:4px;">
+        <div style="display:flex; gap:4px;">
+'''.format(**locals()), unsafe_allow_html=True)
 
-with col_center:
-    s1, s2, s3 = st.columns([1, 1.3, 1])
-    with s1:
-        if st.button("⚽ FUTBOL", key="btn_futbol", use_container_width=True):
-            st.session_state.deporte = "FUTBOL"
-    with s2:
-        if st.button("🏀 BALONCESTO", key="btn_basket", use_container_width=True):
-            st.session_state.deporte = "BALONCESTO"
-    with s3:
-        if st.button("🎾 TENIS", key="btn_tenis", use_container_width=True):
-            st.session_state.deporte = "TENIS"
+s1, s2, s3 = st.columns([1, 1.2, 1])
+with s1:
+    if st.button("⚽ FUTBOL", key="btn_futbol"):
+        st.session_state.deporte = "FUTBOL"
+with s2:
+    if st.button("🏀 BALONCESTO", key="btn_basket"):
+        st.session_state.deporte = "BALONCESTO"
+with s3:
+    if st.button("🎾 TENIS", key="btn_tenis"):
+        st.session_state.deporte = "TENIS"
 
-with col_right:
-    c1, c2 = st.columns([1.5, 1])
-    with c1:
-        fecha = st.date_input("", value=st.session_state.fecha_seleccionada, key="calendario", help="Seleccionar fecha", label_visibility="collapsed")
-        st.session_state.fecha_seleccionada = fecha
-    with c2:
-        if st.button("🔓", key="login_btn", use_container_width=True):
-            st.session_state.show_login = True
-            st.rerun()
+st.markdown('''</div>
+    <div style="display:flex; gap:8px; align-items:center; margin-left:20px;">
+''', unsafe_allow_html=True)
+
+c1, c2 = st.columns([1, 1])
+with c1:
+    fecha = st.date_input("", value=st.session_state.fecha_seleccionada, key="calendario", help="Seleccionar fecha", label_visibility="collapsed")
+    st.session_state.fecha_seleccionada = fecha
+with c2:
+    if st.button("🔓", key="login_btn"):
+        st.session_state.show_login = True
+        st.rerun()
+
+st.markdown('''    </div>
+</div>''', unsafe_allow_html=True)
 
 # CONTENEDOR UNIFICADO PARA LAS 3 TARJETAS - COMPACTO
 st.markdown(f'<div style="background:{CARD}; border:2px solid {BORDER}; border-radius:12px; padding:12px; margin:8px 0; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">', unsafe_allow_html=True)
