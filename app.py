@@ -24,7 +24,7 @@ header {{display:none;}}
 # HEADER
 st.markdown(f'''
 <div style="background:{CARD}; padding:15px 30px; border-bottom:1px solid {BORDER}; display:flex; justify-content:space-between; align-items:center;">
-    <div style="color:{ORANGE}; font-size:24px; font-weight:bold;">SCORPION ELITE</div>
+    <div><div style="color:{ORANGE}; font-size:24px; font-weight:bold;">SCORPION ELITE</div><div style="color:{MUTED}; font-size:10px; letter-spacing:2px;">ANALISIS Y TENDENCIAS DEPORTIVAS</div></div>
     <div style="display:flex; gap:8px;">
         <span style="background:{GREEN}; color:{BG}; padding:8px 16px; border-radius:4px; font-size:12px; font-weight:bold;">FUTBOL</span>
         <span style="border:1px solid {BORDER}; color:{MUTED}; padding:8px 16px; border-radius:4px; font-size:12px;">BALONCESTO</span>
