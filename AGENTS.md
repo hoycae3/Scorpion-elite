@@ -60,30 +60,45 @@ Scorpion-elite/
    - Partidos: 5 minutos TTL
    - Predicciones/cuotas: 10 minutos TTL
 
-4. **Integración con Supabase** (pendiente de configurar)
-   - scraper.py creado
-   - Workflow GitHub Actions creado
-   - Schema SQL creado
+4. **Integración con Supabase** (EN PROGRESO)
+   - ✅ scraper.py creado
+   - ✅ Workflow GitHub Actions creado
+   - ✅ Schema SQL creado
+   - ✅ app.py modificado para leer desde Supabase
+   - ⏳ **Pendiente: Ejecutar SQL en Supabase**
+   - ⏳ **Pendiente: Agregar secrets en GitHub**
+
+---
+
+## 📍 Último Paso Completado
+
+El usuario creó el proyecto en Supabase pero necesita ejecutar el SQL.
+
+### Cómo ejecutar el SQL en Supabase:
+
+1. Ir a https://supabase.com y abrir el proyecto
+2. En el menú lateral → **SQL Editor** (icono >_)
+3. Click en **New query**
+4. Copiar el contenido de `supabase_schema.sql` del repositorio
+5. Click en **Run**
 
 ---
 
 ## ⏳ Pendiente por Hacer
 
-### 1. Configurar Supabase (REQUIRED)
-El usuario necesita:
-1. Crear cuenta en https://supabase.com
-2. Ejecutar `supabase_schema.sql` en SQL Editor
-3. Agregar secrets en GitHub:
-   - `SUPABASE_URL`
-   - `SUPABASE_KEY` (service_role key)
+### Paso 1: Ejecutar SQL en Supabase
+- El usuario YA creó el proyecto en Supabase
+- Falta ejecutar el archivo `supabase_schema.sql` en el SQL Editor
 
-### 2. Verificar que APIs funcionan
-- Las 2 keys de API-Football actualmente devuelven 0 partidos
-- Necesitan regenerarse o conseguir nuevas keys
+### Paso 2: Agregar secrets en GitHub
+- Ir a: https://github.com/hoycae3/Scorpion-elite/settings/secrets/actions
+- Agregar:
+  - `SUPABASE_URL` → La URL del proyecto (ej: https://xxxx.supabase.co)
+  - `SUPABASE_KEY` → service_role key (de Settings → API en Supabase)
 
-### 3. El scraper se ejecutará automáticamente
-- GitHub Actions ejecuta scraper.py cada día a las 6:00 AM UTC
-- Guardará partidos + predicciones + cuotas en Supabase
+### Paso 3: Verificar APIs
+- Las 2 keys de API-Football devolvían 0 partidos
+- Posiblemente necesitan renovarse
 
 ---
 
@@ -126,11 +141,15 @@ Para seguimiento de resultados de picks.
 
 ---
 
-## 🔑 Variables de Entorno
+## 🔑 Secrets Requeridos en GitHub
 
-En Streamlit Cloud (Settings → Secrets):
-- `SUPABASE_URL`
-- `SUPABASE_KEY`
+Después de configurar Supabase, agregar en:
+https://github.com/hoycae3/Scorpion-elite/settings/secrets/actions
+
+| Secret | Valor |
+|--------|-------|
+| `SUPABASE_URL` | URL del proyecto en Supabase |
+| `SUPABASE_KEY` | service_role key (Settings → API en Supabase) |
 
 ---
 
@@ -145,9 +164,10 @@ En Streamlit Cloud (Settings → Secrets):
 
 ---
 
-## 🔄 Cómo Continuar
+## 🔄 Cómo Continuar en Nuevo Chat
 
-1. Si el chat se reinicia, leer este archivo primero
-2. Verificar estado de Supabase y APIs
-3. Revisar logs de GitHub Actions si el scraper falla
-4. La app tiene fallback automático si Supabase no está configurado
+1. Leer este archivo AGENTS.md primero
+2. Verificar si el usuario ejecutó el SQL en Supabase
+3. Si no lo ha hecho, guiarlo paso a paso
+4. Si ya lo hizo, ayudar con los secrets de GitHub
+5. Probar que todo funcione correctamente
