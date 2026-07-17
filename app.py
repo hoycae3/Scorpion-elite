@@ -144,20 +144,42 @@ with col_center:
             st.session_state.deporte = "TENIS"
 
 with col_right:
-    # Mostrar fecha actual
-    fecha_hoy = date.today().strftime("%d/%m/%Y")
-    st.markdown(f'<span style="border:1px solid {ORANGE}; color:{ORANGE}; padding:6px 10px; border-radius:4px; font-size:11px; font-weight:bold;">📅 {fecha_hoy}</span>', unsafe_allow_html=True)
+    col_hoy, col_login = st.columns(2)
+    with col_hoy:
+        # Botón HOY que abre selector de fecha
+        fecha_hoy = date.today().strftime("%d/%m")
+        if st.button(f"📅 {fecha_hoy}", key="btn_hoy"):
+            st.session_state.show_fecha = True
+            
+    # Modal para seleccionar fecha
+    if st.session_state.get('show_fecha', False):
+        st.markdown("### Seleccionar Fecha")
+        cols_fecha = st.columns(3)
+        with cols_fecha[0]:
+            dia = st.selectbox("Día", list(range(1, 32)), index=date.today().day - 1, key="dia")
+        with cols_fecha[1]:
+            mes = st.selectbox("Mes", ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"], index=date.today().month - 1, key="mes")
+        with cols_fecha[2]:
+            year = st.selectbox("Año", [2025, 2026, 2027], index=1, key="year")
+        
+        if st.button("✓ Aplicar", key="aplicar_fecha"):
+            st.session_state.fecha_seleccionada = date(year, date.today().month, dia)
+            st.session_state.show_fecha = False
+            st.rerun()
+        if st.button("✕ Cerrar", key="cerrar_fecha"):
+            st.session_state.show_fecha = False
+            st.rerun()
     
-    # Calendario para seleccionar fecha
-    fecha = st.date_input("Seleccionar fecha", value=st.session_state.fecha_seleccionada, key="calendario")
-    st.session_state.fecha_seleccionada = fecha
-    
-    if st.button("🔓 LOGIN", key="login_btn"):
-        st.session_state.show_login = True
-        st.rerun()
+    with col_login:
+        if st.button("🔓 LOGIN", key="login_btn"):
+            st.session_state.show_login = True
+            st.rerun()
 
-# Mostrar deporte seleccionado
-st.markdown(f'<div style="text-align:center; color:{GREEN}; font-size:14px; margin:10px 0;">📋 Mostrando: <strong>{st.session_state.deporte}</strong> | Fecha: {st.session_state.fecha_seleccionada.strftime("%d/%m/%Y")}</div>', unsafe_allow_html=True)
+# Mostrar deporte y fecha seleccionados
+st.markdown(f'<div style="text-align:center; color:{GREEN}; font-size:14px; margin:10px 0; background:{CARD}; padding:8px; border-radius:8px; border:1px solid {BORDER};">📋 {st.session_state.deporte} | 📅 {st.session_state.fecha_seleccionada.strftime("%d/%m/%Y")}</div>', unsafe_allow_html=True)
+
+# CONTENEDOR UNIFICADO PARA LAS 3 TARJETAS
+st.markdown(f'<div style="background:{CARD}; border:2px solid {BORDER}; border-radius:16px; padding:16px; margin:10px 0; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">', unsafe_allow_html=True)
 
 # 3 COLUMNAS - TARJETAS DEFINIDAS
 c1, c2, c3 = st.columns(3)
@@ -247,6 +269,9 @@ with c3:
 <tr><td style="padding:10px 8px; color:white; font-size:11px; text-align:left; border-top:1px solid {BORDER};">Stake</td><td style="padding:10px 8px; color:white; font-size:11px; text-align:center; border-top:1px solid {BORDER};">1.88</td><td style="padding:10px 8px; color:white; font-size:11px; text-align:center; border-top:1px solid {BORDER};">3.76</td><td style="padding:10px 8px; color:white; font-size:11px; text-align:center; border-top:1px solid {BORDER};">4.05</td></tr>
 </table>''', unsafe_allow_html=True)
     st.markdown(f'<div style="text-align:center; margin-top:12px;"><span style="background:{GREEN}; color:{BG}; padding:8px 16px; border-radius:6px; font-size:11px; font-weight:bold;">📋 Ver todas las cuotas</span></div>', unsafe_allow_html=True)
+
+# Cerrar contenedor unificado
+st.markdown('</div>')
 
 # FOOTER
 st.markdown(f'<div style="text-align:center; padding:15px; border-top:1px solid {BORDER}; margin-top:10px;"><span style="color:{MUTED}; font-size:10px;">Scorpion Elite 2025 - Solo uso informativo</span></div>', unsafe_allow_html=True)
