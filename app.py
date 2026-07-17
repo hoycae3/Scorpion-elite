@@ -190,14 +190,45 @@ PARTIDOS = {
 # API Keys
 API_FOOTBALL_KEY = "e3926f829cd848f4b2b54d722ca29701"  # API-Football (nueva key funciona)
 
-def obtener_partidos_futbol():
-    """Obtiene TODOS los partidos de futbol para hoy desde API-Football"""
+# Prioridad de ligas para mostrar las mas importantes
+LIGAS_PRIORIDAD = {
+    # Top 10 ligas (prioridad mas alta)
+    "major league soccer": 10,
+    "liga mx": 10,
+    "copa argentina": 9,
+    "premier league": 8,
+    "la liga": 8,
+    "bundesliga": 8,
+    "serie a": 8,
+    "ligue 1": 8,
+    "champions league": 7,
+    "europa league": 7,
+    "brasileiro": 7,
+    "libertadores": 7,
+    # Otras ligas importantes
+    "eredivisie": 6,
+    "primeira liga": 6,
+    "super lig": 5,
+    "mls": 5,
+    "liga pro": 5,
+    "canadian premier league": 4,
+    # Divisions menores
+    "league two": 1,
+    "usl": 1,
+}
+
+def obtener_partidos_futbol(todos=False):
+    """Obtiene partidos de futbol para hoy desde API-Football
+    
+    Args:
+        todos: Si True, retorna todos los partidos. Si False, solo los 3 mas importantes.
+    """
     import requests
     from datetime import datetime, timedelta
     
     partidos = []
     
-    # Fuente: API-Football (funciona con la nueva key)
+    # Fuente: API-Football
     try:
         hoy = datetime.now()
         fecha_str = hoy.strftime("%Y-%m-%d")
@@ -214,7 +245,7 @@ def obtener_partidos_futbol():
                     try:
                         home = fixture["teams"]["home"]["name"]
                         away = fixture["teams"]["away"]["name"]
-                        league = fixture["league"]["name"]
+                        league = fixture["league"]["name"].lower()
                         country = fixture["league"]["country"]
                         hora = fixture["fixture"]["date"][11:16]
                         
@@ -226,15 +257,24 @@ def obtener_partidos_futbol():
                         except:
                             hora_local = hora
                         
+                        # Calcular prioridad
+                        prioridad = 0
+                        for nombre_liga, prio in LIGAS_PRIORIDAD.items():
+                            if nombre_liga in league:
+                                prioridad = prio
+                                break
+                        
                         # Combinar liga + pais
-                        liga_completa = f"{league}"
+                        liga_completa = fixture["league"]["name"]
                         if country:
-                            liga_completa = f"{league} ({country})"
+                            liga_completa = f"{liga_completa} ({country})"
                         
                         partidos.append({
                             "equipo": f"{home} vs {away}",
                             "hora": hora_local,
-                            "liga": liga_completa
+                            "liga": liga_completa,
+                            "prioridad": prioridad,
+                            "league_lower": league
                         })
                     except:
                         continue
@@ -245,15 +285,22 @@ def obtener_partidos_futbol():
     seen = set()
     unique_partidos = []
     for p in partidos:
-        key = f"{p['equipo']}"
+        key = p["equipo"]
         if key not in seen:
             seen.add(key)
             unique_partidos.append(p)
     
     if not unique_partidos:
-        unique_partidos = [{"equipo": "Sin partidos disponibles", "hora": "--:--", "liga": "Verifica conexion"}]
+        return [{"equipo": "Sin partidos disponibles", "hora": "--:--", "liga": "Verifica conexion"}]
     
-    return unique_partidos[:15]
+    # Si no queremos todos, filtrar solo los mas importantes
+    if not todos:
+        # Ordenar por prioridad (descendente)
+        unique_partidos.sort(key=lambda x: x.get("prioridad", 0), reverse=True)
+        # Tomar solo los 3 primeros
+        unique_partidos = unique_partidos[:3]
+    
+    return unique_partidos
 
 def obtener_partidos_baloncesto():
     """Obtiene partidos de baloncesto para hoy"""
