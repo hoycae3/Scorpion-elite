@@ -1,718 +1,196 @@
-/* Scorpion Elite - Verde y Dorado */
+/* Scorpion Elite - Negro y Naranja */
 
 /* Variables CSS */
 :root {
-    --bg-dark-green: #003300;
-    --panel-bg: #004400;
-    --gold-bright: #ffcc00;
-    --gold-dark: #ff9900;
+    --bg-black: #000000;
+    --bg-dark: #1a1a1a;
+    --gold-bright: #ff8c00;
     --text-light: #ffffff;
 }
 
-/* 1. CONFIGURACIÓN DE LA PÁGINA */
+/* CONFIGURACIÓN DE LA PÁGINA */
 .stApp {
-    background-color: #003300 !important;
-    background: #003300 !important;
-    color: var(--text-light);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #000000 !important;
+    color: #ffffff;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
 }
 
-/* Forzar fondo verde en todo el body */
 body, .stApp > div, main {
-    background-color: #003300 !important;
-    background: #003300 !important;
+    background-color: #000000 !important;
 }
 
-/* 2. CABECERA PRINCIPAL */
+/* CABECERA PRINCIPAL */
 .header-container {
-    background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%) !important;
-    padding: 25px;
-    border-radius: 15px;
-    border: 3px solid #ff9900;
-    box-shadow: 0 4px 20px rgba(255,153,0,0.4);
-    margin-bottom: 25px;
+    background: #1a1a1a;
+    padding: 20px;
+    margin-bottom: 20px;
 }
 
 .brand-title {
-    color: #003300;
-    font-family: 'Georgia', serif;
-    font-size: 40px;
+    color: #ff8c00;
+    font-size: 32px;
     font-weight: bold;
-    letter-spacing: 2px;
-    margin: 0;
+    letter-spacing: 3px;
 }
 
 .brand-subtitle {
-    color: #003300;
-    font-size: 14px;
-    margin-top: 5px;
-    letter-spacing: 1px;
+    color: #888;
+    font-size: 12px;
 }
 
-/* 3. CAJA DE ACCESO / LOGIN */
+/* CAJA DE ACCESO / LOGIN */
 .login-container, .login-box {
-    background-color: #004400;
-    border: 2px solid #ffcc00;
+    background-color: #1a1a1a;
+    border: 2px solid #ff8c00;
     border-radius: 12px;
     padding: 25px;
-    box-shadow: 0 8px 30px rgba(255,153,0,0.2);
 }
 
-.login-title {
-    color: var(--gold-bright);
-    font-size: 18px;
-    font-weight: bold;
-    margin-bottom: 10px;
-    border-bottom: 1px solid rgba(223, 175, 111, 0.2);
-    padding-bottom: 10px;
-}
-
-/* 4. TÍTULOS DE LAS SECCIONES */
+/* TÍTULOS DE LAS SECCIONES */
 .section-title {
-    color: var(--gold-bright);
-    font-size: 18px;
+    color: #0066cc;
+    font-size: 14px;
     font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-top: 10px;
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* 5. TARJETAS DE PICKS RECOMENDADOS */
-.pick-card {
-    background-color: #004400;
-    border: 2px solid #ffcc00;
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 15px;
-    box-shadow: 0 4px 15px rgba(255,153,0,0.2);
-}
-
-.pick-header {
-    font-size: 12px;
-    color: var(--gold-bright);
-    font-weight: bold;
-    text-transform: uppercase;
-    border-bottom: 1px solid rgba(223, 175, 111, 0.2);
-    padding-bottom: 10px;
+    border-bottom: 2px solid #0066cc;
+    padding-bottom: 8px;
     margin-bottom: 10px;
 }
 
-.pick-match {
-    font-size: 15px;
-    font-weight: bold;
-    color: #ffffff;
-}
-
-.pick-selection {
-    font-size: 13px;
-    color: var(--text-light);
-    margin-top: 4px;
-}
-
-.pick-odds {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-    font-size: 13px;
-    font-weight: bold;
-}
-
-.odds-label {
-    color: #888;
-}
-
-.odds-value {
-    color: var(--gold-bright);
-}
-
-/* 6. TARJETAS DE LA COLUMNA DERECHA */
-.sidebar-card, .sidebar-right-card {
-    background-color: #004400;
-    border: 2px solid #ffcc00;
-    border-radius: 10px;
-    padding: 20px;
+/* TARJETAS */
+.dash-box, .pick-card, .sidebar-card {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 15px;
     margin-bottom: 15px;
-    box-shadow: 0 4px 15px rgba(255,153,0,0.2);
+    border: 1px solid #e0e0e0;
 }
 
-.sidebar-card-title {
-    color: var(--gold-bright);
-    font-size: 16px;
-    font-weight: bold;
-    border-bottom: 1px solid rgba(255,204,0,0.3);
-    padding-bottom: 10px;
-    margin-bottom: 12px;
-}
-
-/* 7. INPUT Y BOTONES */
+/* INPUT Y BOTONES */
 .stTextInput > div > div > input {
-    background-color: rgba(0, 51, 0, 0.6) !important;
-    color: #ffcc00 !important;
-    border: 1px solid rgba(255, 204, 0, 0.3) !important;
-    border-radius: 20px !important;
-    padding: 8px 15px !important;
-}
-
-.stTextInput > div > div > input:focus {
-    border-color: #ffcc00 !important;
-    box-shadow: 0 0 10px rgba(255, 204, 0, 0.3) !important;
+    background-color: #f5f5f5 !important;
+    color: #000 !important;
+    border: 1px solid #ccc !important;
+    border-radius: 8px !important;
 }
 
 .stButton > button {
-    background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%) !important;
+    background: #ff8c00 !important;
+    color: #000 !important;
     border: none !important;
-    padding: 8px 20px !important;
-    color: #003300 !important;
-    font-weight: 600 !important;
-    cursor: pointer;
-    border-radius: 20px !important;
-    transition: all 0.3s ease;
-    font-size: 0.85rem !important;
+    border-radius: 8px !important;
 }
 
-.stButton > button:hover {
-    background: linear-gradient(135deg, #ff9900 0%, #ffcc00 100%) !important;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(255, 153, 0, 0.4);
-}
-
-/* 8. FOOTER */
-.footer {
-    text-align: center;
-    color: var(--gold-dark);
-    font-size: 12px;
-    padding: 20px;
-    margin-top: 30px;
-}
-
-/* 9. BADGES DE RANGO */
+/* BADGES DE RANGO */
 .badge-Aplus {
-    background-color: rgba(255, 204, 0, 0.15);
-    color: #ffcc00;
-    border: 1px solid #ffcc00;
-    padding: 2px 9px;
-    border-radius: 20px;
+    background-color: rgba(255, 140, 0, 0.15);
+    color: #ff8c00;
+    border: 1px solid #ff8c00;
+    padding: 2px 8px;
+    border-radius: 12px;
     font-size: 11px;
-    font-weight: 700;
-}
-
-.badge-B {
-    background-color: rgba(223, 175, 111, 0.15);
-    color: var(--gold-bright);
-    border: 1px solid var(--gold-bright);
-    padding: 2px 9px;
-    border-radius: 20px;
-    font-size: 11px;
-}
-
-.badge-C {
-    background-color: rgba(138, 100, 53, 0.15);
-    color: var(--gold-dark);
-    border: 1px solid var(--gold-dark);
-    padding: 2px 9px;
-    border-radius: 20px;
-    font-size: 11px;
-}
-
-.badge-D {
-    background-color: rgba(255, 107, 107, 0.15);
-    color: #ff6b6b;
-    border: 1px solid #ff6b6b;
-    padding: 2px 9px;
-    border-radius: 20px;
-    font-size: 11px;
-}
-
-/* 10. GOLEADORES */
-.goleador-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(223, 175, 111, 0.2);
-}
-
-.goleador-num {
-    color: var(--gold-bright);
-    font-weight: bold;
-    width: 30px;
-}
-
-.goleador-nom {
-    color: var(--text-light);
-    flex: 1;
-}
-
-.goleador-gol {
-    color: var(--gold-bright);
     font-weight: bold;
 }
 
-/* 11. CARDS DE MÉTRICAS */
-.metric-card {
-    background-color: #ffffff;
-    border: 2px solid #00aa55;
-    border-radius: 10px;
-    padding: 15px;
-    text-align: center;
-    margin-bottom: 10px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.metric-value {
-    color: #00aa55;
-    font-size: 28px;
-    font-weight: bold;
-}
-
-.metric-label {
-    color: #666;
-    font-size: 12px;
-    text-transform: uppercase;
-    margin-top: 5px;
-}
-
-/* 12. MATCH ROW */
+/* MATCH ROW */
 .match-row {
-    background-color: #ffffff;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 8px;
-    border: 1px solid #ddd;
-    font-size: 14px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-
-/* 13. TEXTOS DE ALERTAS */
-.text-alert {
-    font-size: 12px;
-    color: #333;
     background: #f5f5f5;
     padding: 10px;
-    border-radius: 8px;
+    border-radius: 6px;
     margin-bottom: 8px;
-    border-left: 4px solid #00aa55;
+    border-left: 3px solid #ff8c00;
 }
 
-.text-trend {
-    font-size: 13px;
-    color: var(--text-light);
-    margin-bottom: 6px;
-}
-
-/* 14. HDR antigo */
-.hdr {
-    background: #00aa55 !important;
-    border: 2px solid #008844 !important;
-    border-radius: 10px !important;
-    padding: 20px !important;
-    text-align: center !important;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important;
-}
-
-.hdr h1 {
-    color: #fff !important;
-    font-family: 'Georgia', serif !important;
-    font-size: 2.2rem !important;
-    margin: 0 !important;
-    letter-spacing: 4px !important;
-}
-
-.hdr p {
-    color: #fff !important;
-    margin: 5px 0 0 !important;
-    font-size: 0.9rem !important;
-}
-
-/* 15. PILLS/BADGES pequeños */
+/* PILLS */
 .pill-ok {
-    background: rgba(0, 170, 85, 0.15) !important;
-    color: #00aa55 !important;
-    border: 1px solid #00aa55 !important;
-    padding: 2px 10px !important;
-    border-radius: 20px !important;
-    font-size: 11px !important;
-}
-
-.pill-v {
-    background: rgba(255, 107, 107, 0.15) !important;
-    color: #ff6b6b !important;
-    border: 1px solid #ff6b6b !important;
-    padding: 2px 10px !important;
-    border-radius: 20px !important;
-    font-size: 11px !important;
-}
-
-.pill-f {
-    background: rgba(223, 175, 111, 0.15) !important;
-    color: var(--gold-bright) !important;
-    border: 1px solid var(--gold-dark) !important;
-    padding: 2px 10px !important;
-    border-radius: 20px !important;
-    font-size: 11px !important;
-}
-
-/* 16. FORZAR h1 */
-h1 {
-    color: #fff !important;
-}
-
-/* 17. Border cards */
-div[data-testid="stHorizontalBlock"] > div {
-    background: transparent;
-}
-
-/* ══════════════════════════════════════════════════════════
-   DASHBOARD V2 - Estructura tipo terminal
-   ══════════════════════════════════════════════════════════ */
-
-/* Header del Dashboard */
-.dash-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: linear-gradient(135deg, #00ff88 0%, #00cc66 50%, #009944 100%);
-    border: 2px solid #00ff88;
+    background: rgba(0, 102, 204, 0.15);
+    color: #0066cc;
+    border: 1px solid #0066cc;
+    padding: 2px 10px;
     border-radius: 12px;
-    padding: 18px 30px;
+    font-size: 11px;
+}
+
+/* DASHBOARD V2 */
+.dash-header {
+    background: #1a1a1a;
+    padding: 15px 20px;
     margin-bottom: 15px;
-    box-shadow: 0 0 30px rgba(0, 255, 136, 0.3), 0 4px 20px rgba(0,0,0,0.5);
 }
 
-.dash-logo {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.dash-logo-icon {
-    font-size: 3rem;
-    filter: drop-shadow(0 0 10px rgba(0, 255, 136, 0.8));
-}
-
-.dash-logo-text {
-    font-family: 'Georgia', serif;
-    font-size: 2rem;
-    font-weight: bold;
-    color: #ffffff;
-    letter-spacing: 4px;
-    text-shadow: 0 0 20px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.dash-user-info {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.dash-user, .dash-saldo {
-    font-size: 1.1rem;
-    font-weight: bold;
-    color: #000;
-    padding: 10px 18px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 25px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.dash-saldo {
-    color: #ffffff;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-    background: rgba(0, 0, 0, 0.3);
-}
-
-/* Barra de navegación */
 .dash-nav {
-    display: flex;
-    gap: 4px;
-    background: transparent;
-    border: none;
-    border-radius: 25px;
-    padding: 0;
-    margin: 15px 0 20px 0;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    box-shadow: none;
+    background: #2a2a2a;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 15px;
 }
 
 .nav-tab {
-    background: rgba(255, 204, 0, 0.1);
-    border: 1px solid rgba(255, 204, 0, 0.3);
-    color: rgba(255, 204, 0, 0.8);
+    background: transparent;
+    color: #0099ff;
     padding: 8px 16px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 500;
-    white-space: nowrap;
-    transition: all 0.25s ease;
+    border-radius: 6px;
 }
 
-.nav-tab:hover {
-    background: rgba(255, 204, 0, 0.2);
-    color: #ffcc00;
-    border-color: #ffcc00;
-    transform: translateY(-1px);
+.nav-tab:hover, .nav-tab.nav-active {
+    background: rgba(0, 153, 255, 0.2);
+    color: #0099ff;
 }
 
-.nav-tab.nav-active {
-    background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%);
-    color: #003300;
-    border-color: #ffcc00;
-    font-weight: 600;
-}
-
-/* Layout de 2 columnas */
-.dash-main {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-bottom: 15px;
-}
-
-@media (max-width: 1200px) {
-    .dash-main {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Cajas del dashboard */
-.dash-box {
-    background: rgba(0, 68, 0, 0.4);
-    border: 1px solid rgba(255, 204, 0, 0.2);
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(10px);
-}
-
+/* CAJAS DEL DASHBOARD */
 .dash-box-title {
-    color: #ffcc00;
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    border-bottom: 1px solid rgba(255, 204, 0, 0.2);
-    padding-bottom: 10px;
-    margin-bottom: 15px;
+    color: #0066cc;
+    font-size: 13px;
+    font-weight: bold;
+    border-bottom: 2px solid #0066cc;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
 }
 
-.dash-box-content {
-    color: #ffffff;
-    font-size: 0.95rem;
-}
-
-.dash-empty {
-    color: #888;
-    font-style: italic;
-    text-align: center;
-    padding: 20px;
-}
-
-/* Lista de partidos */
-.match-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
+/* MATCH LIST */
 .match-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: rgba(0, 255, 136, 0.08);
-    padding: 12px 15px;
-    border-radius: 8px;
-    border-left: 4px solid #00ff88;
+    background: #f8f8f8;
+    padding: 10px;
+    border-radius: 6px;
+    border-left: 3px solid #ff8c00;
+    margin-bottom: 8px;
 }
 
-.match-rango {
-    font-weight: bold;
-    font-size: 0.9rem;
-    min-width: 35px;
-}
-
-.match-teams {
-    flex: 1;
-    color: #ffffff;
-    font-weight: 500;
-}
-
-.match-time {
-    color: #00ff88;
-    font-size: 0.9rem;
-    font-weight: bold;
-}
-
-/* Análisis IA */
-.ai-analysis {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
+/* AI ANALYSIS */
 .ai-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
 }
 
-.ai-label {
-    color: #aaaaaa;
-    font-size: 0.95rem;
-}
+.ai-label {color: #333;}
+.ai-value {color: #009933; font-weight: bold;}
 
-.ai-value {
-    color: #ffffff;
-    font-weight: bold;
-    font-size: 1rem;
-}
-
-.ai-value.confianza {
-    color: #00ff88;
-    font-size: 1.3rem;
-    text-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
-}
-
-/* Mercados */
-.markets-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.market-item {
-    color: #00ff88;
-    padding: 10px 0;
-    font-size: 1rem;
-    font-weight: 500;
-    text-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
-}
-
-/* Comparador de cuotas */
-.odds-comparator {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
+/* ODDS */
 .odds-row {
     display: flex;
     justify-content: space-between;
-    padding: 12px 15px;
-    background: rgba(0, 255, 136, 0.08);
-    border-radius: 8px;
-    border-left: 4px solid #666;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
 }
 
-.odds-row.best {
-    background: rgba(0, 255, 136, 0.2);
-    border-left-color: #00ff88;
-    box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+.odds-book {color: #333;}
+.odds-val {color: #009900; font-weight: bold;}
+
+/* ALERTAS */
+.alert-item {
+    background: #333;
+    color: #fff;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 6px;
 }
 
-.odds-book {
-    color: #cccccc;
-    font-weight: 500;
-}
-
-.odds-val {
-    color: #ffffff;
-    font-weight: bold;
-    font-size: 1.1rem;
-}
-
-.odds-row.best .odds-val {
-    color: #00ff88;
-    text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
-}
-
-/* Estadísticas */
-.stats-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
+/* ESTADISTICAS */
 .stat-item {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(0, 255, 136, 0.15);
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
 }
 
-.stat-label {
-    color: #aaaaaa;
-    font-size: 0.95rem;
-}
-
-.stat-value {
-    color: #00ff88;
-    font-family: monospace;
-    font-size: 1rem;
-    font-weight: bold;
-}
-
-/* Alertas */
-.alerts-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.alert-item {
-    padding: 12px 15px;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 500;
-    border-left: 4px solid;
-}
-
-.alert-info {
-    background: rgba(100, 149, 237, 0.2);
-    color: #6495ed;
-    border-left-color: #6495ed;
-}
-
-.alert-warning {
-    background: rgba(255, 215, 0, 0.2);
-    color: #ffdd00;
-    border-left-color: #ffdd00;
-}
-
-.alert-success {
-    background: rgba(0, 255, 136, 0.2);
-    color: #00ff88;
-    border-left-color: #00ff88;
-}
-
-.alert-fire {
-    background: rgba(255, 107, 53, 0.2);
-    color: #ff6b35;
-    border-left-color: #ff6b35;
-}
-
-/* Layout completo del dashboard V2 */
-.dash-layout {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.dash-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
-
-@media (max-width: 900px) {
-    .dash-row {
-        grid-template-columns: 1fr;
-    }
-}
+.stat-label {color: #333;}
+.stat-value {color: #009933; font-weight: bold;}
