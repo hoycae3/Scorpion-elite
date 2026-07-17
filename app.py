@@ -202,33 +202,49 @@ with c1:
 with c2:
     st.markdown(f'''
     <div style="background:{BG}; border:2px solid {ORANGE}; border-radius:10px; padding:12px;">
-        <div style="color:{ORANGE}; font-size:12px; font-weight:bold; display:flex; align-items:center; gap:6px;">
+        <div style="color:{ORANGE}; font-size:12px; font-weight:bold; display:flex; align-items:center; gap:6px; margin-bottom:10px;">
             ⭐ MEJOR PICK DEL DÍA
+        </div>
+        <div style="background:{BG}; border:1px solid {ORANGE}; border-radius:6px; padding:10px;">
+            <div style="text-align:center; color:{GREEN}; font-size:10px; margin-bottom:6px;">🏆 Premier League</div>
+            <div style="text-align:center; margin:6px 0;"><span style="font-size:14px; font-weight:bold;">Man City</span> <span style="color:{MUTED};">vs</span> <span style="font-size:14px; font-weight:bold;">Arsenal</span></div>
+            <div style="background:{CARD}; border:1px solid {ORANGE}; border-radius:6px; padding:8px; display:flex; justify-content:space-between; margin-top:8px;"><div><div style="color:{MUTED}; font-size:8px;">MERCADO</div><div style="font-weight:bold; color:white; font-size:11px;">1 Gana</div></div><div style="text-align:right;"><div style="color:{MUTED}; font-size:8px;">CUOTA</div><div style="font-size:18px; font-weight:bold; color:{ORANGE};">1.91</div></div></div>
+            <div style="display:flex; justify-content:space-around; margin-top:8px;">
+                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">PROB</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">72%</div></div>
+                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">CONF</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">92%</div></div>
+                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">VALOR</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">+19%</div></div>
+            </div>
         </div>
     </div>
     ''', unsafe_allow_html=True)
-    st.markdown(f'<div style="text-align:center; color:{GREEN}; font-size:10px; margin:6px 0;">🏆 Premier League</div>', unsafe_allow_html=True)
-    st.markdown(f'<div style="text-align:center; margin:6px 0;"><span style="font-size:14px; font-weight:bold;">Man City</span> <span style="color:{MUTED};">vs</span> <span style="font-size:14px; font-weight:bold;">Arsenal</span></div>', unsafe_allow_html=True)
-    st.markdown(f'<div style="background:{CARD}; border:1px solid {BORDER}; border-radius:6px; padding:8px; display:flex; justify-content:space-between;"><div><div style="color:{MUTED}; font-size:8px;">MERCADO</div><div style="font-weight:bold; color:white; font-size:11px;">1 Gana</div></div><div style="text-align:right;"><div style="color:{MUTED}; font-size:8px;">CUOTA</div><div style="font-size:18px; font-weight:bold; color:{ORANGE};">1.91</div></div></div>', unsafe_allow_html=True)
-    m1, m2, m3 = st.columns(3)
-    with m1: st.markdown(f'<div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">PROB</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">72%</div></div>', unsafe_allow_html=True)
-    with m2: st.markdown(f'<div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">CONF</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">92%</div></div>', unsafe_allow_html=True)
-    with m3: st.markdown(f'<div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">VALOR</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">+19%</div></div>', unsafe_allow_html=True)
 
 with c3:
     st.markdown(f'''
     <div style="background:{BG}; border:2px solid {GREEN}; border-radius:10px; padding:12px;">
-        <div style="color:{GREEN}; font-size:12px; font-weight:bold; display:flex; align-items:center; gap:6px;">
+        <div style="color:{GREEN}; font-size:12px; font-weight:bold; display:flex; align-items:center; gap:6px; margin-bottom:10px;">
             📊 COMPARADOR
+        </div>
+        <div style="background:{BG}; border:1px solid {GREEN}; border-radius:6px; padding:10px;">
+            <table style="width:100%; border-collapse:collapse;">
+                <tr style="border-bottom:1px solid {BORDER};">
+                    <th style="color:{MUTED}; font-size:9px; text-align:left; padding:6px;">CASA</th>
+                    <th style="color:{MUTED}; font-size:9px; text-align:center; padding:6px;">1</th>
+                    <th style="color:{MUTED}; font-size:9px; text-align:center; padding:6px;">X</th>
+                    <th style="color:{MUTED}; font-size:9px; text-align:center; padding:6px;">2</th>
+                </tr>
+                <tr>
+                    <td style="padding:6px; color:white; font-size:9px;">⭐ Pinnacle</td><td style="padding:6px; color:{ORANGE}; font-size:9px; text-align:center; font-weight:bold;">1.91</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">3.80</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">4.20</td>
+                </tr>
+                <tr style="border-top:1px solid {BORDER};">
+                    <td style="padding:6px; color:white; font-size:9px;">Bet365</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">1.87</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">3.75</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">4.00</td>
+                </tr>
+                <tr style="border-top:1px solid {BORDER};">
+                    <td style="padding:6px; color:white; font-size:9px;">Betano</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">1.85</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">3.70</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">3.95</td>
+                </tr>
+            </table>
         </div>
     </div>
     ''', unsafe_allow_html=True)
-    st.markdown(f'''<table style="width:100%;">
-<tr><th style="color:{MUTED}; font-size:9px; text-align:left; padding:6px;">CASA</th><th style="color:{MUTED}; font-size:9px; text-align:center; padding:6px;">1</th><th style="color:{MUTED}; font-size:9px; text-align:center; padding:6px;">X</th><th style="color:{MUTED}; font-size:9px; text-align:center; padding:6px;">2</th></tr>
-<tr><td style="padding:6px; color:white; font-size:9px;">⭐ Pinnacle</td><td style="padding:6px; color:{ORANGE}; font-size:9px; text-align:center;">1.91</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">3.80</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">4.20</td></tr>
-<tr><td style="padding:6px; color:white; font-size:9px; border-top:1px solid {BORDER};">Bet365</td><td style="padding:6px; color:white; font-size:9px; text-align:center; border-top:1px solid {BORDER};">1.87</td><td style="padding:6px; color:white; font-size:9px; text-align:center; border-top:1px solid {BORDER};">3.75</td><td style="padding:6px; color:white; font-size:9px; text-align:center; border-top:1px solid {BORDER};">4.00</td></tr>
-<tr><td style="padding:6px; color:white; font-size:9px; border-top:1px solid {BORDER};">Betano</td><td style="padding:6px; color:white; font-size:9px; text-align:center; border-top:1px solid {BORDER};">1.85</td><td style="padding:6px; color:white; font-size:9px; text-align:center; border-top:1px solid {BORDER};">3.70</td><td style="padding:6px; color:white; font-size:9px; text-align:center; border-top:1px solid {BORDER};">3.95</td></tr>
-</table>''', unsafe_allow_html=True)
 
 # Cerrar contenedor unificado
 st.markdown('</div>')
