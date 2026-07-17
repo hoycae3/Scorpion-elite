@@ -5850,15 +5850,10 @@ def pantalla_principal_unificada():
     </style>
     """, unsafe_allow_html=True)
     
-    # Header con logo
+    # Header sin título (el título está en el dashboard)
     col_titulo, col_login_btn = st.columns([3, 1])
     with col_titulo:
-        st.markdown('''
-        <div style="padding: 15px 0 10px 0;">
-            <span style="font-size: 2rem;">🦂</span>
-            <span class="scorpion-title" style="font-size: 1.4rem; font-weight: bold; letter-spacing: 4px; margin-left: 10px;">SCORPION ELITE</span>
-        </div>
-        ''', unsafe_allow_html=True)
+        st.markdown("<div style='padding-top: 10px;'></div>", unsafe_allow_html=True)
     with col_login_btn:
         st.markdown("<div style='padding-top: 3px;'></div>", unsafe_allow_html=True)
         
