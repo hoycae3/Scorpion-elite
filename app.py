@@ -5773,20 +5773,52 @@ def pantalla_principal_unificada():
     with col_login_btn:
         st.markdown("<div style='padding-top: 5px;'></div>", unsafe_allow_html=True)
         
-        # CSS para popover ultra pequeño
+        # CSS minimalista y elegante
         st.markdown("""
         <style>
-        [data-testid="stPopover"] {width: 140px !important;}
-        [data-testid="stPopover"] input {font-size: 10px !important; padding: 3px 5px !important;}
-        [data-testid="stPopover"] button {font-size: 10px !important; padding: 3px !important;}
-        [data-testid="stPopover"] [data-testid="stHorizontalBlock"] {gap: 3px !important;}
+        [data-testid="stPopover"] {
+            width: 200px !important;
+            background: transparent !important;
+            border: none !important;
+        }
+        .mini-login {
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .mini-login input {
+            background: #0f3460 !important;
+            border: 1px solid #16213e !important;
+            border-radius: 4px !important;
+            color: #fff !important;
+            font-size: 11px !important;
+            padding: 6px 8px !important;
+        }
+        .mini-login input::placeholder {
+            color: #888 !important;
+        }
+        .mini-login button {
+            background: #e94560 !important;
+            border: none !important;
+            border-radius: 4px !important;
+            color: #fff !important;
+            font-size: 11px !important;
+            font-weight: bold !important;
+            padding: 6px 8px !important;
+            width: 100%;
+        }
+        .mini-login button:hover {
+            background: #c23a51 !important;
+        }
         </style>
         """, unsafe_allow_html=True)
         
         with st.popover("Login"):
-            usr = st.text_input("", placeholder="user", label_visibility="collapsed")
-            pwd = st.text_input("", type="password", placeholder="pass", label_visibility="collapsed")
-            if st.button("Entrar", use_container_width=True):
+            st.markdown('<div class="mini-login">', unsafe_allow_html=True)
+            usr = st.text_input("", placeholder="usuario", label_visibility="collapsed")
+            pwd = st.text_input("", type="password", placeholder="contraseña", label_visibility="collapsed")
+            if st.button("Entrar"):
                 if usr and pwd:
                     if usr.lower() == "admin" and pwd == "scorpion_admin_2025":
                         st.session_state.logged_in = True
@@ -5796,6 +5828,7 @@ def pantalla_principal_unificada():
                         st.rerun()
                     else:
                         st.error("❌")
+            st.markdown('</div>', unsafe_allow_html=True)
     
     # Si está logueado
     if st.session_state.get("logged_in", False):
