@@ -345,9 +345,8 @@ def obtener_partidos_baloncesto():
     
     partidos = []
     
-    # Fuente: TheSportsDB Basketball (NBA y otras)
+    # Fuente: TheSportsDB Basketball (NBA)
     try:
-        # NBA
         url = "https://www.thesportsdb.com/api/v1/json/3/eventspastleague.php?id=4387"
         headers = {"User-Agent": "Mozilla/5.0"}
         response = requests.get(url, headers=headers, timeout=15)
@@ -360,9 +359,13 @@ def obtener_partidos_baloncesto():
                 try:
                     home = event.get("strHomeTeam", "")
                     away = event.get("strAwayTeam", "")
+                    league = event.get("strLeague", "")
                     
+                    # Verificar que sea basketball (filtrar partidos de futbol)
                     if home and away and home != "None" and away != "None":
-                        league = event.get("strLeague", "NBA")
+                        if "basketball" not in league.lower() and "nba" not in league.lower():
+                            continue  # Saltar si no es basketball
+                            
                         date = event.get("dateEvent", "")
                         time = event.get("strTime", "")
                         hora = time.split(" ")[-1][:5] if time and time != "None" else "--:--"
@@ -374,54 +377,12 @@ def obtener_partidos_baloncesto():
                                 today = datetime.now()
                                 days_diff = (today - event_date).days
                                 
-                                if days_diff <= 7:  # Solo partidos de ultimos 7 dias
-                                    partidos.append({
-                                        "equipo": f"{home} vs {away}",
-                                        "hora": hora,
-                                        "liga": league,
-                                        "prioridad": 10,  # NBA
-                                        "fecha": date
-                                    })
-                            except:
-                                pass
-                except:
-                    continue
-    except Exception as e:
-        print(f"Error TheSportsDB Basketball: {e}")
-    
-    # Fuente: TheSportsDB EuroLeague
-    try:
-        url = "https://www.thesportsdb.com/api/v1/json/3/eventspastleague.php?id=4480"
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(url, headers=headers, timeout=15)
-        
-        if response.status_code == 200:
-            data = response.json()
-            events = data.get("events", [])
-            
-            for event in events[:10]:
-                try:
-                    home = event.get("strHomeTeam", "")
-                    away = event.get("strAwayTeam", "")
-                    
-                    if home and away and home != "None" and away != "None":
-                        league = event.get("strLeague", "EuroLeague")
-                        date = event.get("dateEvent", "")
-                        time = event.get("strTime", "")
-                        hora = time.split(" ")[-1][:5] if time and time != "None" else "--:--"
-                        
-                        if date:
-                            try:
-                                event_date = datetime.strptime(date, "%Y-%m-%d")
-                                today = datetime.now()
-                                days_diff = (today - event_date).days
-                                
                                 if days_diff <= 7:
                                     partidos.append({
                                         "equipo": f"{home} vs {away}",
                                         "hora": hora,
-                                        "liga": league,
-                                        "prioridad": 9,  # EuroLeague
+                                        "liga": league if league else "NBA",
+                                        "prioridad": 10,
                                         "fecha": date
                                     })
                             except:
@@ -429,7 +390,7 @@ def obtener_partidos_baloncesto():
                 except:
                     continue
     except Exception as e:
-        print(f"Error EuroLeague: {e}")
+        print(f"Error Basketball: {e}")
     
     # Eliminar duplicados y ordenar
     seen = set()
@@ -441,7 +402,7 @@ def obtener_partidos_baloncesto():
             unique_partidos.append(p)
     
     if not unique_partidos:
-        return [{"equipo": "Temporada baja", "hora": "--:--", "liga": "NBA/EuroLeague reanuda en Oct"}]
+        return [{"equipo": "Temporada baja", "hora": "--:--", "liga": "NBA/EuroLeague - Inicia Oct"}]
     
     # Ordenar por prioridad y luego por fecha
     unique_partidos.sort(key=lambda x: (-x.get("prioridad", 0), x.get("fecha", "")))
