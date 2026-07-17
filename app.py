@@ -5773,24 +5773,9 @@ def pantalla_principal_unificada():
     with col_login_btn:
         st.markdown("<div style='padding-top: 5px;'></div>", unsafe_allow_html=True)
         
-        # CSS minimalista
-        st.markdown("""
-        <style>
-        [data-testid="stPopover"] {
-            width: 220px !important;
-        }
-        .login-box {
-            background: #fff;
-            border-radius: 8px;
-            padding: 12px;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-        
-        with st.popover("🔐"):
-            st.markdown("""<div class="login-box">""", unsafe_allow_html=True)
-            usr = st.text_input("User", placeholder="admin", label_visibility="collapsed")
-            pwd = st.text_input("Pass", type="password", placeholder="******", label_visibility="collapsed")
+        with st.popover("Login"):
+            usr = st.text_input("Usuario", placeholder="admin", label_visibility="collapsed")
+            pwd = st.text_input("Contraseña", type="password", placeholder="********", label_visibility="collapsed")
             if st.button("Entrar", use_container_width=True):
                 if usr and pwd:
                     if usr.lower() == "admin" and pwd == "scorpion_admin_2025":
@@ -5801,7 +5786,6 @@ def pantalla_principal_unificada():
                         st.rerun()
                     else:
                         st.error("❌ Incorrecto")
-            st.markdown("</div>", unsafe_allow_html=True)
     
     # Si está logueado
     if st.session_state.get("logged_in", False):
