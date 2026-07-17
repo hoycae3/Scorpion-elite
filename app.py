@@ -180,13 +180,6 @@ DEPORTE_ICONS = {
     "TENIS": "🎾"
 }
 
-# Datos de partidos por deporte (conectar con API/DB)
-PARTIDOS = {
-    "FUTBOL": [],
-    "BALONCESTO": [],
-    "TENIS": []
-}
-
 # API Keys
 API_FOOTBALL_KEY = "e3926f829cd848f4b2b54d722ca29701"  # API-Football (nueva key funciona)
 
@@ -565,11 +558,14 @@ def obtener_partidos_en_vivo(deporte):
 
 deporte = st.session_state.deporte
 icono = DEPORTE_ICONS.get(deporte, "⚽")
-# Obtener partidos en tiempo real
-partidos = obtener_partidos_en_vivo(deporte)
 
-with c1:
-    # Construir filas de la tabla
+# Obtener partidos de los 3 deportes
+partidos_futbol = obtener_partidos_futbol()
+partidos_baloncesto = obtener_partidos_baloncesto()
+partidos_tenis = obtener_partidos_tenis()
+
+# Función para crear tabla HTML de partidos
+def crear_tabla_partidos(partidos, icono, color_titulo):
     filas_html = ""
     for i, p in enumerate(partidos):
         borde = f"border-top:1px solid {BORDER};" if i > 0 else ""
@@ -579,8 +575,8 @@ with c1:
 <td style="padding:8px 6px; color:{MUTED}; font-size:9px; text-align:center;" title="{p["liga"]}">{p["liga"]}</td>
 </tr>'''
     
-    tabla_html = f'''<div style="background:{BG}; border:2px solid {TITLE}; border-radius:10px; padding:12px;">
-<div style="color:{TITLE}; font-size:12px; font-weight:bold; display:flex; align-items:center; gap:6px; margin-bottom:10px;">
+    return f'''<div style="background:{BG}; border:2px solid {color_titulo}; border-radius:10px; padding:12px;">
+<div style="color:{color_titulo}; font-size:12px; font-weight:bold; display:flex; align-items:center; gap:6px; margin-bottom:10px;">
 {icono} PARTIDOS DESTACADOS
 </div>
 <table style="width:100%; border-collapse:collapse;">
@@ -591,64 +587,18 @@ with c1:
 </tr>
 {filas_html}
 </table></div>'''
-    st.markdown(tabla_html, unsafe_allow_html=True)
 
+# FUTBOL
+with c1:
+    st.markdown(crear_tabla_partidos(partidos_futbol, "⚽", TITLE), unsafe_allow_html=True)
+
+# BALONCESTO
 with c2:
-    # Variables para datos del pick (conectar con API/DB)
-    PICK_LIGA = "Liga"  # {{liga}}
-    PICK_LOCAL = "Equipo Local"  # {{equipo_local}}
-    PICK_VISITA = "Equipo Visita"  # {{equipo_visita}}
-    PICK_NOMBRE = "Pick"  # {{pick}} - Ej: Gana Arsenal, Over 2.5, Corners +9.5
-    PICK_CUOTA = "0.00"  # {{cuota}}
-    PICK_PROB = "0"  # {{probabilidad}}
-    PICK_CONF = "0"  # {{confianza}}
-    PICK_VALOR = "+0%"  # {{valor}}
-    
-    st.markdown(f'''
-    <div style="background:{BG}; border:2px solid {ORANGE}; border-radius:10px; padding:12px;">
-        <div style="color:{ORANGE}; font-size:12px; font-weight:bold; display:flex; align-items:center; gap:6px; margin-bottom:10px;">
-            ⭐ MEJOR PICK DEL DÍA
-        </div>
-        <div style="background:{BG}; border:1px solid {ORANGE}; border-radius:6px; padding:10px;">
-            <div style="text-align:center; color:{GREEN}; font-size:10px; margin-bottom:6px;">🏆 {PICK_LIGA}</div>
-            <div style="text-align:center; margin:6px 0;"><span style="font-size:14px; font-weight:bold;">{PICK_LOCAL}</span> <span style="color:{MUTED};">vs</span> <span style="font-size:14px; font-weight:bold;">{PICK_VISITA}</span></div>
-            <div style="background:{CARD}; border:1px solid {ORANGE}; border-radius:6px; padding:8px; display:flex; justify-content:space-between; margin-top:8px;"><div><div style="color:{MUTED}; font-size:8px;">MERCADO</div><div style="font-weight:bold; color:white; font-size:11px;">{PICK_NOMBRE}</div></div><div style="text-align:right;"><div style="color:{MUTED}; font-size:8px;">CUOTA</div><div style="font-size:18px; font-weight:bold; color:{ORANGE};">{PICK_CUOTA}</div></div></div>
-            <div style="display:flex; justify-content:space-around; margin-top:8px;">
-                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">PROB</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">{PICK_PROB}%</div></div>
-                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">CONF</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">{PICK_CONF}%</div></div>
-                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">VALOR</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">{PICK_VALOR}</div></div>
-            </div>
-        </div>
-    </div>
-    ''', unsafe_allow_html=True)
+    st.markdown(crear_tabla_partidos(partidos_baloncesto, "🏀", "#FF6B6B"), unsafe_allow_html=True)
 
+# TENIS
 with c3:
-    st.markdown(f'''
-    <div style="background:{BG}; border:2px solid {GREEN}; border-radius:10px; padding:12px;">
-        <div style="color:{GREEN}; font-size:12px; font-weight:bold; display:flex; align-items:center; gap:6px; margin-bottom:10px;">
-            📊 COMPARADOR
-        </div>
-        <div style="background:{BG}; border:1px solid {GREEN}; border-radius:6px; padding:10px;">
-            <table style="width:100%; border-collapse:collapse;">
-                <tr style="border-bottom:1px solid {BORDER};">
-                    <th style="color:{MUTED}; font-size:9px; text-align:left; padding:6px;">CASA</th>
-                    <th style="color:{MUTED}; font-size:9px; text-align:center; padding:6px;">1</th>
-                    <th style="color:{MUTED}; font-size:9px; text-align:center; padding:6px;">X</th>
-                    <th style="color:{MUTED}; font-size:9px; text-align:center; padding:6px;">2</th>
-                </tr>
-                <tr>
-                    <td style="padding:6px; color:white; font-size:9px;">⭐ Pinnacle</td><td style="padding:6px; color:{ORANGE}; font-size:9px; text-align:center; font-weight:bold;">1.91</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">3.80</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">4.20</td>
-                </tr>
-                <tr style="border-top:1px solid {BORDER};">
-                    <td style="padding:6px; color:white; font-size:9px;">Bet365</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">1.87</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">3.75</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">4.00</td>
-                </tr>
-                <tr style="border-top:1px solid {BORDER};">
-                    <td style="padding:6px; color:white; font-size:9px;">Betano</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">1.85</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">3.70</td><td style="padding:6px; color:white; font-size:9px; text-align:center;">3.95</td>
-                </tr>
-            </table>
-        </div>
-    </div>
-    ''', unsafe_allow_html=True)
+    st.markdown(crear_tabla_partidos(partidos_tenis, "🎾", GREEN), unsafe_allow_html=True)
 
 # Cerrar contenedor unificado
 st.markdown('</div>')
