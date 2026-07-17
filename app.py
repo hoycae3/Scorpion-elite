@@ -5761,29 +5761,102 @@ def pantalla_principal_unificada():
     # HEADER: 🦂 SCORPION ELITE + LOGIN
     # ══════════════════════════════════════════════════════════
     
-    # CSS Global - Fondo negro
+    # CSS Global - Estilo oscuro profesional
     st.markdown("""
     <style>
-    /* Fondo negro con letras blancas */
-    body {background-color: #000 !important; color: #fff !important;}
-    .stApp {background-color: #000 !important;}
-    [data-testid="stMainBlockContainer"] {background-color: #000 !important;}
+    /* Fondo principal */
+    .stApp {background: linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%) !important;}
     
-    /* Scorpion Elite naranja dorado */
+    /* Scorpion Elite */
     .scorpion-title {
         color: #ff8c00 !important;
-        text-shadow: 0 0 10px #ff8c00 !important;
+        text-shadow: 0 0 15px #ff8c00, 0 0 30px #ff6600 !important;
     }
+    
+    /* Boxes del dashboard */
+    .dash-box {
+        background: #1c1c1c !important;
+        border: 1px solid #333 !important;
+        border-radius: 12px !important;
+        padding: 15px !important;
+        margin-bottom: 15px !important;
+    }
+    .dash-box-title {
+        color: #ff8c00 !important;
+        font-size: 14px !important;
+        font-weight: bold !important;
+        margin-bottom: 12px !important;
+        border-bottom: 1px solid #333 !important;
+        padding-bottom: 8px !important;
+    }
+    
+    /* Matches */
+    .match-item {
+        background: #252525 !important;
+        border-radius: 8px !important;
+        padding: 10px !important;
+        margin-bottom: 8px !important;
+        border-left: 3px solid #ff8c00 !important;
+    }
+    
+    /* Odds */
+    .odds-row {
+        display: flex !important;
+        justify-content: space-between !important;
+        padding: 6px 10px !important;
+        background: #252525 !important;
+        border-radius: 6px !important;
+        margin-bottom: 5px !important;
+        font-size: 12px !important;
+    }
+    .odds-book {color: #888 !important;}
+    .odds-value {color: #00ff88 !important; font-weight: bold !important;}
+    .odds-best {color: #ffcc00 !important; font-weight: bold !important;}
+    
+    /* Checkboxes */
+    .stCheckbox label {color: #ccc !important; font-size: 12px !important;}
+    
+    /* Navigation tabs */
+    .nav-tab {
+        background: #1c1c1c !important;
+        border-radius: 8px !important;
+        padding: 8px 15px !important;
+        color: #888 !important;
+    }
+    .nav-tab:hover {color: #ff8c00 !important;}
+    
+    /* Análisis */
+    .analysis-item {
+        color: #ddd !important;
+        font-size: 11px !important;
+        margin-bottom: 5px !important;
+    }
+    .analysis-label {color: #888 !important;}
+    .analysis-value {color: #00ff88 !important; font-weight: bold !important;}
+    
+    /* Alert badge */
+    .alert-badge {
+        background: #ff4444 !important;
+        color: #fff !important;
+        padding: 2px 8px !important;
+        border-radius: 10px !important;
+        font-size: 10px !important;
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar {width: 6px !important;}
+    ::-webkit-scrollbar-track {background: #1a1a1a !important;}
+    ::-webkit-scrollbar-thumb {background: #444 !important; border-radius: 3px !important;}
     </style>
     """, unsafe_allow_html=True)
     
-    # Título con logo grande
-    col_titulo, col_login_btn = st.columns([4, 1])
+    # Header con logo
+    col_titulo, col_login_btn = st.columns([3, 1])
     with col_titulo:
         st.markdown('''
-        <div style="padding: 10px 0 5px 0;">
-            <span style="font-size: 2.5rem;">🦂</span>
-            <span class="scorpion-title" style="font-size: 1.5rem; font-weight: bold; letter-spacing: 3px; margin-left: 10px;">SCORPION ELITE</span>
+        <div style="padding: 15px 0 10px 0;">
+            <span style="font-size: 2rem;">🦂</span>
+            <span class="scorpion-title" style="font-size: 1.4rem; font-weight: bold; letter-spacing: 4px; margin-left: 10px;">SCORPION ELITE</span>
         </div>
         ''', unsafe_allow_html=True)
     with col_login_btn:
@@ -6021,16 +6094,109 @@ def pantalla_principal_unificada():
                 {"tipo": "fire", "mensaje": "🔥 Pick con Value +4.2%"},
             ]
             
-            # Layout de 2 columnas
+            # Navegación tipo imagen
+            nav_options = ["Hoy", "Mañana", "En vivo", "Fútbol", "NBA", "MLB", "Tenis", "Favoritos"]
+            cols_nav = st.columns(len(nav_options))
+            selected_nav = None
+            for i, opt in enumerate(nav_options):
+                with cols_nav[i]:
+                    if st.button(opt, use_container_width=True):
+                        selected_nav = opt
+            
+            st.markdown("<hr style='margin: 10px 0; border-color: #333;'>", unsafe_allow_html=True)
+            
+            # Layout de 2 columnas como en la imagen
             col1, col2 = st.columns(2)
             
             with col1:
-                st.markdown(render_dashboard_box("⚽ Partidos del Día", render_match_list(partidos_ejemplo)), unsafe_allow_html=True)
-                st.markdown(render_dashboard_box("📊 Estadísticas", render_statistics(stats_ejemplo)), unsafe_allow_html=True)
+                # Partidos del día
+                st.markdown("""
+                <div class="dash-box">
+                    <div class="dash-box-title">⚽ Partidos del Día</div>
+                """, unsafe_allow_html=True)
+                
+                for p in partidos_ejemplo:
+                    st.markdown(f"""
+                    <div class="match-item">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #fff; font-size: 12px;">{p['local']} vs {p['visitante']}</span>
+                            <span style="color: #888; font-size: 10px;">{p['hora']}</span>
+                        </div>
+                        <div style="color: #ff8c00; font-size: 10px; margin-top: 3px;">Rango: {p['rango']}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown("</div>", unsafe_allow_html=True)
+                
+                # Mercados
+                st.markdown("""
+                <div class="dash-box">
+                    <div class="dash-box-title">📋 Mercados</div>
+                """, unsafe_allow_html=True)
+                
+                mercados = ["Ganador", "Over/Under", "Ambos marcan", "Hándicap"]
+                for m in mercados:
+                    st.checkbox(f"✔ {m}")
+                
+                st.markdown("</div>", unsafe_allow_html=True)
             
             with col2:
-                st.markdown(render_dashboard_box("📊 Pick Análisis", render_ai_analysis(analisis_ejemplo)), unsafe_allow_html=True)
-                st.markdown(render_dashboard_box("🏠 Casas de Apuestas", render_odds_comparator(cuotas_ejemplo)), unsafe_allow_html=True)
+                # Análisis IA
+                st.markdown("""
+                <div class="dash-box">
+                    <div class="dash-box-title">🤖 Análisis IA</div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Probabilidad Local: </span>
+                        <span class="analysis-value">72%</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Valor encontrado: </span>
+                        <span class="analysis-value" style="color: #00ff88;">SI</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Riesgo: </span>
+                        <span class="analysis-value" style="color: #ffcc00;">Bajo</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Confianza: </span>
+                        <span class="analysis-value" style="color: #00ff88;">91%</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Comparador de cuotas
+                st.markdown("""
+                <div class="dash-box">
+                    <div class="dash-box-title">💰 Comparador de Cuotas</div>
+                """, unsafe_allow_html=True)
+                
+                for c in cuotas_ejemplo:
+                    star = " ⭐" if c['best'] else ""
+                    color_class = "odds-best" if c['best'] else "odds-value"
+                    st.markdown(f"""
+                    <div class="odds-row">
+                        <span class="odds-book">{c['book']}</span>
+                        <span class="{color_class}">{c['value']}{star}</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown("</div>", unsafe_allow_html=True)
+                
+                # Alertas
+                st.markdown("""
+                <div class="dash-box">
+                    <div class="dash-box-title">🔔 Alertas</div>
+                """, unsafe_allow_html=True)
+                
+                for a in alertas_ejemplo:
+                    emoji = "⚠️" if a['tipo'] == 'warning' else "📊" if a['tipo'] == 'info' else "💰" if a['tipo'] == 'success' else "🔥"
+                    st.markdown(f"""
+                    <div style="padding: 6px 10px; background: #252525; border-radius: 6px; margin-bottom: 5px; font-size: 11px;">
+                        {emoji} {a['mensaje']}
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown("</div>", unsafe_allow_html=True)
         
         # ══════════════════════════════════════════════════════════
         # PESTAÑA PICKS
