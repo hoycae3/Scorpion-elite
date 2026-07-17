@@ -6047,27 +6047,27 @@ def pantalla_principal_unificada():
         # CSS específico para dashboard imagen - COLORES EXACTOS
         st.markdown("""
         <style>
-        /* Fondo principal BLANCO/CLARO */
-        .stApp {background: #ffffff !important;}
+        /* Fondo principal NEGRO */
+        .stApp {background: #000000 !important;}
         
         /* Header negro con naranja ARRIBA */
         .header-top {background: #1a1a1a; padding: 12px 20px; margin: -50px -50px 0 -50px;}
         .main-title {color: #ff8c00; font-size: 24px; font-weight: bold; letter-spacing: 5px; text-align: center; text-shadow: 0 0 10px #ff8c00;}
         
-        /* Navegación AZUL brillante en barra blanca */
-        .nav-bar {display: flex; justify-content: center; gap: 0; padding: 10px 0; background: #f5f5f5; margin: 0 0 15px 0; border-bottom: 1px solid #ddd;}
-        .nav-item {color: #0099ff; font-size: 12px; padding: 8px 18px; font-weight: bold; border-right: 1px solid #ddd;}
+        /* Navegación AZUL brillante en barra gris */
+        .nav-bar {display: flex; justify-content: center; gap: 0; padding: 10px 0; background: #2a2a2a; margin: 0 0 15px 0; border-bottom: 1px solid #444;}
+        .nav-item {color: #0099ff; font-size: 12px; padding: 8px 18px; font-weight: bold; border-right: 1px solid #444;}
         .nav-item:last-child {border-right: none;}
-        .nav-item:first-child {color: #0066cc; border-bottom: 2px solid #0066cc;}
+        .nav-item:first-child {color: #0099ff; border-bottom: 2px solid #0099ff;}
         
-        /* Boxes blancos con sombra */
-        .dash-section {background: #fff; border-radius: 8px; padding: 12px; margin-bottom: 12px; border: 1px solid #e0e0e0; box-shadow: 0 1px 3px rgba(0,0,0,0.08);}
+        /* Boxes blancos con sombra sobre fondo negro */
+        .dash-section {background: #ffffff; border-radius: 8px; padding: 12px; margin-bottom: 12px; border: 1px solid #333;}
         
         /* Títulos azul oscuro */
         .section-title {color: #0066cc; font-size: 13px; font-weight: bold; margin-bottom: 8px; border-bottom: 2px solid #0066cc; padding-bottom: 5px;}
         
         /* Partidos con borde naranja */
-        .match-row {background: #fafafa; padding: 8px 10px; margin-bottom: 6px; border-left: 3px solid #ff8c00; border-radius: 4px;}
+        .match-row {background: #f5f5f5; padding: 8px 10px; margin-bottom: 6px; border-left: 3px solid #ff8c00; border-radius: 4px;}
         .match-teams {color: #000; font-size: 12px; font-weight: bold;}
         .match-time {color: #666; font-size: 10px;}
         .match-range {color: #ff8c00; font-size: 10px; font-weight: bold;}
@@ -6088,9 +6088,9 @@ def pantalla_principal_unificada():
         .market-check {color: #009900; margin-right: 6px; font-weight: bold;}
         
         /* Alertas fondo gris oscuro */
-        .alert-section {background: #404040; border-radius: 8px; padding: 12px; margin-bottom: 12px;}
-        .alert-title {color: #fff; font-size: 13px; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #555; padding-bottom: 5px;}
-        .alert-item {background: #505050; padding: 8px; border-radius: 4px; margin-bottom: 4px; font-size: 11px; color: #fff;}
+        .alert-section {background: #2a2a2a; border-radius: 8px; padding: 12px; margin-bottom: 12px; border: 1px solid #444;}
+        .alert-title {color: #fff; font-size: 13px; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #444; padding-bottom: 5px;}
+        .alert-item {background: #3a3a3a; padding: 8px; border-radius: 4px; margin-bottom: 4px; font-size: 11px; color: #fff;}
         
         /* Estadísticas */
         .stat-row {display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 11px; color: #333;}
