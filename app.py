@@ -189,8 +189,11 @@ API_KEYS = [
 def obtener_partidos_todas_apis(fecha_str):
     """Obtiene partidos de TODAS las APIs disponibles"""
     import requests
+    from datetime import datetime, timedelta
+    from bs4 import BeautifulSoup
     all_partidos = []
     
+    # Intentar con API-Football
     for api_key in API_KEYS:
         try:
             url = f"https://v3.football.api-sports.io/fixtures?date={fecha_str}"
@@ -203,6 +206,85 @@ def obtener_partidos_todas_apis(fecha_str):
                     all_partidos.extend(data["response"])
         except:
             continue
+    
+    # Si no hay partidos, intentar con TheSportsDB
+    if not all_partidos:
+        try:
+            url = "https://www.thesportsdb.com/api/v1/json/3/eventsday.php"
+            params = {"d": fecha_str}
+            response = requests.get(url, params=params, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                events = data.get("events", []) or []
+                
+                for event in events:
+                    sport = event.get("strSport", "")
+                    if sport != "Soccer":
+                        continue
+                    
+                    all_partidos.append({
+                        "fixture": {
+                            "id": event.get("idEvent", 0),
+                            "date": event.get("dateEvent", "") + "T" + event.get("strTime", "00:00"),
+                            "timestamp": 0
+                        },
+                        "league": {
+                            "id": 0,
+                            "name": event.get("strLeague", "Liga"),
+                            "country": ""
+                        },
+                        "teams": {
+                            "home": {"id": 0, "name": event.get("strHomeTeam", "Local")},
+                            "away": {"id": 0, "name": event.get("strAwayTeam", "Visita")}
+                        }
+                    })
+        except:
+            pass
+    
+    # Si sigue sin haber partidos, hacer scraping de Flashscore
+    if not all_partidos:
+        try:
+            url = "https://www.flashscore.com/"
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+            response = requests.get(url, headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                
+                # Buscar partidos en la página
+                events = soup.find_all('div', class_='event__match')
+                
+                for event in events[:10]:
+                    try:
+                        home = event.find('div', class_='event__homeParticipant')
+                        away = event.find('div', class_='event__awayParticipant')
+                        time = event.find('div', class_='event__time')
+                        league = event.find_previous('div', class_='event__league')
+                        
+                        if home and away:
+                            all_partidos.append({
+                                "fixture": {
+                                    "id": hash(home.text + away.text),
+                                    "date": fecha_str + "T" + (time.text if time else "00:00"),
+                                    "timestamp": 0
+                                },
+                                "league": {
+                                    "id": 0,
+                                    "name": league.text if league else "Liga",
+                                    "country": ""
+                                },
+                                "teams": {
+                                    "home": {"id": 0, "name": home.text.strip()},
+                                    "away": {"id": 0, "name": away.text.strip()}
+                                }
+                            })
+                    except:
+                        continue
+        except:
+            pass
     
     # Eliminar duplicados por fixture_id
     seen_ids = set()
