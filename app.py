@@ -5777,14 +5777,14 @@ def pantalla_principal_unificada():
         st.markdown("""
         <style>
         [data-testid="stPopover"] {
-            width: 50px !important;
+            width: 150px !important;
             background: transparent !important;
             border: none !important;
         }
         .mini-login {
             background: #1a1a2e;
             border-radius: 8px;
-            padding: 8px;
+            padding: 6px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
         .mini-login input {
@@ -5792,8 +5792,9 @@ def pantalla_principal_unificada():
             border: 1px solid #16213e !important;
             border-radius: 4px !important;
             color: #fff !important;
-            font-size: 11px !important;
-            padding: 6px 8px !important;
+            font-size: 9px !important;
+            padding: 4px 6px !important;
+            margin-bottom: 4px !important;
         }
         .mini-login input::placeholder {
             color: #888 !important;
@@ -5803,9 +5804,9 @@ def pantalla_principal_unificada():
             border: none !important;
             border-radius: 4px !important;
             color: #fff !important;
-            font-size: 11px !important;
+            font-size: 9px !important;
             font-weight: bold !important;
-            padding: 6px 8px !important;
+            padding: 4px 6px !important;
             width: 100%;
         }
         .mini-login button:hover {
