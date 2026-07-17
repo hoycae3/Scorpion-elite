@@ -5773,29 +5773,23 @@ def pantalla_principal_unificada():
     with col_login_btn:
         st.markdown("<div style='padding-top: 5px;'></div>", unsafe_allow_html=True)
         
-        # CSS para popover pequeño
+        # CSS para popover pequeño y elegante
         st.markdown("""
         <style>
         [data-testid="stPopover"] {
-            width: 280px !important;
+            width: 320px !important;
         }
-        [data-testid="stPopover"] > div {
-            padding: 10px !important;
-        }
-        .stTextInput input, .stTextInput > div > div > input {
-            padding: 6px 10px !important;
-            font-size: 0.85rem !important;
+        [data-testid="stPopover"] [data-testid="stHorizontalBlock"] {
+            gap: 5px;
         }
         </style>
         """, unsafe_allow_html=True)
         
         with st.popover("🔐"):
-            col1, col2 = st.columns(2)
-            with col1:
-                usr = st.text_input("User", placeholder="admin", label_visibility="collapsed")
-            with col2:
-                pwd = st.text_input("Pass", type="password", placeholder="****", label_visibility="collapsed")
-            if st.button("→", use_container_width=True):
+            st.markdown("**Iniciar Sesión**")
+            usr = st.text_input("Usuario", placeholder="admin")
+            pwd = st.text_input("Contraseña", type="password", placeholder="********")
+            if st.button("Entrar", use_container_width=True):
                 if usr and pwd:
                     if usr.lower() == "admin" and pwd == "scorpion_admin_2025":
                         st.session_state.logged_in = True
@@ -5804,7 +5798,7 @@ def pantalla_principal_unificada():
                         st.session_state.user_plan = "ADMIN"
                         st.rerun()
                     else:
-                        st.error("❌")
+                        st.error("❌ Credenciales incorrectas")
     
     # Si está logueado
     if st.session_state.get("logged_in", False):
