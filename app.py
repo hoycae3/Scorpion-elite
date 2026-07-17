@@ -5771,14 +5771,11 @@ def pantalla_principal_unificada():
         </div>
         ''', unsafe_allow_html=True)
     with col_login_btn:
-        st.markdown("<div style='padding-top: 10px;'></div>", unsafe_allow_html=True)
-        with st.popover("🔐 Iniciar sesión"):
-            st.markdown("### 🔐 Iniciar Sesión")
-            st.markdown("---")
-            usr = st.text_input("Usuario", placeholder="admin")
-            pwd = st.text_input("Contraseña", type="password", placeholder="********")
-            
-            if st.button("🎯 INGRESAR", use_container_width=True, type="primary"):
+        st.markdown("<div style='padding-top: 5px;'></div>", unsafe_allow_html=True)
+        with st.popover("🔐"):
+            usr = st.text_input("Usuario", placeholder="admin", label_visibility="collapsed")
+            pwd = st.text_input("Contraseña", type="password", placeholder="********", label_visibility="collapsed")
+            if st.button("Entrar", use_container_width=True):
                 if usr and pwd:
                     if usr.lower() == "admin" and pwd == "scorpion_admin_2025":
                         st.session_state.logged_in = True
@@ -5787,9 +5784,7 @@ def pantalla_principal_unificada():
                         st.session_state.user_plan = "ADMIN"
                         st.rerun()
                     else:
-                        st.error("❌ Credenciales incorrectas")
-                else:
-                    st.warning("⚠️ Completa todos los campos")
+                        st.error("❌ Incorrecto")
     
     # Si está logueado
     if st.session_state.get("logged_in", False):
