@@ -5802,13 +5802,16 @@ def pantalla_principal_unificada():
                 if st.button("🎯 INGRESAR", use_container_width=True, type="primary"):
                     if usr and pwd:
                         if usr.lower() == "admin":
-                            # Admin
-                            st.session_state.logged_in = True
-                            st.session_state.is_admin = True
-                            st.session_state.user_name = "Admin"
-                            st.session_state.user_plan = "ADMIN"
-                            st.session_state.show_login = False
-                            st.rerun()
+                            if pwd == "scorpion_admin_2025":
+                                # Admin
+                                st.session_state.logged_in = True
+                                st.session_state.is_admin = True
+                                st.session_state.user_name = "Admin"
+                                st.session_state.user_plan = "ADMIN"
+                                st.session_state.show_login = False
+                                st.rerun()
+                            else:
+                                st.error("❌ Contraseña de administrador incorrecta")
                         elif pwd == "scorpion":
                             # Usuario normal
                             st.session_state.logged_in = True
@@ -5825,8 +5828,8 @@ def pantalla_principal_unificada():
                 st.markdown("""
                 <div style="text-align: center; margin-top: 20px;">
                     <small style="color: #666; font-size: 0.8rem;">
-                        Usuario: <b style="color:#ffcc00;">admin</b> → Panel de Admin<br>
-                        Otros usuarios → Dashboard normal (contraseña: <b style="color:#ffcc00;">scorpion</b>)
+                        Admin: <b style="color:#ffcc00;">admin</b> / <b style="color:#ffcc00;">scorpion_admin_2025</b><br>
+                        Usuarios: cualquier usuario / <b style="color:#ffcc00;">scorpion</b>
                     </small>
                 </div>
                 """, unsafe_allow_html=True)
