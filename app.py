@@ -5777,59 +5777,74 @@ def pantalla_principal_unificada():
     
     # Modal/Popup de Login
     if st.session_state.get("show_login", False):
-        with st.container():
-            col_m1, col_m2, col_m3 = st.columns([1, 2, 1])
-            with col_m2:
-                st.markdown("""
-                <div style="
-                    background: linear-gradient(135deg, #004400 0%, #003300 100%);
-                    border: 2px solid #ffcc00;
-                    border-radius: 20px;
-                    padding: 30px;
-                    margin: 20px 0;
-                    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-                ">
-                    <div style="text-align: center; margin-bottom: 25px;">
-                        <span style="font-size: 3rem;">🦂</span>
-                        <h2 style="color: #ffcc00; margin: 10px 0;">SCORPION ELITE</h2>
-                        <p style="color: #888; font-size: 0.9rem;">Ingresa tus credenciales</p>
-                    </div>
-                """, unsafe_allow_html=True)
-                
-                usr = st.text_input("Usuario", placeholder="Tu usuario", label_visibility="collapsed", key="modal_user")
-                pwd = st.text_input("Contraseña", type="password", placeholder="Tu contraseña", label_visibility="collapsed", key="modal_pass")
-                
-                if st.button("🎯 INGRESAR", use_container_width=True, type="primary"):
-                    if usr and pwd:
-                        if usr.lower() == "admin":
-                            if pwd == "scorpion_admin_2025":
-                                # Admin
-                                st.session_state.logged_in = True
-                                st.session_state.is_admin = True
-                                st.session_state.user_name = "Admin"
-                                st.session_state.user_plan = "ADMIN"
-                                st.session_state.show_login = False
-                                st.rerun()
-                            else:
-                                st.error("❌ Contraseña de administrador incorrecta")
-                        else:
-                            st.error("❌ Solo el administrador puede acceder")
-                    else:
-                        st.warning("⚠️ Ingresa usuario y contraseña")
-                
-                st.markdown("""
-                <div style="text-align: center; margin-top: 20px;">
-                    <small style="color: #666; font-size: 0.8rem;">
-                        Admin: <b style="color:#ffcc00;">admin</b> / <b style="color:#ffcc00;">scorpion_admin_2025</b>
-                    </small>
+        # CSS para el modal
+        st.markdown("""
+        <style>
+        .login-modal {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 9999;
+        }
+        .login-box {
+            background: linear-gradient(135deg, #004400 0%, #003300 100%);
+            border: 2px solid #ffcc00;
+            border-radius: 16px;
+            padding: 30px;
+            width: 350px;
+            box-shadow: 0 10px 40px rgba(255,204,0,0.3);
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        col_m1, col_m2, col_m3 = st.columns([0.5, 2, 0.5])
+        with col_m2:
+            st.markdown("""
+            <div style="
+                background: linear-gradient(135deg, #004400 0%, #003300 100%);
+                border: 2px solid #ffcc00;
+                border-radius: 16px;
+                padding: 30px;
+                margin-top: 50px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            ">
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <span style="font-size: 2.5rem;">🦂</span>
+                    <h3 style="color: #ffcc00; margin: 10px 0;">INICIAR SESIÓN</h3>
                 </div>
-                """, unsafe_allow_html=True)
-                
-                if st.button("✖ Cancelar"):
-                    st.session_state.show_login = False
-                    st.rerun()
-                
-                st.markdown("</div>", unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+            
+            usr = st.text_input("Usuario", placeholder="Usuario admin", label_visibility="collapsed", key="modal_user")
+            pwd = st.text_input("Contraseña", type="password", placeholder="Contraseña", label_visibility="collapsed", key="modal_pass")
+            
+            if st.button("🎯 INGRESAR", use_container_width=True, type="primary"):
+                if usr and pwd:
+                    if usr.lower() == "admin":
+                        if pwd == "scorpion_admin_2025":
+                            st.session_state.logged_in = True
+                            st.session_state.is_admin = True
+                            st.session_state.user_name = "Admin"
+                            st.session_state.user_plan = "ADMIN"
+                            st.session_state.show_login = False
+                            st.rerun()
+                        else:
+                            st.error("❌ Contraseña incorrecta")
+                    else:
+                        st.error("❌ Solo el administrador")
+                else:
+                    st.warning("⚠️ Completa los campos")
+            
+            if st.button("✖ Cancelar"):
+                st.session_state.show_login = False
+                st.rerun()
+            
+            st.markdown("</div>", unsafe_allow_html=True)
     
     # Si está logueado
     if st.session_state.get("logged_in", False):
