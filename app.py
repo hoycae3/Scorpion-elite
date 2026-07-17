@@ -27,6 +27,13 @@ if 'deporte' not in st.session_state:
 if 'fecha_seleccionada' not in st.session_state:
     st.session_state.fecha_seleccionada = date.today()
 
+# Asegurar que la fecha siempre sea valida
+try:
+    if st.session_state.fecha_seleccionada > date.today():
+        st.session_state.fecha_seleccionada = date.today()
+except:
+    st.session_state.fecha_seleccionada = date.today()
+
 st.markdown(f'''
 <style>
 .stApp {{background-color:{BG}; padding-top:0px !important;}}
