@@ -1,4 +1,5 @@
 import streamlit as st
+from datetime import date
 
 st.set_page_config(page_title='SCORPION ELITE', layout='wide')
 
@@ -21,6 +22,10 @@ if 'user_name' not in st.session_state:
     st.session_state.user_name = ""
 if 'show_login' not in st.session_state:
     st.session_state.show_login = False
+if 'deporte' not in st.session_state:
+    st.session_state.deporte = "FUTBOL"
+if 'fecha_seleccionada' not in st.session_state:
+    st.session_state.fecha_seleccionada = date.today()
 
 st.markdown(f'''
 <style>
@@ -129,20 +134,30 @@ with col_left:
 with col_center:
     s1, s2, s3 = st.columns(3)
     with s1:
-        st.markdown(f'<span style="background:{GREEN}; color:{BG}; padding:6px 14px; border-radius:4px; font-size:11px; font-weight:bold;">FUTBOL</span>', unsafe_allow_html=True)
+        if st.button("⚽ FUTBOL", key="btn_futbol"):
+            st.session_state.deporte = "FUTBOL"
     with s2:
-        st.markdown(f'<span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 14px; border-radius:4px; font-size:11px;">BALONCESTO</span>', unsafe_allow_html=True)
+        if st.button("🏀 BALONCESTO", key="btn_basket"):
+            st.session_state.deporte = "BALONCESTO"
     with s3:
-        st.markdown(f'<span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 14px; border-radius:4px; font-size:11px;">TENIS</span>', unsafe_allow_html=True)
+        if st.button("🎾 TENIS", key="btn_tenis"):
+            st.session_state.deporte = "TENIS"
 
 with col_right:
-    b1, b2 = st.columns(2)
-    with b1:
-        st.markdown(f'<span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 10px; border-radius:4px; font-size:11px;">HOY</span>', unsafe_allow_html=True)
-    with b2:
-        if st.button("LOGIN", key="login_btn"):
-            st.session_state.show_login = True
-            st.rerun()
+    # Mostrar fecha actual
+    fecha_hoy = date.today().strftime("%d/%m/%Y")
+    st.markdown(f'<span style="border:1px solid {ORANGE}; color:{ORANGE}; padding:6px 10px; border-radius:4px; font-size:11px; font-weight:bold;">📅 {fecha_hoy}</span>', unsafe_allow_html=True)
+    
+    # Calendario para seleccionar fecha
+    fecha = st.date_input("Seleccionar fecha", value=st.session_state.fecha_seleccionada, key="calendario")
+    st.session_state.fecha_seleccionada = fecha
+    
+    if st.button("🔓 LOGIN", key="login_btn"):
+        st.session_state.show_login = True
+        st.rerun()
+
+# Mostrar deporte seleccionado
+st.markdown(f'<div style="text-align:center; color:{GREEN}; font-size:14px; margin:10px 0;">📋 Mostrando: <strong>{st.session_state.deporte}</strong> | Fecha: {st.session_state.fecha_seleccionada.strftime("%d/%m/%Y")}</div>', unsafe_allow_html=True)
 
 # 3 COLUMNAS
 c1, c2, c3 = st.columns(3)
