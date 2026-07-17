@@ -208,29 +208,25 @@ with c1:
     filas_html = ""
     for i, p in enumerate(partidos):
         borde = f"border-top:1px solid {BORDER};" if i > 0 else ""
-        filas_html += f'''
-        <tr style="{borde}">
-            <td style="padding:8px 6px; color:white; font-size:10px;">{p["equipo"]}</td>
-            <td style="padding:8px 6px; color:{ORANGE}; font-size:10px; text-align:center; font-weight:bold;">{p["hora"]}</td>
-            <td style="padding:8px 6px; color:{MUTED}; font-size:9px; text-align:center;" title="{p["liga"]}">{p["liga"]}</td>
-        </tr>
-        '''
+        filas_html += f'''<tr style="{borde}">
+<td style="padding:8px 6px; color:white; font-size:10px;">{p["equipo"]}</td>
+<td style="padding:8px 6px; color:{ORANGE}; font-size:10px; text-align:center; font-weight:bold;">{p["hora"]}</td>
+<td style="padding:8px 6px; color:{MUTED}; font-size:9px; text-align:center;" title="{p["liga"]}">{p["liga"]}</td>
+</tr>'''
     
-    st.markdown(f'''
-    <div style="background:{BG}; border:2px solid {TITLE}; border-radius:10px; padding:12px;">
-        <div style="color:{TITLE}; font-size:12px; font-weight:bold; display:flex; align-items:center; gap:6px; margin-bottom:10px;">
-            {icono} PARTIDOS DESTACADOS
-        </div>
-        <table style="width:100%; border-collapse:collapse;">
-        <tr style="border-bottom:1px solid {BORDER};">
-            <th style="color:{MUTED}; font-size:9px; text-align:left; padding:4px 6px; width:50%;">EQUIPO</th>
-            <th style="color:{MUTED}; font-size:9px; text-align:center; padding:4px 6px; width:20%;">HORA</th>
-            <th style="color:{MUTED}; font-size:9px; text-align:center; padding:4px 6px; width:30%;">LIGA</th>
-        </tr>
-        {filas_html}
-        </table>
-    </div>
-    ''', unsafe_allow_html=True)
+    tabla_html = f'''<div style="background:{BG}; border:2px solid {TITLE}; border-radius:10px; padding:12px;">
+<div style="color:{TITLE}; font-size:12px; font-weight:bold; display:flex; align-items:center; gap:6px; margin-bottom:10px;">
+{icono} PARTIDOS DESTACADOS
+</div>
+<table style="width:100%; border-collapse:collapse;">
+<tr style="border-bottom:1px solid {BORDER};">
+<th style="color:{MUTED}; font-size:9px; text-align:left; padding:4px 6px; width:50%;">EQUIPO</th>
+<th style="color:{MUTED}; font-size:9px; text-align:center; padding:4px 6px; width:20%;">HORA</th>
+<th style="color:{MUTED}; font-size:9px; text-align:center; padding:4px 6px; width:30%;">LIGA</th>
+</tr>
+{filas_html}
+</table></div>'''
+    st.markdown(tabla_html, unsafe_allow_html=True)
 
 with c2:
     # Variables para datos del pick (conectar con API/DB)
