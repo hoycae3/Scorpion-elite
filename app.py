@@ -5777,14 +5777,14 @@ def pantalla_principal_unificada():
         st.markdown("""
         <style>
         [data-testid="stPopover"] {
-            width: 150px !important;
+            width: 120px !important;
             background: transparent !important;
             border: none !important;
         }
         .mini-login {
             background: #1a1a2e;
             border-radius: 8px;
-            padding: 10px;
+            padding: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
         .mini-login input {
