@@ -42,8 +42,8 @@ st.markdown(f'''
 c1, c2, c3 = st.columns(3)
 
 matches = [
-    ('Manchester City<br>Arsenal', '16:00', 'Premier League'),
-    ('Real Madrid<br>Barcelona', '17:30', 'LaLiga'),
+    ('Manchester City vs Arsenal', '16:00', 'Premier League'),
+    ('Real Madrid vs Barcelona', '17:30', 'LaLiga'),
 ]
 
 with c1:
@@ -51,7 +51,7 @@ with c1:
     st.markdown(f'<div style="color:{TITLE}; font-size:12px; font-weight:bold; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid {BORDER};">PARTIDOS DESTACADOS</div>', unsafe_allow_html=True)
     st.markdown(f'<table style="width:100%;"><tr style="border-bottom:1px solid {BORDER};"><th style="color:{MUTED}; font-size:9px; text-align:left; padding:6px;">PARTIDO</th><th style="color:{MUTED}; font-size:9px; text-align:center; padding:6px;">HORA</th><th style="color:{MUTED}; font-size:9px; text-align:center; padding:6px;">LIGA</th></tr>', unsafe_allow_html=True)
     for m in matches:
-        st.markdown(f'<tr style="border-bottom:1px solid {BORDER};"><td style="padding:8px; color:white; font-weight:bold; font-size:11px;">{m[0]}</td><td style="text-align:center; padding:8px; color:{MUTED}; font-size:10px;">{m[1]}</td><td style="text-align:center; padding:8px; color:{MUTED}; font-size:10px;">{m[2]}</td></tr>', unsafe_allow_html=True)
+        st.markdown(f'<tr style="border-bottom:1px solid {BORDER};"><td style="padding:8px; color:white; font-size:10px; text-align:left;">{m[0]}</td><td style="text-align:center; padding:8px; color:{MUTED}; font-size:10px;">{m[1]}</td><td style="text-align:center; padding:8px; color:{MUTED}; font-size:10px;">{m[2]}</td></tr>', unsafe_allow_html=True)
     st.markdown('</table></div>', unsafe_allow_html=True)
 
 with c2:
