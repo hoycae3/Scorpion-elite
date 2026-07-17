@@ -159,22 +159,9 @@ with col_center:
 with col_right:
     c1, c2 = st.columns([1.5, 1])
     with c1:
-        # Selector de fecha en formato dd/mm/yyyy
-        dias = list(range(1, 32))
-        meses = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
-        meses_nombres = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
-        anios = [2025, 2026, 2027]
-        
-        hoy = date.today()
-        col_d, col_m, col_a = st.columns(3)
-        with col_d:
-            dia = st.selectbox("", dias, index=hoy.day-1, key="dia_select")
-        with col_m:
-            mes_idx = st.selectbox("", range(12), index=hoy.month-1, key="mes_select", format_func=lambda x: meses_nombres[x])
-        with col_a:
-            anio = st.selectbox("", anios, index=hoy.year-2025, key="anio_select")
-        
-        st.session_state.fecha_seleccionada = date(anio, mes_idx+1, dia)
+        # Calendario nativo
+        fecha = st.date_input("📅 dd/mm/yyyy", value=st.session_state.fecha_seleccionada, key="calendario")
+        st.session_state.fecha_seleccionada = fecha
     with c2:
         if st.button("LOGIN", key="login_btn"):
             st.session_state.show_login = True
