@@ -4747,8 +4747,8 @@ def pantalla_pago(u,plan):
             ), unsafe_allow_html=True)
             
             st.markdown(render_dashboard_box(
-                "📈 Cuotas",
-                render_alerts(alertas_ejemplo)
+                "🏠 Casas de Apuestas",
+                render_odds_comparator(cuotas_ejemplo)
             ), unsafe_allow_html=True)
         
         st.markdown("---")
@@ -5761,21 +5761,13 @@ def pantalla_principal_unificada():
     # HEADER: 🦂 SCORPION ELITE + LOGIN
     # ══════════════════════════════════════════════════════════
     
-    # CSS Global - Fondo negro, hover verde
+    # CSS Global - Fondo negro
     st.markdown("""
     <style>
     /* Fondo negro con letras blancas */
     body {background-color: #000 !important; color: #fff !important;}
     .stApp {background-color: #000 !important;}
     [data-testid="stMainBlockContainer"] {background-color: #000 !important;}
-    
-    /* Hover verde en elementos clickeables */
-    .stButton > button:hover, .stDownloadButton > button:hover,
-    [data-testid="stHorizontalBlock"] > div:hover,
-    .element-container:hover {
-        background-color: #00ff00 !important;
-        color: #000 !important;
-    }
     
     /* Scorpion Elite naranja dorado */
     .scorpion-title {
@@ -6038,7 +6030,7 @@ def pantalla_principal_unificada():
             
             with col2:
                 st.markdown(render_dashboard_box("📊 Pick Análisis", render_ai_analysis(analisis_ejemplo)), unsafe_allow_html=True)
-                st.markdown(render_dashboard_box("📈 Cuotas", render_alerts(alertas_ejemplo)), unsafe_allow_html=True)
+                st.markdown(render_dashboard_box("🏠 Casas de Apuestas", render_odds_comparator(cuotas_ejemplo)), unsafe_allow_html=True)
         
         # ══════════════════════════════════════════════════════════
         # PESTAÑA PICKS
