@@ -128,8 +128,17 @@ if st.session_state.is_admin:
 col_left, col_center, col_right = st.columns([3, 3, 2])
 
 with col_left:
-    st.markdown(f'<div style="color:{ORANGE}; font-size:22px; font-weight:bold;">SCORPION ELITE</div>', unsafe_allow_html=True)
-    st.markdown(f'<div style="color:{MUTED}; font-size:9px; letter-spacing:2px;">ANALISIS Y TENDENCIAS DEPORTIVAS</div>', unsafe_allow_html=True)
+    st.markdown(f'''
+    <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:28px;">🦂</span>
+        <div>
+            <div style="font-size:22px; font-weight:bold;">
+                <span style="color:white;">SCORPION</span><span style="color:{ORANGE};"> ELITE</span>
+            </div>
+            <div style="color:{MUTED}; font-size:9px; letter-spacing:2px;">ANALISIS Y TENDENCIAS DEPORTIVAS</div>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
 
 with col_center:
     s1, s2, s3 = st.columns(3)
@@ -144,36 +153,13 @@ with col_center:
             st.session_state.deporte = "TENIS"
 
 with col_right:
-    col_hoy, col_login = st.columns(2)
-    with col_hoy:
-        # Botón HOY que abre selector de fecha
-        fecha_hoy = date.today().strftime("%d/%m")
-        if st.button(f"📅 {fecha_hoy}", key="btn_hoy"):
-            st.session_state.show_fecha = True
-            
-    # Modal para seleccionar fecha
-    if st.session_state.get('show_fecha', False):
-        st.markdown("### Seleccionar Fecha")
-        cols_fecha = st.columns(3)
-        with cols_fecha[0]:
-            dia = st.selectbox("Día", list(range(1, 32)), index=date.today().day - 1, key="dia")
-        with cols_fecha[1]:
-            mes = st.selectbox("Mes", ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"], index=date.today().month - 1, key="mes")
-        with cols_fecha[2]:
-            year = st.selectbox("Año", [2025, 2026, 2027], index=1, key="year")
-        
-        if st.button("✓ Aplicar", key="aplicar_fecha"):
-            st.session_state.fecha_seleccionada = date(year, date.today().month, dia)
-            st.session_state.show_fecha = False
-            st.rerun()
-        if st.button("✕ Cerrar", key="cerrar_fecha"):
-            st.session_state.show_fecha = False
-            st.rerun()
+    # Calendario pequeño
+    fecha = st.date_input("📅", value=st.session_state.fecha_seleccionada, key="calendario", help="Seleccionar fecha")
+    st.session_state.fecha_seleccionada = fecha
     
-    with col_login:
-        if st.button("🔓 LOGIN", key="login_btn"):
-            st.session_state.show_login = True
-            st.rerun()
+    if st.button("🔓 LOGIN", key="login_btn"):
+        st.session_state.show_login = True
+        st.rerun()
 
 # Mostrar deporte y fecha seleccionados
 st.markdown(f'<div style="text-align:center; color:{GREEN}; font-size:14px; margin:10px 0; background:{CARD}; padding:8px; border-radius:8px; border:1px solid {BORDER};">📋 {st.session_state.deporte} | 📅 {st.session_state.fecha_seleccionada.strftime("%d/%m/%Y")}</div>', unsafe_allow_html=True)
