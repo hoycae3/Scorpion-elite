@@ -188,119 +188,64 @@ PARTIDOS = {
 }
 
 # API Keys
-FOOTBALL_DATA_KEY = "21a9a19125f3467c86579b79f71d359c"  # football-data.org
+API_FOOTBALL_KEY = "e3926f829cd848f4b2b54d722ca29701"  # API-Football (nueva key funciona)
 
 def obtener_partidos_futbol():
-    """Obtiene TODOS los partidos de futbol para hoy desde múltiples fuentes"""
+    """Obtiene TODOS los partidos de futbol para hoy desde API-Football"""
     import requests
-    from bs4 import BeautifulSoup
     from datetime import datetime, timedelta
     
     partidos = []
     
-    # Fuente 1: football-data.org (API principal que funciona)
+    # Fuente: API-Football (funciona con la nueva key)
     try:
-        url = "http://api.football-data.org/v4/matches"
-        headers = {"X-Auth-Token": FOOTBALL_DATA_KEY}
+        hoy = datetime.now()
+        fecha_str = hoy.strftime("%Y-%m-%d")
+        
+        url = f"https://v3.football.api-sports.io/fixtures?date={fecha_str}"
+        headers = {"x-apisports-key": API_FOOTBALL_KEY}
         response = requests.get(url, headers=headers, timeout=15)
         
         if response.status_code == 200:
             data = response.json()
-            matches = data.get("matches", [])
             
-            for match in matches:
-                try:
-                    home = match.get("homeTeam", {}).get("name", "Local")
-                    away = match.get("awayTeam", {}).get("name", "Visita")
-                    league = match.get("competition", {}).get("name", "Liga")
-                    utc_date = match.get("utcDate", "")
-                    
-                    # Convertir UTC a hora local (UTC-3 para America)
-                    if utc_date:
-                        hora_utc = datetime.strptime(utc_date[:16], "%Y-%m-%dT%H:%M")
-                        hora_local = hora_utc + timedelta(hours=-3)  # UTC-3
-                        hora = hora_local.strftime("%H:%M")
-                    else:
-                        hora = "--:--"
-                    
-                    partidos.append({
-                        "equipo": f"{home} vs {away}",
-                        "hora": hora,
-                        "liga": league
-                    })
-                except:
-                    continue
-    except Exception as e:
-        print(f"Error football-data.org: {e}")
-    
-    # Fuente 2: Sofascore API (si no hay partidos)
-    if len(partidos) < 3:
-        try:
-            url = "https://www.sofascore.com/api/v1/sport/football/events/live"
-            headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
-            response = requests.get(url, headers=headers, timeout=15)
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("events"):
-                    for event in data["events"][:30]:
-                        try:
-                            home = event.get("homeTeam", {}).get("shortName") or event.get("homeTeam", {}).get("name", "Local")
-                            away = event.get("awayTeam", {}).get("shortName") or event.get("awayTeam", {}).get("name", "Visita")
-                            league = event.get("tournament", {}).get("name", "Liga")
-                            timestamp = event.get("startTimestamp", 0)
-                            
-                            if timestamp:
-                                hora = datetime.fromtimestamp(timestamp).strftime("%H:%M")
-                            else:
-                                hora = "--:--"
-                            
-                            partidos.append({
-                                "equipo": f"{home} vs {away}",
-                                "hora": hora,
-                                "liga": league
-                            })
-                        except:
-                            continue
-        except Exception as e:
-            print(f"Error Sofascore: {e}")
-    
-    # Fuente 3: TheSportsDB (gratuita)
-    if len(partidos) < 3:
-        try:
-            # Buscar eventos recientes de Premier League
-            url = "https://www.thesportsdb.com/api/v1/json/3/eventspastleague.php?id=4328"
-            headers = {"User-Agent": "Mozilla/5.0"}
-            response = requests.get(url, headers=headers, timeout=15)
-            
-            if response.status_code == 200:
-                data = response.json()
-                events = data.get("events", [])
-                
-                for event in events[:10]:
+            if data.get("response"):
+                for fixture in data["response"]:
                     try:
-                        home = event.get("strHomeTeam", "Local")
-                        away = event.get("strAwayTeam", "Visita")
-                        league = event.get("strLeague", "Liga")
-                        date = event.get("dateEvent", "")
-                        time = event.get("strTime", "")
-                        hora = time.split(" ")[-1] if time else "--:--"
+                        home = fixture["teams"]["home"]["name"]
+                        away = fixture["teams"]["away"]["name"]
+                        league = fixture["league"]["name"]
+                        country = fixture["league"]["country"]
+                        hora = fixture["fixture"]["date"][11:16]
+                        
+                        # Convertir UTC a UTC-3 (America)
+                        try:
+                            dt = datetime.strptime(hora, "%H:%M")
+                            dt = dt + timedelta(hours=-3)
+                            hora_local = dt.strftime("%H:%M")
+                        except:
+                            hora_local = hora
+                        
+                        # Combinar liga + pais
+                        liga_completa = f"{league}"
+                        if country:
+                            liga_completa = f"{league} ({country})"
                         
                         partidos.append({
                             "equipo": f"{home} vs {away}",
-                            "hora": hora[:5] if len(hora) > 5 else hora,
-                            "liga": league
+                            "hora": hora_local,
+                            "liga": liga_completa
                         })
                     except:
                         continue
-        except Exception as e:
-            print(f"Error TheSportsDB: {e}")
+    except Exception as e:
+        print(f"Error API-Football: {e}")
     
     # Eliminar duplicados
     seen = set()
     unique_partidos = []
     for p in partidos:
-        key = f"{p['equipo']}-{p['liga']}"
+        key = f"{p['equipo']}"
         if key not in seen:
             seen.add(key)
             unique_partidos.append(p)
