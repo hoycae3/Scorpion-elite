@@ -6052,7 +6052,12 @@ def pantalla_principal_unificada():
         # CSS específico para dashboard imagen
         st.markdown("""
         <style>
-        .dashboard-container {max-width: 1200px; margin: 0 auto;}
+        .main-title {color: #ff8c00; font-size: 24px; font-weight: bold; letter-spacing: 4px; text-align: center; margin: 10px 0;}
+        .user-info {color: #888; font-size: 12px; text-align: center; margin-bottom: 15px;}
+        .user-info span {margin: 0 15px;}
+        .nav-bar {display: flex; justify-content: center; gap: 0; margin: 10px 0; border-bottom: 2px solid #333; padding-bottom: 10px;}
+        .nav-item {color: #888; font-size: 13px; padding: 8px 15px; cursor: pointer;}
+        .nav-item:hover, .nav-item.active {color: #ff8c00; border-bottom: 2px solid #ff8c00;}
         .dash-section {background: #1a1a2e; border-radius: 10px; padding: 15px; margin-bottom: 15px;}
         .section-title {color: #ff8c00; font-size: 14px; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 8px;}
         .match-row {background: #252540; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #ff8c00;}
@@ -6070,23 +6075,37 @@ def pantalla_principal_unificada():
         </style>
         """, unsafe_allow_html=True)
         
-        # Navegación horizontal
-        nav = st.columns(9)
-        nav_items = ["Hoy", "Mañana", "En vivo", "Fútbol", "NBA", "MLB", "Tenis", "Favoritos", "🔍"]
-        for i, item in enumerate(nav_items):
-            with nav[i]:
-                st.button(item, key=f"nav_{i}")
+        # Título principal SCORPION ELITE
+        st.markdown('<div class="main-title">SCORPION ELITE</div>', unsafe_allow_html=True)
         
-        st.markdown("<hr style='border-color: #333; margin: 10px 0;'>", unsafe_allow_html=True)
+        # Usuario | Saldo | Config
+        st.markdown('''
+        <div class="user-info">
+            <span>👤 Usuario</span>
+            <span>💰 Saldo</span>
+            <span>⚙️</span>
+        </div>
+        ''', unsafe_allow_html=True)
+        
+        # Navegación horizontal
+        nav_items = ["HOY", "MAÑANA", "EN VIVO", "FÚTBOL", "NBA", "MLB", "TENIS", "FAVORITOS", "🔍"]
+        st.markdown('<div class="nav-bar">', unsafe_allow_html=True)
+        cols_nav = st.columns(len(nav_items))
+        for i, item in enumerate(nav_items):
+            with cols_nav[i]:
+                st.button(item, key=f"nav_{i}")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        st.markdown("<hr style='border-color: #333; margin: 5px 0;'>", unsafe_allow_html=True)
         
         # ══════════════════════════════════════════════════════════
-        # FILA 1: Partidos del Día | Análisis IA
+        # FILA 1: Partidos del Día | Análisis IA (sin título)
         # ══════════════════════════════════════════════════════════
         col_partidos, col_analisis = st.columns(2)
         
         with col_partidos:
             st.markdown('<div class="dash-section">', unsafe_allow_html=True)
-            st.markdown('<div class="section-title">⚽ Partidos del Día</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">Partidos del día</div>', unsafe_allow_html=True)
             
             partidos = [
                 ("Man City vs Chelsea", "15:00", "A+"),
@@ -6107,8 +6126,7 @@ def pantalla_principal_unificada():
         
         with col_analisis:
             st.markdown('<div class="dash-section">', unsafe_allow_html=True)
-            st.markdown('<div class="section-title">🤖 Análisis IA</div>', unsafe_allow_html=True)
-            
+            # Sin título, solo los datos directamente
             st.markdown('''
             <div style="padding: 5px 0;"><span class="ai-label">Probabilidad Local:</span> <span class="ai-value">72%</span></div>
             <div style="padding: 5px 0;"><span class="ai-label">Valor encontrado:</span> <span class="ai-value">SI</span></div>
@@ -6124,7 +6142,7 @@ def pantalla_principal_unificada():
         
         with col_mercados:
             st.markdown('<div class="dash-section">', unsafe_allow_html=True)
-            st.markdown('<div class="section-title">📋 Mercados</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">Mercados</div>', unsafe_allow_html=True)
             
             mercados = ["✔ Ganador", "✔ Over/Under", "✔ Ambos marcan", "✔ Hándicap"]
             for m in mercados:
@@ -6133,7 +6151,7 @@ def pantalla_principal_unificada():
         
         with col_cuotas:
             st.markdown('<div class="dash-section">', unsafe_allow_html=True)
-            st.markdown('<div class="section-title">💰 Comparador de Cuotas</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">Comparador de cuotas</div>', unsafe_allow_html=True)
             
             cuotas = [
                 ("Bet365", "1.82", False),
@@ -6159,7 +6177,7 @@ def pantalla_principal_unificada():
         
         with col_stats:
             st.markdown('<div class="dash-section">', unsafe_allow_html=True)
-            st.markdown('<div class="section-title">📊 Estadísticas</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">Estadísticas</div>', unsafe_allow_html=True)
             
             stats = [
                 ("xG", "1.8 - 1.2"),
@@ -6178,7 +6196,7 @@ def pantalla_principal_unificada():
         
         with col_alertas:
             st.markdown('<div class="dash-section">', unsafe_allow_html=True)
-            st.markdown('<div class="section-title">🔔 Alertas</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">Alertas</div>', unsafe_allow_html=True)
             
             alertas = [
                 ("⚠️", "Lesiones importantes"),
