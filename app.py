@@ -188,12 +188,12 @@ with c1:
         <tr>
             <td style="padding:8px 6px; color:white; font-size:10px;">Man City vs Arsenal</td>
             <td style="padding:8px 6px; color:{ORANGE}; font-size:10px; text-align:center; font-weight:bold;">16:00</td>
-            <td style="padding:8px 6px; color:{MUTED}; font-size:9px; text-align:center;">🏴󠁧󠁢󠁥󠁮󠁧󠁿</td>
+            <td style="padding:8px 6px; color:{MUTED}; font-size:9px; text-align:center;" title="Premier League">Premier League</td>
         </tr>
         <tr style="border-top:1px solid {BORDER};">
             <td style="padding:8px 6px; color:white; font-size:10px;">Real Madrid vs Barcelona</td>
             <td style="padding:8px 6px; color:{ORANGE}; font-size:10px; text-align:center; font-weight:bold;">17:30</td>
-            <td style="padding:8px 6px; color:{MUTED}; font-size:9px; text-align:center;">🇪🇸</td>
+            <td style="padding:8px 6px; color:{MUTED}; font-size:9px; text-align:center;" title="LaLiga">LaLiga</td>
         </tr>
         </table>
     </div>
