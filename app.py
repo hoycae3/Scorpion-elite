@@ -2,9 +2,23 @@ import streamlit as st
 from datetime import date
 from datetime import datetime
 import sys
+import time
 sys.path.append('/workspace/project/Scorpion-elite')
 
 st.set_page_config(page_title='SCORPION ELITE', layout='wide')
+
+# Cache global para partidos (dura 5 minutos)
+PARTIDOS_CACHE = {
+    "data": None,
+    "timestamp": 0,
+    "ttl": 300  # 5 minutos
+}
+
+# Cache para datos de un partido específico (dura 10 minutos)
+PARTIDO_CACHE = {
+    "data": {},
+    "ttl": 600  # 10 minutos
+}
 
 BG = '#070b0e'
 CARD = '#0d131a'
@@ -187,10 +201,20 @@ API_KEYS = [
 ]
 
 def obtener_partidos_todas_apis(fecha_str):
-    """Obtiene partidos de TODAS las APIs disponibles"""
+    """Obtiene partidos de TODAS las APIs disponibles (con caché)"""
     import requests
     from datetime import datetime, timedelta
     from bs4 import BeautifulSoup
+    
+    # Verificar caché
+    cache_key = f"partidos_{fecha_str}"
+    now = time.time()
+    
+    if cache_key in st.session_state:
+        cached = st.session_state[cache_key]
+        if cached and (now - cached.get("time", 0)) < 300:  # 5 min cache
+            return cached.get("data", [])
+    
     all_partidos = []
     
     # Intentar con API-Football
@@ -294,6 +318,12 @@ def obtener_partidos_todas_apis(fecha_str):
         if fixture_id not in seen_ids:
             seen_ids.add(fixture_id)
             unique_partidos.append(p)
+    
+    # Guardar en caché
+    st.session_state[cache_key] = {
+        "data": unique_partidos,
+        "time": time.time()
+    }
     
     return unique_partidos
 
@@ -442,7 +472,7 @@ def obtener_partidos_futbol(todos=False):
 
 
 def obtener_mejor_pick():
-    """Obtiene el mejor partido del día con datos REALES de cuotas y predicciones"""
+    """Obtiene el mejor partido del día con datos REALES de cuotas y predicciones (con caché)"""
     import requests
     from datetime import datetime, timedelta
     
@@ -510,10 +540,18 @@ def obtener_mejor_pick():
     if not mejor_partido:
         return None
     
+    # Verificar caché para predicciones/cuotas
+    fixture_id = mejor_partido["fixture_id"]
+    cache_key = f"pick_{fixture_id}"
+    now = time.time()
+    
+    if cache_key in st.session_state:
+        cached = st.session_state[cache_key]
+        if cached and (now - cached.get("time", 0)) < 600:  # 10 min cache
+            return cached.get("data")
+    
     # Obtener datos REALES: cuotas y predicciones de API-Football
     try:
-        fixture_id = mejor_partido["fixture_id"]
-        
         # Obtener predictions reales
         url_pred = f"https://v3.football.api-sports.io/predictions?fixture={fixture_id}"
         response_pred = requests.get(url_pred, headers={"x-apisports-key": API_KEYS[0]}, timeout=15)
@@ -607,7 +645,7 @@ def obtener_mejor_pick():
         total_prob = prob_home + prob_draw + prob_away
         confianza = round((max(prob_home, prob_draw, prob_away) / total_prob) * 100, 0) if total_prob > 0 else 50
         
-        return {
+        result = {
             "liga": mejor_partido["liga"],
             "home": mejor_partido["home"],
             "away": mejor_partido["away"],
@@ -628,6 +666,14 @@ def obtener_mejor_pick():
             "cuota_x": cuota_x,
             "cuota_2": cuota_2
         }
+        
+        # Guardar en caché
+        st.session_state[cache_key] = {
+            "data": result,
+            "time": time.time()
+        }
+        
+        return result
     except Exception as e:
         print(f"Error obteniendo datos reales: {e}")
         return None
