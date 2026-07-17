@@ -50,14 +50,14 @@ matches = [
 ]
 
 with c1:
-    st.markdown(f'<div style="background:{CARD}; border:1px solid {BORDER}; border-radius:8px; padding:16px; margin:10px;">', unsafe_allow_html=True)
+    st.markdown(f'<div style="background:{CARD}; border:1px solid {BORDER}; border-radius:8px; padding:16px;">', unsafe_allow_html=True)
     st.markdown(f'<div style="color:{TITLE}; font-size:13px; font-weight:bold; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid {BORDER};">PARTIDOS DESTACADOS</div>', unsafe_allow_html=True)
     for m in matches:
         st.markdown(f'<div style="background:{BG}; padding:10px; margin-bottom:8px; border-radius:4px; border-left:3px solid {ORANGE};"><div style="font-weight:bold; font-size:12px; color:white;">{m[0]}</div><div style="display:flex; justify-content:space-between; margin-top:4px;"><span style="color:{MUTED}; font-size:10px;">{m[2]}</span><span style="color:{MUTED}; font-size:10px;">{m[1]}</span></div></div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 with c2:
-    st.markdown(f'<div style="background:{CARD}; border:1px solid {BORDER}; border-radius:8px; padding:16px; margin:10px;">', unsafe_allow_html=True)
+    st.markdown(f'<div style="background:{CARD}; border:1px solid {BORDER}; border-radius:8px; padding:16px;">', unsafe_allow_html=True)
     st.markdown(f'<div style="color:{TITLE}; font-size:13px; font-weight:bold; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid {BORDER};">MEJOR PICK DEL DIA</div>', unsafe_allow_html=True)
     st.markdown(f'<div style="text-align:center; color:{MUTED}; font-size:11px; margin-bottom:10px;">Premier League - Jornada 36</div>', unsafe_allow_html=True)
     st.markdown(f'<div style="text-align:center; margin:15px 0;"><span style="font-size:16px; font-weight:bold;">Manchester City</span> <span style="color:{MUTED};">VS</span> <span style="font-size:16px; font-weight:bold;">Arsenal</span></div>', unsafe_allow_html=True)
@@ -77,7 +77,7 @@ with c3:
         ('1xBet', '1.90', '3.78', '4.10', False),
         ('Stake', '1.88', '3.76', '4.05', False),
     ]
-    st.markdown(f'<div style="background:{CARD}; border:1px solid {BORDER}; border-radius:8px; padding:16px; margin:10px;">', unsafe_allow_html=True)
+    st.markdown(f'<div style="background:{CARD}; border:1px solid {BORDER}; border-radius:8px; padding:16px;">', unsafe_allow_html=True)
     st.markdown(f'<div style="color:{TITLE}; font-size:13px; font-weight:bold; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid {BORDER};">COMPARADOR DE CUOTAS</div>', unsafe_allow_html=True)
     st.markdown(f'<table style="width:100%;"><tr style="border-bottom:1px solid {BORDER};"><th style="color:{MUTED}; font-size:10px; text-align:left; padding:8px;">CASA</th><th style="color:{MUTED}; font-size:10px; text-align:center;">1</th><th style="color:{MUTED}; font-size:10px; text-align:center;">X</th><th style="color:{MUTED}; font-size:10px; text-align:center;">2</th><th style="color:{MUTED}; font-size:10px; text-align:center;">*</th></tr>', unsafe_allow_html=True)
     for o in odds:
