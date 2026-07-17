@@ -5776,7 +5776,7 @@ def pantalla_principal_unificada():
         # CSS login con proporción
         st.markdown("""
         <style>
-        [data-testid="stPopover"] {width: 140px !important;}
+        [data-testid="stPopover"] {width: 70px !important;}
         .stTextInput input {font-size: 11px !important; padding: 6px 8px !important;}
         .stTextInput {margin-bottom: 4px !important;}
         .stButton button {font-size: 11px !important; padding: 6px 8px !important;}
