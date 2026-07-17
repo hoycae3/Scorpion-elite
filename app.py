@@ -19,6 +19,8 @@ if 'is_admin' not in st.session_state:
     st.session_state.is_admin = False
 if 'user_name' not in st.session_state:
     st.session_state.user_name = ""
+if 'show_login' not in st.session_state:
+    st.session_state.show_login = False
 
 st.markdown(f'''
 <style>
@@ -33,28 +35,35 @@ th, td {{border: none;}}
 </style>
 ''', unsafe_allow_html=True)
 
-# LOGIN
-if not st.session_state.logged_in:
-    col1, col2, col3 = st.columns([1,2,1])
-    with col2:
-        st.markdown(f'<div style="background:{CARD}; border:1px solid {BORDER}; border-radius:12px; padding:40px; margin-top:80px; text-align:center;">', unsafe_allow_html=True)
-        st.markdown(f'<div style="color:{ORANGE}; font-size:28px; font-weight:bold; margin-bottom:8px;">SCORPION ELITE</div>', unsafe_allow_html=True)
-        st.markdown(f'<div style="color:{MUTED}; font-size:11px; margin-bottom:25px;">ANALISIS Y TENDENCIAS DEPORTIVAS</div>', unsafe_allow_html=True)
-        
-        username = st.text_input("Usuario", placeholder="Ingrese usuario")
-        password = st.text_input("Contrasena", type="password", placeholder="Ingrese contrasena")
-        
-        if st.button("INICIAR SESION", use_container_width=True):
-            if username == ADMIN_USER and password == ADMIN_PASS:
-                st.session_state.logged_in = True
-                st.session_state.is_admin = True
-                st.session_state.user_name = username
-                st.rerun()
-            else:
-                st.error("Usuario o contrasena incorrectos")
-        
-        st.markdown(f'<div style="color:{MUTED}; font-size:9px; margin-top:15px;">Scorpion Elite 2025</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+# LOGIN MODAL
+if st.session_state.show_login:
+    with st.container():
+        col1, col2, col3 = st.columns([1,2,1])
+        with col2:
+            st.markdown(f'<div style="background:{CARD}; border:1px solid {BORDER}; border-radius:12px; padding:30px; margin-top:60px; text-align:center;">', unsafe_allow_html=True)
+            st.markdown(f'<div style="color:{ORANGE}; font-size:24px; font-weight:bold; margin-bottom:5px;">INICIAR SESION</div>', unsafe_allow_html=True)
+            
+            username = st.text_input("Usuario", placeholder="Ingrese usuario", key="user_input")
+            password = st.text_input("Contrasena", type="password", placeholder="Ingrese contrasena", key="pass_input")
+            
+            col_a, col_b = st.columns(2)
+            with col_a:
+                if st.button("ENTRAR", use_container_width=True):
+                    if username == ADMIN_USER and password == ADMIN_PASS:
+                        st.session_state.logged_in = True
+                        st.session_state.is_admin = True
+                        st.session_state.user_name = username
+                        st.session_state.show_login = False
+                        st.rerun()
+                    else:
+                        st.error("Datos incorrectos")
+            with col_b:
+                if st.button("CANCELAR", use_container_width=True):
+                    st.session_state.show_login = False
+                    st.rerun()
+            
+            st.markdown(f'<div style="color:{MUTED}; font-size:9px; margin-top:10px;">Scorpion Elite 2025</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
 # ADMIN VIEW
@@ -76,16 +85,14 @@ if st.session_state.is_admin:
     tab1, tab2, tab3 = st.tabs(["Dashboard", "Gestionar Picks", "Usuarios"])
     
     with tab1:
-        st.markdown(f'<div style="padding:20px;">', unsafe_allow_html=True)
         m1, m2, m3, m4 = st.columns(4)
         with m1: st.metric("Usuarios Totales", "156")
         with m2: st.metric("Picks Publicados", "89")
         with m3: st.metric("Aciertos", "72%")
         with m4: st.metric("Ingresos", "$1,250")
-        st.markdown('</div>', unsafe_allow_html=True)
     
     with tab2:
-        st.markdown(f'<div style="padding:20px;"><h4 style="color:white;">Crear Pick</h4>', unsafe_allow_html=True)
+        st.markdown("### Crear Pick")
         col_a, col_b = st.columns(2)
         with col_a:
             liga = st.selectbox("Liga", ["Premier League", "LaLiga", "Serie A", "Bundesliga", "Ligue 1"])
@@ -100,7 +107,7 @@ if st.session_state.is_admin:
             st.success("Pick publicado exitosamente!")
     
     with tab3:
-        st.markdown(f'<div style="padding:20px;"><h4 style="color:white;">Gestion de Usuarios</h4>', unsafe_allow_html=True)
+        st.markdown("### Gestion de Usuarios")
         st.table({"Usuario": ["juan123", "maria456", "pedro789"], "Plan": ["Premium", "Basico", "Premium"], "Estado": ["Activo", "Activo", "Suspendido"]})
     
     if st.button("Cerrar Sesion"):
@@ -120,11 +127,16 @@ st.markdown(f'''
         <span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 14px; border-radius:4px; font-size:11px;"> TENIS</span>
     </div>
     <div style="display:flex; gap:8px; align-items:center;">
-        <input type="text" placeholder="Buscar..." style="background:{BG}; border:1px solid {BORDER}; color:white; padding:6px 10px; border-radius:4px; font-size:11px; width:160px;">
+        <input type="text" placeholder="Buscar..." style="background:{BG}; border:1px solid {BORDER}; color:white; padding:6px 10px; border-radius:4px; font-size:11px; width:140px;">
         <span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 10px; border-radius:4px; font-size:11px;">HOY</span>
+        <span style="border:1px solid {ORANGE}; color:{ORANGE}; padding:6px 12px; border-radius:4px; font-size:11px; cursor:pointer;" onclick="document.querySelector('[data-testid]').click()">LOGIN</span>
     </div>
 </div>
 ''', unsafe_allow_html=True)
+
+if st.button("LOGIN", key="login_btn"):
+    st.session_state.show_login = True
+    st.rerun()
 
 # 3 COLUMNAS
 c1, c2, c3 = st.columns(3)
