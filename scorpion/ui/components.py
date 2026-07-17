@@ -28,17 +28,30 @@ def render_dashboard_header(username: str = "Usuario", saldo: str = "$0.00", sho
 
 def render_nav_bar(active_tab: str = "hoy") -> str:
     """Renderiza la barra de navegación horizontal."""
-    tabs = ["hoy", "manana", "futbol", "baloncesto", "tenis"]
-    tabs_labels = ["📅 Hoy", "📅 Mañana", "⚽ Fútbol", "🏀 Baloncesto", "🎾 Tenis"]
+    # Deportes
+    sports = ["futbol", "baloncesto", "tenis"]
+    sports_labels = ["⚽ Fútbol", "🏀 Baloncesto", "🎾 Tenis"]
     
-    tabs_html = ""
-    for tab, label in zip(tabs, tabs_labels):
+    sports_html = ""
+    for tab, label in zip(sports, sports_labels):
         active_class = "nav-active" if tab == active_tab else ""
-        tabs_html += f'<button class="nav-tab {active_class}" data-tab="{tab}">{label}</button>'
+        sports_html += f'<button class="nav-tab {active_class}" data-tab="{tab}">{label}</button>'
+    
+    # Fechas
+    dates = ["hoy", "manana"]
+    dates_labels = ["📅 Hoy", "📅 Mañana"]
+    
+    dates_html = ""
+    for tab, label in zip(dates, dates_labels):
+        active_class = "nav-active" if tab == active_tab else ""
+        dates_html += f'<button class="nav-tab {active_class}" data-tab="{tab}">{label}</button>'
     
     return f'''
+    <div class="dash-nav" style="margin-bottom: 8px;">
+        {sports_html}
+    </div>
     <div class="dash-nav">
-        {tabs_html}
+        {dates_html}
     </div>
     '''
 
