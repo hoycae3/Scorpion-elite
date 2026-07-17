@@ -5765,18 +5765,18 @@ def pantalla_principal_unificada():
     col_titulo, col_login_btn = st.columns([4, 1])
     with col_titulo:
         st.markdown('''
-        <div style="padding: 10px 0 5px 0;">
-            <span style="font-size: 1.5rem;">🦂</span>
-            <span style="color: #ffcc00; font-size: 1.1rem; font-weight: bold; letter-spacing: 2px; margin-left: 8px;">SCORPION ELITE</span>
+        <div style="padding: 5px 0 3px 0;">
+            <span style="font-size: 1rem;">🦂</span>
+            <span style="color: #ffcc00; font-size: 0.7rem; font-weight: bold; letter-spacing: 2px; margin-left: 5px;">SCORPION ELITE</span>
         </div>
         ''', unsafe_allow_html=True)
     with col_login_btn:
-        st.markdown("<div style='padding-top: 5px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='padding-top: 3px;'></div>", unsafe_allow_html=True)
         
         # CSS login con proporción
         st.markdown("""
         <style>
-        [data-testid="stPopover"] {width: 70px !important;}
+        [data-testid="stPopover"] {width: 140px !important;}
         .stTextInput input {font-size: 11px !important; padding: 6px 8px !important;}
         .stTextInput {margin-bottom: 4px !important;}
         .stButton button {font-size: 11px !important; padding: 6px 8px !important;}
