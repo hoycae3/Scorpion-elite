@@ -145,16 +145,16 @@ with col_left:
     ''', unsafe_allow_html=True)
 
 with col_center:
-    s1, s2, s3 = st.columns([1, 1.2, 1])
+    s1, s2 = st.columns(2)
     with s1:
         if st.button("⚽ FUTBOL", key="btn_futbol"):
             st.session_state.deporte = "FUTBOL"
     with s2:
         if st.button("🏀 BALONCESTO", key="btn_basket"):
             st.session_state.deporte = "BALONCESTO"
-    with s3:
-        if st.button("🎾 TENIS", key="btn_tenis"):
-            st.session_state.deporte = "TENIS"
+    # with s3:
+    #     if st.button("🎾 TENIS", key="btn_tenis"):
+    #         st.session_state.deporte = "TENIS"
 
 with col_right:
     c1, c2 = st.columns([1.5, 1])
@@ -448,48 +448,48 @@ def obtener_partidos_tenis():
             
             for event in events[:15]:
                 try:
-                    home = event.get("strHomeTeam", "")
-                    away = event.get("strAwayTeam", "")
-                    league = event.get("strLeague", "")
+                    home = event.get("strHomeTeam") or ""
+                    away = event.get("strAwayTeam") or ""
+                    league = event.get("strLeague") or ""
                     
                     # Verificar que sea tenis (filtrar partidos de otros deportes)
-                    if home and away and home != "None" and away != "None":
-                        if "tennis" not in league.lower() and "tenis" not in league.lower() and "atp" not in league.lower():
-                            continue  # Saltar si no es tenis
+                    league_lower = league.lower()
+                    if "tennis" in league_lower or "tenis" in league_lower or "atp" in league_lower:
+                        # Para tenis, puede que venga sin nombres de jugadores
+                        if home and away and str(home) != "None" and str(away) != "None":
+                            date = event.get("dateEvent") or ""
+                            time = event.get("strTime") or ""
+                            hora = time.split(" ")[-1][:5] if time and str(time) != "None" else "--:--"
                             
-                        date = event.get("dateEvent", "")
-                        time = event.get("strTime", "")
-                        hora = time.split(" ")[-1][:5] if time and time != "None" else "--:--"
-                        
-                        # Calcular prioridad
-                        prioridad = 0
-                        league_lower = league.lower()
-                        for nombre, prio in TENIS_PRIORIDAD.items():
-                            if nombre in league_lower:
-                                prioridad = prio
-                                break
-                        
-                        if not prioridad:
-                            prioridad = 5  # Default para ATP
-                        
-                        # Solo partidos de ultimos 7 dias
-                        if date:
-                            try:
-                                event_date = datetime.strptime(date, "%Y-%m-%d")
-                                today = datetime.now()
-                                days_diff = (today - event_date).days
-                                
-                                if days_diff <= 7:
-                                    partidos.append({
-                                        "equipo": f"{home} vs {away}",
-                                        "hora": hora,
-                                        "liga": league if league else "ATP",
-                                        "prioridad": prioridad,
-                                        "fecha": date
-                                    })
-                            except:
-                                pass
-                except:
+                            # Calcular prioridad
+                            prioridad = 0
+                            for nombre, prio in TENIS_PRIORIDAD.items():
+                                if nombre in league_lower:
+                                    prioridad = prio
+                                    break
+                            
+                            if not prioridad:
+                                prioridad = 5  # Default para ATP
+                            
+                            # Solo partidos de ultimos 7 dias
+                            if date:
+                                try:
+                                    event_date = datetime.strptime(date, "%Y-%m-%d")
+                                    today = datetime.now()
+                                    days_diff = (today - event_date).days
+                                    
+                                    if days_diff <= 7:
+                                        partidos.append({
+                                            "equipo": f"{home} vs {away}",
+                                            "hora": hora,
+                                            "liga": league if league else "ATP",
+                                            "prioridad": prioridad,
+                                            "fecha": date
+                                        })
+                                except:
+                                    pass
+                except Exception as e:
+                    print(f"Error parsing tennis event: {e}")
                     continue
     except Exception as e:
         print(f"Error Tennis: {e}")
