@@ -4737,7 +4737,7 @@ def pantalla_pago(u,plan):
         with col2:
             # Columna derecha
             st.markdown(render_dashboard_box(
-                "🤖 Análisis IA",
+                "📊 Pick Análisis",
                 render_ai_analysis(analisis_ejemplo)
             ), unsafe_allow_html=True)
             
@@ -4747,7 +4747,7 @@ def pantalla_pago(u,plan):
             ), unsafe_allow_html=True)
             
             st.markdown(render_dashboard_box(
-                "🔔 Alertas",
+                "📈 Cuotas",
                 render_alerts(alertas_ejemplo)
             ), unsafe_allow_html=True)
         
@@ -5761,13 +5761,37 @@ def pantalla_principal_unificada():
     # HEADER: 🦂 SCORPION ELITE + LOGIN
     # ══════════════════════════════════════════════════════════
     
-    # Título pequeño con logo
+    # CSS Global - Fondo negro, hover verde
+    st.markdown("""
+    <style>
+    /* Fondo negro con letras blancas */
+    body {background-color: #000 !important; color: #fff !important;}
+    .stApp {background-color: #000 !important;}
+    [data-testid="stMainBlockContainer"] {background-color: #000 !important;}
+    
+    /* Hover verde en elementos clickeables */
+    .stButton > button:hover, .stDownloadButton > button:hover,
+    [data-testid="stHorizontalBlock"] > div:hover,
+    .element-container:hover {
+        background-color: #00ff00 !important;
+        color: #000 !important;
+    }
+    
+    /* Scorpion Elite naranja dorado */
+    .scorpion-title {
+        color: #ff8c00 !important;
+        text-shadow: 0 0 10px #ff8c00 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Título con logo grande
     col_titulo, col_login_btn = st.columns([4, 1])
     with col_titulo:
         st.markdown('''
-        <div style="padding: 5px 0 3px 0;">
-            <span style="font-size: 1rem;">🦂</span>
-            <span style="color: #ffcc00; font-size: 0.7rem; font-weight: bold; letter-spacing: 2px; margin-left: 5px;">SCORPION ELITE</span>
+        <div style="padding: 10px 0 5px 0;">
+            <span style="font-size: 2.5rem;">🦂</span>
+            <span class="scorpion-title" style="font-size: 1.5rem; font-weight: bold; letter-spacing: 3px; margin-left: 10px;">SCORPION ELITE</span>
         </div>
         ''', unsafe_allow_html=True)
     with col_login_btn:
@@ -6013,8 +6037,8 @@ def pantalla_principal_unificada():
                 st.markdown(render_dashboard_box("📊 Estadísticas", render_statistics(stats_ejemplo)), unsafe_allow_html=True)
             
             with col2:
-                st.markdown(render_dashboard_box("🤖 Análisis IA", render_ai_analysis(analisis_ejemplo)), unsafe_allow_html=True)
-                st.markdown(render_dashboard_box("🔔 Alertas", render_alerts(alertas_ejemplo)), unsafe_allow_html=True)
+                st.markdown(render_dashboard_box("📊 Pick Análisis", render_ai_analysis(analisis_ejemplo)), unsafe_allow_html=True)
+                st.markdown(render_dashboard_box("📈 Cuotas", render_alerts(alertas_ejemplo)), unsafe_allow_html=True)
         
         # ══════════════════════════════════════════════════════════
         # PESTAÑA PICKS
