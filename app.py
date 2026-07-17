@@ -201,8 +201,14 @@ LIGAS_PRIORIDAD = {
     "ligue 1": 10,
     
     # SECOND TIER - Alto interes
-    "libertadores": 9,
-    "europa league": 8,
+    "champions league": 15,
+    "premier league": 14,
+    "la liga": 13,
+    "serie a": 12,
+    "bundesliga": 11,
+    "ligue 1": 10,
+    "europa league": 9,  # Prioridad alta
+    "libertadores": 8,
     "copa america": 8,
     "euro": 8,
     "world cup": 8,
@@ -215,13 +221,15 @@ LIGAS_PRIORIDAD = {
     "primeira liga": 5,
     "super lig": 5,
     "copa argentina": 5,
+    "copa sudamericana": 5,
     
     # FOURTH TIER - Menor interes
     "canadian premier league": 4,
     "liga pro": 4,
     "paraguay": 4,
     "chile": 4,
-    "colombia": 4,
+    "colombia": 4,  # Liga colombiana
+    "betplay": 4,   # Liga BetPlay Colombia
     "uruguay": 4,
     "peru": 4,
     "bolivia": 4,
