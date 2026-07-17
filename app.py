@@ -5776,7 +5776,7 @@ def pantalla_principal_unificada():
         # CSS ultra compacto
         st.markdown("""
         <style>
-        [data-testid="stPopover"] {width: 130px !important;}
+        [data-testid="stPopover"] {width: 100px !important;}
         .stTextInput input {font-size: 10px !important; padding: 4px 6px !important;}
         .stTextInput {margin-bottom: 3px !important;}
         .stButton button {font-size: 10px !important; padding: 4px !important;}
