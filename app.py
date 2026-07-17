@@ -5773,19 +5773,20 @@ def pantalla_principal_unificada():
     with col_login_btn:
         st.markdown("<div style='padding-top: 5px;'></div>", unsafe_allow_html=True)
         
-        # CSS para popover pequeño
+        # CSS para popover ultra pequeño
         st.markdown("""
         <style>
-        [data-testid="stPopover"] {width: 180px !important;}
-        [data-testid="stPopover"] input {font-size: 11px !important; padding: 4px 6px !important;}
-        [data-testid="stPopover"] button {font-size: 11px !important; padding: 4px !important;}
+        [data-testid="stPopover"] {width: 140px !important;}
+        [data-testid="stPopover"] input {font-size: 10px !important; padding: 3px 5px !important;}
+        [data-testid="stPopover"] button {font-size: 10px !important; padding: 3px !important;}
+        [data-testid="stPopover"] [data-testid="stHorizontalBlock"] {gap: 3px !important;}
         </style>
         """, unsafe_allow_html=True)
         
         with st.popover("Login"):
-            usr = st.text_input("", placeholder="usuario", label_visibility="collapsed")
-            pwd = st.text_input("", type="password", placeholder="contraseña", label_visibility="collapsed")
-            if st.button("Entrar", use_container_width=True):
+            usr = st.text_input("", placeholder="user", label_visibility="collapsed")
+            pwd = st.text_input("", type="password", placeholder="pass", label_visibility="collapsed")
+            if st.button("→", use_container_width=True):
                 if usr and pwd:
                     if usr.lower() == "admin" and pwd == "scorpion_admin_2025":
                         st.session_state.logged_in = True
@@ -5794,7 +5795,7 @@ def pantalla_principal_unificada():
                         st.session_state.user_plan = "ADMIN"
                         st.rerun()
                     else:
-                        st.error("❌ Incorrecto")
+                        st.error("❌")
     
     # Si está logueado
     if st.session_state.get("logged_in", False):
