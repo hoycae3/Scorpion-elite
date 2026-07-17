@@ -1,0 +1,41 @@
+name: Daily Match Scraper
+
+on:
+  # Ejecutar cada día a las 6:00 AM UTC (= 1:00 AM Colombia/Perú, 3:00 AM Argentina)
+  schedule:
+    - cron: '0 6 * * *'
+  
+  # También permite ejecución manual desde Actions tab
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install requests beautifulsoup4 supabase-py
+      
+      - name: Run scraper
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          python scraper.py
+      
+      - name: Check for errors
+        if: success()
+        run: echo "✅ Scraper completed successfully"
+      
+      - name: Notify on failure
+        if: failure()
+        run: echo "❌ Scraper failed - check logs"

@@ -3,9 +3,14 @@ from datetime import date
 from datetime import datetime
 import sys
 import time
+import os
 sys.path.append('/workspace/project/Scorpion-elite')
 
 st.set_page_config(page_title='SCORPION ELITE', layout='wide')
+
+# Configuración Supabase
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 
 # Cache global para partidos (dura 5 minutos)
 PARTIDOS_CACHE = {
@@ -200,8 +205,50 @@ API_KEYS = [
     "124c9519df145caf883cd82f0b2a4671",  # API-Football key 2
 ]
 
+
+def obtener_partidos_de_supabase(fecha_str):
+    """Obtiene partidos desde Supabase ( fuente principal )"""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return None
+    
+    try:
+        from supabase import create_client
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        
+        # Consultar partidos de la fecha
+        response = supabase.table("partidos").select("*").eq("fecha", fecha_str).execute()
+        
+        if response.data:
+            return response.data
+        return None
+    except Exception as e:
+        print(f"Error conectando a Supabase: {e}")
+        return None
+
+
+def convertir_partidos_supabase_a_fixture(datos_supabase):
+    """Convierte datos de Supabase al formato de fixture que usa la app"""
+    fixtures = []
+    for p in datos_supabase:
+        fixtures.append({
+            "fixture": {
+                "id": p.get("fixture_id", 0),
+                "date": f"{p.get('fecha', '')}T{p.get('hora_utc', '00:00')}"
+            },
+            "league": {
+                "id": p.get("liga_id", 0),
+                "name": p.get("liga", "Liga"),
+                "country": p.get("pais", "")
+            },
+            "teams": {
+                "home": {"id": 0, "name": p.get("equipo_home", "Local")},
+                "away": {"id": 0, "name": p.get("equipo_away", "Visita")}
+            }
+        })
+    return fixtures
+
 def obtener_partidos_todas_apis(fecha_str):
-    """Obtiene partidos de TODAS las APIs disponibles (con caché)"""
+    """Obtiene partidos de Supabase (primario) o APIs (fallback)"""
     import requests
     from datetime import datetime, timedelta
     from bs4 import BeautifulSoup
@@ -217,98 +264,108 @@ def obtener_partidos_todas_apis(fecha_str):
     
     all_partidos = []
     
-    # Intentar con API-Football
-    for api_key in API_KEYS:
-        try:
-            url = f"https://v3.football.api-sports.io/fixtures?date={fecha_str}"
-            headers = {"x-apisports-key": api_key}
-            response = requests.get(url, headers=headers, timeout=15)
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("response"):
-                    all_partidos.extend(data["response"])
-        except:
-            continue
+    # 1. PRIMERO: Intentar con Supabase (fuente principal)
+    datos_supabase = obtener_partidos_de_supabase(fecha_str)
+    if datos_supabase:
+        all_partidos = convertir_partidos_supabase_a_fixture(datos_supabase)
+        print(f"✅ Obtenidos {len(all_partidos)} partidos de Supabase")
+    else:
+        print("📡 Supabase vacío, usando APIs como fallback...")
     
-    # Si no hay partidos, intentar con TheSportsDB
+    # 2. FALLBACK: Si no hay datos en Supabase, usar APIs
     if not all_partidos:
-        try:
-            url = "https://www.thesportsdb.com/api/v1/json/3/eventsday.php"
-            params = {"d": fecha_str}
-            response = requests.get(url, params=params, timeout=15)
-            
-            if response.status_code == 200:
-                data = response.json()
-                events = data.get("events", []) or []
+        # Intentar con API-Football
+        for api_key in API_KEYS:
+            try:
+                url = f"https://v3.football.api-sports.io/fixtures?date={fecha_str}"
+                headers = {"x-apisports-key": api_key}
+                response = requests.get(url, headers=headers, timeout=15)
                 
-                for event in events:
-                    sport = event.get("strSport", "")
-                    if sport != "Soccer":
-                        continue
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("response"):
+                        all_partidos.extend(data["response"])
+            except:
+                continue
+        
+        # Si no hay partidos, intentar con TheSportsDB
+        if not all_partidos:
+            try:
+                url = "https://www.thesportsdb.com/api/v1/json/3/eventsday.php"
+                params = {"d": fecha_str}
+                response = requests.get(url, params=params, timeout=15)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    events = data.get("events", []) or []
                     
-                    all_partidos.append({
-                        "fixture": {
-                            "id": event.get("idEvent", 0),
-                            "date": event.get("dateEvent", "") + "T" + event.get("strTime", "00:00"),
-                            "timestamp": 0
-                        },
-                        "league": {
-                            "id": 0,
-                            "name": event.get("strLeague", "Liga"),
-                            "country": ""
-                        },
-                        "teams": {
-                            "home": {"id": 0, "name": event.get("strHomeTeam", "Local")},
-                            "away": {"id": 0, "name": event.get("strAwayTeam", "Visita")}
-                        }
-                    })
-        except:
-            pass
-    
-    # Si sigue sin haber partidos, hacer scraping de Flashscore
-    if not all_partidos:
-        try:
-            url = "https://www.flashscore.com/"
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            }
-            response = requests.get(url, headers=headers, timeout=15)
-            
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.text, 'html.parser')
-                
-                # Buscar partidos en la página
-                events = soup.find_all('div', class_='event__match')
-                
-                for event in events[:10]:
-                    try:
-                        home = event.find('div', class_='event__homeParticipant')
-                        away = event.find('div', class_='event__awayParticipant')
-                        time = event.find('div', class_='event__time')
-                        league = event.find_previous('div', class_='event__league')
+                    for event in events:
+                        sport = event.get("strSport", "")
+                        if sport != "Soccer":
+                            continue
                         
-                        if home and away:
-                            all_partidos.append({
-                                "fixture": {
-                                    "id": hash(home.text + away.text),
-                                    "date": fecha_str + "T" + (time.text if time else "00:00"),
-                                    "timestamp": 0
-                                },
-                                "league": {
-                                    "id": 0,
-                                    "name": league.text if league else "Liga",
-                                    "country": ""
-                                },
-                                "teams": {
-                                    "home": {"id": 0, "name": home.text.strip()},
-                                    "away": {"id": 0, "name": away.text.strip()}
-                                }
-                            })
-                    except:
-                        continue
-        except:
-            pass
+                        all_partidos.append({
+                            "fixture": {
+                                "id": event.get("idEvent", 0),
+                                "date": event.get("dateEvent", "") + "T" + event.get("strTime", "00:00"),
+                                "timestamp": 0
+                            },
+                            "league": {
+                                "id": 0,
+                                "name": event.get("strLeague", "Liga"),
+                                "country": ""
+                            },
+                            "teams": {
+                                "home": {"id": 0, "name": event.get("strHomeTeam", "Local")},
+                                "away": {"id": 0, "name": event.get("strAwayTeam", "Visita")}
+                            }
+                        })
+            except:
+                pass
+        
+        # Si sigue sin haber partidos, hacer scraping de Flashscore
+        if not all_partidos:
+            try:
+                url = "https://www.flashscore.com/"
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                }
+                response = requests.get(url, headers=headers, timeout=15)
+                
+                if response.status_code == 200:
+                    soup = BeautifulSoup(response.text, 'html.parser')
+                    
+                    # Buscar partidos en la página
+                    events = soup.find_all('div', class_='event__match')
+                    
+                    for event in events[:10]:
+                        try:
+                            home = event.find('div', class_='event__homeParticipant')
+                            away = event.find('div', class_='event__awayParticipant')
+                            time_elem = event.find('div', class_='event__time')
+                            league = event.find_previous('div', class_='event__league')
+                            
+                            if home and away:
+                                all_partidos.append({
+                                    "fixture": {
+                                        "id": hash(home.text + away.text),
+                                        "date": fecha_str + "T" + (time_elem.text if time_elem else "00:00"),
+                                        "timestamp": 0
+                                    },
+                                    "league": {
+                                        "id": 0,
+                                        "name": league.text if league else "Liga",
+                                        "country": ""
+                                    },
+                                    "teams": {
+                                        "home": {"id": 0, "name": home.text.strip()},
+                                        "away": {"id": 0, "name": away.text.strip()}
+                                    }
+                                })
+                        except:
+                            continue
+            except:
+                pass
     
     # Eliminar duplicados por fixture_id
     seen_ids = set()
