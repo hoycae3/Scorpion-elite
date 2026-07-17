@@ -215,32 +215,27 @@ def obtener_partidos_todas_apis(fecha_str):
     
     return unique_partidos
 
-# Prioridad de ligas segun interes mundial
+# Prioridad de ligas segun interes mundial (SIN DUPLICADOS)
 LIGAS_PRIORIDAD = {
     # TOP TIER - Mayor atencion mundial
     "champions league": 15,
     "premier league": 14,
     "la liga": 13,
-    "serie a": 12,
+    "serie a": 12,  # Italia
     "bundesliga": 11,
     "ligue 1": 10,
     
     # SECOND TIER - Alto interes
-    "champions league": 15,
-    "premier league": 14,
-    "la liga": 13,
-    "serie a": 12,
-    "bundesliga": 11,
-    "ligue 1": 10,
-    "europa league": 9,  # Prioridad alta
+    "europa league": 9,
     "libertadores": 8,
     "copa america": 8,
     "euro": 8,
     "world cup": 8,
     
     # THIRD TIER - Medio interes (ligas con muchos goles)
-    "brasileiro": 7,
-    "eredivisie": 7,  # Liga holandesa - muchos goles
+    "brasileiro": 7,  # Brasil Serie A
+    "brasil": 7,      # Alternativa para Brasil
+    "eredivisie": 7,
     "liga mx": 6,
     "major league soccer": 5,
     "primeira liga": 5,
@@ -253,8 +248,8 @@ LIGAS_PRIORIDAD = {
     "liga pro": 4,
     "paraguay": 4,
     "chile": 4,
-    "colombia": 4,  # Liga colombiana
-    "betplay": 4,   # Liga BetPlay Colombia
+    "colombia": 4,
+    "betplay": 4,
     "uruguay": 4,
     "peru": 4,
     "bolivia": 4,
@@ -263,6 +258,18 @@ LIGAS_PRIORIDAD = {
     "league two": 2,
     "usl": 2,
     "national league": 2,
+}
+
+# Mapeo de league_id a prioridad para evitar ambiguedades
+LIGAS_POR_ID = {
+    71: 7,   # Serie A Brasil (Brasileiro)
+    39: 14,  # Premier League
+    140: 13, # La Liga
+    135: 12, # Serie A Italia
+    78: 11,  # Bundesliga
+    61: 10,  # Ligue 1
+    253: 5,  # MLS
+    262: 6,  # Liga MX
 }
 
 def obtener_partidos_futbol(todos=False):
@@ -290,6 +297,7 @@ def obtener_partidos_futbol(todos=False):
                     home = fixture["teams"]["home"]["name"]
                     away = fixture["teams"]["away"]["name"]
                     league = fixture["league"]["name"].lower()
+                    league_id = fixture["league"]["id"]
                     country = fixture["league"]["country"]
                     hora = fixture["fixture"]["date"][11:16]
                     
@@ -301,12 +309,15 @@ def obtener_partidos_futbol(todos=False):
                     except:
                         hora_local = hora
                     
-                    # Calcular prioridad
-                    prioridad = 0
-                    for nombre_liga, prio in LIGAS_PRIORIDAD.items():
-                        if nombre_liga in league:
-                            prioridad = prio
-                            break
+                    # Calcular prioridad por league_id (mas preciso)
+                    prioridad = LIGAS_POR_ID.get(league_id, 0)
+                    
+                    # Si no hay prioridad por ID, buscar por nombre
+                    if prioridad == 0:
+                        for nombre_liga, prio in LIGAS_PRIORIDAD.items():
+                            if nombre_liga in league:
+                                prioridad = prio
+                                break
                     
                     # Combinar liga + pais
                     liga_completa = fixture["league"]["name"]
@@ -318,7 +329,8 @@ def obtener_partidos_futbol(todos=False):
                         "hora": hora_local,
                         "liga": liga_completa,
                         "prioridad": prioridad,
-                        "league_lower": league
+                        "league_lower": league,
+                        "league_id": league_id
                     })
                 except:
                     continue
@@ -369,6 +381,7 @@ def obtener_mejor_pick():
                     home = fixture["teams"]["home"]["name"]
                     away = fixture["teams"]["away"]["name"]
                     league = fixture["league"]["name"].lower()
+                    league_id = fixture["league"]["id"]
                     country = fixture["league"]["country"]
                     fixture_id = fixture["fixture"]["id"]
                     hora = fixture["fixture"]["date"][11:16]
@@ -381,12 +394,15 @@ def obtener_mejor_pick():
                     except:
                         hora_local = hora
                     
-                    # Calcular prioridad
-                    prioridad = 0
-                    for nombre_liga, prio in LIGAS_PRIORIDAD.items():
-                        if nombre_liga in league:
-                            prioridad = prio
-                            break
+                    # Calcular prioridad por league_id (mas preciso)
+                    prioridad = LIGAS_POR_ID.get(league_id, 0)
+                    
+                    # Si no hay prioridad por ID, buscar por nombre
+                    if prioridad == 0:
+                        for nombre_liga, prio in LIGAS_PRIORIDAD.items():
+                            if nombre_liga in league:
+                                prioridad = prio
+                                break
                     
                     # Seleccionar el de mayor prioridad
                     if prioridad > mejor_prioridad:
@@ -401,7 +417,8 @@ def obtener_mejor_pick():
                             "liga": liga_completa,
                             "hora": hora_local,
                             "prioridad": prioridad,
-                            "fixture_id": fixture_id
+                            "fixture_id": fixture_id,
+                            "league_id": league_id
                         }
                 except:
                     continue
