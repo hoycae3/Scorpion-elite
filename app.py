@@ -10,19 +10,6 @@ TITLE = '#a3e635'
 MUTED = '#94a3b8'
 ORANGE = '#f59e0b'
 
-# Login config
-ADMIN_USER = "admin"
-ADMIN_PASS = "scorpion_admin_2025"
-
-# Inicializar session state
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-if 'is_admin' not in st.session_state:
-    st.session_state.is_admin = False
-if 'user_name' not in st.session_state:
-    st.session_state.user_name = ""
-
-# CSS para full page
 st.markdown(f'''
 <style>
 .stApp {{background-color:{BG};}}
@@ -33,85 +20,7 @@ header {{display:none;}}
 </style>
 ''', unsafe_allow_html=True)
 
-# LOGIN
-if not st.session_state.logged_in:
-    col1, col2, col3 = st.columns([1,2,1])
-    with col2:
-        st.markdown(f'<div style="background:{CARD}; border:1px solid {BORDER}; border-radius:12px; padding:40px; margin-top:100px; text-align:center;">', unsafe_allow_html=True)
-        st.markdown(f'<div style="color:{ORANGE}; font-size:32px; font-weight:bold; margin-bottom:10px;">SCORPION ELITE</div>', unsafe_allow_html=True)
-        st.markdown(f'<div style="color:{MUTED}; font-size:12px; margin-bottom:30px;">ANALISIS Y TENDENCIAS DEPORTIVAS</div>', unsafe_allow_html=True)
-        
-        username = st.text_input("Usuario", placeholder="Ingrese usuario")
-        password = st.text_input("Contraseña", type="password", placeholder="Ingrese contrasena")
-        
-        if st.button("INICIAR SESION", use_container_width=True):
-            if username == ADMIN_USER and password == ADMIN_PASS:
-                st.session_state.logged_in = True
-                st.session_state.is_admin = True
-                st.session_state.user_name = username
-                st.rerun()
-            else:
-                st.error("Usuario o contrasena incorrectos")
-        
-        st.markdown(f'<div style="color:{MUTED}; font-size:10px; margin-top:20px;">Scorpion Elite 2025 - Solo uso informativo</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-    st.stop()
-
-# ADMIN VIEW
-if st.session_state.is_admin:
-    st.markdown(f'''
-    <div style="background:{CARD}; padding:15px 30px; border-bottom:1px solid {BORDER}; display:flex; justify-content:space-between; align-items:center;">
-        <div>
-            <div style="color:{ORANGE}; font-size:24px; font-weight:bold;">PANEL DE ADMINISTRADOR</div>
-            <div style="color:{MUTED}; font-size:10px;">Bienvenido, {st.session_state.user_name}</div>
-        </div>
-        <div style="display:flex; gap:10px;">
-            <span style="border:1px solid {BORDER}; color:{MUTED}; padding:8px 16px; border-radius:4px; font-size:12px;">Gestionar Picks</span>
-            <span style="border:1px solid {BORDER}; color:{MUTED}; padding:8px 16px; border-radius:4px; font-size:12px;">Usuarios</span>
-            <span style="border:1px solid {BORDER}; color:{MUTED}; padding:8px 16px; border-radius:4px; font-size:12px;">Estadisticas</span>
-        </div>
-    </div>
-    ''', unsafe_allow_html=True)
-    
-    tab1, tab2, tab3 = st.tabs(["Dashboard", "Gestionar Picks", "Usuarios"])
-    
-    with tab1:
-        st.markdown(f'<div style="padding:20px; color:white;"><h3>Estadisticas Generales</h3>', unsafe_allow_html=True)
-        m1, m2, m3, m4 = st.columns(4)
-        with m1: st.metric("Usuarios Totales", "156")
-        with m2: st.metric("Picks Publicados", "89")
-        with m3: st.metric("Aciertos", "72%")
-        with m4: st.metric("Ingresos", "$1,250")
-    
-    with tab2:
-        st.markdown(f'<div style="padding:20px; color:white;"><h3>Crear Pick</h3>', unsafe_allow_html=True)
-        col_a, col_b = st.columns(2)
-        with col_a:
-            liga = st.selectbox("Liga", ["Premier League", "LaLiga", "Serie A", "Bundesliga", "Ligue 1"])
-            partido = st.text_input("Partido", "Manchester City vs Arsenal")
-            mercado = st.selectbox("Mercado", ["Resultado Final", "Over/Under", "Ambos marcan", "Hándicap"])
-        with col_b:
-            cuota = st.number_input("Cuota", min_value=1.01, max_value=100.0, value=1.91)
-            rango = st.selectbox("Rango", ["A+", "A", "B", "C"])
-            confianza = st.slider("Confianza", 50, 100, 85)
-        
-        if st.button("Publicar Pick"):
-            st.success("Pick publicado exitosamente!")
-    
-    with tab3:
-        st.markdown(f'<div style="padding:20px; color:white;"><h3>Gestion de Usuarios</h3>', unsafe_allow_html=True)
-        st.table({"Usuario": ["juan123", "maria456", "pedro789"], "Plan": ["Premium", "Basico", "Premium"], "Estado": ["Activo", "Activo", "Suspendido"]})
-    
-    if st.button("Cerrar Sesion"):
-        st.session_state.logged_in = False
-        st.session_state.is_admin = False
-        st.session_state.user_name = ""
-        st.rerun()
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    st.stop()
-
-# DASHBOARD (Usuario normal)
+# HEADER
 st.markdown(f'''
 <div style="background:{CARD}; padding:15px 30px; border-bottom:1px solid {BORDER}; display:flex; justify-content:space-between; align-items:center;">
     <div><div style="color:{ORANGE}; font-size:24px; font-weight:bold;">SCORPION ELITE</div><div style="color:{MUTED}; font-size:10px; letter-spacing:2px;">ANALISIS Y TENDENCIAS DEPORTIVAS</div></div>
@@ -121,10 +30,9 @@ st.markdown(f'''
         <span style="border:1px solid {BORDER}; color:{MUTED}; padding:8px 16px; border-radius:4px; font-size:12px;">TENIS</span>
         <span style="border:1px solid {BORDER}; color:{MUTED}; padding:8px 16px; border-radius:4px; font-size:12px;">MMA</span>
     </div>
-    <div style="display:flex; gap:10px; align-items:center;">
-        <span style="color:{MUTED}; font-size:12px;">Bienvenido, {st.session_state.user_name}</span>
+    <div style="display:flex; gap:10px;">
+        <input type="text" placeholder="Buscar..." style="background:{BG}; border:1px solid {BORDER}; color:white; padding:8px 12px; border-radius:4px; font-size:12px;">
         <span style="border:1px solid {BORDER}; color:{MUTED}; padding:8px 12px; border-radius:4px; font-size:12px;">HOY</span>
-        <span style="border:1px solid {BORDER}; color:{MUTED}; padding:8px 12px; border-radius:4px; font-size:12px; cursor:pointer;">Salir</span>
     </div>
 </div>
 ''', unsafe_allow_html=True)
@@ -153,7 +61,7 @@ with c2:
     st.markdown(f'<div style="text-align:center; color:{MUTED}; font-size:11px; margin-bottom:10px;">Premier League - Jornada 36</div>', unsafe_allow_html=True)
     st.markdown(f'<div style="text-align:center; margin:15px 0;"><span style="font-size:16px; font-weight:bold;">Manchester City</span> <span style="color:{MUTED};">VS</span> <span style="font-size:16px; font-weight:bold;">Arsenal</span></div>', unsafe_allow_html=True)
     st.markdown(f'<div style="background:{BG}; border:1px solid {BORDER}; border-radius:6px; padding:12px; margin-bottom:15px; display:flex; justify-content:space-between;"><div><div style="color:{MUTED}; font-size:9px;">MERCADO</div><div style="color:{MUTED}; font-size:11px;">Resultado Final</div><div style="font-weight:bold; color:white;">Manchester City Gana</div></div><div style="text-align:right;"><div style="color:{MUTED}; font-size:9px;">CUOTA</div><div><span style="font-size:22px; font-weight:bold; color:white;">1.91</span> <span style="background:#1e293b; color:white; font-size:10px; padding:2px 8px; border-radius:4px;">Pinnacle</span></div></div></div>', unsafe_allow_html=True)
-    m1,m2,m3,m4 = st.columns(4)
+    m1, m2, m3, m4 = st.columns(4)
     with m1: st.markdown(f'<div style="text-align:center;"><div style="color:{MUTED}; font-size:9px;">PROBABILIDAD</div><div style="color:{GREEN}; font-size:20px; font-weight:bold;">72%</div></div>', unsafe_allow_html=True)
     with m2: st.markdown(f'<div style="text-align:center;"><div style="color:{MUTED}; font-size:9px;">CONFIANZA</div><div style="color:{GREEN}; font-size:20px; font-weight:bold;">92%</div><div style="color:{GREEN}; font-size:8px;">MUY ALTA</div></div>', unsafe_allow_html=True)
     with m3: st.markdown(f'<div style="text-align:center;"><div style="color:{MUTED}; font-size:9px;">VALOR</div><div style="color:{GREEN}; font-size:20px; font-weight:bold;">+19%</div><div style="color:{GREEN}; font-size:8px;">VALUE</div></div>', unsafe_allow_html=True)
@@ -174,14 +82,7 @@ with c3:
     for o in odds:
         cls = f'color:{ORANGE}; font-weight:bold;' if o[4] else 'color:white;'
         st.markdown(f'<tr style="border-bottom:1px solid {BORDER};"><td style="padding:8px; color:white; font-weight:bold;">{o[0]}</td><td style="text-align:center; padding:8px; {cls}">{o[1]}</td><td style="text-align:center; padding:8px; {cls}">{o[2]}</td><td style="text-align:center; padding:8px; {cls}">{o[3]}</td><td style="text-align:center; padding:8px; {cls}">{"*" if o[4] else "-"}</td></tr>', unsafe_allow_html=True)
-    st.markdown('</table><div style="text-align:center; margin-top:15px;"><a href="#" style="color:#22c55e; font-size:11px;">Ver todas las cuotas</a></div></div>', unsafe_allow_html=True)
+    st.markdown(f'</table><div style="text-align:center; margin-top:15px;"><a href="#" style="color:{GREEN}; font-size:11px;">Ver todas las cuotas</a></div></div>', unsafe_allow_html=True)
 
 # FOOTER
 st.markdown(f'<div style="text-align:center; padding:20px; border-top:1px solid {BORDER}; margin-top:20px;"><span style="color:{MUTED}; font-size:11px;">Scorpion Elite 2025 - Solo uso informativo</span></div>', unsafe_allow_html=True)
-
-# Logout button
-if st.button("Cerrar Sesion"):
-    st.session_state.logged_in = False
-    st.session_state.is_admin = False
-    st.session_state.user_name = ""
-    st.rerun()
