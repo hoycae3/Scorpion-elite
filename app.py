@@ -44,14 +44,11 @@ c1, c2, c3 = st.columns(3)
 matches = [
     ('Manchester City<br>Arsenal', '16:00', 'Premier League'),
     ('Real Madrid<br>Barcelona', '17:30', 'LaLiga'),
-    ('Bayern<br>Dortmund', '14:30', 'Bundesliga'),
-    ('PSG<br>Lyon', '15:00', 'Ligue 1'),
-    ('Inter<br>AC Milan', '20:45', 'Serie A'),
 ]
 
 with c1:
     st.markdown(f'<div style="background:{CARD}; border:1px solid {BORDER}; border-radius:8px; padding:14px; margin:8px;">', unsafe_allow_html=True)
-    st.markdown(f'<div style="color:{TITLE}; font-size:12px; font-weight:bold; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid {BORDER};">PARTIDOS DESTACADOS</div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="color:{TITLE}; font-size:12px; font-weight:bold; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid {BORDER};">PARTIDO HORA Y LIGA</div>', unsafe_allow_html=True)
     for m in matches:
         st.markdown(f'<div style="background:{BG}; padding:8px; margin-bottom:6px; border-radius:4px; border-left:3px solid {ORANGE};"><div style="font-weight:bold; font-size:11px; color:white;">{m[0]}</div><div style="display:flex; justify-content:space-between; margin-top:3px;"><span style="color:{MUTED}; font-size:9px;">{m[2]}</span><span style="color:{MUTED}; font-size:9px;">{m[1]}</span></div></div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
