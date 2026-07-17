@@ -1,5 +1,6 @@
 import streamlit as st
 from datetime import date
+from datetime import datetime
 
 st.set_page_config(page_title='SCORPION ELITE', layout='wide')
 
@@ -156,10 +157,24 @@ with col_center:
             st.session_state.deporte = "TENIS"
 
 with col_right:
-    c1, c2 = st.columns([1.2, 1])
+    c1, c2 = st.columns([1.5, 1])
     with c1:
-        fecha = st.date_input("", value=st.session_state.fecha_seleccionada, key="calendario", help="Seleccionar fecha", label_visibility="collapsed")
-        st.session_state.fecha_seleccionada = fecha
+        # Selector de fecha en formato dd/mm/yyyy
+        dias = list(range(1, 32))
+        meses = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
+        meses_nombres = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+        anios = [2025, 2026, 2027]
+        
+        hoy = date.today()
+        col_d, col_m, col_a = st.columns(3)
+        with col_d:
+            dia = st.selectbox("", dias, index=hoy.day-1, key="dia_select")
+        with col_m:
+            mes_idx = st.selectbox("", range(12), index=hoy.month-1, key="mes_select", format_func=lambda x: meses_nombres[x])
+        with col_a:
+            anio = st.selectbox("", anios, index=hoy.year-2025, key="anio_select")
+        
+        st.session_state.fecha_seleccionada = date(anio, mes_idx+1, dia)
     with c2:
         if st.button("LOGIN", key="login_btn"):
             st.session_state.show_login = True
