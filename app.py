@@ -159,8 +159,8 @@ with col_center:
 with col_right:
     c1, c2 = st.columns([1.5, 1])
     with c1:
-        # Calendario nativo
-        fecha = st.date_input("📅 dd/mm/yyyy", value=st.session_state.fecha_seleccionada, key="calendario")
+        # Calendario nativo sin label
+        fecha = st.date_input("", value=st.session_state.fecha_seleccionada, key="calendario", label_visibility="collapsed")
         st.session_state.fecha_seleccionada = fecha
     with c2:
         if st.button("LOGIN", key="login_btn"):
