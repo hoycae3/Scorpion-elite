@@ -5773,32 +5773,84 @@ def pantalla_principal_unificada():
     with col_login_btn:
         st.markdown("<div style='padding-top: 5px;'></div>", unsafe_allow_html=True)
         
-        # CSS para popover compacto
+        # CSS estilo Flashscore - minimalista y elegante
         st.markdown("""
         <style>
         [data-testid="stPopover"] {
-            width: 260px !important;
+            width: 300px !important;
+            border: none !important;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
         }
-        .stTextInput input {
-            font-size: 0.8rem !important;
-            padding: 4px 8px !important;
+        .login-flash {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #0f3460;
         }
-        .stTextInput > div > div > label {
-            font-size: 0.75rem !important;
+        .login-logo {
+            text-align: center;
+            margin-bottom: 15px;
         }
-        [data-testid="stPopover"] .stTextInput {
-            margin-bottom: 5px !important;
+        .login-logo span {
+            font-size: 2rem;
         }
-        [data-testid="stPopover"] .stButton {
-            margin-top: 5px !important;
+        .login-logo h3 {
+            color: #e94560;
+            margin: 5px 0 0 0;
+            font-size: 1rem;
+            letter-spacing: 2px;
+        }
+        .login-input {
+            width: 100%;
+            padding: 10px 12px;
+            background: #0f3460;
+            border: 1px solid #1a1a2e;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        .login-input:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        .login-btn {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #e94560 0%, #c23a51 100%);
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        .login-btn:hover {
+            background: linear-gradient(135deg, #c23a51 0%, #e94560 100%);
         }
         </style>
         """, unsafe_allow_html=True)
         
         with st.popover("🔐 Login"):
-            usr = st.text_input("User", placeholder="admin", label_visibility="collapsed")
-            pwd = st.text_input("Pass", type="password", placeholder="******", label_visibility="collapsed")
-            if st.button("Entrar", use_container_width=True):
+            st.markdown("""
+            <div class="login-flash">
+                <div class="login-logo">
+                    <span>🦂</span>
+                    <h3>SCORPION</h3>
+                </div>
+                <input type="text" class="login-input" id="usr" placeholder="Usuario" autocomplete="off">
+                <input type="password" class="login-input" id="pwd" placeholder="Contraseña" autocomplete="off">
+                <button class="login-btn" onclick="document.getElementById('loginBtn').click()">ENTRAR</button>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Campos ocultos para Streamlit
+            usr = st.text_input("u", label_visibility="collapsed", key="u")
+            pwd = st.text_input("p", type="password", label_visibility="collapsed", key="p")
+            
+            if st.button("→", key="loginBtn"):
                 if usr and pwd:
                     if usr.lower() == "admin" and pwd == "scorpion_admin_2025":
                         st.session_state.logged_in = True
