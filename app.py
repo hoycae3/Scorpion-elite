@@ -124,7 +124,7 @@ if st.session_state.is_admin:
     st.stop()
 
 # HEADER con columnas - COMPACTO
-col_left, col_center, col_right = st.columns([2.5, 3.5, 2])
+col_left, col_center, col_right = st.columns([2.5, 4, 1.5])
 
 with col_left:
     st.markdown(f'''
@@ -140,7 +140,7 @@ with col_left:
     ''', unsafe_allow_html=True)
 
 with col_center:
-    s1, s2, s3 = st.columns([1, 1.2, 1])
+    s1, s2, s3 = st.columns([1, 1.3, 1])
     with s1:
         if st.button("⚽ FUTBOL", key="btn_futbol", use_container_width=True):
             st.session_state.deporte = "FUTBOL"
@@ -152,9 +152,9 @@ with col_center:
             st.session_state.deporte = "TENIS"
 
 with col_right:
-    c1, c2 = st.columns(2)
+    c1, c2 = st.columns([1.5, 1])
     with c1:
-        fecha = st.date_input("📅", value=st.session_state.fecha_seleccionada, key="calendario", help="Seleccionar fecha")
+        fecha = st.date_input("", value=st.session_state.fecha_seleccionada, key="calendario", help="Seleccionar fecha", label_visibility="collapsed")
         st.session_state.fecha_seleccionada = fecha
     with c2:
         if st.button("🔓", key="login_btn", use_container_width=True):
