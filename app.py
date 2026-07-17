@@ -187,6 +187,9 @@ PARTIDOS = {
     "TENIS": []
 }
 
+# API Keys
+FOOTBALL_DATA_KEY = "21a9a19125f3467c86579b79f71d359c"
+
 def obtener_partidos_futbol():
     """Obtiene partidos de futbol para hoy desde internet"""
     import requests
@@ -254,7 +257,7 @@ def obtener_partidos_futbol():
             
             url = f"https://v3.football.api-sports.io/fixtures?date={fecha_str}"
             headers = {
-                "x-apisports-key": "2f1a93c44e3e2548945bb9dfc08bc4f4"
+                "x-apisports-key": FOOTBALL_DATA_KEY
             }
             response = requests.get(url, headers=headers, timeout=10)
             
@@ -355,83 +358,221 @@ def obtener_partidos_baloncesto():
     """Obtiene partidos de baloncesto para hoy"""
     import requests
     from bs4 import BeautifulSoup
+    from datetime import datetime, timedelta
     
     partidos = []
     
+    # Fuente 1: API-Football Basketball
     try:
-        url = "https://www.flashscore.com.mx/baloncesto/"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        }
+        hoy = datetime.now()
+        fecha_str = hoy.strftime("%Y-%m-%d")
         
+        # Buscar NBA y basketball leagues
+        url = f"https://v3.football.api-sports.io/fixtures?date={fecha_str}&sport=basketball"
+        headers = {"x-apisports-key": FOOTBALL_DATA_KEY}
         response = requests.get(url, headers=headers, timeout=10)
         
         if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
-            eventos = soup.find_all('div', class_='event__match')
-            
-            for evento in eventos[:5]:
-                try:
-                    hora_elem = evento.find('div', class_='event__time')
-                    hora = hora_elem.text.strip() if hora_elem else "--:--"
+            data = response.json()
+            if data.get("response"):
+                for fixture in data["response"][:10]:
+                    home = fixture["teams"]["home"]["name"]
+                    away = fixture["teams"]["away"]["name"]
+                    league = fixture["league"]["name"]
+                    hora = fixture["fixture"]["date"][11:16]
                     
-                    equipos = evento.find_all('div', class_='event__participant')
-                    if len(equipos) >= 2:
-                        partidos.append({
-                            "equipo": f"{equipos[0].text.strip()} vs {equipos[1].text.strip()}",
-                            "hora": hora,
-                            "liga": "Baloncesto"
-                        })
-                except:
-                    continue
-    except:
-        pass
+                    try:
+                        dt = datetime.strptime(hora, "%H:%M")
+                        dt = dt + timedelta(hours=-3)
+                        hora = dt.strftime("%H:%M")
+                    except:
+                        pass
+                    
+                    partidos.append({
+                        "equipo": f"{home} vs {away}",
+                        "hora": hora,
+                        "liga": league
+                    })
+    except Exception as e:
+        print(f"Error API Basketball: {e}")
     
-    if not partidos:
-        partidos = [{"equipo": "Sin datos disponibles", "hora": "--:--", "liga": "NBA/Euroleague"}]
+    # Fuente 2: Sofascore Basketball
+    if len(partidos) < 3:
+        try:
+            url = "https://www.sofascore.com/api/v1/sport/basketball/events/live"
+            headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+            response = requests.get(url, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                for event in data.get("events", [])[:10]:
+                    home = event.get("homeTeam", {}).get("shortName", "Local")
+                    away = event.get("awayTeam", {}).get("shortName", "Visita")
+                    league = event.get("tournament", {}).get("name", "Basketball")
+                    timestamp = event.get("startTimestamp", 0)
+                    
+                    if timestamp:
+                        hora = datetime.fromtimestamp(timestamp).strftime("%H:%M")
+                    else:
+                        hora = "--:--"
+                    
+                    partidos.append({
+                        "equipo": f"{home} vs {away}",
+                        "hora": hora,
+                        "liga": league
+                    })
+        except Exception as e:
+            print(f"Error Sofascore Basketball: {e}")
     
-    return partidos
+    # Fuente 3: Flashscore Basketball
+    if len(partidos) < 3:
+        try:
+            url = "https://www.flashscore.com.mx/baloncesto/"
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            response = requests.get(url, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, 'html.parser')
+                eventos = soup.find_all('div', class_='event__match')
+                
+                for evento in eventos[:6]:
+                    try:
+                        hora_elem = evento.find('div', class_='event__time')
+                        hora = hora_elem.text.strip() if hora_elem else "--:--"
+                        
+                        equipos = evento.find_all('div', class_='event__participant')
+                        if len(equipos) >= 2:
+                            partidos.append({
+                                "equipo": f"{equipos[0].text.strip()} vs {equipos[1].text.strip()}",
+                                "hora": hora,
+                                "liga": "Basketball"
+                            })
+                    except:
+                        continue
+        except Exception as e:
+            print(f"Error Flashscore Basketball: {e}")
+    
+    # Eliminar duplicados
+    seen = set()
+    unique_partidos = []
+    for p in partidos:
+        key = p["equipo"]
+        if key not in seen:
+            seen.add(key)
+            unique_partidos.append(p)
+    
+    if not unique_partidos:
+        unique_partidos = [{"equipo": "Sin partidos disponibles", "hora": "--:--", "liga": "NBA/Euroleague"}]
+    
+    return unique_partidos[:8]
 
 def obtener_partidos_tenis():
     """Obtiene partidos de tenis para hoy"""
     import requests
     from bs4 import BeautifulSoup
+    from datetime import datetime, timedelta
     
     partidos = []
     
+    # Fuente 1: Sofascore Tennis
     try:
-        url = "https://www.flashscore.com.mx/tenis/"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        }
-        
+        url = "https://www.sofascore.com/api/v1/sport/tennis/events/live"
+        headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
         response = requests.get(url, headers=headers, timeout=10)
         
         if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
-            eventos = soup.find_all('div', class_='event__match')
+            data = response.json()
+            for event in data.get("events", [])[:10]:
+                home = event.get("homeTeam", {}).get("shortName", "Jugador 1")
+                away = event.get("awayTeam", {}).get("shortName", "Jugador 2")
+                league = event.get("tournament", {}).get("name", "Tenis")
+                timestamp = event.get("startTimestamp", 0)
+                
+                if timestamp:
+                    hora = datetime.fromtimestamp(timestamp).strftime("%H:%M")
+                else:
+                    hora = "--:--"
+                
+                partidos.append({
+                    "equipo": f"{home} vs {away}",
+                    "hora": hora,
+                    "liga": league
+                })
+    except Exception as e:
+        print(f"Error Sofascore Tennis: {e}")
+    
+    # Fuente 2: Flashscore Tennis
+    if len(partidos) < 3:
+        try:
+            url = "https://www.flashscore.com.mx/tenis/"
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            response = requests.get(url, headers=headers, timeout=10)
             
-            for evento in eventos[:5]:
-                try:
-                    hora_elem = evento.find('div', class_='event__time')
-                    hora = hora_elem.text.strip() if hora_elem else "--:--"
-                    
-                    nombres = evento.find_all('div', class_='event__participant')
-                    if len(nombres) >= 2:
-                        partidos.append({
-                            "equipo": f"{nombres[0].text.strip()} vs {nombres[1].text.strip()}",
-                            "hora": hora,
-                            "liga": "Tenis ATP/WTA"
-                        })
-                except:
-                    continue
-    except:
-        pass
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, 'html.parser')
+                eventos = soup.find_all('div', class_='event__match')
+                
+                for evento in eventos[:6]:
+                    try:
+                        hora_elem = evento.find('div', class_='event__time')
+                        hora = hora_elem.text.strip() if hora_elem else "--:--"
+                        
+                        nombres = evento.find_all('div', class_='event__participant')
+                        if len(nombres) >= 2:
+                            partidos.append({
+                                "equipo": f"{nombres[0].text.strip()} vs {nombres[1].text.strip()}",
+                                "hora": hora,
+                                "liga": "ATP/WTA"
+                            })
+                    except:
+                        continue
+        except Exception as e:
+            print(f"Error Flashscore Tennis: {e}")
     
-    if not partidos:
-        partidos = [{"equipo": "Sin datos disponibles", "hora": "--:--", "liga": "ATP/WTA"}]
+    # Fuente 3: WorldFootball Tennis (si existe)
+    if len(partidos) < 3:
+        try:
+            url = "https://www.worldfootball.net/matches-today/tennis/"
+            headers = {"User-Agent": "Mozilla/5.0"}
+            response = requests.get(url, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, 'html.parser')
+                eventos = soup.find_all('tr', class_=['row_today'])
+                
+                for evento in eventos[:6]:
+                    try:
+                        equipos = evento.find_all('td', class_='team')
+                        zeit = evento.find('td', class_='zeit')
+                        
+                        if len(equipos) >= 2 and zeit:
+                            local = equipos[0].get_text(strip=True)
+                            visita = equipos[1].get_text(strip=True)
+                            hora = zeit.get_text(strip=True)
+                            
+                            partidos.append({
+                                "equipo": f"{local} vs {visita}",
+                                "hora": hora,
+                                "liga": "Tennis"
+                            })
+                    except:
+                        continue
+        except Exception as e:
+            print(f"Error WorldFootball Tennis: {e}")
     
-    return partidos
+    # Eliminar duplicados
+    seen = set()
+    unique_partidos = []
+    for p in partidos:
+        key = p["equipo"]
+        if key not in seen:
+            seen.add(key)
+            unique_partidos.append(p)
+    
+    if not unique_partidos:
+        unique_partidos = [{"equipo": "Sin partidos disponibles", "hora": "--:--", "liga": "ATP/WTA"}]
+    
+    return unique_partidos[:8]
 
 def obtener_partidos_en_vivo(deporte):
     """Función general para obtener partidos en vivo"""
