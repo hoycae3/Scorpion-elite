@@ -129,14 +129,15 @@ st.markdown(f'''
     <div style="display:flex; gap:8px; align-items:center;">
         <input type="text" placeholder="Buscar..." style="background:{BG}; border:1px solid {BORDER}; color:white; padding:6px 10px; border-radius:4px; font-size:11px; width:140px;">
         <span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 10px; border-radius:4px; font-size:11px;">HOY</span>
-        <span style="border:1px solid {ORANGE}; color:{ORANGE}; padding:6px 12px; border-radius:4px; font-size:11px; cursor:pointer;" onclick="document.querySelector('[data-testid]').click()">LOGIN</span>
     </div>
 </div>
 ''', unsafe_allow_html=True)
 
-if st.button("LOGIN", key="login_btn"):
-    st.session_state.show_login = True
-    st.rerun()
+col_login = st.columns([5, 1])
+with col_login[1]:
+    if st.button("🔓 LOGIN", key="login_btn", use_container_width=True):
+        st.session_state.show_login = True
+        st.rerun()
 
 # 3 COLUMNAS
 c1, c2, c3 = st.columns(3)
