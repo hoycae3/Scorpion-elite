@@ -5773,13 +5773,13 @@ def pantalla_principal_unificada():
     with col_login_btn:
         st.markdown("<div style='padding-top: 5px;'></div>", unsafe_allow_html=True)
         
-        # CSS ultra compacto
+        # CSS mini
         st.markdown("""
         <style>
-        [data-testid="stPopover"] {width: 100px !important;}
-        .stTextInput input {font-size: 10px !important; padding: 4px 6px !important;}
-        .stTextInput {margin-bottom: 3px !important;}
-        .stButton button {font-size: 10px !important; padding: 4px !important;}
+        [data-testid="stPopover"] {width: 90px !important;}
+        .stTextInput input {font-size: 9px !important; padding: 2px 4px !important; height: 20px !important;}
+        .stTextInput {margin-bottom: 2px !important;}
+        .stButton button {font-size: 9px !important; padding: 2px !important; height: 22px !important;}
         </style>
         """, unsafe_allow_html=True)
         
