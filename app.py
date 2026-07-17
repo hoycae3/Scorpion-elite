@@ -1,6 +1,9 @@
 import streamlit as st
 from datetime import date
 from datetime import datetime
+import sys
+sys.path.append('/workspace/project/Scorpion-elite')
+from scorpion.models.math import MotorAnalisis
 
 st.set_page_config(page_title='SCORPION ELITE', layout='wide')
 
@@ -145,13 +148,11 @@ with col_left:
     ''', unsafe_allow_html=True)
 
 with col_center:
-    s1, s2 = st.columns(2)
-    with s1:
-        if st.button("⚽ FUTBOL", key="btn_futbol"):
-            st.session_state.deporte = "FUTBOL"
-    with s2:
-        if st.button("🏀 BALONCESTO", key="btn_basket"):
-            st.session_state.deporte = "BALONCESTO"
+    if st.button("⚽ FUTBOL", key="btn_futbol"):
+        st.session_state.deporte = "FUTBOL"
+    # with s2:
+    #     if st.button("🏀 BALONCESTO", key="btn_basket"):
+    #         st.session_state.deporte = "BALONCESTO"
     # with s3:
     #     if st.button("🎾 TENIS", key="btn_tenis"):
     #         st.session_state.deporte = "TENIS"
@@ -317,6 +318,124 @@ def obtener_partidos_futbol(todos=False):
         unique_partidos = unique_partidos[:3]
     
     return unique_partidos
+
+
+def obtener_mejor_pick():
+    """Obtiene el mejor partido del día y lo analiza con los modelos matemáticos"""
+    import requests
+    from datetime import datetime, timedelta
+    
+    mejor_partido = None
+    mejor_prioridad = 0
+    
+    # Fuente: API-Football - buscar TODOS los partidos para encontrar el mejor
+    try:
+        hoy = datetime.now()
+        fecha_str = hoy.strftime("%Y-%m-%d")
+        
+        url = f"https://v3.football.api-sports.io/fixtures?date={fecha_str}"
+        headers = {"x-apisports-key": API_FOOTBALL_KEY}
+        response = requests.get(url, headers=headers, timeout=15)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            if data.get("response"):
+                for fixture in data["response"]:
+                    try:
+                        home = fixture["teams"]["home"]["name"]
+                        away = fixture["teams"]["away"]["name"]
+                        league = fixture["league"]["name"].lower()
+                        country = fixture["league"]["country"]
+                        hora = fixture["fixture"]["date"][11:16]
+                        
+                        # Convertir UTC a UTC-3 (America)
+                        try:
+                            dt = datetime.strptime(hora, "%H:%M")
+                            dt = dt + timedelta(hours=-3)
+                            hora_local = dt.strftime("%H:%M")
+                        except:
+                            hora_local = hora
+                        
+                        # Calcular prioridad
+                        prioridad = 0
+                        for nombre_liga, prio in LIGAS_PRIORIDAD.items():
+                            if nombre_liga in league:
+                                prioridad = prio
+                                break
+                        
+                        # Seleccionar el de mayor prioridad
+                        if prioridad > mejor_prioridad:
+                            mejor_prioridad = prioridad
+                            liga_completa = fixture["league"]["name"]
+                            if country:
+                                liga_completa = f"{liga_completa} ({country})"
+                            
+                            mejor_partido = {
+                                "home": home,
+                                "away": away,
+                                "liga": liga_completa,
+                                "hora": hora_local,
+                                "prioridad": prioridad
+                            }
+                    except:
+                        continue
+    except Exception as e:
+        print(f"Error obteniendo mejor pick: {e}")
+    
+    if not mejor_partido:
+        return None
+    
+    # Analizar con MotorAnalisis
+    try:
+        motor = MotorAnalisis()
+        analisis = motor.analizar(
+            liga=mejor_partido["liga"],
+            usar_datos_reales=False
+        )
+        
+        # Calcular cuota estimada (fair odds)
+        pick = analisis.pick_clave
+        
+        # Determinar cuota basada en el pick
+        if "Victoria Local" in pick:
+            prob = analisis.p1
+        elif "Victoria Visitante" in pick:
+            prob = analisis.p2
+        elif "Over 2.5" in pick:
+            prob = analisis.over25
+        elif "Over 1.5" in pick:
+            prob = analisis.over15
+        elif "BTTS" in pick:
+            prob = analisis.btts_si
+        else:
+            prob = analisis.px
+        
+        cuota = round(100 / prob, 2) if prob > 0 else 1.50
+        
+        # Calcular valor (asumiendo cuota promedio del mercado)
+        cuota_mercado = cuota * 1.05  # Margen típico
+        valor = round(((cuota / cuota_mercado) - 1) * 100, 1)
+        
+        return {
+            "liga": mejor_partido["liga"],
+            "home": mejor_partido["home"],
+            "away": mejor_partido["away"],
+            "hora": mejor_partido["hora"],
+            "pick": pick,
+            "cuota": cuota,
+            "probabilidad": prob,
+            "confianza": analisis.confianza,
+            "valor": f"{'+' if valor > 0 else ''}{valor}%",
+            "rango": analisis.rango,
+            "over25": analisis.over25,
+            "btts": analisis.btts_si,
+            "xg": f"{analisis.xl:.1f} - {analisis.xv:.1f}"
+        }
+    except Exception as e:
+        print(f"Error analisis: {e}")
+        return None
+
 
 # Prioridad de competiciones de baloncesto
 BALONCESTO_PRIORIDAD = {
@@ -526,6 +645,9 @@ icono = DEPORTE_ICONS.get(deporte, "⚽")
 # Obtener partidos en tiempo real
 partidos = obtener_partidos_en_vivo(deporte)
 
+# Obtener el Mejor Pick del Día (analizado con modelos matemáticos)
+mejor_pick = obtener_mejor_pick()
+
 with c1:
     # Construir filas de la tabla
     filas_html = ""
@@ -552,15 +674,35 @@ with c1:
     st.markdown(tabla_html, unsafe_allow_html=True)
 
 with c2:
-    # Variables para datos del pick (conectar con API/DB)
-    PICK_LIGA = "Liga"  # {{liga}}
-    PICK_LOCAL = "Equipo Local"  # {{equipo_local}}
-    PICK_VISITA = "Equipo Visita"  # {{equipo_visita}}
-    PICK_NOMBRE = "Pick"  # {{pick}} - Ej: Gana Arsenal, Over 2.5, Corners +9.5
-    PICK_CUOTA = "0.00"  # {{cuota}}
-    PICK_PROB = "0"  # {{probabilidad}}
-    PICK_CONF = "0"  # {{confianza}}
-    PICK_VALOR = "+0%"  # {{valor}}
+    # Usar datos del analisis matematico
+    if mejor_pick:
+        PICK_LIGA = mejor_pick.get("liga", "Liga")
+        PICK_LOCAL = mejor_pick.get("home", "Local")
+        PICK_VISITA = mejor_pick.get("away", "Visita")
+        PICK_NOMBRE = mejor_pick.get("pick", "Pick")
+        PICK_CUOTA = f"{mejor_pick.get('cuota', 1.50):.2f}"
+        PICK_PROB = f"{mejor_pick.get('probabilidad', 0):.0f}"
+        PICK_CONF = f"{mejor_pick.get('confianza', 0):.0f}"
+        PICK_VALOR = mejor_pick.get("valor", "+0%")
+        PICK_HORA = mejor_pick.get("hora", "--:--")
+        PICK_XG = mejor_pick.get("xg", "0.0 - 0.0")
+        PICK_RANGO = mejor_pick.get("rango", "D")
+        PICK_OVER25 = f"{mejor_pick.get('over25', 0):.0f}%"
+        PICK_BTTS = f"{mejor_pick.get('btts', 0):.0f}%"
+    else:
+        PICK_LIGA = "Sin partidos"
+        PICK_LOCAL = "Sin datos"
+        PICK_VISITA = ""
+        PICK_NOMBRE = "Sin analisis"
+        PICK_CUOTA = "0.00"
+        PICK_PROB = "0"
+        PICK_CONF = "0"
+        PICK_VALOR = "+0%"
+        PICK_HORA = "--:--"
+        PICK_XG = "0.0 - 0.0"
+        PICK_RANGO = "D"
+        PICK_OVER25 = "0%"
+        PICK_BTTS = "0%"
     
     st.markdown(f'''
     <div style="background:{BG}; border:2px solid {ORANGE}; border-radius:10px; padding:12px;">
@@ -568,13 +710,19 @@ with c2:
             ⭐ MEJOR PICK DEL DÍA
         </div>
         <div style="background:{BG}; border:1px solid {ORANGE}; border-radius:6px; padding:10px;">
-            <div style="text-align:center; color:{GREEN}; font-size:10px; margin-bottom:6px;">🏆 {PICK_LIGA}</div>
-            <div style="text-align:center; margin:6px 0;"><span style="font-size:14px; font-weight:bold;">{PICK_LOCAL}</span> <span style="color:{MUTED};">vs</span> <span style="font-size:14px; font-weight:bold;">{PICK_VISITA}</span></div>
-            <div style="background:{CARD}; border:1px solid {ORANGE}; border-radius:6px; padding:8px; display:flex; justify-content:space-between; margin-top:8px;"><div><div style="color:{MUTED}; font-size:8px;">MERCADO</div><div style="font-weight:bold; color:white; font-size:11px;">{PICK_NOMBRE}</div></div><div style="text-align:right;"><div style="color:{MUTED}; font-size:8px;">CUOTA</div><div style="font-size:18px; font-weight:bold; color:{ORANGE};">{PICK_CUOTA}</div></div></div>
-            <div style="display:flex; justify-content:space-around; margin-top:8px;">
-                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">PROB</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">{PICK_PROB}%</div></div>
-                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">CONF</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">{PICK_CONF}%</div></div>
-                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">VALOR</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">{PICK_VALOR}</div></div>
+            <div style="text-align:center; color:{GREEN}; font-size:10px; margin-bottom:4px;">🏆 {PICK_LIGA} · {PICK_HORA}</div>
+            <div style="text-align:center; margin:4px 0;"><span style="font-size:13px; font-weight:bold;">{PICK_LOCAL}</span> <span style="color:{MUTED};">vs</span> <span style="font-size:13px; font-weight:bold;">{PICK_VISITA}</span></div>
+            <div style="background:{CARD}; border:1px solid {ORANGE}; border-radius:6px; padding:6px; display:flex; justify-content:space-between; margin-top:6px;"><div><div style="color:{MUTED}; font-size:7px;">MERCADO</div><div style="font-weight:bold; color:white; font-size:10px;">{PICK_NOMBRE}</div></div><div style="text-align:right;"><div style="color:{MUTED}; font-size:7px;">CUOTA</div><div style="font-size:16px; font-weight:bold; color:{ORANGE};">{PICK_CUOTA}</div></div></div>
+            <div style="display:flex; justify-content:space-around; margin-top:6px;">
+                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">PROB</div><div style="color:{GREEN}; font-size:13px; font-weight:bold;">{PICK_PROB}%</div></div>
+                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">CONF</div><div style="color:{GREEN}; font-size:13px; font-weight:bold;">{PICK_CONF}%</div></div>
+                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">VALOR</div><div style="color:{GREEN}; font-size:13px; font-weight:bold;">{PICK_VALOR}</div></div>
+            </div>
+            <div style="border-top:1px solid {BORDER}; margin-top:6px; padding-top:6px; display:flex; justify-content:space-between; font-size:8px;">
+                <div style="color:{MUTED};">xG: {PICK_XG}</div>
+                <div style="color:{MUTED};">O2.5: {PICK_OVER25}</div>
+                <div style="color:{MUTED};">BTTS: {PICK_BTTS}</div>
+                <div style="color:{ORANGE}; font-weight:bold;">Rango: {PICK_RANGO}</div>
             </div>
         </div>
     </div>
