@@ -188,7 +188,7 @@ PARTIDOS = {
 }
 
 # API Keys
-FOOTBALL_DATA_KEY = "21a9a19125f3467c86579b79f71d359c"
+FOOTBALL_DATA_KEY = "21a9a19125f3467c86579b79f71d359c"  # football-data.org
 
 def obtener_partidos_futbol():
     """Obtiene TODOS los partidos de futbol para hoy desde múltiples fuentes"""
@@ -198,215 +198,103 @@ def obtener_partidos_futbol():
     
     partidos = []
     
-    # Fuente 1: WorldFootball.net - scraping COMPLETO de TODAS las ligas
+    # Fuente 1: football-data.org (API principal que funciona)
     try:
-        url = "https://www.worldfootball.net/matches-today/"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        }
-        
-        response = requests.get(url, headers=headers, timeout=20)
+        url = "http://api.football-data.org/v4/matches"
+        headers = {"X-Auth-Token": FOOTBALL_DATA_KEY}
+        response = requests.get(url, headers=headers, timeout=15)
         
         if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
+            data = response.json()
+            matches = data.get("matches", [])
             
-            # Buscar TODOS los contenedores de liga
-            secciones = soup.find_all(['div', 'td'], class_=['sector', ' league-name'])
-            
-            for seccion in secciones:
+            for match in matches:
                 try:
-                    # Obtener nombre de la liga
-                    liga = seccion.get_text(strip=True)
-                    if not liga or len(liga) < 3:
-                        continue
+                    home = match.get("homeTeam", {}).get("name", "Local")
+                    away = match.get("awayTeam", {}).get("name", "Visita")
+                    league = match.get("competition", {}).get("name", "Liga")
+                    utc_date = match.get("utcDate", "")
                     
-                    # Buscar la tabla o filas siguientes a esta liga
-                    parent = seccion.find_parent(['tr', 'div', 'table'])
-                    if parent:
-                        # Buscar filas de partidos cercanas
-                        if parent.name == 'td':
-                            # Es un td de liga
-                            next_row = parent.find_next_sibling(['tr', 'td'])
-                            while next_row:
-                                equipos = next_row.find_all('td', class_='team')
-                                zeit = next_row.find('td', class_='zeit')
-                                
-                                if len(equipos) >= 2 and zeit:
-                                    local = equipos[0].get_text(strip=True).replace('\n', ' ').strip()
-                                    visita = equipos[1].get_text(strip=True).replace('\n', ' ').strip()
-                                    hora = zeit.get_text(strip=True)
-                                    
-                                    if local and visita and hora and 'vs' not in local.lower():
-                                        partidos.append({
-                                            "equipo": f"{local} vs {visita}",
-                                            "hora": hora,
-                                            "liga": liga
-                                        })
-                                
-                                # Buscar siguiente sección
-                                if next_row.find(['td'], class_=['sector', ' league-name']):
-                                    break
-                                next_row = next_row.find_next_sibling(['tr', 'td'])
+                    # Convertir UTC a hora local (UTC-3 para America)
+                    if utc_date:
+                        hora_utc = datetime.strptime(utc_date[:16], "%Y-%m-%dT%H:%M")
+                        hora_local = hora_utc + timedelta(hours=-3)  # UTC-3
+                        hora = hora_local.strftime("%H:%M")
+                    else:
+                        hora = "--:--"
+                    
+                    partidos.append({
+                        "equipo": f"{home} vs {away}",
+                        "hora": hora,
+                        "liga": league
+                    })
                 except:
                     continue
     except Exception as e:
-        print(f"Error WorldFootball: {e}")
+        print(f"Error football-data.org: {e}")
     
-    # Fuente 2: API-Football - TODAS las ligas disponibles
-    try:
-        hoy = datetime.now()
-        fecha_str = hoy.strftime("%Y-%m-%d")
-        
-        # Solicitar TODOS los partidos sin filtro de liga
-        url = f"https://v3.football.api-sports.io/fixtures?date={fecha_str}"
-        headers = {"x-apisports-key": FOOTBALL_DATA_KEY}
-        response = requests.get(url, headers=headers, timeout=15)
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("response"):
-                for fixture in data["response"][:50]:  # Aumentar a 50
-                    try:
-                        home = fixture["teams"]["home"]["name"]
-                        away = fixture["teams"]["away"]["name"]
-                        league = fixture["league"]["name"]
-                        hora = fixture["fixture"]["date"][11:16]
-                        
-                        # Convertir hora a UTC-3
+    # Fuente 2: Sofascore API (si no hay partidos)
+    if len(partidos) < 3:
+        try:
+            url = "https://www.sofascore.com/api/v1/sport/football/events/live"
+            headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+            response = requests.get(url, headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("events"):
+                    for event in data["events"][:30]:
                         try:
-                            dt = datetime.strptime(hora, "%H:%M")
-                            dt = dt + timedelta(hours=-3)
-                            hora = dt.strftime("%H:%M")
-                        except:
-                            pass
-                        
-                        partidos.append({
-                            "equipo": f"{home} vs {away}",
-                            "hora": hora,
-                            "liga": league
-                        })
-                    except:
-                        continue
-    except Exception as e:
-        print(f"Error API-Football: {e}")
-    
-    # Fuente 3: Sofascore API - TODOS los partidos
-    try:
-        url = "https://www.sofascore.com/api/v1/sport/football/events/live"
-        headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
-        response = requests.get(url, headers=headers, timeout=15)
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("events"):
-                for event in data["events"][:50]:  # Aumentar
-                    try:
-                        home = event.get("homeTeam", {}).get("shortName") or event.get("homeTeam", {}).get("name", "Local")
-                        away = event.get("awayTeam", {}).get("shortName") or event.get("awayTeam", {}).get("name", "Visita")
-                        league = event.get("tournament", {}).get("name", "Liga")
-                        timestamp = event.get("startTimestamp", 0)
-                        
-                        if timestamp:
-                            hora = datetime.fromtimestamp(timestamp).strftime("%H:%M")
-                        else:
-                            hora = "--:--"
-                        
-                        partidos.append({
-                            "equipo": f"{home} vs {away}",
-                            "hora": hora,
-                            "liga": league
-                        })
-                    except:
-                        continue
-    except Exception as e:
-        print(f"Error Sofascore: {e}")
-    
-    # Fuente 4: Flashscore - scraping completo
-    try:
-        url = "https://www.flashscore.com.mx/futbol/"
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-        response = requests.get(url, headers=headers, timeout=15)
-        
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
-            
-            # Buscar todos los eventos
-            eventos = soup.find_all(['div', 'tr'], class_=['event__match', 'event', 'match'])
-            
-            for evento in eventos[:30]:  # Aumentar
-                try:
-                    # Buscar hora
-                    hora_elem = evento.find(['div', 'span'], class_=['event__time', 'time', 'match-time'])
-                    hora = hora_elem.get_text(strip=True) if hora_elem else "--:--"
-                    
-                    # Buscar equipos
-                    equipos = evento.find_all(['div', 'span'], class_=['event__participant', 'team', 'team-home', 'team-away'])
-                    if len(equipos) >= 2:
-                        local = equipos[0].get_text(strip=True)
-                        visita = equipos[1].get_text(strip=True)
-                        
-                        if local and visita:
-                            # Buscar liga
-                            liga_parent = evento.find_parent(['div', 'tr'])
-                            liga = "Partido"
-                            if liga_parent:
-                                liga_elem = liga_parent.find(['div', 'span', 'a'], class_=['event__league', 'league', 'tournament'])
-                                if liga_elem:
-                                    liga = liga_elem.get_text(strip=True)
+                            home = event.get("homeTeam", {}).get("shortName") or event.get("homeTeam", {}).get("name", "Local")
+                            away = event.get("awayTeam", {}).get("shortName") or event.get("awayTeam", {}).get("name", "Visita")
+                            league = event.get("tournament", {}).get("name", "Liga")
+                            timestamp = event.get("startTimestamp", 0)
+                            
+                            if timestamp:
+                                hora = datetime.fromtimestamp(timestamp).strftime("%H:%M")
+                            else:
+                                hora = "--:--"
                             
                             partidos.append({
-                                "equipo": f"{local} vs {visita}",
+                                "equipo": f"{home} vs {away}",
                                 "hora": hora,
-                                "liga": liga
+                                "liga": league
                             })
-                except:
-                    continue
-    except Exception as e:
-        print(f"Error Flashscore: {e}")
-    
-    # Fuente 5: Livescore
-    try:
-        url = "https://www.livescore.com/en/football/live/"
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(url, headers=headers, timeout=15)
-        
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
-            
-            # Buscar secciones de liga y partidos
-            sections = soup.find_all(['div', 'section'], class_=['sport', 'category', 'league'])
-            
-            for section in sections[:20]:
-                try:
-                    # Nombre de liga
-                    liga_elem = section.find(['h2', 'h3', 'div'], class_=['title', 'league-name', 'category'])
-                    liga = liga_elem.get_text(strip=True) if liga_elem else "Liga"
-                    
-                    # Partidos en esta sección
-                    matches = section.find_all(['div', 'tr'], class_=['match', 'event', 'row'])
-                    
-                    for match in matches[:10]:
-                        try:
-                            home = match.find(['span', 'div'], class_=['home', 'team-home', 'home-team'])
-                            away = match.find(['span', 'div'], class_=['away', 'team-away', 'away-team'])
-                            time_elem = match.find(['span', 'div'], class_=['time', 'match-time', 'scheduled'])
-                            
-                            if home and away:
-                                home_name = home.get_text(strip=True)
-                                away_name = away.get_text(strip=True)
-                                hora = time_elem.get_text(strip=True) if time_elem else "--:--"
-                                
-                                partidos.append({
-                                    "equipo": f"{home_name} vs {away_name}",
-                                    "hora": hora,
-                                    "liga": liga
-                                })
                         except:
                             continue
-                except:
-                    continue
-    except Exception as e:
-        print(f"Error Livescore: {e}")
+        except Exception as e:
+            print(f"Error Sofascore: {e}")
+    
+    # Fuente 3: TheSportsDB (gratuita)
+    if len(partidos) < 3:
+        try:
+            # Buscar eventos recientes de Premier League
+            url = "https://www.thesportsdb.com/api/v1/json/3/eventspastleague.php?id=4328"
+            headers = {"User-Agent": "Mozilla/5.0"}
+            response = requests.get(url, headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                events = data.get("events", [])
+                
+                for event in events[:10]:
+                    try:
+                        home = event.get("strHomeTeam", "Local")
+                        away = event.get("strAwayTeam", "Visita")
+                        league = event.get("strLeague", "Liga")
+                        date = event.get("dateEvent", "")
+                        time = event.get("strTime", "")
+                        hora = time.split(" ")[-1] if time else "--:--"
+                        
+                        partidos.append({
+                            "equipo": f"{home} vs {away}",
+                            "hora": hora[:5] if len(hora) > 5 else hora,
+                            "liga": league
+                        })
+                    except:
+                        continue
+        except Exception as e:
+            print(f"Error TheSportsDB: {e}")
     
     # Eliminar duplicados
     seen = set()
@@ -420,56 +308,50 @@ def obtener_partidos_futbol():
     if not unique_partidos:
         unique_partidos = [{"equipo": "Sin partidos disponibles", "hora": "--:--", "liga": "Verifica conexion"}]
     
-    return unique_partidos[:15]  # Máximo 15 partidos
+    return unique_partidos[:15]
 
 def obtener_partidos_baloncesto():
     """Obtiene partidos de baloncesto para hoy"""
     import requests
-    from bs4 import BeautifulSoup
     from datetime import datetime, timedelta
     
     partidos = []
     
-    # Fuente 1: API-Football Basketball
+    # Fuente 1: TheSportsDB Basketball
     try:
-        hoy = datetime.now()
-        fecha_str = hoy.strftime("%Y-%m-%d")
-        
-        # Buscar NBA y basketball leagues
-        url = f"https://v3.football.api-sports.io/fixtures?date={fecha_str}&sport=basketball"
-        headers = {"x-apisports-key": FOOTBALL_DATA_KEY}
-        response = requests.get(url, headers=headers, timeout=10)
+        # NBA
+        url = "https://www.thesportsdb.com/api/v1/json/3/eventspastleague.php?id=4387"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers, timeout=15)
         
         if response.status_code == 200:
             data = response.json()
-            if data.get("response"):
-                for fixture in data["response"][:10]:
-                    home = fixture["teams"]["home"]["name"]
-                    away = fixture["teams"]["away"]["name"]
-                    league = fixture["league"]["name"]
-                    hora = fixture["fixture"]["date"][11:16]
-                    
-                    try:
-                        dt = datetime.strptime(hora, "%H:%M")
-                        dt = dt + timedelta(hours=-3)
-                        hora = dt.strftime("%H:%M")
-                    except:
-                        pass
+            events = data.get("events", [])
+            
+            for event in events[:10]:
+                try:
+                    home = event.get("strHomeTeam", "Local")
+                    away = event.get("strAwayTeam", "Visita")
+                    league = event.get("strLeague", "NBA")
+                    time = event.get("strTime", "")
+                    hora = time.split(" ")[-1][:5] if time else "--:--"
                     
                     partidos.append({
                         "equipo": f"{home} vs {away}",
                         "hora": hora,
                         "liga": league
                     })
+                except:
+                    continue
     except Exception as e:
-        print(f"Error API Basketball: {e}")
+        print(f"Error TheSportsDB Basketball: {e}")
     
     # Fuente 2: Sofascore Basketball
     if len(partidos) < 3:
         try:
             url = "https://www.sofascore.com/api/v1/sport/basketball/events/live"
             headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
-            response = requests.get(url, headers=headers, timeout=10)
+            response = requests.get(url, headers=headers, timeout=15)
             
             if response.status_code == 200:
                 data = response.json()
@@ -492,34 +374,6 @@ def obtener_partidos_baloncesto():
         except Exception as e:
             print(f"Error Sofascore Basketball: {e}")
     
-    # Fuente 3: Flashscore Basketball
-    if len(partidos) < 3:
-        try:
-            url = "https://www.flashscore.com.mx/baloncesto/"
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-            response = requests.get(url, headers=headers, timeout=10)
-            
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.content, 'html.parser')
-                eventos = soup.find_all('div', class_='event__match')
-                
-                for evento in eventos[:6]:
-                    try:
-                        hora_elem = evento.find('div', class_='event__time')
-                        hora = hora_elem.text.strip() if hora_elem else "--:--"
-                        
-                        equipos = evento.find_all('div', class_='event__participant')
-                        if len(equipos) >= 2:
-                            partidos.append({
-                                "equipo": f"{equipos[0].text.strip()} vs {equipos[1].text.strip()}",
-                                "hora": hora,
-                                "liga": "Basketball"
-                            })
-                    except:
-                        continue
-        except Exception as e:
-            print(f"Error Flashscore Basketball: {e}")
-    
     # Eliminar duplicados
     seen = set()
     unique_partidos = []
@@ -537,96 +391,65 @@ def obtener_partidos_baloncesto():
 def obtener_partidos_tenis():
     """Obtiene partidos de tenis para hoy"""
     import requests
-    from bs4 import BeautifulSoup
     from datetime import datetime, timedelta
     
     partidos = []
     
-    # Fuente 1: Sofascore Tennis
+    # Fuente 1: TheSportsDB Tennis ATP
     try:
-        url = "https://www.sofascore.com/api/v1/sport/tennis/events/live"
-        headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
-        response = requests.get(url, headers=headers, timeout=10)
+        url = "https://www.thesportsdb.com/api/v1/json/3/eventspastleague.php?id=4464"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers, timeout=15)
         
         if response.status_code == 200:
             data = response.json()
-            for event in data.get("events", [])[:10]:
-                home = event.get("homeTeam", {}).get("shortName", "Jugador 1")
-                away = event.get("awayTeam", {}).get("shortName", "Jugador 2")
-                league = event.get("tournament", {}).get("name", "Tenis")
-                timestamp = event.get("startTimestamp", 0)
-                
-                if timestamp:
-                    hora = datetime.fromtimestamp(timestamp).strftime("%H:%M")
-                else:
-                    hora = "--:--"
-                
-                partidos.append({
-                    "equipo": f"{home} vs {away}",
-                    "hora": hora,
-                    "liga": league
-                })
+            events = data.get("events", [])
+            
+            for event in events[:10]:
+                try:
+                    home = event.get("strHomeTeam", "Jugador 1")
+                    away = event.get("strAwayTeam", "Jugador 2")
+                    league = event.get("strLeague", "ATP")
+                    time = event.get("strTime", "")
+                    hora = time.split(" ")[-1][:5] if time else "--:--"
+                    
+                    partidos.append({
+                        "equipo": f"{home} vs {away}",
+                        "hora": hora,
+                        "liga": league
+                    })
+                except:
+                    continue
     except Exception as e:
-        print(f"Error Sofascore Tennis: {e}")
+        print(f"Error TheSportsDB Tennis: {e}")
     
-    # Fuente 2: Flashscore Tennis
+    # Fuente 2: Sofascore Tennis
     if len(partidos) < 3:
         try:
-            url = "https://www.flashscore.com.mx/tenis/"
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-            response = requests.get(url, headers=headers, timeout=10)
+            url = "https://www.sofascore.com/api/v1/sport/tennis/events/live"
+            headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+            response = requests.get(url, headers=headers, timeout=15)
             
             if response.status_code == 200:
-                soup = BeautifulSoup(response.content, 'html.parser')
-                eventos = soup.find_all('div', class_='event__match')
-                
-                for evento in eventos[:6]:
-                    try:
-                        hora_elem = evento.find('div', class_='event__time')
-                        hora = hora_elem.text.strip() if hora_elem else "--:--"
-                        
-                        nombres = evento.find_all('div', class_='event__participant')
-                        if len(nombres) >= 2:
-                            partidos.append({
-                                "equipo": f"{nombres[0].text.strip()} vs {nombres[1].text.strip()}",
-                                "hora": hora,
-                                "liga": "ATP/WTA"
-                            })
-                    except:
-                        continue
+                data = response.json()
+                for event in data.get("events", [])[:10]:
+                    home = event.get("homeTeam", {}).get("shortName", "Jugador 1")
+                    away = event.get("awayTeam", {}).get("shortName", "Jugador 2")
+                    league = event.get("tournament", {}).get("name", "Tenis")
+                    timestamp = event.get("startTimestamp", 0)
+                    
+                    if timestamp:
+                        hora = datetime.fromtimestamp(timestamp).strftime("%H:%M")
+                    else:
+                        hora = "--:--"
+                    
+                    partidos.append({
+                        "equipo": f"{home} vs {away}",
+                        "hora": hora,
+                        "liga": league
+                    })
         except Exception as e:
-            print(f"Error Flashscore Tennis: {e}")
-    
-    # Fuente 3: WorldFootball Tennis (si existe)
-    if len(partidos) < 3:
-        try:
-            url = "https://www.worldfootball.net/matches-today/tennis/"
-            headers = {"User-Agent": "Mozilla/5.0"}
-            response = requests.get(url, headers=headers, timeout=10)
-            
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.content, 'html.parser')
-                eventos = soup.find_all('tr', class_=['row_today'])
-                
-                for evento in eventos[:6]:
-                    try:
-                        equipos = evento.find_all('td', class_='team')
-                        zeit = evento.find('td', class_='zeit')
-                        
-                        if len(equipos) >= 2 and zeit:
-                            local = equipos[0].get_text(strip=True)
-                            visita = equipos[1].get_text(strip=True)
-                            hora = zeit.get_text(strip=True)
-                            
-                            partidos.append({
-                                "equipo": f"{local} vs {visita}",
-                                "hora": hora,
-                                "liga": "Tennis"
-                            })
-                    except:
-                        continue
-        except Exception as e:
-            print(f"Error WorldFootball Tennis: {e}")
+            print(f"Error Sofascore Tennis: {e}")
     
     # Eliminar duplicados
     seen = set()
