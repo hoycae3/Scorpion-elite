@@ -5801,14 +5801,16 @@ def pantalla_principal_unificada():
                 
                 if st.button("🎯 INGRESAR", use_container_width=True, type="primary"):
                     if usr and pwd:
-                        if pwd == "admin":
+                        if usr.lower() == "admin":
+                            # Admin
                             st.session_state.logged_in = True
                             st.session_state.is_admin = True
-                            st.session_state.user_name = usr
+                            st.session_state.user_name = "Admin"
                             st.session_state.user_plan = "ADMIN"
                             st.session_state.show_login = False
                             st.rerun()
                         elif pwd == "scorpion":
+                            # Usuario normal
                             st.session_state.logged_in = True
                             st.session_state.is_admin = False
                             st.session_state.user_name = usr
@@ -5823,8 +5825,8 @@ def pantalla_principal_unificada():
                 st.markdown("""
                 <div style="text-align: center; margin-top: 20px;">
                     <small style="color: #666; font-size: 0.8rem;">
-                        Demo Admin: cualquier usuario + contraseña <b style="color:#ffcc00;">admin</b><br>
-                        Demo Usuario: cualquier usuario + contraseña <b style="color:#ffcc00;">scorpion</b>
+                        Usuario: <b style="color:#ffcc00;">admin</b> → Panel de Admin<br>
+                        Otros usuarios → Dashboard normal (contraseña: <b style="color:#ffcc00;">scorpion</b>)
                     </small>
                 </div>
                 """, unsafe_allow_html=True)
