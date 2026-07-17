@@ -32,6 +32,8 @@ header {{display:none !important;}}
 [data-testid="stMain"] {{padding:0; background:{BG};}}
 table {{border-collapse: collapse; width: 100%;}}
 th, td {{border: none;}}
+.header-container {{display:flex; justify-content:space-between; align-items:center;}}
+.header-right {{display:flex; gap:8px; align-items:center;}}
 </style>
 ''', unsafe_allow_html=True)
 
@@ -118,26 +120,31 @@ if st.session_state.is_admin:
     st.stop()
 
 # HEADER
-st.markdown(f'''
-<div style="background:{CARD}; padding:12px 30px; border-bottom:1px solid {BORDER}; display:flex; justify-content:space-between; align-items:center;">
-    <div><div style="color:{ORANGE}; font-size:22px; font-weight:bold;">SCORPION ELITE</div><div style="color:{MUTED}; font-size:9px; letter-spacing:2px;">ANALISIS Y TENDENCIAS DEPORTIVAS</div></div>
-    <div style="display:flex; gap:6px; align-items:center;">
-        <span style="background:{GREEN}; color:{BG}; padding:6px 14px; border-radius:4px; font-size:11px; font-weight:bold;"> FUTBOL</span>
-        <span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 14px; border-radius:4px; font-size:11px;"> BALONCESTO</span>
-        <span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 14px; border-radius:4px; font-size:11px;"> TENIS</span>
-    </div>
-    <div style="display:flex; gap:8px; align-items:center;">
-        <input type="text" placeholder="Buscar..." style="background:{BG}; border:1px solid {BORDER}; color:white; padding:6px 10px; border-radius:4px; font-size:11px; width:140px;">
-        <span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 10px; border-radius:4px; font-size:11px;">HOY</span>
-    </div>
-</div>
-''', unsafe_allow_html=True)
+col1, col2, col3 = st.columns([3, 3, 2])
 
-col_login = st.columns([5, 1])
-with col_login[1]:
-    if st.button("🔓 LOGIN", key="login_btn", use_container_width=True):
-        st.session_state.show_login = True
-        st.rerun()
+with col1:
+    st.markdown(f'<div style="color:{ORANGE}; font-size:22px; font-weight:bold;">SCORPION ELITE</div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="color:{MUTED}; font-size:9px; letter-spacing:2px;">ANALISIS Y TENDENCIAS DEPORTIVAS</div>', unsafe_allow_html=True)
+
+with col2:
+    c_futbol, c_basket, c_tenis = st.columns(3)
+    with c_futbol:
+        st.markdown(f'<span style="background:{GREEN}; color:{BG}; padding:6px 14px; border-radius:4px; font-size:11px; font-weight:bold;">FUTBOL</span>', unsafe_allow_html=True)
+    with c_basket:
+        st.markdown(f'<span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 14px; border-radius:4px; font-size:11px;">BALONCESTO</span>', unsafe_allow_html=True)
+    with c_tenis:
+        st.markdown(f'<span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 14px; border-radius:4px; font-size:11px;">TENIS</span>', unsafe_allow_html=True)
+
+with col3:
+    c_buscar, c_hoy, c_login = st.columns(3)
+    with c_buscar:
+        st.text_input("Buscar", placeholder="Buscar...", label_visibility="collapsed", key="buscar")
+    with c_hoy:
+        st.markdown(f'<span style="border:1px solid {BORDER}; color:{MUTED}; padding:6px 10px; border-radius:4px; font-size:11px;">HOY</span>', unsafe_allow_html=True)
+    with c_login:
+        if st.button("LOGIN", key="login_btn"):
+            st.session_state.show_login = True
+            st.rerun()
 
 # 3 COLUMNAS
 c1, c2, c3 = st.columns(3)
