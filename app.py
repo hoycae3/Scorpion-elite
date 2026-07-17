@@ -6047,59 +6047,60 @@ def pantalla_principal_unificada():
         # CSS específico para dashboard imagen - COLORES EXACTOS
         st.markdown("""
         <style>
-        /* Fondo principal gris claro */
-        .stApp {background: #d4cfc4 !important;}
+        /* Fondo principal BLANCO/CLARO */
+        .stApp {background: #ffffff !important;}
         
-        /* Header negro con naranja */
-        .header-dark {background: #1a1a1a; padding: 15px; margin: -50px -50px 15px -50px;}
-        .main-title {color: #ff8c00; font-size: 28px; font-weight: bold; letter-spacing: 5px; text-align: center; text-shadow: 0 0 10px #ff8c00;}
+        /* Header negro con naranja ARRIBA */
+        .header-top {background: #1a1a1a; padding: 12px 20px; margin: -50px -50px 0 -50px;}
+        .main-title {color: #ff8c00; font-size: 24px; font-weight: bold; letter-spacing: 5px; text-align: center; text-shadow: 0 0 10px #ff8c00;}
         
-        /* Navegación AZUL brillante */
-        .nav-bar {display: flex; justify-content: center; gap: 0; padding: 12px 0; background: #fff; margin-bottom: 15px; border-radius: 8px;}
-        .nav-item {color: #00a8ff; font-size: 13px; padding: 8px 15px; font-weight: bold; border-right: 1px solid #ddd;}
+        /* Navegación AZUL brillante en barra blanca */
+        .nav-bar {display: flex; justify-content: center; gap: 0; padding: 10px 0; background: #f5f5f5; margin: 0 0 15px 0; border-bottom: 1px solid #ddd;}
+        .nav-item {color: #0099ff; font-size: 12px; padding: 8px 18px; font-weight: bold; border-right: 1px solid #ddd;}
         .nav-item:last-child {border-right: none;}
+        .nav-item:first-child {color: #0066cc; border-bottom: 2px solid #0066cc;}
         
-        /* Boxes blancos */
-        .dash-section {background: #fff; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
+        /* Boxes blancos con sombra */
+        .dash-section {background: #fff; border-radius: 8px; padding: 12px; margin-bottom: 12px; border: 1px solid #e0e0e0; box-shadow: 0 1px 3px rgba(0,0,0,0.08);}
         
         /* Títulos azul oscuro */
-        .section-title {color: #0066cc; font-size: 14px; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #0066cc; padding-bottom: 8px;}
+        .section-title {color: #0066cc; font-size: 13px; font-weight: bold; margin-bottom: 8px; border-bottom: 2px solid #0066cc; padding-bottom: 5px;}
         
         /* Partidos con borde naranja */
-        .match-row {background: #f8f8f8; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #ff8c00; border-top: 1px solid #eee; border-bottom: 1px solid #eee; border-right: 1px solid #eee;}
-        .match-teams {color: #000; font-size: 13px; font-weight: bold;}
-        .match-time {color: #666; font-size: 11px;}
+        .match-row {background: #fafafa; padding: 8px 10px; margin-bottom: 6px; border-left: 3px solid #ff8c00; border-radius: 4px;}
+        .match-teams {color: #000; font-size: 12px; font-weight: bold;}
+        .match-time {color: #666; font-size: 10px;}
         .match-range {color: #ff8c00; font-size: 10px; font-weight: bold;}
         
         /* Análisis - letras negras */
-        .ai-row {padding: 8px 0; border-bottom: 1px solid #eee; font-size: 12px;}
+        .ai-row {padding: 6px 0; border-bottom: 1px solid #eee; font-size: 11px;}
         .ai-label {color: #333;}
         .ai-value {color: #009933; font-weight: bold;}
         
-        /* Odds - verde brillante */
-        .odds-row {display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 12px;}
+        /* Odds - verde */
+        .odds-row {display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 11px;}
         .odds-book {color: #333;}
-        .odds-val {color: #00cc00; font-weight: bold;}
+        .odds-val {color: #009900; font-weight: bold;}
         .odds-best {color: #ff6600; font-weight: bold;}
         
         /* Mercados con checks */
-        .market-item {color: #333; font-size: 12px; padding: 6px 0;}
-        .market-check {color: #00cc00; margin-right: 8px; font-weight: bold;}
+        .market-item {color: #333; font-size: 11px; padding: 4px 0;}
+        .market-check {color: #009900; margin-right: 6px; font-weight: bold;}
         
-        /* Alertas fondo oscuro */
-        .alert-section {background: #333; border-radius: 10px; padding: 15px; margin-bottom: 15px;}
-        .alert-title {color: #fff; font-size: 14px; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #555; padding-bottom: 8px;}
-        .alert-item {background: #444; padding: 10px; border-radius: 6px; margin-bottom: 6px; font-size: 12px; color: #fff;}
+        /* Alertas fondo gris oscuro */
+        .alert-section {background: #404040; border-radius: 8px; padding: 12px; margin-bottom: 12px;}
+        .alert-title {color: #fff; font-size: 13px; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #555; padding-bottom: 5px;}
+        .alert-item {background: #505050; padding: 8px; border-radius: 4px; margin-bottom: 4px; font-size: 11px; color: #fff;}
         
         /* Estadísticas */
-        .stat-row {display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 12px; color: #333;}
+        .stat-row {display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 11px; color: #333;}
         .stat-val {color: #009933; font-weight: bold;}
         </style>
         """, unsafe_allow_html=True)
         
-        # Título principal SCORPION ELITE con fondo oscuro
+        # Header negro con SCORPION ELITE naranja
         st.markdown('''
-        <div style="background: #1a1a1a; padding: 15px; margin: -50px -50px 15px -50px;">
+        <div class="header-top">
             <div class="main-title">SCORPION ELITE</div>
         </div>
         ''', unsafe_allow_html=True)
