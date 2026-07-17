@@ -5772,79 +5772,24 @@ def pantalla_principal_unificada():
         ''', unsafe_allow_html=True)
     with col_login_btn:
         st.markdown("<div style='padding-top: 10px;'></div>", unsafe_allow_html=True)
-        if st.button("🔐 Iniciar sesión"):
-            st.session_state.show_login = True
-    
-    # Modal/Popup de Login
-    if st.session_state.get("show_login", False):
-        # CSS para el modal
-        st.markdown("""
-        <style>
-        .login-modal {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 9999;
-        }
-        .login-box {
-            background: linear-gradient(135deg, #004400 0%, #003300 100%);
-            border: 2px solid #ffcc00;
-            border-radius: 16px;
-            padding: 30px;
-            width: 350px;
-            box-shadow: 0 10px 40px rgba(255,204,0,0.3);
-        }
-        </style>
-        """, unsafe_allow_html=True)
-        
-        col_m1, col_m2, col_m3 = st.columns([0.5, 2, 0.5])
-        with col_m2:
-            st.markdown("""
-            <div style="
-                background: linear-gradient(135deg, #004400 0%, #003300 100%);
-                border: 2px solid #ffcc00;
-                border-radius: 16px;
-                padding: 30px;
-                margin-top: 50px;
-                box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            ">
-                <div style="text-align: center; margin-bottom: 25px;">
-                    <span style="font-size: 2.5rem;">🦂</span>
-                    <h3 style="color: #ffcc00; margin: 10px 0;">INICIAR SESIÓN</h3>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            usr = st.text_input("Usuario", placeholder="Usuario admin", label_visibility="collapsed", key="modal_user")
-            pwd = st.text_input("Contraseña", type="password", placeholder="Contraseña", label_visibility="collapsed", key="modal_pass")
+        with st.popover("🔐 Iniciar sesión"):
+            st.markdown("### 🔐 Iniciar Sesión")
+            st.markdown("---")
+            usr = st.text_input("Usuario", placeholder="admin")
+            pwd = st.text_input("Contraseña", type="password", placeholder="********")
             
             if st.button("🎯 INGRESAR", use_container_width=True, type="primary"):
                 if usr and pwd:
-                    if usr.lower() == "admin":
-                        if pwd == "scorpion_admin_2025":
-                            st.session_state.logged_in = True
-                            st.session_state.is_admin = True
-                            st.session_state.user_name = "Admin"
-                            st.session_state.user_plan = "ADMIN"
-                            st.session_state.show_login = False
-                            st.rerun()
-                        else:
-                            st.error("❌ Contraseña incorrecta")
+                    if usr.lower() == "admin" and pwd == "scorpion_admin_2025":
+                        st.session_state.logged_in = True
+                        st.session_state.is_admin = True
+                        st.session_state.user_name = "Admin"
+                        st.session_state.user_plan = "ADMIN"
+                        st.rerun()
                     else:
-                        st.error("❌ Solo el administrador")
+                        st.error("❌ Credenciales incorrectas")
                 else:
-                    st.warning("⚠️ Completa los campos")
-            
-            if st.button("✖ Cancelar"):
-                st.session_state.show_login = False
-                st.rerun()
-            
-            st.markdown("</div>", unsafe_allow_html=True)
+                    st.warning("⚠️ Completa todos los campos")
     
     # Si está logueado
     if st.session_state.get("logged_in", False):
