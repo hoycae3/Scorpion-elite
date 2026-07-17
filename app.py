@@ -190,31 +190,46 @@ PARTIDOS = {
 # API Keys
 API_FOOTBALL_KEY = "e3926f829cd848f4b2b54d722ca29701"  # API-Football (nueva key funciona)
 
-# Prioridad de ligas para mostrar las mas importantes
+# Prioridad de ligas segun interes mundial
 LIGAS_PRIORIDAD = {
-    # Top 10 ligas (prioridad mas alta)
-    "major league soccer": 10,
-    "liga mx": 10,
-    "copa argentina": 9,
-    "premier league": 8,
-    "la liga": 8,
-    "bundesliga": 8,
-    "serie a": 8,
-    "ligue 1": 8,
-    "champions league": 7,
-    "europa league": 7,
+    # TOP TIER - Mayor atencion mundial
+    "champions league": 15,
+    "premier league": 14,
+    "la liga": 13,
+    "serie a": 12,
+    "bundesliga": 11,
+    "ligue 1": 10,
+    
+    # SECOND TIER - Alto interes
+    "libertadores": 9,
+    "europa league": 8,
+    "copa america": 8,
+    "euro": 8,
+    "world cup": 8,
+    
+    # THIRD TIER - Medio interes
     "brasileiro": 7,
-    "libertadores": 7,
-    # Otras ligas importantes
-    "eredivisie": 6,
-    "primeira liga": 6,
+    "liga mx": 6,
+    "major league soccer": 5,
+    "eredivisie": 5,
+    "primeira liga": 5,
     "super lig": 5,
-    "mls": 5,
-    "liga pro": 5,
+    "copa argentina": 5,
+    
+    # FOURTH TIER - Menor interes
     "canadian premier league": 4,
-    # Divisions menores
-    "league two": 1,
-    "usl": 1,
+    "liga pro": 4,
+    "paraguay": 4,
+    "chile": 4,
+    "colombia": 4,
+    "uruguay": 4,
+    "peru": 4,
+    "bolivia": 4,
+    
+    # FIFTH TIER - Divisions menores
+    "league two": 2,
+    "usl": 2,
+    "national league": 2,
 }
 
 def obtener_partidos_futbol(todos=False):
