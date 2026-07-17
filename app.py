@@ -200,19 +200,29 @@ with c1:
     ''', unsafe_allow_html=True)
 
 with c2:
+    # Variables para datos del pick (conectar con API/DB)
+    PICK_LIGA = "Liga"  # {{liga}}
+    PICK_LOCAL = "Equipo Local"  # {{equipo_local}}
+    PICK_VISITA = "Equipo Visita"  # {{equipo_visita}}
+    PICK_NOMBRE = "Pick"  # {{pick}} - Ej: Gana Arsenal, Over 2.5, Corners +9.5
+    PICK_CUOTA = "0.00"  # {{cuota}}
+    PICK_PROB = "0"  # {{probabilidad}}
+    PICK_CONF = "0"  # {{confianza}}
+    PICK_VALOR = "+0%"  # {{valor}}
+    
     st.markdown(f'''
     <div style="background:{BG}; border:2px solid {ORANGE}; border-radius:10px; padding:12px;">
         <div style="color:{ORANGE}; font-size:12px; font-weight:bold; display:flex; align-items:center; gap:6px; margin-bottom:10px;">
             ⭐ MEJOR PICK DEL DÍA
         </div>
         <div style="background:{BG}; border:1px solid {ORANGE}; border-radius:6px; padding:10px;">
-            <div style="text-align:center; color:{GREEN}; font-size:10px; margin-bottom:6px;">🏆 Premier League</div>
-            <div style="text-align:center; margin:6px 0;"><span style="font-size:14px; font-weight:bold;">Man City</span> <span style="color:{MUTED};">vs</span> <span style="font-size:14px; font-weight:bold;">Arsenal</span></div>
-            <div style="background:{CARD}; border:1px solid {ORANGE}; border-radius:6px; padding:8px; display:flex; justify-content:space-between; margin-top:8px;"><div><div style="color:{MUTED}; font-size:8px;">MERCADO</div><div style="font-weight:bold; color:white; font-size:11px;">1 Gana</div></div><div style="text-align:right;"><div style="color:{MUTED}; font-size:8px;">CUOTA</div><div style="font-size:18px; font-weight:bold; color:{ORANGE};">1.91</div></div></div>
+            <div style="text-align:center; color:{GREEN}; font-size:10px; margin-bottom:6px;">🏆 {PICK_LIGA}</div>
+            <div style="text-align:center; margin:6px 0;"><span style="font-size:14px; font-weight:bold;">{PICK_LOCAL}</span> <span style="color:{MUTED};">vs</span> <span style="font-size:14px; font-weight:bold;">{PICK_VISITA}</span></div>
+            <div style="background:{CARD}; border:1px solid {ORANGE}; border-radius:6px; padding:8px; display:flex; justify-content:space-between; margin-top:8px;"><div><div style="color:{MUTED}; font-size:8px;">MERCADO</div><div style="font-weight:bold; color:white; font-size:11px;">{PICK_NOMBRE}</div></div><div style="text-align:right;"><div style="color:{MUTED}; font-size:8px;">CUOTA</div><div style="font-size:18px; font-weight:bold; color:{ORANGE};">{PICK_CUOTA}</div></div></div>
             <div style="display:flex; justify-content:space-around; margin-top:8px;">
-                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">PROB</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">72%</div></div>
-                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">CONF</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">92%</div></div>
-                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">VALOR</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">+19%</div></div>
+                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">PROB</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">{PICK_PROB}%</div></div>
+                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">CONF</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">{PICK_CONF}%</div></div>
+                <div style="text-align:center;"><div style="color:{MUTED}; font-size:7px;">VALOR</div><div style="color:{GREEN}; font-size:14px; font-weight:bold;">{PICK_VALOR}</div></div>
             </div>
         </div>
     </div>
