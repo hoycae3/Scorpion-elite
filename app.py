@@ -5773,6 +5773,15 @@ def pantalla_principal_unificada():
     with col_login_btn:
         st.markdown("<div style='padding-top: 5px;'></div>", unsafe_allow_html=True)
         
+        # CSS para popover pequeño
+        st.markdown("""
+        <style>
+        [data-testid="stPopover"] {width: 180px !important;}
+        [data-testid="stPopover"] input {font-size: 11px !important; padding: 4px 6px !important;}
+        [data-testid="stPopover"] button {font-size: 11px !important; padding: 4px !important;}
+        </style>
+        """, unsafe_allow_html=True)
+        
         with st.popover("Login"):
             usr = st.text_input("", placeholder="usuario", label_visibility="collapsed")
             pwd = st.text_input("", type="password", placeholder="contraseña", label_visibility="collapsed")
