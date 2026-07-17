@@ -450,17 +450,22 @@ def obtener_partidos_tenis():
                 try:
                     home = event.get("strHomeTeam", "")
                     away = event.get("strAwayTeam", "")
+                    league = event.get("strLeague", "")
                     
+                    # Verificar que sea tenis (filtrar partidos de otros deportes)
                     if home and away and home != "None" and away != "None":
-                        league = event.get("strLeague", "ATP").lower()
+                        if "tennis" not in league.lower() and "tenis" not in league.lower() and "atp" not in league.lower():
+                            continue  # Saltar si no es tenis
+                            
                         date = event.get("dateEvent", "")
                         time = event.get("strTime", "")
                         hora = time.split(" ")[-1][:5] if time and time != "None" else "--:--"
                         
                         # Calcular prioridad
                         prioridad = 0
+                        league_lower = league.lower()
                         for nombre, prio in TENIS_PRIORIDAD.items():
-                            if nombre in league:
+                            if nombre in league_lower:
                                 prioridad = prio
                                 break
                         
@@ -478,7 +483,7 @@ def obtener_partidos_tenis():
                                     partidos.append({
                                         "equipo": f"{home} vs {away}",
                                         "hora": hora,
-                                        "liga": event.get("strLeague", "ATP"),
+                                        "liga": league if league else "ATP",
                                         "prioridad": prioridad,
                                         "fecha": date
                                     })
@@ -487,49 +492,7 @@ def obtener_partidos_tenis():
                 except:
                     continue
     except Exception as e:
-        print(f"Error TheSportsDB Tennis: {e}")
-    
-    # Fuente: TheSportsDB Tennis WTA
-    try:
-        url = "https://www.thesportsdb.com/api/v1/json/3/eventspastleague.php?id=4499"
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(url, headers=headers, timeout=15)
-        
-        if response.status_code == 200:
-            data = response.json()
-            events = data.get("events", [])
-            
-            for event in events[:10]:
-                try:
-                    home = event.get("strHomeTeam", "")
-                    away = event.get("strAwayTeam", "")
-                    
-                    if home and away and home != "None" and away != "None":
-                        league = event.get("strLeague", "WTA")
-                        date = event.get("dateEvent", "")
-                        time = event.get("strTime", "")
-                        hora = time.split(" ")[-1][:5] if time and time != "None" else "--:--"
-                        
-                        if date:
-                            try:
-                                event_date = datetime.strptime(date, "%Y-%m-%d")
-                                today = datetime.now()
-                                days_diff = (today - event_date).days
-                                
-                                if days_diff <= 7:
-                                    partidos.append({
-                                        "equipo": f"{home} vs {away}",
-                                        "hora": hora,
-                                        "liga": league,
-                                        "prioridad": 5,  # WTA
-                                        "fecha": date
-                                    })
-                            except:
-                                pass
-                except:
-                    continue
-    except Exception as e:
-        print(f"Error WTA Tennis: {e}")
+        print(f"Error Tennis: {e}")
     
     # Eliminar duplicados y ordenar
     seen = set()
@@ -541,7 +504,7 @@ def obtener_partidos_tenis():
             unique_partidos.append(p)
     
     if not unique_partidos:
-        return [{"equipo": "Sin partidos hoy", "hora": "--:--", "liga": "Verificar mañana"}]
+        return [{"equipo": "Sin partidos hoy", "hora": "--:--", "liga": "ATP/WTA - Verificar mañana"}]
     
     # Ordenar por prioridad y tomar los 3 primeros
     unique_partidos.sort(key=lambda x: (-x.get("prioridad", 0), x.get("fecha", "")))
