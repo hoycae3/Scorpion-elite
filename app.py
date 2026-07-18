@@ -1,8 +1,9 @@
 import streamlit as st
 import os
+from datetime import date, timedelta
 
 # ══════════════════════════════════════════════════════════
-# CONFIGURACIÓN DE PÁGINA
+# CONFIGURACIÓN
 # ══════════════════════════════════════════════════════════
 st.set_page_config(
     page_title="Scorpion Elite",
@@ -10,241 +11,156 @@ st.set_page_config(
     layout="wide"
 )
 
-# ══════════════════════════════════════════════════════════
-# CONFIGURACIÓN
-# ══════════════════════════════════════════════════════════
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "scorpion2026")
-
-# Supabase
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
 # ══════════════════════════════════════════════════════════
-# INICIALIZAR SESIÓN
+# SESIÓN
 # ══════════════════════════════════════════════════════════
 if "admin_logged" not in st.session_state:
     st.session_state.admin_logged = False
-if "page" not in st.session_state:
-    st.session_state.page = "Inicio"
 
 # ══════════════════════════════════════════════════════════
-# FUNCIONES DE SUPABASE
-# ══════════════════════════════════════════════════════════
-def obtener_partidos():
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        return []
-    
-    try:
-        from supabase import create_client
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        response = supabase.table("partidos").select("*").execute()
-        return response.data if response.data else []
-    except Exception as e:
-        st.error(f"Error: {e}")
-        return []
-
-def formatear_partido(p):
-    """Formatea un partido para mostrar"""
-    return {
-        "Hora": p.get("hora", "00:00"),
-        "Liga": p.get("liga", "N/A"),
-        "Local": p.get("equipo_local", "N/A"),
-        "Visitante": p.get("equipo_visitante", "N/A")
-    }
-
-# ══════════════════════════════════════════════════════════
-# ESTILOS CSS
+# CSS
 # ══════════════════════════════════════════════════════════
 st.markdown("""
 <style>
-    /* Fondo oscuro */
-    .stApp {
-        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
-    }
-    
-    /* Títulos */
-    h1, h2, h3 {
-        color: #ffd700 !important;
-        font-family: 'Arial Black', sans-serif;
-    }
-    
-    /* Cards */
-    .card {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 215, 0, 0.3);
-        border-radius: 15px;
-        padding: 25px;
-        margin: 10px 0;
-        backdrop-filter: blur(10px);
-    }
-    
-    /* Feature icons */
-    .feature-icon {
-        font-size: 50px;
-        margin-bottom: 15px;
-    }
-    
-    /* Stats */
-    .stat-number {
-        font-size: 48px;
-        font-weight: bold;
-        color: #ffd700;
-    }
-    
-    .stat-label {
-        color: #aaa;
-        font-size: 14px;
-        text-transform: uppercase;
-    }
+    .stApp { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%); }
+    h1, h2, h3 { color: #ffd700 !important; font-family: 'Arial Black', sans-serif; }
+    .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,215,0,0.3); 
+            border-radius: 15px; padding: 25px; margin: 10px 0; }
+    .match-card { background: rgba(255,255,255,0.08); border-radius: 10px; padding: 15px; 
+                  margin: 8px 0; border-left: 4px solid #ffd700; }
 </style>
 """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════
-# HEADER CON TÍTULO Y LOGIN
+# FUNCIONES
 # ══════════════════════════════════════════════════════════
-col_header_left, col_header_right = st.columns([3, 1])
+def get_partidos():
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return []
+    try:
+        from supabase import create_client
+        client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        return client.table('partidos').select('*').execute().data or []
+    except:
+        return []
 
-with col_header_left:
-    st.markdown("<h1 style='font-size: 24px; margin: 0;'>🦂 SCORPION ELITE</h1>", unsafe_allow_html=True)
-
-with col_header_right:
+# ══════════════════════════════════════════════════════════
+# HEADER
+# ══════════════════════════════════════════════════════════
+col1, col2 = st.columns([4, 1])
+with col1:
+    st.markdown("<h1>🦂 SCORPION ELITE</h1>", unsafe_allow_html=True)
+with col2:
     if st.session_state.admin_logged:
-        if st.button("🔒 Cerrar Sesión", use_container_width=True):
+        if st.button("🔒 Cerrar", use_container_width=True):
             st.session_state.admin_logged = False
-            st.session_state.page = "Inicio"
             st.rerun()
     else:
         if st.button("🔐 Login", use_container_width=True):
-            st.session_state.page = "Login"
+            st.session_state.admin_logged = True
             st.rerun()
 
-# ══════════════════════════════════════════════════════════
-# NAVEGACIÓN PRINCIPAL
-# ══════════════════════════════════════════════════════════
-st.markdown("<hr style='border-color: rgba(255,215,0,0.3); margin: 5px 0;'>", unsafe_allow_html=True)
+st.markdown("<hr style='border-color:rgba(255,215,0,0.3)'>", unsafe_allow_html=True)
 
-# Menú según estado de login
-selection = "🏠"
+# ══════════════════════════════════════════════════════════
+# LOGIN
+# ══════════════════════════════════════════════════════════
 if st.session_state.admin_logged:
-    menu_options = ["🏠", "📊 Predicciones", "📈 Estadísticas", "⚙️ Configuración"]
-    selection = st.radio("", menu_options, horizontal=True, label_visibility="collapsed")
+    menu = st.radio("", ["📅 Partidos", "📊 Predicciones", "⚙️ Config"], horizontal=True)
 else:
-    st.markdown("<br>", unsafe_allow_html=True)
+    menu = None
 
 # ══════════════════════════════════════════════════════════
 # PÁGINA: LOGIN
 # ══════════════════════════════════════════════════════════
-if st.session_state.page == "Login":
+if not st.session_state.admin_logged:
     st.markdown("<br><br>", unsafe_allow_html=True)
-    
-    col_a, col_b, col_c = st.columns([1, 2, 1])
-    with col_b:
-        st.markdown("<h2 style='text-align: center;'>🔐 Login</h2>", unsafe_allow_html=True)
-        
-        password = st.text_input("Contraseña", type="password")
-        
-        col_1, col_2, col_3 = st.columns([1, 1, 1])
-        with col_2:
-            if st.button("🔓 Ingresar", use_container_width=True):
-                if password == ADMIN_PASSWORD:
-                    st.session_state.admin_logged = True
-                    st.session_state.page = "Inicio"
-                    st.rerun()
-                else:
-                    st.error("❌ Contraseña incorrecta")
-        
-        if st.button("← Volver al Inicio"):
-            st.session_state.page = "Inicio"
-            st.rerun()
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("<h2 style='text-align:center'>🔐 Login</h2>", unsafe_allow_html=True)
+        pwd = st.text_input("Contraseña", type="password")
+        if st.button("🔓 Ingresar"):
+            if pwd == ADMIN_PASSWORD:
+                st.session_state.admin_logged = True
+                st.rerun()
+            else:
+                st.error("❌ Contraseña incorrecta")
 
 # ══════════════════════════════════════════════════════════
-# PÁGINA: INICIO
+# PÁGINA: PARTIDOS
 # ══════════════════════════════════════════════════════════
-elif selection == "🏠":
-    st.markdown("<h2>🦂 Scorpion Elite</h2>", unsafe_allow_html=True)
+elif menu == "📅 Partidos":
+    st.markdown("<h2>📅 Partidos del Día</h2>", unsafe_allow_html=True)
     
-    st.info("👆 Selecciona una opción del menú lateral")
+    partidos = get_partidos()
+    
+    # Filtros
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        filtro_fecha = st.selectbox("Fecha", ["Todas", "Hoy", "Mañana"])
+    with col2:
+        filtro_liga = st.selectbox("Liga", ["Todas"] + sorted(set(p.get('liga','') for p in partidos if p.get('liga'))) or ["Todas"])
+    
+    # Filtrar
+    if filtro_fecha == "Hoy":
+        partidos = [p for p in partidos if p.get('fecha') == date.today().isoformat()]
+    elif filtro_fecha == "Mañana":
+        partidos = [p for p in partidos if p.get('fecha') == (date.today() + timedelta(days=1)).isoformat()]
+    
+    if filtro_liga != "Todas":
+        partidos = [p for p in partidos if p.get('liga') == filtro_liga]
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    if partidos:
+        st.success(f"✅ {len(partidos)} partidos encontrados")
+        for p in sorted(partidos, key=lambda x: x.get('hora', '')):
+            liga = p.get('liga', 'N/A')
+            hora = p.get('hora', '--:--')
+            local = p.get('equipo_local', '?')
+            visitante = p.get('equipo_visitante', '?')
+            
+            st.markdown(f"""
+            <div class="match-card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <span style="color:#ffd700; font-size:12px;">{liga}</span>
+                        <h3 style="margin:5px 0;">{local} <span style="color:#888">vs</span> {visitante}</h3>
+                    </div>
+                    <div style="text-align:right;">
+                        <span style="color:#ffd700; font-size:20px; font-weight:bold;">{hora}</span>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.info("📭 No hay partidos para los filtros seleccionados")
 
 # ══════════════════════════════════════════════════════════
 # PÁGINA: PREDICCIONES
 # ══════════════════════════════════════════════════════════
-elif selection == "📊 Predicciones":
-    st.markdown("<h2>📊 Predicciones de Partidos</h2>", unsafe_allow_html=True)
-    
-    # Selector de fecha
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        fecha = st.date_input("Selecciona la fecha", value=None)
-    
-    with col2:
-        liga = st.selectbox("Liga", ["Todas", "Premier League", "La Liga", "Bundesliga", "Serie A", "Ligue 1"])
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Placeholder para predicciones
-    st.info("👆 Selecciona una fecha para ver las predicciones")
-    
-    st.markdown("""
-    <div class="card" style='text-align: center; padding: 50px;'>
-        <h3 style='color: #ffd700;'>🔮 Área de Predicciones</h3>
-        <p style='color: #aaa;'>Los partidos aparecerán aquí cuando se seleccione una fecha.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-# ══════════════════════════════════════════════════════════
-# PÁGINA: ESTADÍSTICAS
-# ══════════════════════════════════════════════════════════
-elif selection == "📈 Estadísticas":
-    st.markdown("<h2>📈 Estadísticas y Análisis</h2>", unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="card">
-        <h3 style='color: #ffd700;'>📊 Modelos de Análisis</h3>
-        <br>
-        <h4>🎯 Modelo Poisson</h4>
-        <p style='color: #ccc;'>Distribución de probabilidad de goles basados en promedio histórico de equipos.</p>
-        
-        <h4>📉 Dixon-Coles</h4>
-        <p style='color: #ccc;'>Modelo especial para marcadores correctos, considera el factor de agresividad.</p>
-        
-        <h4>🎲 Monte Carlo</h4>
-        <p style='color: #ccc;'>Simulación de miles de escenarios para calcular probabilidades precisas.</p>
-        
-        <h4>⚡ Sistema Elo</h4>
-        <p style='color: #ccc;'>Clasificación dinámica basada en rendimiento actual de los equipos.</p>
-    </div>
-    """, unsafe_allow_html=True)
+elif menu == "📊 Predicciones":
+    st.markdown("<h2>📊 Predicciones</h2>", unsafe_allow_html=True)
+    st.info("Pronto disponible...")
 
 # ══════════════════════════════════════════════════════════
 # PÁGINA: CONFIGURACIÓN
 # ══════════════════════════════════════════════════════════
-elif selection == "⚙️ Configuración":
+elif menu == "⚙️ Config":
     st.markdown("<h2>⚙️ Configuración</h2>", unsafe_allow_html=True)
-    
-    st.markdown("""
+    st.markdown(f"""
     <div class="card">
-        <h3 style='color: #ffd700;'>🔑 API Keys</h3>
-        <p style='color: #ccc;'>Configura tus claves de API en Streamlit Cloud (secrets).</p>
-        <ul style='color: #ccc;'>
-            <li><strong>API_FOOTBALL_KEY</strong> - Key de API-Football</li>
-            <li><strong>ADMIN_PASSWORD</strong> - Contraseña de administrador</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="card">
-        <h3 style='color: #ffd700;'>📋 Información</h3>
-        <p style='color: #ccc;'><strong>Versión:</strong> V4 Pro</p>
-        <p style='color: #ccc;'><strong>Última actualización:</strong> Julio 2026</p>
+        <h3>🔑 API Keys</h3>
+        <p>SUPABASE_URL: {'✅ Configurado' if SUPABASE_URL else '❌ Falta'}</p>
+        <p>SUPABASE_KEY: {'✅ Configurado' if SUPABASE_KEY else '❌ Falta'}</p>
     </div>
     """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════
 # FOOTER
 # ══════════════════════════════════════════════════════════
-st.markdown("<br><br><hr style='border-color: rgba(255,215,0,0.3);'>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #555;'>🦂 Scorpion Elite © 2026</p>", unsafe_allow_html=True)
+st.markdown("<br><hr style='border-color:rgba(255,215,0,0.3)'><p style='text-align:center;color:#555'>🦂 Scorpion Elite © 2026</p>", unsafe_allow_html=True)
