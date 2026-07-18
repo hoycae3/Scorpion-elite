@@ -300,21 +300,29 @@ API_KEYS = [
 
 def obtener_partidos_de_supabase(fecha_str):
     """Obtiene partidos desde Supabase ( fuente principal )"""
+    print(f"🔍 DEBUG: SUPABASE_URL = {SUPABASE_URL[:20] if SUPABASE_URL else 'EMPTY'}...")
+    print(f"🔍 DEBUG: SUPABASE_KEY = {SUPABASE_KEY[:10] if SUPABASE_KEY else 'EMPTY'}...")
+    
     if not SUPABASE_URL or not SUPABASE_KEY:
+        print("❌ DEBUG: Faltan credenciales de Supabase")
         return None
     
     try:
         from supabase import create_client
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
         
+        print(f"🔍 Consultando Supabase para fecha: {fecha_str}")
+        
         # Consultar partidos de la fecha, ordenados por prioridad DESCENDENTE
         response = supabase.table("partidos").select("*").eq("fecha", fecha_str).order("prioridad", desc=True).execute()
+        
+        print(f"🔍 Response received: {len(response.data) if response.data else 0} rows")
         
         if response.data:
             return response.data
         return None
     except Exception as e:
-        print(f"Error conectando a Supabase: {e}")
+        print(f"❌ Error conectando a Supabase: {e}")
         return None
 
 
@@ -363,7 +371,7 @@ def obtener_partidos_todas_apis(fecha_str):
     
     # 1. PRIMERO: Intentar con Supabase (fuente principal)
     datos_supabase = obtener_partidos_de_supabase(fecha_str)
-    print(f"📊 Supabase returned {len(datos_supabase)} partidos for {fecha_str}")
+    print(f"📊 Supabase returned {len(datos_supabase) if datos_supabase else 0} partidos for {fecha_str}")
     if datos_supabase:
         all_partidos = convertir_partidos_supabase_a_fixture(datos_supabase)
         print(f"✅ Obtenidos {len(all_partidos)} partidos de Supabase")
