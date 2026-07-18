@@ -16,8 +16,8 @@ st.set_page_config(
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "scorpion2026")
 
 # Supabase
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://jjtifureeygvygxtpuku.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "sb_publishable_0nCe_oMgVQpefVcJBzph8g_fj1-nanm")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
 # ══════════════════════════════════════════════════════════
 # INICIALIZAR SESIÓN
@@ -32,6 +32,9 @@ if "page" not in st.session_state:
 # ══════════════════════════════════════════════════════════
 @st.cache_data(ttl=300)
 def obtener_partidos(fecha=None):
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return []
+    
     try:
         from supabase import create_client
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -43,7 +46,6 @@ def obtener_partidos(fecha=None):
         
         return response.data if response.data else []
     except Exception as e:
-        st.error(f"Error: {e}")
         return []
 
 def formatear_partido(p):
