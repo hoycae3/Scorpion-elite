@@ -96,11 +96,10 @@ st.markdown("<hr style='border-color: rgba(255,215,0,0.3); margin: 5px 0;'>", un
 
 # Menú según estado de login
 if st.session_state.admin_logged:
-    menu_options = ["🏠 Inicio", "📊 Predicciones", "📈 Estadísticas", "⚙️ Configuración"]
+    menu_options = ["🏠", "📊 Predicciones", "📈 Estadísticas", "⚙️ Configuración"]
     selection = st.radio("", menu_options, horizontal=True, label_visibility="collapsed")
 else:
-    menu_options = ["🏠 Inicio"]
-    selection = st.radio("", menu_options, horizontal=True, label_visibility="collapsed")
+    st.markdown("<br>", unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════
 # PÁGINA: LOGIN
@@ -131,7 +130,7 @@ if st.session_state.page == "Login":
 # ══════════════════════════════════════════════════════════
 # PÁGINA: INICIO
 # ══════════════════════════════════════════════════════════
-elif selection == "🏠 Inicio":
+elif selection == "🏠":
     col_left, col_right = st.columns([1, 1])
     
     with col_left:
