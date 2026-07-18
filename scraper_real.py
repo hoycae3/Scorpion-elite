@@ -12,7 +12,7 @@ Ejecución: python scraper_real.py
 
 import asyncio
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from playwright.async_api import async_playwright
 from supabase import create_client
 import json
@@ -262,21 +262,35 @@ async def scrape_flashscore():
         )
         page = await context.new_page()
         
+        # Obtener la fecha actual y los próximos 7 días
+        today = datetime.now()
+        dates_to_scrape = [(today + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(7)]
+        
+        print("📅 Extrayendo partidos de los próximos 7 días...")
+        
+        # Primero ir a la página principal
         print("📡 Conectando a Flashscore...")
         await page.goto("https://www.flashscore.com/football/", timeout=60000)
         await page.wait_for_load_state("networkidle", timeout=30000)
         print("✅ Página cargada")
         await asyncio.sleep(3)
         
-        # Scroll para cargar más partidos
-        for _ in range(5):
-            await page.evaluate("window.scrollBy(0, 2000)")
-            await asyncio.sleep(1)
-        
-        print("\n📅 Extrayendo partidos de los próximos 7 días...")
-        matches = await extract_matches(page)
-        all_matches.extend(matches)
-        print(f"   Total encontrados: {len(matches)}")
+        for date_str in dates_to_scrape:
+            print(f"   📅 {date_str}...")
+            try:
+                # Scroll para cargar más partidos
+                for _ in range(5):
+                    await page.evaluate("window.scrollBy(0, 2000)")
+                    await asyncio.sleep(1)
+                
+                # Extraer partidos de la página actual
+                date_matches = await extract_matches_for_date(page, date_str)
+                all_matches.extend(date_matches)
+                print(f"      ✅ {len(date_matches)} partidos")
+                
+            except Exception as e:
+                print(f"      ⚠️ Error: {e}")
+                continue
         
         await browser.close()
     
@@ -284,21 +298,22 @@ async def scrape_flashscore():
     return all_matches
 
 
-async def extract_matches(page):
+async def extract_matches_for_date(page, date_str):
+    """Extrae partidos para una fecha específica"""
     matches = []
     seen_matches = set()
     
     await page.wait_for_selector('.event__match', timeout=15000)
     await asyncio.sleep(2)
     
-    data = await page.evaluate("""
-        () => {
+    data = await page.evaluate(f"""
+        () => {{
             const matches = [];
             const seenKeys = new Set();
             const events = document.querySelectorAll('.event__match');
             
-            events.forEach(event => {
-                try {
+            events.forEach(event => {{
+                try {{
                     const timeEl = event.querySelector('.event__time');
                     let time = timeEl ? timeEl.textContent.replace(/\\n/g, ' ').trim() : '';
                     time = time.replace('FRO', '').trim();
@@ -319,33 +334,33 @@ async def extract_matches(page):
                     let prev = event.previousElementSibling;
                     let attempts = 0;
                     
-                    while (prev && attempts < 10) {
+                    while (prev && attempts < 10) {{
                         const leagueTitle = prev.querySelector('.headerLeague__title');
                         const leagueCountry = prev.querySelector('.headerLeague__country');
-                        if (leagueTitle) {
+                        if (leagueTitle) {{
                             league = leagueTitle.textContent.trim();
                             country = leagueCountry ? leagueCountry.textContent.trim() : '';
                             break;
-                        }
+                        }}
                         prev = prev.previousElementSibling;
                         attempts++;
-                    }
+                    }}
                     
-                    matches.push({ time, home, away, league, country });
-                } catch (e) {}
-            });
+                    matches.push({{ time, home, away, league, country }});
+                }} catch (e) {{}}
+            }});
             
             return matches;
-        }
+        }}
     """)
     
     for item in data:
-        match_id = hash(f"{item['home']}{item['away']}{item['league']}{item['time']}") % 10000000
+        match_id = hash(f"{item['home']}{item['away']}{item['league']}{item['time']}{date_str}") % 10000000
         prioridad = calcular_prioridad(item['league'] or "Liga", item.get('country', ''), item.get('home', ''), item.get('away', ''))
         
         match_data = {
             "fixture_id": match_id,
-            "fecha": datetime.now().strftime("%Y-%m-%d"),
+            "fecha": date_str,
             "hora_utc": item['time'] or "00:00",
             "hora_local": item['time'],
             "liga": item['league'] or "Liga",
