@@ -2,6 +2,7 @@
 """
 Scraper Simple - Scorpion Elite
 Solo extrae las 28 ligas principales
+Navega a páginas específicas por liga
 """
 
 import asyncio
@@ -14,66 +15,63 @@ import json
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_KE = os.environ.get("SUPABASE_KE", "")
 
-# LAS 28 LIGAS QUE QUEREMOS
-LIGAS_DESEADAS = [
+# LAS 28 LIGAS CON SUS PÁGINAS EN FLASSSCORE
+LIGAS_POR_PAIS = {
     # Torneos Internacionales
-    ("UEFA Champions League", ["champions league", "uefa champions"]),
-    ("Copa Libertadores", ["copa libertadores", "libertadores"]),
-    ("UEFA Europa League", ["europa league", "uefa europa"]),
-    ("Copa Mundial FIFA", ["copa mundial", "world cup"]),
-    ("Copa América", ["copa america"]),
-    ("Eurocopa", ["eurocopa", "euro"]),
+    "Champions League": "https://www.flashscore.com/football/uefa-champions-league/",
+    "Copa Libertadores": "https://www.flashscore.com/football/south-america/copa-libertadores/",
+    "UEFA Europa League": "https://www.flashscore.com/football/uefa-europa-league/",
     
     # Inglaterra
-    ("Premier League", ["premier league"]),
-    ("EFL Championship", ["championship", "efl championship"]),
+    "Premier League": "https://www.flashscore.com/football/england/premier-league/",
+    "EFL Championship": "https://www.flashscore.com/football/england/championship/",
     
     # España
-    ("LaLiga", ["laliga", "la liga", "liga española"]),
-    ("LaLiga 2", ["laliga 2", "segunda division", "laliga hypermotion"]),
+    "LaLiga": "https://www.flashscore.com/football/spain/laliga/",
+    "LaLiga 2": "https://www.flashscore.com/football/spain/laliga-2/",
     
     # Italia
-    ("Serie A", ["serie a"]),
-    ("Serie B", ["serie b"]),
+    "Serie A": "https://www.flashscore.com/football/italy/serie-a/",
+    "Serie B": "https://www.flashscore.com/football/italy/serie-b/",
     
     # Alemania
-    ("Bundesliga", ["bundesliga"]),
-    ("2. Bundesliga", ["2. bundesliga", "bundesliga 2"]),
+    "Bundesliga": "https://www.flashscore.com/football/germany/bundesliga/",
+    "2. Bundesliga": "https://www.flashscore.com/football/germany/2-bundesliga/",
     
     # Francia
-    ("Ligue 1", ["ligue 1", "liga 1 francia"]),
-    ("Ligue 2", ["ligue 2"]),
+    "Ligue 1": "https://www.flashscore.com/football/france/ligue-1/",
+    "Ligue 2": "https://www.flashscore.com/football/france/ligue-2/",
     
     # Colombia
-    ("Liga BetPlay Dimayor", ["liga colombia", "dimayor", "liga col"]),
-    ("Torneo BetPlay Dimayor", ["categoria primera b", "primera b colombia"]),
+    "Liga BetPlay Dimayor": "https://www.flashscore.com/football/colombia/liga-aguila/",
+    "Torneo BetPlay Dimayor": "https://www.flashscore.com/football/colombia/primera-b/",
     
     # Brasil
-    ("Brasileirão Série A", ["brasileirao", "brasileirão"]),
-    ("Brasileirão Série B", ["serie b brasil", "brasil serie b"]),
+    "Brasileirão Série A": "https://www.flashscore.com/football/brazil/serie-a/",
+    "Brasileirão Série B": "https://www.flashscore.com/football/brazil/serie-b/",
     
     # Argentina
-    ("Liga Profesional Argentina", ["liga profesional", "liga argentina"]),
-    ("Primera Nacional", ["primera nacional", "nacional argentina"]),
+    "Liga Profesional Argentina": "https://www.flashscore.com/football/argentina/primera-division/",
+    "Primera Nacional": "https://www.flashscore.com/football/argentina/primera-nacional/",
     
     # México
-    ("Liga MX", ["liga mx", "liga mexicana", "liga mx apertura", "liga mx clausura"]),
+    "Liga MX": "https://www.flashscore.com/football/mexico/liga-mx/",
     
     # USA
-    ("MLS", ["major league", "mls soccer", "liga mayor"]),
+    "MLS": "https://www.flashscore.com/football/usa/mls/",
     
     # Japón
-    ("J1 League", ["j1 league", "j1 japón", "j league"]),
+    "J1 League": "https://www.flashscore.com/football/japan/j-league/",
     
     # Holanda
-    ("Eredivisie", ["eredivisie", "holanda primera"]),
+    "Eredivisie": "https://www.flashscore.com/football/netherlands/eredivisie/",
     
     # Bélgica
-    ("Jupiler Pro League", ["belgian pro", "jupiler", "belgica"]),
+    "Jupiler Pro League": "https://www.flashscore.com/football/belgium/jupiler-pro-league/",
     
     # Portugal
-    ("Primeira Liga", ["primeira liga", "liga portuguesa"]),
-]
+    "Primeira Liga": "https://www.flashscore.com/football/portugal/primeira-liga/",
+}
 
 
 def get_supabase_client():
@@ -87,27 +85,69 @@ def get_supabase_client():
         return None
 
 
-def get_liga_limpia(nombre_liga):
-    """Retorna el nombre limpio de la liga si está en nuestra lista"""
-    if not nombre_liga:
-        return None
+async def scrape_liga(page, liga_nombre, url):
+    """Extrae partidos de una liga específica"""
+    print(f"\n🔍 {liga_nombre}...")
     
-    nombre_lower = nombre_liga.lower()
-    
-    for nombre_limpio, keywords in LIGAS_DESEADAS:
-        for keyword in keywords:
-            if keyword in nombre_lower:
-                return nombre_limpio
-    return None
+    try:
+        await page.goto(url, timeout=60000)
+        await page.wait_for_load_state("networkidle", timeout=30000)
+        await asyncio.sleep(3)
+        
+        # Scroll para cargar más partidos
+        for _ in range(3):
+            await page.evaluate("window.scrollBy(0, 1500)")
+            await asyncio.sleep(1)
+        
+        # Extraer partidos
+        data = await page.evaluate("""
+            () => {
+                const events = document.querySelectorAll('.event__match');
+                const results = [];
+                
+                events.forEach(event => {
+                    try {
+                        const timeEl = event.querySelector('.event__time');
+                        let time = timeEl ? timeEl.textContent.replace(/\\n/g, ' ').trim() : '';
+                        time = time.replace('FRO', '').trim();
+                        
+                        const homeEl = event.querySelector('.event__homeParticipant');
+                        const awayEl = event.querySelector('.event__awayParticipant');
+                        
+                        const home = homeEl ? homeEl.textContent.trim() : '';
+                        const away = awayEl ? awayEl.textContent.trim() : '';
+                        
+                        if (home && away) {
+                            results.push({ time: time || '00:00', home, away });
+                        }
+                    } catch(e) {}
+                });
+                
+                return results;
+            }
+        """)
+        
+        print(f"   ✅ Encontrados {len(data)} partidos")
+        return data
+        
+    except Exception as e:
+        print(f"   ❌ Error: {e}")
+        return []
 
 
-async def scrape_flashscore():
+async def main():
     print("=" * 60)
-    print("🦂 SCORPION ELITE - SCRAPER (Solo 28 ligas)")
+    print("🦂 SCORPION ELITE - SCRAPER (28 ligas)")
     print("=" * 60)
     
-    all_matches = []
     Mexico_TZ = timezone(timedelta(hours=-6))
+    now_mexico = datetime.now(Mexico_TZ)
+    today = now_mexico.replace(hour=0, minute=0, second=0, microsecond=0)
+    fecha_hoy = today.strftime("%Y-%m-%d")
+    
+    print(f"\n📅 Fecha de México: {fecha_hoy}\n")
+    
+    all_partidos = []
     
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -116,143 +156,50 @@ async def scrape_flashscore():
         )
         page = await context.new_page()
         
-        # Obtener los próximos 7 días en hora de México
-        now_mexico = datetime.now(Mexico_TZ)
-        today = now_mexico.replace(hour=0, minute=0, second=0, microsecond=0)
-        dates_to_scrape = [(today + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(7)]
-        
-        print(f"📅 Buscando partidos para 7 días...\n")
-        
-        await page.goto("https://www.flashscore.com/football/", timeout=60000)
-        await page.wait_for_load_state("networkidle", timeout=30000)
-        print("✅ Conectado a Flashscore")
-        await asyncio.sleep(3)
-        
-        for date_str in dates_to_scrape:
-            print(f"\n📅 {date_str}")
-            try:
-                for _ in range(5):
-                    await page.evaluate("window.scrollBy(0, 2000)")
-                    await asyncio.sleep(1)
+        for liga_nombre, url in LIGAS_POR_PAIS.items():
+            matches = await scrape_liga(page, liga_nombre, url)
+            
+            for item in matches:
+                match_id = hash(f"{item['home']}{item['away']}{liga_nombre}{fecha_hoy}") % 10000000
                 
-                matches = await extract_matches(page, date_str)
-                all_matches.extend(matches)
-                print(f"   ✅ {len(matches)} partidos de las 28 ligas")
+                partido = {
+                    "fixture_id": match_id,
+                    "fecha": fecha_hoy,
+                    "hora": item['time'],
+                    "liga": liga_nombre,
+                    "equipo_local": item['home'],
+                    "equipo_visitante": item['away'],
+                }
                 
-            except Exception as e:
-                print(f"   ⚠️ Error: {e}")
+                all_partidos.append(partido)
+                print(f"   ⚽ {item['home']} vs {item['away']}")
         
         await browser.close()
     
-    return all_matches
-
-
-async def extract_matches(page, date_str):
-    """Extrae partidos de las ligas deseadas"""
-    matches = []
+    print(f"\n📊 Total: {len(all_partidos)} partidos de {len(LIGAS_POR_PAIS)} ligas")
     
-    await page.wait_for_selector('.event__match', timeout=15000)
-    await asyncio.sleep(2)
-    
-    data = await page.evaluate("""
-        () => {
-            const events = document.querySelectorAll('.event__match');
-            const results = [];
-            
-            events.forEach(event => {
-                try {
-                    const timeEl = event.querySelector('.event__time');
-                    let time = timeEl ? timeEl.textContent.replace(/\\n/g, ' ').trim() : '';
-                    time = time.replace('FRO', '').trim();
-                    
-                    const homeEl = event.querySelector('.event__homeParticipant');
-                    const awayEl = event.querySelector('.event__awayParticipant');
-                    
-                    let home = homeEl ? homeEl.textContent.trim() : '';
-                    let away = awayEl ? awayEl.textContent.trim() : '';
-                    
-                    if (!home || !away) return;
-                    
-                    let league = '';
-                    let prev = event.previousElementSibling;
-                    for (let i = 0; i < 5 && prev; i++) {
-                        const title = prev.querySelector('.headerLeague__title');
-                        if (title) {
-                            league = title.textContent.trim();
-                            break;
-                        }
-                        prev = prev.previousElementSibling;
-                    }
-                    
-                    results.push({ time, home, away, league });
-                } catch(e) {}
-            });
-            
-            return results;
-        }
-    """)
-    
-    for item in data:
-        liga_limpia = get_liga_limpia(item['league'])
-        
-        if liga_limpia:
-            match_id = hash(f"{item['home']}{item['away']}{liga_limpia}{date_str}") % 10000000
-            
-            partido = {
-                "fixture_id": match_id,
-                "fecha": date_str,
-                "hora": item['time'] or "00:00",
-                "liga": liga_limpia,
-                "equipo_local": item['home'],
-                "equipo_visitante": item['away'],
-            }
-            
-            matches.append(partido)
-            print(f"   ⚽ {item['home']} vs {item['away']} ({liga_limpia})")
-    
-    return matches
-
-
-def guardar_en_supabase(supabase, partidos):
-    if not supabase:
-        return 0
-    
-    try:
-        # Limpiar tabla
-        print("🗑️ Limpiando tabla...")
-        supabase.table("partidos").delete().neq("id", 0).execute()
-        
-        guardados = 0
-        for partido in partidos:
-            try:
-                supabase.table("partidos").upsert(partido, on_conflict="fixture_id").execute()
-                guardados += 1
-            except:
-                pass
-        
-        return guardados
-    except Exception as e:
-        print(f"❌ Error: {e}")
-        return 0
-
-
-async def main():
-    partidos = await scrape_flashscore()
-    
-    if not partidos:
-        print("\n⚠️  No se encontraron partidos")
-        return
-    
-    print(f"\n📊 Total: {len(partidos)} partidos de las 28 ligas")
-    
+    # Guardar
     supabase = get_supabase_client()
     if supabase:
-        guardados = guardar_en_supabase(supabase, partidos)
-        print(f"\n✅ {guardados} partidos guardados en Supabase")
+        try:
+            print("\n🗑️ Limpiando tabla...")
+            supabase.table("partidos").delete().neq("id", 0).execute()
+            
+            guardados = 0
+            for partido in all_partidos:
+                try:
+                    supabase.table("partidos").upsert(partido, on_conflict="fixture_id").execute()
+                    guardados += 1
+                except:
+                    pass
+            
+            print(f"✅ {guardados} partidos guardados en Supabase")
+        except Exception as e:
+            print(f"❌ Error: {e}")
     else:
         print("\n⚠️  Modo demo - Guardando en archivo")
         with open("partidos_debug.json", "w", encoding="utf-8") as f:
-            json.dump(partidos, f, indent=2, ensure_ascii=False)
+            json.dump(all_partidos, f, indent=2, ensure_ascii=False)
         print("📁 Guardado en partidos_debug.json")
     
     print("\n" + "=" * 60)
