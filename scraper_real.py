@@ -23,46 +23,38 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 # Prioridades de ligas MEJORADAS
 LIGAS_PRIORIDAD = {
     # Top tier (15)
-    "champions league": 15, "uefa champions league": 15,
-    
-    # Premier League Inglaterra (14) - específico
-    "premier league inglaterra": 14, "english premier league": 14, 
-    "inglaterra premier": 14,
+    "champions league": 15,
     
     # La Liga (13)
-    "la liga": 13, "laliga": 13, "espana": 13,
+    "la liga": 13, "laliga": 13,
     
     # Serie A (12)
-    "serie a italia": 12, "italian serie a": 12,
+    "serie a": 12,
     
     # Bundesliga (11)
-    "bundesliga alemania": 11, "german bundesliga": 11,
+    "bundesliga": 11,
     
     # Ligue 1 (10)
-    "ligue 1 francia": 10, "french ligue": 10,
+    "ligue 1": 10,
     
     # Europa League (9)
-    "europa league": 9, "uefa europa league": 9,
+    "europa league": 9,
     
     # Libertadores (8)
-    "copa libertadores": 8, "conmebol libertadores": 8,
+    "libertadores": 8,
     
     # Brasileirao (7)
     "brasileiro": 7, "serie a betano": 7,
     
     # Otras ligas importantes (6)
     "eredivisie": 6, "primeira liga": 6,
-    "super lig": 6, "turkish super lig": 6,
-    "liga mx": 6, "liga mexicana": 6,
+    "super lig": 6, "liga mx": 6,
     
     # MLS (5)
-    "major league soccer": 5,
+    "mls": 5,
     
-    # Championship/FA Cup (4)
-    "championship": 4, "copa argentina": 4, "fa cup": 4,
-    
-    # Equipos juvenil/reservas (2)
-    "u21": 2, "u20": 2, "women": 2, "femenino": 2,
+    # Copa Argentina, FA Cup (4)
+    "copa argentina": 4, "fa cup": 4,
 }
 
 
@@ -79,13 +71,22 @@ def get_supabase_client():
 
 def calcular_prioridad(liga_nombre):
     liga_lower = liga_nombre.lower()
+    
+    # Buscar coincidencias exactas
     for nombre, prio in LIGAS_PRIORIDAD.items():
         if nombre in liga_lower:
             return prio
-    if any(x in liga_lower for x in ["friendly", "amistoso"]):
+    
+    # Penalizar ligas menores
+    if any(x in liga_lower for x in ["friendly", "amistoso", "amical"]):
         return 1
-    if any(x in liga_lower for x in ["u18", "u17", "u16"]):
-        return 1
+    if any(x in liga_lower for x in ["u21", "u20", "u19", "u18", "u17"]):
+        return 2
+    if any(x in liga_lower for x in ["women", "femenino"]):
+        return 2
+    if any(x in liga_lower for x in ["premier league", "championship"]):
+        return 3
+    
     return 1
 
 
