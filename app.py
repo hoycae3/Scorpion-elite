@@ -1,36 +1,16 @@
 import streamlit as st
-from datetime import date, timedelta
-from datetime import datetime, timezone
+from datetime import date
+from datetime import datetime
 import sys
 import time
 import os
 sys.path.append('/workspace/project/Scorpion-elite')
 
-# Función para obtener la fecha en hora local (UTC-5 para América Latina: Perú, Colombia, Ecuador)
-def get_local_date():
-    """Obtiene la fecha actual en zona horaria UTC-5 (América Latina)"""
-    from datetime import timezone, timedelta
-    utc_now = datetime.now(timezone.utc)
-    # Ajustar a UTC-5 (Perú, Colombia, Ecuador)
-    local_tz = timezone(timedelta(hours=-5))
-    local_now = utc_now.astimezone(local_tz)
-    return local_now.date()
-
 st.set_page_config(page_title='SCORPION ELITE', layout='wide')
 
-# Limpiar cache antiguo si la fecha está desactualizada
-if 'fecha_seleccionada' in st.session_state:
-    today = get_local_date()
-    if st.session_state.fecha_seleccionada < today:
-        st.session_state.fecha_seleccionada = today
-
-# Configuración Supabase (usa secrets.toml en Streamlit Cloud)
-try:
-    SUPABASE_URL = st.secrets.get("SUPABASE_URL", os.environ.get("SUPABASE_URL", ""))
-    SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", os.environ.get("SUPABASE_KEY", ""))
-except:
-    SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
-    SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
+# Configuración Supabase
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 
 # Cache global para partidos (dura 5 minutos)
 PARTIDOS_CACHE = {
@@ -45,25 +25,6 @@ PARTIDO_CACHE = {
     "ttl": 600  # 10 minutos
 }
 
-# Función para formatear fechas
-def format_date_display(fecha_date):
-    """Convierte fecha a formato DD/MM/YYYY"""
-    return fecha_date.strftime("%d/%m/%Y")
-
-def format_date_for_query(fecha_date):
-    """Convierte fecha a formato YYYY-MM-DD para consultas"""
-    return fecha_date.strftime("%Y-%m-%d")
-
-# Generar opciones de fechas (hoy + 6 días) - usa hora local UTC-3
-def get_date_options():
-    """Genera opciones de fechas para el selector usando hora local UTC-3"""
-    today = get_local_date()
-    options = []
-    for i in range(7):
-        d = today + timedelta(days=i)
-        options.append((d, format_date_display(d)))
-    return options
-
 BG = '#070b0e'
 CARD = '#0d131a'
 BORDER = '#1b2430'
@@ -74,54 +35,6 @@ ORANGE = '#f59e0b'
 
 ADMIN_USER = "admin"
 ADMIN_PASS = "scorpion_admin_2025"
-
-# Equipos y ligas a EXCLUIR de los resultados
-EQUIPOS_EXCLUIR_APP = [
-    "labasa", "suva", "ba", "lautoka", "nadi", "rewa", "nadroga",
-    "okzhetpes", "zhetysu", "kyzylzhar", "tobol", "zhenis", "ulytau",
-    "atyrrau", "kairat", "kaisar", "aktobe", "ordabasy", "shakhtyor",
-    "maktaaral", "caspi", "kallon", "old edwardians", "diamond stars",
-    "bo rangers", "mighty blackpool", "wusum", "bai bureh", "slifa",
-]
-
-LIGAS_EXCLUIR_APP = [
-    "queensland", "npl", "tasmania", "fiji", "oceania", "solomon",
-    "vanuatu", "samoa", "tonga", "new zealand", "kazakhstan", "azerbaijan",
-    "sierra leone", "malta premier", "malaysia", "singapore", "hong kong",
-    "taiwan", "myanmar", "cambodia", "india i-league", "bangladesh",
-    "friendly women", "ykkonen", "veikkausliiga", "national league",
-    "super league", "elite league",  # genéricos sin contexto
-]
-
-PAISES_EXCLUIR_APP = [
-    "fiji", "samoa", "tonga", "vanuatu", "solomon", "papua", "kazakhstan",
-    "azerbaijan", "armenia", "malta", "cyprus", "iceland", "faroe",
-    "estonia", "latvia", "lithuania", "belarus", "luxembourg", "andorra",
-]
-
-def debe_excluir_partido(home, away, league_name="", country=""):
-    """Determina si un partido debe ser excluido de los resultados"""
-    home_lower = home.lower() if home else ""
-    away_lower = away.lower() if away else ""
-    league_lower = league_name.lower() if league_name else ""
-    country_lower = country.lower() if country else ""
-    
-    # Verificar equipos
-    for eq in EQUIPOS_EXCLUIR_APP:
-        if eq in home_lower or eq in away_lower:
-            return True
-    
-    # Verificar ligas
-    for lg in LIGAS_EXCLUIR_APP:
-        if lg in league_lower:
-            return True
-    
-    # Verificar países
-    for pc in PAISES_EXCLUIR_APP:
-        if pc in country_lower:
-            return True
-    
-    return False
 
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
@@ -134,7 +47,14 @@ if 'show_login' not in st.session_state:
 if 'deporte' not in st.session_state:
     st.session_state.deporte = "FUTBOL"
 if 'fecha_seleccionada' not in st.session_state:
-    st.session_state.fecha_seleccionada = get_local_date()
+    st.session_state.fecha_seleccionada = date.today()
+
+# Asegurar que la fecha siempre sea valida
+try:
+    if st.session_state.fecha_seleccionada > date.today():
+        st.session_state.fecha_seleccionada = date.today()
+except:
+    st.session_state.fecha_seleccionada = date.today()
 
 st.markdown(f'''
 <style>
@@ -147,17 +67,6 @@ header {{display:none !important;}}
 table {{border-collapse: collapse; width: 100%;}}
 th, td {{border: none;}}
 .stHorizontalBlock {{gap:0.5rem;}}
-
-/* Date input compacto */
-[data-testid="stDateInput"] {{margin-top: 0px !important;}}
-[data-testid="stDateInput"] > div {{min-width: 80px !important;}}
-
-/* Botón INICIAR SESIÓN compacto */
-[data-testid="stHorizontalBlock"] > div:nth-child(4) button {{
-    padding: 4px 8px !important;
-    font-size: 11px !important;
-    height: 36px !important;
-}}
 </style>
 ''', unsafe_allow_html=True)
 
@@ -243,40 +152,39 @@ if st.session_state.is_admin:
         st.rerun()
     st.stop()
 
-# ==========================================
-# HEADER EN UNA SOLA FILA
-# ==========================================
-col_logo, col_deportes, col_fecha, col_login = st.columns([2, 4, 2, 1])
+# HEADER con columnas
+col_left, col_center, col_right = st.columns([2.5, 4, 2])
 
-with col_logo:
+with col_left:
     st.markdown(f'''
-    <div style="display:flex; align-items:center; gap:6px;">
-        <span style="font-size:22px;">🦂</span>
-        <span style="font-size:15px; font-weight:bold; color:white;">SCORPION</span>
-        <span style="font-size:15px; font-weight:bold; color:{ORANGE};">ELITE</span>
-    </div>
-    ''', unsafe_allow_html=True)
-
-with col_deportes:
-    st.markdown('''
     <div style="display:flex; align-items:center; gap:8px;">
-        <span style="background:#1f2937; color:white; padding:6px 14px; border-radius:4px; font-weight:bold; font-size:12px; border:1px solid #374151;">⚽ FUTBOL</span>
+        <span style="font-size:22px;">🦂</span>
+        <div style="font-size:16px; font-weight:bold;">
+            <span style="color:white;">SCORPION</span><span style="color:{ORANGE};"> ELITE</span>
+        </div>
     </div>
     ''', unsafe_allow_html=True)
 
-with col_fecha:
-    fecha = st.date_input("Fecha", value=st.session_state.fecha_seleccionada, key="navbar_date", label_visibility="collapsed")
-    if fecha != st.session_state.fecha_seleccionada:
-        old_cache_key = f"partidos_{st.session_state.fecha_seleccionada.strftime('%Y-%m-%d')}"
-        if old_cache_key in st.session_state:
-            del st.session_state[old_cache_key]
-        st.session_state.fecha_seleccionada = fecha
-        st.rerun()
+with col_center:
+    if st.button("⚽ FUTBOL", key="btn_futbol"):
+        st.session_state.deporte = "FUTBOL"
+    # with s2:
+    #     if st.button("🏀 BALONCESTO", key="btn_basket"):
+    #         st.session_state.deporte = "BALONCESTO"
+    # with s3:
+    #     if st.button("🎾 TENIS", key="btn_tenis"):
+    #         st.session_state.deporte = "TENIS"
 
-with col_login:
-    if st.button("INICIAR SESIÓN", use_container_width=True, key="login_btn"):
-        st.session_state.show_login = True
-        st.rerun()
+with col_right:
+    c1, c2 = st.columns([1.5, 1])
+    with c1:
+        # Calendario nativo sin label
+        fecha = st.date_input("", value=st.session_state.fecha_seleccionada, key="calendario", label_visibility="collapsed")
+        st.session_state.fecha_seleccionada = fecha
+    with c2:
+        if st.button("LOGIN", key="login_btn"):
+            st.session_state.show_login = True
+            st.rerun()
 
 # CONTENEDOR UNIFICADO PARA LAS 3 TARJETAS - COMPACTO
 st.markdown(f'<div style="background:{CARD}; border:2px solid {BORDER}; border-radius:12px; padding:12px; margin:8px 0; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">', unsafe_allow_html=True)
@@ -307,8 +215,8 @@ def obtener_partidos_de_supabase(fecha_str):
         from supabase import create_client
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
         
-        # Consultar partidos de la fecha, ordenados por prioridad DESCENDENTE
-        response = supabase.table("partidos").select("*").eq("fecha", fecha_str).order("prioridad", desc=True).execute()
+        # Consultar partidos de la fecha
+        response = supabase.table("partidos").select("*").eq("fecha", fecha_str).execute()
         
         if response.data:
             return response.data
@@ -322,12 +230,10 @@ def convertir_partidos_supabase_a_fixture(datos_supabase):
     """Convierte datos de Supabase al formato de fixture que usa la app"""
     fixtures = []
     for p in datos_supabase:
-        # Mantener la prioridad para ordenar correctamente
         fixtures.append({
             "fixture": {
                 "id": p.get("fixture_id", 0),
-                "date": f"{p.get('fecha', '')}T{p.get('hora_utc', '00:00')}",
-                "prioridad": p.get("prioridad", 1)
+                "date": f"{p.get('fecha', '')}T{p.get('hora_utc', '00:00')}"
             },
             "league": {
                 "id": p.get("liga_id", 0),
@@ -347,8 +253,6 @@ def obtener_partidos_todas_apis(fecha_str):
     from datetime import datetime, timedelta
     from bs4 import BeautifulSoup
     
-    print(f"📅 Buscando partidos para fecha: {fecha_str}")
-    
     # Verificar caché
     cache_key = f"partidos_{fecha_str}"
     now = time.time()
@@ -356,14 +260,12 @@ def obtener_partidos_todas_apis(fecha_str):
     if cache_key in st.session_state:
         cached = st.session_state[cache_key]
         if cached and (now - cached.get("time", 0)) < 300:  # 5 min cache
-            print(f"📦 Usando cache para {fecha_str}: {len(cached.get('data', []))} partidos")
             return cached.get("data", [])
     
     all_partidos = []
     
     # 1. PRIMERO: Intentar con Supabase (fuente principal)
     datos_supabase = obtener_partidos_de_supabase(fecha_str)
-    print(f"📊 Supabase returned {len(datos_supabase)} partidos for {fecha_str}")
     if datos_supabase:
         all_partidos = convertir_partidos_supabase_a_fixture(datos_supabase)
         print(f"✅ Obtenidos {len(all_partidos)} partidos de Supabase")
@@ -540,7 +442,7 @@ LIGAS_POR_ID = {
 }
 
 def obtener_partidos_futbol(todos=False):
-    """Obtiene partidos de futbol para la fecha seleccionada desde TODAS las APIs
+    """Obtiene partidos de futbol para hoy desde TODAS las APIs
     
     Args:
         todos: Si True, retorna todos los partidos. Si False, solo los 3 mas importantes.
@@ -552,9 +454,8 @@ def obtener_partidos_futbol(todos=False):
     
     # Buscar en TODAS las APIs
     try:
-        # Usar la fecha seleccionada por el usuario desde session_state
-        fecha_seleccionada = st.session_state.fecha_seleccionada
-        fecha_str = format_date_for_query(fecha_seleccionada)
+        hoy = datetime.now()
+        fecha_str = hoy.strftime("%Y-%m-%d")
         
         # Usar función que busca en todas las APIs
         todos_fixture = obtener_partidos_todas_apis(fecha_str)
@@ -568,10 +469,6 @@ def obtener_partidos_futbol(todos=False):
                     league_id = fixture["league"]["id"]
                     country = fixture["league"]["country"]
                     hora = fixture["fixture"]["date"][11:16]
-                    
-                    # EXCLUIR partidos de ligas/equipos regionales
-                    if debe_excluir_partido(home, away, league, country):
-                        continue
                     
                     # Convertir UTC a UTC-3 (America)
                     try:
@@ -641,9 +538,8 @@ def obtener_mejor_pick():
     
     # Buscar en TODAS las APIs disponibles
     try:
-        # Usar la fecha seleccionada por el usuario desde session_state
-        fecha_seleccionada = st.session_state.fecha_seleccionada
-        fecha_str = format_date_for_query(fecha_seleccionada)
+        hoy = datetime.now()
+        fecha_str = hoy.strftime("%Y-%m-%d")
         
         # Usar función que busca en todas las APIs
         todos_fixture = obtener_partidos_todas_apis(fecha_str)
@@ -658,10 +554,6 @@ def obtener_mejor_pick():
                     country = fixture["league"]["country"]
                     fixture_id = fixture["fixture"]["id"]
                     hora = fixture["fixture"]["date"][11:16]
-                    
-                    # EXCLUIR partidos de ligas/equipos regionales
-                    if debe_excluir_partido(home, away, league, country):
-                        continue
                     
                     # Convertir UTC a UTC-3 (America)
                     try:
