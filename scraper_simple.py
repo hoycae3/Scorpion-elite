@@ -62,17 +62,25 @@ def main():
             page = await context.new_page()
             
             print("📡 Conectando a Flashscore...")
-            await page.goto("https://www.flashscore.com/football/", timeout=60000)
-            await page.wait_for_load_state("networkidle", timeout=30000)
+            await page.goto("https://www.flashscore.com/football/", timeout=90000, wait_until="networkidle")
             
-            # Solo hacer scroll inicial - NO cargar todo
+            # Esperar a que carguen los eventos
+            print("📜 Esperando carga de partidos...")
+            try:
+                await page.wait_for_selector('.event__match', timeout=30000)
+            except:
+                pass
+            
+            await asyncio.sleep(5)  # Esperar más para asegurar carga
+            
+            # Scroll para cargar todo
             print("📜 Cargando partidos...")
-            await asyncio.sleep(3)
-            await page.evaluate("window.scrollBy(0, 1000)")
-            await asyncio.sleep(1)
+            for _ in range(5):
+                await page.evaluate("window.scrollBy(0, 1500)")
+                await asyncio.sleep(0.5)
             
-            # Extraer partidos - los primeros que aparecen son los de HOY
-            print("🔍 Extrayendo partidos de HOY...")
+            # Extraer partidos
+            print("🔍 Extrayendo partidos...")
             
             data = await page.evaluate("""
                 () => {
