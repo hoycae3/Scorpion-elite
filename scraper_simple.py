@@ -58,69 +58,87 @@ def get_supabase_client():
 
 
 async def scrape_liga(page, liga_nombre, url, fecha_base, year):
-    """Extrae partidos de una liga específica capturando la fecha correcta"""
-    try:
-        await page.goto(url, timeout=60000)
-        await page.wait_for_load_state("networkidle", timeout=30000)
-        await asyncio.sleep(3)
-        
-        # Scroll para cargar más partidos
-        for _ in range(3):
-            await page.evaluate("window.scrollBy(0, 1500)")
-            await asyncio.sleep(1)
-        
-        # Extraer partidos con la fecha del evento
-        data = await page.evaluate(f"""
-            () => {{
-                const matches = [];
-                const events = document.querySelectorAll('.event__match');
+    """Extrae partidos de una liga específica - hoy y mañana"""
+    all_matches = []
+    
+    for day_offset in [0, 1]:  # Hoy y mañana
+        try:
+            target_date = fecha_base + timedelta(days=day_offset)
+            target_date_str = target_date.strftime("%Y-%m-%d")
+            
+            await page.goto(url, timeout=60000)
+            await page.wait_for_load_state("networkidle", timeout=30000)
+            await asyncio.sleep(2)
+            
+            # Intentar cambiar la fecha usando el calendario
+            try:
+                # Click en el selector de fecha
+                date_picker = page.locator('.calendarNav')
+                await date_picker.click(timeout=3000)
+                await asyncio.sleep(1)
                 
-                events.forEach(event => {{
-                    try {{
-                        const timeEl = event.querySelector('.event__time');
-                        let time = timeEl ? timeEl.textContent.replace(/\\n/g, ' ').trim() : '';
-                        time = time.replace('FRO', '').trim();
-                        
-                        const homeEl = event.querySelector('.event__homeParticipant');
-                        const awayEl = event.querySelector('.event__awayParticipant');
-                        
-                        const home = homeEl ? homeEl.textContent.trim() : '';
-                        const away = awayEl ? awayEl.textContent.trim() : '';
-                        
-                        // Buscar la fecha en el header de la sección
-                        let dayNum = '';
-                        let prev = event.previousElementSibling;
-                        for (let i = 0; i < 5 && prev; i++) {{
-                            const dateEl = prev.querySelector('.event__date');
-                            if (dateEl) {{
-                                const text = dateEl.textContent;
-                                const match = text.match(/(\\d+)/);
-                                if (match) dayNum = match[1];
-                                break;
+                # Buscar y click en el día correcto
+                await page.evaluate(f"""
+                    () => {{
+                        const days = document.querySelectorAll('.pickerDay, .day, [data-date]');
+                        days.forEach(d => {{
+                            if (d.textContent.trim() === '{target_date.day}') {{
+                                d.click();
                             }}
-                            prev = prev.previousElementSibling;
-                        }}
-                        
-                        if (home && away) {{
-                            matches.push({{ 
-                                time: time || '00:00', 
-                                home, 
-                                away,
-                                day: dayNum
-                            }});
-                        }}
-                    }} catch(e) {{}}
-                }});
-                
-                return matches;
-            }}
-        """)
-        
-        return data
-        
-    except Exception as e:
-        print(f"   ❌ Error: {e}")
-        return []
+                        }});
+                    }}
+                """)
+                await asyncio.sleep(2)
+            except:
+                pass  # Si no funciona el calendario, usa la fecha actual
+            
+            # Scroll para cargar más partidos
+            for _ in range(3):
+                await page.evaluate("window.scrollBy(0, 1500)")
+                await asyncio.sleep(0.5)
+            
+            # Extraer partidos
+            data = await page.evaluate(f"""
+                () => {{
+                    const matches = [];
+                    const events = document.querySelectorAll('.event__match');
+                    
+                    events.forEach(event => {{
+                        try {{
+                            const timeEl = event.querySelector('.event__time');
+                            let time = timeEl ? timeEl.textContent.replace(/\\n/g, ' ').trim() : '';
+                            time = time.replace('FRO', '').trim();
+                            
+                            const homeEl = event.querySelector('.event__homeParticipant');
+                            const awayEl = event.querySelector('.event__awayParticipant');
+                            
+                            const home = homeEl ? homeEl.textContent.trim() : '';
+                            const away = awayEl ? awayEl.textContent.trim() : '';
+                            
+                            if (home && away) {{
+                                matches.push({{ 
+                                    time: time || '00:00', 
+                                    home, 
+                                    away
+                                }});
+                            }}
+                        }} catch(e) {{}}
+                    }});
+                    
+                    return matches;
+                }}
+            """)
+            
+            # Agregar la fecha correcta a cada partido
+            for item in data:
+                item['fecha'] = target_date_str
+            
+            all_matches.extend(data)
+            
+        except Exception as e:
+            print(f"   ⚠️  Error día {day_offset}: {e}")
+    
+    return all_matches
 
 
 def parse_fecha(flashscore_date, year=2026):
@@ -168,11 +186,8 @@ async def main():
             matches = await scrape_liga(page, liga_nombre, url, today, year)
             
             for item in matches:
-                # Generar fecha real
-                if item.get('day'):
-                    fecha = f"{year}-{now_mexico.month:02d}-{int(item['day']):02d}"
-                else:
-                    fecha = today.strftime("%Y-%m-%d")
+                # Usar la fecha que ya viene del scrape
+                fecha = item.get('fecha', today.strftime("%Y-%m-%d"))
                 
                 key = f"{item['home']}{item['away']}{liga_nombre}{fecha}"
                 
@@ -190,7 +205,7 @@ async def main():
                     }
                     
                     all_partidos.append(partido)
-                    print(f"   ⚽ {item['home']} vs {item['away']} ({fecha} {item['time']})")
+                    print(f"   ⚽ {item['home']} vs {item['away']}")
             
             print(f"   ✅ {len(matches)} partidos")
         
