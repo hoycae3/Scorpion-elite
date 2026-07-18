@@ -246,54 +246,47 @@ with col_left:
     ''', unsafe_allow_html=True)
 
 with col_center:
-    if st.button("⚽ FUTBOL", key="btn_futbol"):
-        st.session_state.deporte = "FUTBOL"
-    # with s2:
-    #     if st.button("🏀 BALONCESTO", key="btn_basket"):
-    #         st.session_state.deporte = "BALONCESTO"
-    # with s3:
-    #     if st.button("🎾 TENIS", key="btn_tenis"):
-    #         st.session_state.deporte = "TENIS"
+    st.button("⚽ FUTBOL", key="btn_futbol", disabled=True)
 
 with col_right:
-    # Selector de fechas en una sola línea con LOGIN
+    # Selector simple de fecha y botón LOGIN
     date_options = get_date_options()
     date_labels = [opt[1] for opt in date_options]
     date_values = [opt[0] for opt in date_options]
     
-    # Verificar que la fecha seleccionada esté en las opciones disponibles
+    # Asegurar que la fecha sea válida
     today_local = get_local_date()
     if st.session_state.fecha_seleccionada < today_local:
         st.session_state.fecha_seleccionada = today_local
     
-    # Encontrar el índice de la fecha seleccionada o usar 0 (hoy)
-    try:
-        selected_index = date_values.index(st.session_state.fecha_seleccionada)
-    except:
-        selected_index = 0
-        st.session_state.fecha_seleccionada = date_values[0]
+    # Buscar índice de la fecha
+    selected_index = 0
+    for i, dv in enumerate(date_values):
+        if dv == st.session_state.fecha_seleccionada:
+            selected_index = i
+            break
     
-    # Crear columnas para alinear fecha y login
-    col_date, col_login = st.columns([3, 1])
+    # Selector de fecha pequeño
+    selected_label = st.selectbox("", date_labels, index=selected_index, key="calendario")
     
-    with col_date:
-        selected_label = st.selectbox("", date_labels, index=selected_index, key="calendario")
+    # Actualizar fecha si cambió
+    idx = date_labels.index(selected_label)
+    nueva_fecha = date_values[idx]
+    if nueva_fecha != st.session_state.fecha_seleccionada:
+        # Limpiar cache de la fecha anterior
+        old_cache_key = f"partidos_{st.session_state.fecha_seleccionada.strftime('%Y-%m-%d')}"
+        if old_cache_key in st.session_state:
+            del st.session_state[old_cache_key]
         
-        # Actualizar la fecha seleccionada
-        idx = date_labels.index(selected_label)
-        nueva_fecha = date_values[idx]
-        
-        # Si cambió la fecha, guardar y rerun
-        if nueva_fecha != st.session_state.fecha_seleccionada:
-            st.session_state.fecha_seleccionada = nueva_fecha
-            st.rerun()
-        
-        fecha = st.session_state.fecha_seleccionada
+        st.session_state.fecha_seleccionada = nueva_fecha
+        st.rerun()
     
-    with col_login:
-        if st.button("LOGIN", key="login_btn"):
-            st.session_state.show_login = True
-            st.rerun()
+    fecha = st.session_state.fecha_seleccionada
+    
+    # Botón LOGIN
+    if st.button("LOGIN", key="login_btn"):
+        st.session_state.show_login = True
+        st.rerun()
 
 # CONTENEDOR UNIFICADO PARA LAS 3 TARJETAS - COMPACTO
 st.markdown(f'<div style="background:{CARD}; border:2px solid {BORDER}; border-radius:12px; padding:12px; margin:8px 0; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">', unsafe_allow_html=True)
@@ -364,6 +357,8 @@ def obtener_partidos_todas_apis(fecha_str):
     from datetime import datetime, timedelta
     from bs4 import BeautifulSoup
     
+    print(f"📅 Buscando partidos para fecha: {fecha_str}")
+    
     # Verificar caché
     cache_key = f"partidos_{fecha_str}"
     now = time.time()
@@ -371,12 +366,14 @@ def obtener_partidos_todas_apis(fecha_str):
     if cache_key in st.session_state:
         cached = st.session_state[cache_key]
         if cached and (now - cached.get("time", 0)) < 300:  # 5 min cache
+            print(f"📦 Usando cache para {fecha_str}: {len(cached.get('data', []))} partidos")
             return cached.get("data", [])
     
     all_partidos = []
     
     # 1. PRIMERO: Intentar con Supabase (fuente principal)
     datos_supabase = obtener_partidos_de_supabase(fecha_str)
+    print(f"📊 Supabase returned {len(datos_supabase)} partidos for {fecha_str}")
     if datos_supabase:
         all_partidos = convertir_partidos_supabase_a_fixture(datos_supabase)
         print(f"✅ Obtenidos {len(all_partidos)} partidos de Supabase")
