@@ -27,13 +27,9 @@ CREATE TABLE IF NOT EXISTS partidos (
     actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Índice para búsqueda por fecha
+-- Índices para búsqueda
 CREATE INDEX IF NOT EXISTS idx_partidos_fecha ON partidos(fecha);
-
--- Índice para búsqueda por liga
 CREATE INDEX IF NOT EXISTS idx_partidos_liga ON partidos(liga_id);
-
--- Índice para búsqueda por prioridad
 CREATE INDEX IF NOT EXISTS idx_partidos_prioridad ON partidos(prioridad DESC);
 
 -- Tabla de historial de picks (para estadísticas)
@@ -51,20 +47,45 @@ CREATE TABLE IF NOT EXISTS historial_picks (
     actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Índice para historial
+-- Tabla de estadísticas de equipos (para análisis histórico)
+CREATE TABLE IF NOT EXISTS estadisticas_equipos (
+    id BIGSERIAL PRIMARY KEY,
+    equipo VARCHAR(255) NOT NULL,
+    liga VARCHAR(255),
+    partido_jugados INTEGER DEFAULT 0,
+    victorias INTEGER DEFAULT 0,
+    empates INTEGER DEFAULT 0,
+    derrotas INTEGER DEFAULT 0,
+    goles_favor INTEGER DEFAULT 0,
+    goles_contra INTEGER DEFAULT 0,
+    promedio_corners_home DECIMAL(4,2) DEFAULT 0,
+    promedio_corners_away DECIMAL(4,2) DEFAULT 0,
+    promedio_tarjetas_home DECIMAL(4,2) DEFAULT 0,
+    promedio_tarjetas_away DECIMAL(4,2) DEFAULT 0,
+    ultimos_5 TEXT DEFAULT '[]', -- JSON array con últimos resultados
+    actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(equipo, liga)
+);
+
+-- Índices para estadísticas de equipos
+CREATE INDEX IF NOT EXISTS idx_stats_equipo ON estadisticas_equipos(equipo);
 CREATE INDEX IF NOT EXISTS idx_historial_fecha ON historial_picks(fecha);
 
 -- Políticas RLS (Row Level Security) - permite lectura pública
 ALTER TABLE partidos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE historial_picks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE estadisticas_equipos ENABLE ROW LEVEL SECURITY;
 
 -- Política para lectura pública
 CREATE POLICY "Allow public read" ON partidos FOR SELECT USING (true);
 CREATE POLICY "Allow public read" ON historial_picks FOR SELECT USING (true);
+CREATE POLICY "Allow public read" ON estadisticas_equipos FOR SELECT USING (true);
 
 -- Política para inserción (solo desde el scraper con service role)
 CREATE POLICY "Allow insert from service" ON partidos FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow insert stats from service" ON estadisticas_equipos FOR INSERT WITH CHECK (true);
 
 -- Comentario de ayuda
 COMMENT ON TABLE partidos IS 'Partidos de fútbol del día con predicciones';
 COMMENT ON TABLE historial_picks IS 'Historial de picks para seguimiento de resultados';
+COMMENT ON TABLE estadisticas_equipos IS 'Estadísticas históricas de equipos para análisis de IA';
