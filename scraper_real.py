@@ -106,7 +106,8 @@ LIGAS_EXCLUIR = [
     "india i league", "bangladesh premier", "nepal premier",
     "jordan premier", "lebanon premier", "syria premier", "iraq premier",
     "bahrain premier", "qatar league", "kuwait premier", "oman premier",
-    "uae league", "saudi professional",
+    "uae league", "saudi professional", "belarusian cup", "polish cup", 
+    "czech cup", "romanian cup", "slovak cup", "friendly women",
 ]
 
 
@@ -114,6 +115,9 @@ def calcular_prioridad(liga_nombre, pais="", equipo_home="", equipo_away=""):
     liga_lower = liga_nombre.lower()
     home_lower = equipo_home.lower() if equipo_home else ""
     away_lower = equipo_away.lower() if equipo_away else ""
+    
+    # Si la liga es solo "Liga" (genérica), no dar prioridad alta por equipo
+    liga_es_generica = liga_lower.strip() == "liga"
     
     # EXCLUIR ligas muy regionales
     for exclude in LIGAS_EXCLUIR:
@@ -131,67 +135,69 @@ def calcular_prioridad(liga_nombre, pais="", equipo_home="", equipo_away=""):
         if nombre in liga_lower:
             return prio
     
-    # PREMIUM: Detectar por equipos (solo si la liga no es muy genérica)
+    # PREMIUM: Detectar por equipos SOLO si la liga NO es genérica
+    # (para evitar que "Arsenal Dzerzhinsk" se confunda con Arsenal de Inglaterra)
     
-    # Premier League Inglaterra
-    if any(e in home_lower for e in EQUIPOS_PREMIER) or any(e in away_lower for e in EQUIPOS_PREMIER):
-        return 14
-    
-    # La Liga
-    if any(e in home_lower for e in EQUIPOS_LA_LIGA) or any(e in away_lower for e in EQUIPOS_LA_LIGA):
-        return 13
-    
-    # Serie A Italia
-    if any(e in home_lower for e in EQUIPOS_SERIE_A) or any(e in away_lower for e in EQUIPOS_SERIE_A):
-        return 12
-    
-    # Bundesliga
-    if any(e in home_lower for e in EQUIPOS_BUNDESLIGA) or any(e in away_lower for e in EQUIPOS_BUNDESLIGA):
-        return 11
-    
-    # Ligue 1
-    if any(e in home_lower for e in EQUIPOS_LIGUE_1) or any(e in away_lower for e in EQUIPOS_LIGUE_1):
-        return 10
-    
-    # Brasileirao
-    if any(e in home_lower for e in EQUIPOS_BRASILEIRAO) or any(e in away_lower for e in EQUIPOS_BRASILEIRAO):
-        return 7
-    
-    # Liga MX
-    if any(e in home_lower for e in EQUIPOS_LIGA_MX) or any(e in away_lower for e in EQUIPOS_LIGA_MX):
-        return 6
-    
-    # Liga Argentina
-    if any(e in home_lower for e in EQUIPOS_LIGA_ARG) or any(e in away_lower for e in EQUIPOS_LIGA_ARG):
-        return 7
-    
-    # Liga Colombia
-    if any(e in home_lower for e in EQUIPOS_LIGA_COL) or any(e in away_lower for e in EQUIPOS_LIGA_COL):
-        return 6
-    
-    # Liga Peru
-    if any(e in home_lower for e in EQUIPOS_LIGA_PERU) or any(e in away_lower for e in EQUIPOS_LIGA_PERU):
-        return 6
-    
-    # Liga Chile
-    if any(e in home_lower for e in EQUIPOS_LIGA_CHILE) or any(e in away_lower for e in EQUIPOS_LIGA_CHILE):
-        return 6
-    
-    # Liga Uruguay
-    if any(e in home_lower for e in EQUIPOS_LIGA_URU) or any(e in away_lower for e in EQUIPOS_LIGA_URU):
-        return 6
-    
-    # J1 League
-    if any(e in home_lower for e in EQUIPOS_J1_LEAGUE) or any(e in away_lower for e in EQUIPOS_J1_LEAGUE):
-        return 6
-    
-    # Eredivisie
-    if any(e in home_lower for e in EQUIPOS_EREDIVISIE) or any(e in away_lower for e in EQUIPOS_EREDIVISIE):
-        return 6
-    
-    # MLS
-    if any(e in home_lower for e in EQUIPOS_MLS) or any(e in away_lower for e in EQUIPOS_MLS):
-        return 5
+    if not liga_es_generica:
+        # Premier League Inglaterra
+        if any(e in home_lower for e in EQUIPOS_PREMIER) or any(e in away_lower for e in EQUIPOS_PREMIER):
+            return 14
+        
+        # La Liga
+        if any(e in home_lower for e in EQUIPOS_LA_LIGA) or any(e in away_lower for e in EQUIPOS_LA_LIGA):
+            return 13
+        
+        # Serie A Italia
+        if any(e in home_lower for e in EQUIPOS_SERIE_A) or any(e in away_lower for e in EQUIPOS_SERIE_A):
+            return 12
+        
+        # Bundesliga
+        if any(e in home_lower for e in EQUIPOS_BUNDESLIGA) or any(e in away_lower for e in EQUIPOS_BUNDESLIGA):
+            return 11
+        
+        # Ligue 1
+        if any(e in home_lower for e in EQUIPOS_LIGUE_1) or any(e in away_lower for e in EQUIPOS_LIGUE_1):
+            return 10
+        
+        # Brasileirao
+        if any(e in home_lower for e in EQUIPOS_BRASILEIRAO) or any(e in away_lower for e in EQUIPOS_BRASILEIRAO):
+            return 7
+        
+        # Liga MX
+        if any(e in home_lower for e in EQUIPOS_LIGA_MX) or any(e in away_lower for e in EQUIPOS_LIGA_MX):
+            return 6
+        
+        # Liga Argentina
+        if any(e in home_lower for e in EQUIPOS_LIGA_ARG) or any(e in away_lower for e in EQUIPOS_LIGA_ARG):
+            return 7
+        
+        # Liga Colombia
+        if any(e in home_lower for e in EQUIPOS_LIGA_COL) or any(e in away_lower for e in EQUIPOS_LIGA_COL):
+            return 6
+        
+        # Liga Peru
+        if any(e in home_lower for e in EQUIPOS_LIGA_PERU) or any(e in away_lower for e in EQUIPOS_LIGA_PERU):
+            return 6
+        
+        # Liga Chile
+        if any(e in home_lower for e in EQUIPOS_LIGA_CHILE) or any(e in away_lower for e in EQUIPOS_LIGA_CHILE):
+            return 6
+        
+        # Liga Uruguay
+        if any(e in home_lower for e in EQUIPOS_LIGA_URU) or any(e in away_lower for e in EQUIPOS_LIGA_URU):
+            return 6
+        
+        # J1 League
+        if any(e in home_lower for e in EQUIPOS_J1_LEAGUE) or any(e in away_lower for e in EQUIPOS_J1_LEAGUE):
+            return 6
+        
+        # Eredivisie
+        if any(e in home_lower for e in EQUIPOS_EREDIVISIE) or any(e in away_lower for e in EQUIPOS_EREDIVISIE):
+            return 6
+        
+        # MLS
+        if any(e in home_lower for e in EQUIPOS_MLS) or any(e in away_lower for e in EQUIPOS_MLS):
+            return 5
     
     # Inglaterra championship
     if "england" in pais.lower() or "inglaterra" in pais.lower():
