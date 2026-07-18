@@ -71,9 +71,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════
-# HEADER CON LOGIN A LA DERECHA
+# HEADER CON TÍTULO Y LOGIN
 # ══════════════════════════════════════════════════════════
-col_header_left, col_header_right = st.columns([4, 1])
+col_header_left, col_header_right = st.columns([3, 1])
+
+with col_header_left:
+    st.markdown("<h1 style='font-size: 24px; margin: 0;'>🦂 SCORPION ELITE</h1>", unsafe_allow_html=True)
 
 with col_header_right:
     if st.session_state.admin_logged:
