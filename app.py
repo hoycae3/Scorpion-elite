@@ -147,6 +147,37 @@ header {{display:none !important;}}
 table {{border-collapse: collapse; width: 100%;}}
 th, td {{border: none;}}
 .stHorizontalBlock {{gap:0.5rem;}}
+
+/* HEADER COMPACTO */
+.header-container {{
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 10px 20px !important;
+    background: {CARD} !important;
+    border-bottom: 1px solid {BORDER} !important;
+    margin-bottom: 10px !important;
+}}
+
+/* Selector de fecha compacto */
+[data-testid="stSelectbox"] {{
+    min-width: 120px !important;
+}}
+
+/* Botón FUTBOL activo */
+.stButton > button:disabled {{
+    background-color: {GREEN} !important;
+    color: {BG} !important;
+    opacity: 1 !important;
+    font-weight: bold !important;
+}}
+
+/* Alinear elementos del header */
+.header-left, .header-center, .header-right {{
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+}}
 </style>
 ''', unsafe_allow_html=True)
 
@@ -232,58 +263,59 @@ if st.session_state.is_admin:
         st.rerun()
     st.stop()
 
-# HEADER con columnas
-col_left, col_center, col_right = st.columns([2.5, 4, 2])
+# HEADER COMPACTO CON COLUMNAS DE STREAMLIT
+# Generar opciones de fecha para el selector
+date_options = get_date_options()
+date_labels = [opt[1] for opt in date_options]
+date_values = [opt[0] for opt in date_options]
 
-with col_left:
+# Asegurar que la fecha sea válida
+today_local = get_local_date()
+if st.session_state.fecha_seleccionada < today_local:
+    st.session_state.fecha_seleccionada = today_local
+
+# Buscar índice de la fecha
+selected_index = 0
+for i, dv in enumerate(date_values):
+    if dv == st.session_state.fecha_seleccionada:
+        selected_index = i
+        break
+
+# Header con 4 columnas: Logo | Deporte | Fecha | Login
+h1, h2, h3, h4 = st.columns([2, 1.5, 1.5, 0.5])
+
+with h1:
     st.markdown(f'''
-    <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:22px;">🦂</span>
-        <div style="font-size:16px; font-weight:bold;">
-            <span style="color:white;">SCORPION</span><span style="color:{ORANGE};"> ELITE</span>
-        </div>
+    <div style="display:flex; align-items:center; gap:6px; padding-top:5px;">
+        <span style="font-size:20px;">🦂</span>
+        <span style="font-size:14px; font-weight:bold; color:white;">SCORPION</span>
+        <span style="font-size:14px; font-weight:bold; color:{ORANGE};">ELITE</span>
     </div>
     ''', unsafe_allow_html=True)
 
-with col_center:
-    st.button("⚽ FUTBOL", key="btn_futbol", disabled=True)
+with h2:
+    st.markdown(f'''
+    <div style="padding-top:5px;">
+        <span style="background:{GREEN}; color:{BG}; padding:6px 12px; border-radius:4px; font-weight:bold; font-size:11px;">⚽ FUTBOL</span>
+    </div>
+    ''', unsafe_allow_html=True)
 
-with col_right:
-    # Selector simple de fecha y botón LOGIN
-    date_options = get_date_options()
-    date_labels = [opt[1] for opt in date_options]
-    date_values = [opt[0] for opt in date_options]
-    
-    # Asegurar que la fecha sea válida
-    today_local = get_local_date()
-    if st.session_state.fecha_seleccionada < today_local:
-        st.session_state.fecha_seleccionada = today_local
-    
-    # Buscar índice de la fecha
-    selected_index = 0
-    for i, dv in enumerate(date_values):
-        if dv == st.session_state.fecha_seleccionada:
-            selected_index = i
-            break
-    
-    # Selector de fecha pequeño
+with h3:
     selected_label = st.selectbox("", date_labels, index=selected_index, key="calendario")
     
     # Actualizar fecha si cambió
     idx = date_labels.index(selected_label)
     nueva_fecha = date_values[idx]
     if nueva_fecha != st.session_state.fecha_seleccionada:
-        # Limpiar cache de la fecha anterior
         old_cache_key = f"partidos_{st.session_state.fecha_seleccionada.strftime('%Y-%m-%d')}"
         if old_cache_key in st.session_state:
             del st.session_state[old_cache_key]
-        
         st.session_state.fecha_seleccionada = nueva_fecha
         st.rerun()
     
     fecha = st.session_state.fecha_seleccionada
-    
-    # Botón LOGIN
+
+with h4:
     if st.button("LOGIN", key="login_btn"):
         st.session_state.show_login = True
         st.rerun()
