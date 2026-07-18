@@ -27,10 +27,10 @@ if 'fecha_seleccionada' in st.session_state:
 # Configuración Supabase (usa secrets.toml en Streamlit Cloud)
 try:
     SUPABASE_URL = st.secrets.get("SUPABASE_URL", os.environ.get("SUPABASE_URL", ""))
-    SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", os.environ.get("SUPABASE_KEY", ""))
+    SUPABASE_KEY = st.secrets.get("SUPABASE_KE", os.environ.get("SUPABASE_KE", ""))
 except:
     SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
-    SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
+    SUPABASE_KEY = os.environ.get("SUPABASE_KE", "")
 
 # Cache global para partidos (dura 5 minutos)
 PARTIDOS_CACHE = {
