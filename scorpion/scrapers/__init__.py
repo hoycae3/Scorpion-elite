@@ -1,39 +1,35 @@
 """
 Scorpion Elite - Módulo de Scrapers
 ===================================
-Scraping multi-fuente para datos de fútbol:
+Scraping con Playwright (JavaScript real):
 
-- API-Football: Partidos del día (principal)
-- Transfermarkt: Tablas de posiciones, valor de mercado
-- Soccerway: Resultados históricos, forma actual
-- WhoScored: Estadísticas avanzadas (corners, tarjetas, posesión)
+- Soccerway: Partidos del día (Playwright)
+- Transfermarkt: Tablas de posiciones
+- Soccerway Stats: Resultados históricos
+- WhoScored: Estadísticas avanzadas
 
 Uso:
-    from scorpion.scrapers import SimpleMatchScraper
+    from scorpion.scrapers import PlaywrightMatchesScraper
     
-    scraper = SimpleMatchScraper()
-    partidos = scraper.scrape(dias=2)
+    scraper = PlaywrightMatchesScraper()
+    partidos = scraper.scrape()
 """
 
-# Scraper principal de partidos (usa API-Football)
-from .simple_scraper import SimpleMatchScraper
+# Scraper de partidos (usa Playwright)
+from .playwright_matches_scraper import PlaywrightMatchesScraper
 
 # Scraper de estadísticas
 from .transfermarkt_scraper import TransfermarktScraper
 from .soccerway_scraper import SoccerwayScraper
 from .whoscored_scraper import WhoScoredScraper
 
-# Scraper legacy (Flashscore con playwright)
-from .flashscore_scraper import FlashscoreScraper
-
 # Scraper unificado
 from .scraper_unificado import ScraperUnificado
 
 __all__ = [
-    "SimpleMatchScraper",
-    "FlashscoreScraper",
-    "TransfermarktScraper", 
+    "PlaywrightMatchesScraper",
     "SoccerwayScraper",
+    "TransfermarktScraper", 
     "WhoScoredScraper",
     "ScraperUnificado",
 ]

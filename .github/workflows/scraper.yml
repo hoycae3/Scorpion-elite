@@ -43,20 +43,23 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip install playwright
+          playwright install chromium
 
-      - name: Run Match Scraper (API-Football)
+      - name: Run Match Scraper (Soccerway con Playwright)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
           python -c "
-          from scorpion.scrapers import SimpleMatchScraper
-          scraper = SimpleMatchScraper()
-          partidos = scraper.scrape(dias=2)
+          from scorpion.scrapers import PlaywrightMatchesScraper
+          scraper = PlaywrightMatchesScraper()
+          partidos = scraper.scrape()
           print(f'Partidos encontrados: {len(partidos)}')
           for p in partidos[:10]:
-              print(f\"  {p['fecha']} {p['hora']} - {p['liga']}: {p['equipo_local']} vs {p['equipo_visitante']}\")
+              print(f\"  {p['liga']}: {p['equipo_local']} vs {p['equipo_visitante']}\")
           "
 
   # ═══════════════════════════════════════════════════════════════════════════════
