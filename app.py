@@ -12,67 +12,27 @@ if "logged" not in st.session_state:
 st.markdown("""
 <style>
 .stApp { background: #0a0a0a; }
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 0;
-    border-bottom: 1px solid #333;
-}
-.title {
-    color: #ffd700;
-    font-size: 48px;
-    font-weight: bold;
-    margin: 0;
-}
-.login-box {
-    background: #1a1a1a;
-    padding: 15px 20px;
-    border-radius: 10px;
-    border: 1px solid #333;
-}
-.stTextInput > div > div > input {
-    background: #0a0a0a;
-    color: white;
-    border: 1px solid #444;
-    border-radius: 6px;
-}
-.stButton > button {
-    background: #ffd700;
-    color: black;
-    border: none;
-    border-radius: 6px;
-    font-weight: bold;
-}
-.stButton > button:hover {
-    background: #ffed4a;
-}
+.title { color: #ffd700; font-size: 52px; font-weight: bold; margin: 0; }
+.header { display: flex; justify-content: space-between; align-items: center; }
 </style>
 """, unsafe_allow_html=True)
 
 # Header
-st.markdown("""
-<div class="header">
-    <h1 class="title">🦂 Scorpion Elite</h1>
-    <div class="login-box">
-""", unsafe_allow_html=True)
-
-# Login
-if not st.session_state.logged:
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        password = st.text_input("", type="password", label_visibility="collapsed", placeholder="Password")
-    with col2:
-        if st.button("Login", type="primary"):
-            if password == ADMIN_PASSWORD:
-                st.session_state.logged = True
-                st.rerun()
-            else:
-                st.error("❌")
-else:
-    st.markdown("### ✅ Conectado")
-    if st.button("Logout"):
-        st.session_state.logged = False
-        st.rerun()
-
-st.markdown("</div></div>", unsafe_allow_html=True)
+col1, col2 = st.columns([4, 1])
+with col1:
+    st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
+with col2:
+    if not st.session_state.logged:
+        with st.expander("🔐 Login", expanded=False):
+            password = st.text_input("Password", type="password", label_visibility="collapsed", placeholder="Ingresa password")
+            if st.button("Entrar", type="primary"):
+                if password == ADMIN_PASSWORD:
+                    st.session_state.logged = True
+                    st.rerun()
+                else:
+                    st.error("Incorrecta")
+    else:
+        st.success("✅ Conectado")
+        if st.button("Logout"):
+            st.session_state.logged = False
+            st.rerun()
