@@ -254,7 +254,7 @@ with col_right:
             selected_index = 0
             st.session_state.fecha_seleccionada = date_values[0]
         
-        selected_label = st.selectbox("📅 Fecha", date_labels, index=selected_index, key="calendario")
+        selected_label = st.selectbox("", date_labels, index=selected_index, key="calendario")
         
         # Actualizar la fecha seleccionada
         idx = date_labels.index(selected_label)
@@ -529,7 +529,7 @@ LIGAS_POR_ID = {
 }
 
 def obtener_partidos_futbol(todos=False):
-    """Obtiene partidos de futbol para hoy desde TODAS las APIs
+    """Obtiene partidos de futbol para la fecha seleccionada desde TODAS las APIs
     
     Args:
         todos: Si True, retorna todos los partidos. Si False, solo los 3 mas importantes.
@@ -541,8 +541,9 @@ def obtener_partidos_futbol(todos=False):
     
     # Buscar en TODAS las APIs
     try:
-        # Usar la fecha seleccionada por el usuario
-        fecha_str = format_date_for_query(fecha)
+        # Usar la fecha seleccionada por el usuario desde session_state
+        fecha_seleccionada = st.session_state.fecha_seleccionada
+        fecha_str = format_date_for_query(fecha_seleccionada)
         
         # Usar función que busca en todas las APIs
         todos_fixture = obtener_partidos_todas_apis(fecha_str)
@@ -629,8 +630,9 @@ def obtener_mejor_pick():
     
     # Buscar en TODAS las APIs disponibles
     try:
-        # Usar la fecha seleccionada por el usuario
-        fecha_str = format_date_for_query(fecha)
+        # Usar la fecha seleccionada por el usuario desde session_state
+        fecha_seleccionada = st.session_state.fecha_seleccionada
+        fecha_str = format_date_for_query(fecha_seleccionada)
         
         # Usar función que busca en todas las APIs
         todos_fixture = obtener_partidos_todas_apis(fecha_str)
