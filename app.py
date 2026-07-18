@@ -15,6 +15,10 @@ st.set_page_config(
 # ══════════════════════════════════════════════════════════
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "scorpion2026")
 
+# Supabase
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://jjtifureeygvygxtpuku.supabase.co")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "sb_publishable_0nCe_oMgVQpefVcJBzph8g_fj1-nanm")
+
 # ══════════════════════════════════════════════════════════
 # INICIALIZAR SESIÓN
 # ══════════════════════════════════════════════════════════
@@ -22,6 +26,37 @@ if "admin_logged" not in st.session_state:
     st.session_state.admin_logged = False
 if "page" not in st.session_state:
     st.session_state.page = "Inicio"
+
+# ══════════════════════════════════════════════════════════
+# FUNCIONES DE SUPABASE
+# ══════════════════════════════════════════════════════════
+@st.cache_data(ttl=300)
+def obtener_partidos(fecha=None):
+    try:
+        from supabase import create_client
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        
+        if fecha:
+            response = supabase.table("partidos").select("*").eq("fecha", str(fecha)).execute()
+        else:
+            response = supabase.table("partidos").select("*").execute()
+        
+        return response.data if response.data else []
+    except Exception as e:
+        st.error(f"Error: {e}")
+        return []
+
+def formatear_partido(p):
+    """Formatea un partido para mostrar"""
+    return {
+        "Hora": p.get("hora_local", "00:00"),
+        "Liga": p.get("liga", "N/A"),
+        "Local": p.get("equipo_home", "N/A"),
+        "Visitante": p.get("equipo_away", "N/A"),
+        "Pick": p.get("pick", "-"),
+        "Cuota": p.get("cuota_pick", "-"),
+        "Confianza": f"{p.get('confianza', 0)}%"
+    }
 
 # ══════════════════════════════════════════════════════════
 # ESTILOS CSS
@@ -132,67 +167,41 @@ if st.session_state.page == "Login":
 # PÁGINA: INICIO
 # ══════════════════════════════════════════════════════════
 elif selection == "🏠":
-    col_left, col_right = st.columns([1, 1])
+    st.markdown("<h2>📅 Partidos de Hoy</h2>", unsafe_allow_html=True)
     
-    with col_left:
-        st.markdown("<h2>Bienvenido a Scorpion Elite</h2>", unsafe_allow_html=True)
-        st.markdown("""
-        <p style='color: #ccc; font-size: 18px; line-height: 1.8;'>
-        El sistema de análisis predictivo más avanzado para fútbol. 
-        Utilizamos modelos matemáticos como Poisson, Dixon-Coles y Monte Carlo 
-        para predecir resultados con alta precisión.
-        </p>
-        """, unsafe_allow_html=True)
+    # Selector de fecha
+    col_fecha, col_boton = st.columns([2, 1])
+    with col_fecha:
+        fecha_seleccionada = st.date_input("Seleccionar fecha", value=None)
+    with col_boton:
+        st.markdown("<br>", unsafe_allow_html=True)
+        actualizar = st.button("🔄 Actualizar")
+    
+    # Obtener partidos
+    if fecha_seleccionada:
+        partidos = obtener_partidos(str(fecha_seleccionada))
+    else:
+        partidos = obtener_partidos()
+    
+    if partidos:
+        st.success(f"✅ {len(partidos)} partidos encontrados")
         
-        # Botón de acción
-        if st.button("🚀 Comenzar Análisis", type="primary", use_container_width=True):
-            st.session_state.page = "Predicciones"
-            st.rerun()
+        # Mostrar partidos en tabla
+        datos_partidos = [formatear_partido(p) for p in partidos]
+        st.dataframe(datos_partidos, use_container_width=True, hide_index=True)
+    else:
+        st.warning("⚠️ No hay partidos para esta fecha")
     
-    with col_right:
-        st.markdown("""
-        <div class="card">
-            <h3 style='color: #ffd700;'>🎯 Características</h3>
-            <ul style='color: #ccc; font-size: 16px; line-height: 2;'>
-                <li>📊 <strong>Predicciones Poisson</strong> - Distribución de goles</li>
-                <li>🎯 <strong>Dixon-Coles</strong> - Análisis de marcador correcto</li>
-                <li>🎲 <strong>Monte Carlo</strong> - Simulaciones avanzadas</li>
-                <li>📈 <strong>Sistema Elo</strong> - Rankings dinámicos</li>
-                <li>⚽ <strong>+50 ligas</strong> - Cobertura mundial</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    
-    # Stats
-    st.markdown("<h3 style='text-align: center;'>📊 Estadísticas del Sistema</h3>", unsafe_allow_html=True)
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown("<div style='text-align: center;' class='card'>", unsafe_allow_html=True)
-        st.markdown("<span class='stat-number'>87%</span>", unsafe_allow_html=True)
-        st.markdown("<div class='stat-label'>Precisión Promedio</div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("<div style='text-align: center;' class='card'>", unsafe_allow_html=True)
-        st.markdown("<span class='stat-number'>1,200+</span>", unsafe_allow_html=True)
-        st.markdown("<div class='stat-label'>Partidos Analizados</div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown("<div style='text-align: center;' class='card'>", unsafe_allow_html=True)
-        st.markdown("<span class='stat-number'>50+</span>", unsafe_allow_html=True)
-        st.markdown("<div class='stat-label'>Ligas Disponibles</div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-    
-    with col4:
-        st.markdown("<div style='text-align: center;' class='card'>", unsafe_allow_html=True)
-        st.markdown("<span class='stat-number'>24/7</span>", unsafe_allow_html=True)
-        st.markdown("<div class='stat-label'>Actualizaciones</div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+    # Info
+    st.markdown("""
+    <div class="card">
+        <p style='color: #888; font-size: 12px;'>
+        Los partidos se actualizan diariamente a las 6:00 AM UTC mediante GitHub Actions.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════
 # PÁGINA: PREDICCIONES
