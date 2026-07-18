@@ -112,8 +112,8 @@ LIGAS_EXCLUIR = [
     "national league", "nsfw", "nwsl women",  # Mujeres Canada
     "super league", "elite league",  # Generic
     # Oceanía
-    "fiji", "oceania", "solomon islands", "vanuatu", "samoa", "tonga",
-    "new zealand premier", "oceania champions",
+    "fiji", "oceania champions", "solomon", "vanuatu", "samoa", "tonga",
+    "new zealand", "papua new guinea",
 ]
 
 
@@ -121,6 +121,7 @@ def calcular_prioridad(liga_nombre, pais="", equipo_home="", equipo_away=""):
     liga_lower = liga_nombre.lower()
     home_lower = equipo_home.lower() if equipo_home else ""
     away_lower = equipo_away.lower() if equipo_away else ""
+    pais_lower = pais.lower() if pais else ""
     
     # Si la liga es solo "Liga" (genérica), no dar prioridad alta por equipo
     liga_es_generica = liga_lower.strip() == "liga"
@@ -129,6 +130,19 @@ def calcular_prioridad(liga_nombre, pais="", equipo_home="", equipo_away=""):
     for exclude in LIGAS_EXCLUIR:
         if exclude in liga_lower:
             return 0  # Excluir completamente
+    
+    # EXCLUIR equipos específicos de ligas regionales (Fiji, Oceanía, etc.)
+    equipos_excluir = ["labasa", "suva", "ba", " Lautoka", "Nadi", "dro", " Rewa", 
+                       " Labasa", "ba", " Nadroga"]
+    for eq in equipos_excluir:
+        if eq in home_lower or eq in away_lower:
+            return 0
+    
+    # EXCLUIR países muy regionales
+    paises_excluir = ["fiji", "fiyi", "samoa", "tonga", "vanuatu", "solomon", "papua", "new caledonia"]
+    for p in paises_excluir:
+        if p in pais_lower:
+            return 0
     
     # PREMIUM: Solo Inglaterra tiene P14 para Premier League
     if "premier league" in liga_lower:
