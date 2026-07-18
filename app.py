@@ -24,6 +24,7 @@ st.markdown("""
 .title { color: #ffd700; font-size: 48px; font-weight: bold; margin: 0; }
 .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 2px solid #333; }
 .stDataFrame { background: #1a1a1a; }
+.section-title { margin-top: 10px; margin-bottom: 5px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -52,10 +53,9 @@ else:
             st.session_state.logged = False
             st.rerun()
     
-    st.markdown("---")
-    
     # Sección de carga
-    st.markdown("### 📂 Cargar archivos")
+    st.markdown("---")
+    st.markdown('<p class="section-title">### 📂 Cargar archivos</p>', unsafe_allow_html=True)
     
     uploaded_file = st.file_uploader("", type=['xlsx', 'xls', 'csv'])
     
