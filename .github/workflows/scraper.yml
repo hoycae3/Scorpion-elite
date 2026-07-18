@@ -64,12 +64,17 @@ jobs:
           supabase_key = os.environ.get('SUPABASE_KEY')
           supabase: Client = create_client(supabase_url, supabase_key)
           
+          # Primero crear columnas si no existen
+          try:
+              supabase.rpc('exec', {'sql': 'ALTER TABLE partidos ADD COLUMN IF NOT EXISTS source_flashscore BOOLEAN DEFAULT false;'}).execute()
+          except: pass
+          
           # Scrape partidos
           scraper = FlashscoreCoScraper()
           partidos = scraper.scrape()
           print(f'Partidos encontrados: {len(partidos)}')
           
-          # Guardar en Supabase
+          # Guardar en Supabase - solo columnas básicas
           guardados = 0
           errores = 0
           for p in sorted(partidos, key=lambda x: -x['prioridad'])[:20]:
@@ -80,16 +85,14 @@ jobs:
                       'hora': p['hora'],
                       'liga': p['liga'],
                       'equipo_local': p['equipo_local'],
-                      'equipo_visitante': p['equipo_visitante'],
-                      'source_flashscore': True,
-                      'estado': 'programado'
+                      'equipo_visitante': p['equipo_visitante']
                   }
                   result = supabase.table('partidos').upsert(data, on_conflict='fixture_id').execute()
                   guardados += 1
                   print(f'OK: {p[\"liga\"]} - {p[\"equipo_local\"]} vs {p[\"equipo_visitante\"]}')
               except Exception as e:
                   errores += 1
-                  print(f'Error: {str(e)[:100]}')
+                  print(f'Error: {str(e)[:80]}')
           
           print(f'Guardados: {guardados}, Errores: {errores}')
           "
