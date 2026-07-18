@@ -18,7 +18,7 @@ from supabase import create_client
 import json
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
+SUPABASE_KE = os.environ.get("SUPABASE_KE", "")
 
 # Prioridades de ligas MEJORADAS
 LIGAS_PRIORIDAD = {
@@ -64,11 +64,11 @@ LIGAS_PRIORIDAD = {
 
 
 def get_supabase_client():
-    if not SUPABASE_URL or not SUPABASE_KEY:
+    if not SUPABASE_URL or not SUPABASE_KE:
         print("⚠️  Supabase no configurado")
         return None
     try:
-        return create_client(SUPABASE_URL, SUPABASE_KEY)
+        return create_client(SUPABASE_URL, SUPABASE_KE)
     except Exception as e:
         print(f"❌ Error conectando a Supabase: {e}")
         return None
