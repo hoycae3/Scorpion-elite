@@ -1,6 +1,5 @@
 import streamlit as st
 import os
-from datetime import date, timedelta
 
 st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
 
@@ -54,26 +53,6 @@ def get_partidos():
 
 partidos = get_partidos()
 
-# Filtros
-col1, col2 = st.columns([1, 1])
-with col1:
-    filtro = st.selectbox("Fecha", ["Todas", "Hoy", "Mañana"])
-with col2:
-    ligas = ["Todas"] + sorted(set(p.get('liga','') for p in partidos if p.get('liga')))
-    filtro_liga = st.selectbox("Liga", ligas if ligas else ["Todas"])
-
-# Filtrar
-if filtro == "Hoy":
-    partidos = [p for p in partidos if p.get('fecha') == date.today().isoformat()]
-elif filtro == "Mañana":
-    partidos = [p for p in partidos if p.get('fecha') == (date.today() + timedelta(days=1)).isoformat()]
-
-if filtro_liga != "Todas":
-    partidos = [p for p in partidos if p.get('liga') == filtro_liga]
-
-st.markdown("---")
-
-# Tabla
 if partidos:
     st.success(f"{len(partidos)} partidos")
     data = [{
