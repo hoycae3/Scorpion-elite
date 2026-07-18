@@ -36,7 +36,6 @@ if "show_login" not in st.session_state:
     st.session_state.show_login = False
 
 if not st.session_state.logged:
-    st.markdown("# Hola")
     col1, col2 = st.columns([4, 1])
     with col1:
         st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
