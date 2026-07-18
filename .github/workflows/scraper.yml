@@ -43,25 +43,21 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          pip install playwright
-          playwright install chromium
+        run: pip install -r requirements.txt
 
-      - name: Run Flashscore Scraper
+      - name: Run Match Scraper (API-Football)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
           python -c "
-          from scorpion.scrapers import FlashscoreScraper
-          scraper = FlashscoreScraper()
+          from scorpion.scrapers import SimpleMatchScraper
+          scraper = SimpleMatchScraper()
           partidos = scraper.scrape(dias=2)
           print(f'Partidos encontrados: {len(partidos)}')
-          for p in partidos[:5]:
+          for p in partidos[:10]:
               print(f\"  {p['fecha']} {p['hora']} - {p['liga']}: {p['equipo_local']} vs {p['equipo_visitante']}\")
           "
-        continue-on-error: true
 
   # ═══════════════════════════════════════════════════════════════════════════════
   # JOB 2: SCRAPING DE TABLAS (Transfermarkt)
