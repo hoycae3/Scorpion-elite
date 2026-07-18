@@ -3,7 +3,7 @@
 ## 📌 Estado Actual (Julio 2026)
 
 ### Descripción
-App de análisis de partidos de fútbol con predicciones matemáticas y datos reales de APIs deportivas.
+App de análisis de partidos de fútbol con predicciones matemáticas y datos reales de scraping de Flashscore.
 
 ### Repositorio
 https://github.com/hoycae3/Scorpion-elite
@@ -11,17 +11,17 @@ https://github.com/hoycae3/Scorpion-elite
 ### App Desplegada
 https://scorpion-elite-go7zv8dgdaa3uarwfsxph6.streamlit.app/
 
+### Pull Request
+https://github.com/hoycae3/Scorpion-elite/pull/3
+
 ---
 
 ## 🔧 Stack Tecnológico
 
 - **Frontend**: Streamlit (Python)
-- **Base de datos**: Supabase (gratuito, en proceso de configuración)
-- **APIs de datos**: 
-  - API-Football (2 keys: e3926f829cd848f4b2b54d722ca29701, 124c9519df145caf883cd82f0b2a4671)
-  - TheSportsDB (fallback)
-  - Flashscore (último fallback)
-- **CI/CD**: GitHub Actions
+- **Base de datos**: Supabase (configurado y funcionando)
+- **Scraping**: Playwright para extraer datos reales de Flashscore
+- **CI/CD**: GitHub Actions (scraper diario automático)
 
 ---
 
@@ -30,84 +30,45 @@ https://scorpion-elite-go7zv8dgdaa3uarwfsxph6.streamlit.app/
 ```
 Scorpion-elite/
 ├── app.py                 # App principal de Streamlit
-├── scraper.py            # Script para obtener datos y guardar en Supabase
+├── scraper_real.py       # Scraper con Playwright (Flashscore)
+├── scraper.py            # Scraper legacy con APIs
 ├── supabase_schema.sql   # Schema de la base de datos
-├── SUPABASE_SETUP.md     # Instrucciones de configuración
 ├── requirements.txt      # Dependencias de Python
 ├── styles.css            # Estilos CSS
 ├── .github/workflows/
-│   └── scraper.yml       # GitHub Actions (scraper diario 6AM UTC)
+│   └── scraper.yml       # GitHub Actions (scraper diario)
 └── scorpion/             # Módulo interno
 ```
 
 ---
 
-## ✅ Lo Que Hemos Hecho
+## ✅ Estado Completado
 
-1. **Frontend completo** con Streamlit
-   - Header con logo Scorpion
-   - Selector de deporte y fecha
-   - Partidos destacados
-   - Mejor Pick del día con análisis
-   - Predicciones Poisson, Dixon-Coles, Monte Carlo, Elo
+### 1. Supabase Configurado ✅
+- Schema SQL ejecutado
+- Secrets configurados en GitHub:
+  - `SUPABASE_URL`
+  - `SUPABASE_KEY`
 
-2. **Sistema de APIs** con fallback
-   - API-Football (primaria, pero agotada actualmente)
-   - TheSportsDB (fallback)
-   - Flashscore (último fallback)
+### 2. Scraper Real con Playwright ✅
+El nuevo `scraper_real.py` usa Playwright para extraer datos reales de Flashscore:
+- Partidos de hoy y mañana (próximas 48 horas)
+- Todas las ligas disponibles (principales y secundarias)
+- Nombres correctos de equipos y ligas
+- Priorización automática por importancia de liga
 
-3. **Sistema de caché** implementado
-   - Partidos: 5 minutos TTL
-   - Predicciones/cuotas: 10 minutos TTL
-
-4. **Integración con Supabase** (EN PROGRESO)
-   - ✅ scraper.py creado
-   - ✅ Workflow GitHub Actions creado
-   - ✅ Schema SQL creado
-   - ✅ app.py modificado para leer desde Supabase
-   - ⏳ **Pendiente: Ejecutar SQL en Supabase**
-   - ⏳ **Pendiente: Agregar secrets en GitHub**
+### 3. Datos en Supabase ✅
+- 246 partidos únicos guardados
+- Ligas incluyen: Serie A Brasil, MLS, Liga MX, Primera Nacional Argentina, Copa Argentina, Canadian Premier League, etc.
 
 ---
 
-## 📍 Último Paso Completado
-
-El usuario creó el proyecto en Supabase pero necesita ejecutar el SQL.
-
-### Cómo ejecutar el SQL en Supabase:
-
-1. Ir a https://supabase.com y abrir el proyecto
-2. En el menú lateral → **SQL Editor** (icono >_)
-3. Click en **New query**
-4. Copiar el contenido de `supabase_schema.sql` del repositorio
-5. Click en **Run**
-
----
-
-## ⏳ Pendiente por Hacer
-
-### Paso 1: Ejecutar SQL en Supabase
-- El usuario YA creó el proyecto en Supabase
-- Falta ejecutar el archivo `supabase_schema.sql` en el SQL Editor
-
-### Paso 2: Agregar secrets en GitHub
-- Ir a: https://github.com/hoycae3/Scorpion-elite/settings/secrets/actions
-- Agregar:
-  - `SUPABASE_URL` → La URL del proyecto (ej: https://xxxx.supabase.co)
-  - `SUPABASE_KEY` → service_role key (de Settings → API en Supabase)
-
-### Paso 3: Verificar APIs
-- Las 2 keys de API-Football devolvían 0 partidos
-- Posiblemente necesitan renovarse
-
----
-
-## 🎯 Flujo de Datos (Goal)
+## 🔄 Flujo de Datos
 
 ```
-GitHub Actions (6AM)
+GitHub Actions (6AM UTC)
     ↓
-scraper.py → API-Football + TheSportsDB + Flashscore
+scraper_real.py → Playwright → Flashscore
     ↓
 Supabase (almacena partidos del día)
     ↓
@@ -125,13 +86,13 @@ Streamlit Cloud → Usuario ve la app
 |-------|-------------|
 | fixture_id | ID único |
 | fecha | Fecha del partido |
-| hora_local | Hora ajustada (UTC-3) |
+| hora_local | Hora del partido |
 | liga | Nombre de la liga |
 | prioridad | 1-15 según importancia |
 | equipo_home | Equipo local |
 | equipo_away | Equipo visitante |
-| prob_home/px/away | Probabilidades % |
-| cuota_1/x/2 | Cuotas del mercado |
+| prob_home/px/away | Probabilidades % (placeholder) |
+| cuota_1/x/2 | Cuotas del mercado (placeholder) |
 | pick | 1, X, o 2 |
 | cuota_pick | Cuota del pick |
 | confianza | % de confianza |
@@ -141,33 +102,34 @@ Para seguimiento de resultados de picks.
 
 ---
 
-## 🔑 Secrets Requeridos en GitHub
+## 🔑 Secrets en GitHub
 
-Después de configurar Supabase, agregar en:
+Los secrets están configurados en:
 https://github.com/hoycae3/Scorpion-elite/settings/secrets/actions
-
-| Secret | Valor |
-|--------|-------|
-| `SUPABASE_URL` | URL del proyecto en Supabase |
-| `SUPABASE_KEY` | service_role key (Settings → API en Supabase) |
 
 ---
 
 ## 📝 Notas Importantes
 
 - **Costo total: $0/mes** (Supabase free tier + Streamlit Cloud free)
-- Las APIs de fútbol son el cuello de botella actual
-- Si las keys de API-Football se agotan, buscar alternativas:
-  - API-Football plan de pago
-  - Football-Data.org
-  - SportMonks
+- El scraper usa Playwright para extraer datos reales de Flashscore
+- Se ejecuta automáticamente cada día a las 6AM UTC
+- También puede ejecutarse manualmente desde GitHub Actions
+
+---
+
+## ⏳ Pendiente por Mejorar
+
+1. **Extraer cuotas reales** - El scraper actualmente usa valores placeholder
+2. **Extraer estadísticas históricas** - Para análisis de córners y tarjetas
+3. **Mejorar priorización de ligas** - Agregar más ligas importantes
 
 ---
 
 ## 🔄 Cómo Continuar en Nuevo Chat
 
 1. Leer este archivo AGENTS.md primero
-2. Verificar si el usuario ejecutó el SQL en Supabase
-3. Si no lo ha hecho, guiarlo paso a paso
-4. Si ya lo hizo, ayudar con los secrets de GitHub
-5. Probar que todo funcione correctamente
+2. Merge el PR #3 para actualizar el scraper
+3. Verificar conexión a Supabase
+4. Ejecutar scraper_real.py si hay nuevos partidos
+5. Verificar que la app muestra los datos correctamente
