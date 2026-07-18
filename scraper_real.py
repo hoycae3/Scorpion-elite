@@ -426,11 +426,16 @@ async def extract_matches_for_date(page, date_str):
     return matches
 
 
-def guardar_en_supabase(supabase, partidos):
+def guardar_en_supabase(supabase, partidos, limpiar_tabla=True):
     if not supabase:
         return 0
     
     try:
+        # Limpiar tabla si se solicita
+        if limpiar_tabla:
+            print("🗑️ Limpiando tabla 'partidos'...")
+            supabase.table("partidos").delete().neq("id", 0).execute()
+        
         guardados = 0
         for partido in partidos:
             try:
