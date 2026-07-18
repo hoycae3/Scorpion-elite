@@ -141,28 +141,12 @@ else:
         except Exception as e:
             st.error(f"Error al leer archivo: {str(e)}")
     
-    # Mostrar partidos existentes en Supabase
+    # Botón de borrado (sin mostrar tabla)
     st.markdown("---")
-    st.markdown("### 📊 Partidos en Supabase")
-    
-    try:
-        client = create_client(SUPABASE_URL, SUPABASE_KEY)
-        response = client.table('partidos').select('*').execute()
-        
-        if response.data:
-            df_db = pd.DataFrame(response.data)
-            st.dataframe(df_db, use_container_width=True, height=300)
-            st.info(f"Total: {len(response.data)} partidos")
-            
-            # Botón de borrado
-            st.markdown("---")
-            col1, col2, col3 = st.columns([1, 1, 1])
-            with col2:
-                if st.button("🗑️ Borrar todos los partidos", type="primary", use_container_width=True):
-                    client.table('partidos').delete().neq('id', 0).execute()
-                    st.success("✅ Partidos eliminados")
-                    st.rerun()
-        else:
-            st.info("No hay partidos en la base de datos")
-    except Exception as e:
-        st.error(f"Error al cargar: {str(e)[:100]}")
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("🗑️ Borrar todos los partidos", type="primary", use_container_width=True):
+            client = create_client(SUPABASE_URL, SUPABASE_KEY)
+            client.table('partidos').delete().neq('id', 0).execute()
+            st.success("✅ Partidos eliminados")
+            st.rerun()
