@@ -16,6 +16,8 @@ if "logged" not in st.session_state:
     st.session_state.logged = False
 if "df_partidos" not in st.session_state:
     st.session_state.df_partidos = None
+if "page" not in st.session_state:
+    st.session_state.page = "Carga"
 
 # CSS
 st.markdown("""
@@ -51,98 +53,136 @@ if not st.session_state.logged:
 
 # Dashboard
 else:
-    col1, col2 = st.columns([4, 1])
-    with col1:
-        st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
-    with col2:
-        if st.button("🔓 Logout"):
+    # Sidebar con navegación
+    st.markdown("""
+    <style>
+    [data-testid="stSidebar"] { background: #1a1a1a; }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    with st.sidebar:
+        st.markdown("## 🦂 Menú")
+        st.markdown("---")
+        
+        if st.button("📂 Carga", use_container_width=True, type="secondary" if st.session_state.page != "Carga" else "primary"):
+            st.session_state.page = "Carga"
+            st.rerun()
+        
+        if st.button("📊 Analizador", use_container_width=True, type="secondary" if st.session_state.page != "Analizador" else "primary"):
+            st.session_state.page = "Analizador"
+            st.rerun()
+        
+        st.markdown("---")
+        st.markdown(f"**Usuario:** Admin")
+        if st.button("🔓 Logout", use_container_width=True):
             st.session_state.logged = False
             st.rerun()
     
-    # Sección de carga
-    st.markdown("### 📂 Cargar archivos")
+    # Página: Carga
+    if st.session_state.page == "Carga":
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
+        
+        # Sección de carga
+        st.markdown("### 📂 Cargar archivos")
+        
+        uploaded_file = st.file_uploader("", type=['xlsx', 'xls', 'csv'])
+        
+        if uploaded_file:
+            try:
+                # Leer archivo
+                if uploaded_file.name.endswith('.csv'):
+                    df_raw = pd.read_csv(uploaded_file, header=None)
+                else:
+                    df_raw = pd.read_excel(uploaded_file, header=None)
+                
+                st.success(f"Archivo cargado: {uploaded_file.name} ({len(df_raw)} filas)")
+                
+                # Parsear datos
+                with st.spinner("Procesando datos..."):
+                    df_partidos = parse_flashscore_excel(df_raw)
+                
+                if not df_partidos.empty:
+                    st.session_state.df_partidos = df_partidos
+                    
+                    # Mostrar errores de validación
+                    df_validated, errors = validate_matches(df_partidos)
+                    
+                    if errors:
+                        with st.expander("⚠️ Errores detectados"):
+                            for err in errors[:10]:
+                                st.warning(err)
+                    
+                    # Previsualización
+                    st.markdown(f"### 📋 Previsualización ({len(df_partidos)} partidos)")
+                    
+                    # Mostrar dataframe
+                    st.dataframe(
+                        df_partidos[['fecha', 'hora', 'pais', 'liga', 'equipo_local', 'equipo_visitante']],
+                        use_container_width=True,
+                        height=400
+                    )
+                    
+                    # Botones de Supabase
+                    col_guardar, col_borrar = st.columns(2)
+                    with col_guardar:
+                        if st.button("✅ Guardar en Supabase", type="primary", use_container_width=True):
+                            with st.spinner("Guardando..."):
+                                try:
+                                    client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                                    
+                                    guardados = 0
+                                    errores = 0
+                                    for _, row in df_partidos.iterrows():
+                                        data = {
+                                            'fixture_id': abs(hash(f"{row['equipo_local']}{row['equipo_visitante']}")) % (10**10),
+                                            'fecha': row['fecha'],
+                                            'hora': row['hora'],
+                                            'liga': row['liga'],
+                                            'pais': row['pais'],
+                                            'equipo_local': row['equipo_local'],
+                                            'equipo_visitante': row['equipo_visitante']
+                                        }
+                                        try:
+                                            result = client.table('partidos').upsert(data, on_conflict='fixture_id').execute()
+                                            guardados += 1
+                                        except Exception as e:
+                                            errores += 1
+                                            st.warning(f"Error en {row['equipo_local']}: {str(e)[:50]}")
+                                    
+                                    if guardados > 0:
+                                        st.success(f"✅ {guardados} partidos guardados")
+                                    if errores > 0:
+                                        st.warning(f"⚠️ {errores} errores")
+                                    
+                                    st.session_state.df_partidos = None
+                                    
+                                except Exception as e:
+                                    st.error(f"Error de conexión: {str(e)[:100]}")
+                    with col_borrar:
+                        if st.button("🗑️ Borrar todos", type="secondary", use_container_width=True):
+                            client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                            client.table('partidos').delete().neq('id', 0).execute()
+                            st.success("✅ Partidos eliminados")
+                            st.rerun()
+                else:
+                    st.warning("No se encontraron partidos en el archivo")
+                    
+            except Exception as e:
+                st.error(f"Error al leer archivo: {str(e)}")
     
-    uploaded_file = st.file_uploader("", type=['xlsx', 'xls', 'csv'])
-    
-    if uploaded_file:
-        try:
-            # Leer archivo
-            if uploaded_file.name.endswith('.csv'):
-                df_raw = pd.read_csv(uploaded_file, header=None)
-            else:
-                df_raw = pd.read_excel(uploaded_file, header=None)
-            
-            st.success(f"Archivo cargado: {uploaded_file.name} ({len(df_raw)} filas)")
-            
-            # Parsear datos
-            with st.spinner("Procesando datos..."):
-                df_partidos = parse_flashscore_excel(df_raw)
-            
-            if not df_partidos.empty:
-                st.session_state.df_partidos = df_partidos
-                
-                # Mostrar errores de validación
-                df_validated, errors = validate_matches(df_partidos)
-                
-                if errors:
-                    with st.expander("⚠️ Errores detectados"):
-                        for err in errors[:10]:
-                            st.warning(err)
-                
-                # Previsualización
-                st.markdown(f"### 📋 Previsualización ({len(df_partidos)} partidos)")
-                
-                # Mostrar dataframe
-                st.dataframe(
-                    df_partidos[['fecha', 'hora', 'pais', 'liga', 'equipo_local', 'equipo_visitante']],
-                    use_container_width=True,
-                    height=400
-                )
-                
-                # Botones de Supabase
-                col_guardar, col_borrar = st.columns(2)
-                with col_guardar:
-                    if st.button("✅ Guardar en Supabase", type="primary", use_container_width=True):
-                        with st.spinner("Guardando..."):
-                            try:
-                                client = create_client(SUPABASE_URL, SUPABASE_KEY)
-                                
-                                guardados = 0
-                                errores = 0
-                                for _, row in df_partidos.iterrows():
-                                    data = {
-                                        'fixture_id': abs(hash(f"{row['equipo_local']}{row['equipo_visitante']}")) % (10**10),
-                                        'fecha': row['fecha'],
-                                        'hora': row['hora'],
-                                        'liga': row['liga'],
-                                        'pais': row['pais'],
-                                        'equipo_local': row['equipo_local'],
-                                        'equipo_visitante': row['equipo_visitante']
-                                    }
-                                    try:
-                                        result = client.table('partidos').upsert(data, on_conflict='fixture_id').execute()
-                                        guardados += 1
-                                    except Exception as e:
-                                        errores += 1
-                                        st.warning(f"Error en {row['equipo_local']}: {str(e)[:50]}")
-                                
-                                if guardados > 0:
-                                    st.success(f"✅ {guardados} partidos guardados")
-                                if errores > 0:
-                                    st.warning(f"⚠️ {errores} errores")
-                                
-                                st.session_state.df_partidos = None
-                                
-                            except Exception as e:
-                                st.error(f"Error de conexión: {str(e)[:100]}")
-                with col_borrar:
-                    if st.button("🗑️ Borrar todos", type="secondary", use_container_width=True):
-                        client = create_client(SUPABASE_URL, SUPABASE_KEY)
-                        client.table('partidos').delete().neq('id', 0).execute()
-                        st.success("✅ Partidos eliminados")
-                        st.rerun()
-            else:
-                st.warning("No se encontraron partidos en el archivo")
-                
-        except Exception as e:
-            st.error(f"Error al leer archivo: {str(e)}")
+    # Página: Analizador
+    elif st.session_state.page == "Analizador":
+        st.markdown('<h1 class="title">📊 Analizador</h1>', unsafe_allow_html=True)
+        
+        st.info("🚧 Esta sección está en construcción...")
+        
+        # Aquí irá la lógica del analizador
+        st.markdown("""
+        ### Funcionalidades próximas:
+        - Análisis de partidos
+        - Predicciones matemáticas
+        - Estadísticas de equipos
+        - Picks del día
+        """)
