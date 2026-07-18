@@ -62,7 +62,6 @@ jobs:
           # Conectar a Supabase
           supabase_url = os.environ.get('SUPABASE_URL')
           supabase_key = os.environ.get('SUPABASE_KEY')
-          print(f'Supabase URL: {supabase_url[:20]}...')
           supabase: Client = create_client(supabase_url, supabase_key)
           
           # Scrape partidos
@@ -73,27 +72,26 @@ jobs:
           # Guardar en Supabase
           guardados = 0
           errores = 0
-          for p in sorted(partidos, key=lambda x: -x['prioridad'])[:5]:
+          for p in sorted(partidos, key=lambda x: -x['prioridad'])[:20]:
               try:
                   data = {
                       'fixture_id': p['fixture_id'],
                       'fecha': p['fecha'],
                       'hora': p['hora'],
                       'liga': p['liga'],
-                      'prioridad': p['prioridad'],
                       'equipo_local': p['equipo_local'],
                       'equipo_visitante': p['equipo_visitante'],
-                      'source_flashscore': True
+                      'source_flashscore': True,
+                      'estado': 'programado'
                   }
                   result = supabase.table('partidos').upsert(data, on_conflict='fixture_id').execute()
                   guardados += 1
-                  print(f'Guardado: {p[\"equipo_local\"]} vs {p[\"equipo_visitante\"]}')
+                  print(f'OK: {p[\"liga\"]} - {p[\"equipo_local\"]} vs {p[\"equipo_visitante\"]}')
               except Exception as e:
                   errores += 1
-                  print(f'Error guardando {p[\"liga\"]}: {str(e)[:200]}')
+                  print(f'Error: {str(e)[:100]}')
           
-          print(f'Total guardados: {guardados}')
-          print(f'Total errores: {errores}')
+          print(f'Guardados: {guardados}, Errores: {errores}')
           "
 
   # ═══════════════════════════════════════════════════════════════════════════════
