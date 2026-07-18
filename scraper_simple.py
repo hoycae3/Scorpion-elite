@@ -15,18 +15,62 @@ import json
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_KE = os.environ.get("SUPABASE_KE", "")
 
-# LAS 10 LIGAS PRINCIPALES
+# LAS 28 LIGAS
 LIGAS_POR_PAIS = {
+    # Torneos Internacionales
     "Champions League": "https://www.flashscore.com/football/uefa-champions-league/",
-    "Premier League": "https://www.flashscore.com/football/england/premier-league/",
-    "LaLiga": "https://www.flashscore.com/football/spain/laliga/",
-    "Serie A": "https://www.flashscore.com/football/italy/serie-a/",
-    "Bundesliga": "https://www.flashscore.com/football/germany/bundesliga/",
-    "Ligue 1": "https://www.flashscore.com/football/france/ligue-1/",
-    "Liga MX": "https://www.flashscore.com/football/mexico/liga-mx/",
-    "MLS": "https://www.flashscore.com/football/usa/mls/",
     "Copa Libertadores": "https://www.flashscore.com/football/south-america/copa-libertadores/",
+    "UEFA Europa League": "https://www.flashscore.com/football/uefa-europa-league/",
+    
+    # Inglaterra
+    "Premier League": "https://www.flashscore.com/football/england/premier-league/",
+    "EFL Championship": "https://www.flashscore.com/football/england/championship/",
+    
+    # España
+    "LaLiga": "https://www.flashscore.com/football/spain/laliga/",
+    "LaLiga 2": "https://www.flashscore.com/football/spain/laliga-2/",
+    
+    # Italia
+    "Serie A": "https://www.flashscore.com/football/italy/serie-a/",
+    "Serie B": "https://www.flashscore.com/football/italy/serie-b/",
+    
+    # Alemania
+    "Bundesliga": "https://www.flashscore.com/football/germany/bundesliga/",
+    "2. Bundesliga": "https://www.flashscore.com/football/germany/2-bundesliga/",
+    
+    # Francia
+    "Ligue 1": "https://www.flashscore.com/football/france/ligue-1/",
+    "Ligue 2": "https://www.flashscore.com/football/france/ligue-2/",
+    
+    # Colombia
+    "Liga BetPlay Dimayor": "https://www.flashscore.com/football/colombia/liga-aguila/",
+    "Torneo BetPlay Dimayor": "https://www.flashscore.com/football/colombia/primera-b/",
+    
+    # Brasil
     "Brasileirão Série A": "https://www.flashscore.com/football/brazil/serie-a/",
+    "Brasileirão Série B": "https://www.flashscore.com/football/brazil/serie-b/",
+    
+    # Argentina
+    "Liga Profesional Argentina": "https://www.flashscore.com/football/argentina/primera-division/",
+    "Primera Nacional": "https://www.flashscore.com/football/argentina/primera-nacional/",
+    
+    # México
+    "Liga MX": "https://www.flashscore.com/football/mexico/liga-mx/",
+    
+    # USA
+    "MLS": "https://www.flashscore.com/football/usa/mls/",
+    
+    # Japón
+    "J1 League": "https://www.flashscore.com/football/japan/j-league/",
+    
+    # Holanda
+    "Eredivisie": "https://www.flashscore.com/football/netherlands/eredivisie/",
+    
+    # Bélgica
+    "Jupiler Pro League": "https://www.flashscore.com/football/belgium/jupiler-pro-league/",
+    
+    # Portugal
+    "Primeira Liga": "https://www.flashscore.com/football/portugal/primeira-liga/",
 }
 
 
