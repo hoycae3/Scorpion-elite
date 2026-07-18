@@ -1,9 +1,9 @@
 name: Daily Match Scraper
 
 on:
-  # Ejecutar cada día a las 12:00 PM UTC (= 7:00 AM Colombia/Perú, 9:00 AM Argentina)
+  # Ejecutar cada día a las 5:00 AM UTC (= 12:00 AM Colombia/Perú, 2:00 AM Argentina)
   schedule:
-    - cron: '0 12 * * *'
+    - cron: '0 5 * * *'
   
   # También permite ejecución manual desde Actions tab
   workflow_dispatch:
