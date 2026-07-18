@@ -254,6 +254,7 @@ CREATE POLICY "Allow public read" ON resultados_historicos FOR SELECT USING (tru
 
 -- Políticas para inserción (solo desde el scraper con service role)
 CREATE POLICY "Allow insert from service" ON partidos FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow insert from service" ON historial_picks FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow insert stats from service" ON estadisticas_equipos FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow insert match stats from service" ON estadisticas_partidos FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow insert odds from service" ON cuotas_mercado FOR INSERT WITH CHECK (true);
