@@ -153,6 +153,15 @@ else:
             df_db = pd.DataFrame(response.data)
             st.dataframe(df_db, use_container_width=True, height=300)
             st.info(f"Total: {len(response.data)} partidos")
+            
+            # Botón de borrado
+            st.markdown("---")
+            col1, col2, col3 = st.columns([1, 1, 1])
+            with col2:
+                if st.button("🗑️ Borrar todos los partidos", type="primary", use_container_width=True):
+                    client.table('partidos').delete().neq('id', 0).execute()
+                    st.success("✅ Partidos eliminados")
+                    st.rerun()
         else:
             st.info("No hay partidos en la base de datos")
     except Exception as e:
