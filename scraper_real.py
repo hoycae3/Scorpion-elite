@@ -25,16 +25,11 @@ LIGAS_PRIORIDAD = {
     # Top tier (15)
     "champions league": 15,
     
-    # La Liga (13)
+    # Top europeas (13-14)
+    "premier league": 14,  # Inglaterra
     "la liga": 13, "laliga": 13,
-    
-    # Serie A (12)
     "serie a": 12,
-    
-    # Bundesliga (11)
     "bundesliga": 11,
-    
-    # Ligue 1 (10)
     "ligue 1": 10,
     
     # Europa League (9)
@@ -43,18 +38,25 @@ LIGAS_PRIORIDAD = {
     # Libertadores (8)
     "libertadores": 8,
     
-    # Brasileirao (7)
+    # Sudamérica - Alta prioridad (6-7)
     "brasileiro": 7, "serie a betano": 7,
+    "liga argentina": 7, "primera nacional": 7, "liga profesional": 7,
+    "liga colombiana": 6, "liga i": 6, "categoría": 6,
+    "liga 1": 6, "liga perú": 6,
+    "liga chile": 6, "primera division chile": 6,
+    "j1 league": 6, "j league": 6, "liga japones": 6,
+    "liga uruguaya": 6, "primera division uru": 6,
+    "liga mx": 6, "liga mexicana": 6,
+    "copa argentina": 6,
+    "copa libertadores": 6,
     
-    # Otras ligas importantes (6)
-    "eredivisie": 6, "primeira liga": 6,
-    "super lig": 6, "liga mx": 6,
-    
-    # MLS (5)
+    # Otras importantes (4-5)
+    "eredivisie": 5, "primeira liga": 5,
+    "super lig": 5, "turkish": 5,
     "mls": 5,
-    
-    # Copa Argentina, FA Cup (4)
-    "copa argentina": 4, "fa cup": 4,
+    "belgian": 4, "belgian pro": 4,
+    "austrian": 4, "austrian bundesliga": 4,
+    "copa do brasil": 4,
 }
 
 
@@ -72,7 +74,7 @@ def get_supabase_client():
 def calcular_prioridad(liga_nombre):
     liga_lower = liga_nombre.lower()
     
-    # Buscar coincidencias exactas
+    # Buscar coincidencias
     for nombre, prio in LIGAS_PRIORIDAD.items():
         if nombre in liga_lower:
             return prio
@@ -80,7 +82,7 @@ def calcular_prioridad(liga_nombre):
     # Penalizar ligas menores
     if any(x in liga_lower for x in ["friendly", "amistoso", "amical"]):
         return 1
-    if any(x in liga_lower for x in ["u21", "u20", "u19", "u18", "u17"]):
+    if any(x in liga_lower for x in ["u21", "u20", "u19", "u18", "u17", "u16"]):
         return 2
     if any(x in liga_lower for x in ["women", "femenino"]):
         return 2
@@ -236,14 +238,18 @@ def guardar_en_supabase(supabase, partidos):
         return 0
     
     try:
-        supabase.table("partidos").delete().neq("id", 0).execute()
         guardados = 0
         for partido in partidos:
             try:
-                supabase.table("partidos").insert(partido).execute()
+                # Usar upsert para actualizar o insertar
+                supabase.table("partidos").upsert(partido, on_conflict="fixture_id").execute()
                 guardados += 1
             except Exception as e:
-                if "duplicate" not in str(e).lower():
+                # Si falla el upsert, intentar solo insert
+                try:
+                    supabase.table("partidos").insert(partido).execute()
+                    guardados += 1
+                except:
                     pass
         return guardados
     except Exception as e:
