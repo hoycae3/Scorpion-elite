@@ -99,9 +99,9 @@ else:
                     height=400
                 )
                 
-                # Botón para enviar a Supabase
-                col1, col2, col3 = st.columns([1, 1, 1])
-                with col2:
+                # Botones de Supabase
+                col_guardar, col_borrar = st.columns(2)
+                with col_guardar:
                     if st.button("✅ Guardar en Supabase", type="primary", use_container_width=True):
                         with st.spinner("Guardando..."):
                             try:
@@ -135,18 +135,14 @@ else:
                                 
                             except Exception as e:
                                 st.error(f"Error de conexión: {str(e)[:100]}")
+                with col_borrar:
+                    if st.button("🗑️ Borrar todos", type="secondary", use_container_width=True):
+                        client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                        client.table('partidos').delete().neq('id', 0).execute()
+                        st.success("✅ Partidos eliminados")
+                        st.rerun()
             else:
                 st.warning("No se encontraron partidos en el archivo")
                 
         except Exception as e:
             st.error(f"Error al leer archivo: {str(e)}")
-    
-    # Botón de borrado (sin mostrar tabla)
-    st.markdown("---")
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("🗑️ Borrar todos los partidos", type="primary", use_container_width=True):
-            client = create_client(SUPABASE_URL, SUPABASE_KEY)
-            client.table('partidos').delete().neq('id', 0).execute()
-            st.success("✅ Partidos eliminados")
-            st.rerun()
