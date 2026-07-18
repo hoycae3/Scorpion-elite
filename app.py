@@ -21,8 +21,8 @@ if "df_partidos" not in st.session_state:
 st.markdown("""
 <style>
 .stApp { background: #0a0a0a; }
-.title { color: #ffd700; font-size: 48px; font-weight: bold; margin: 0; }
-.header { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 2px solid #333; }
+.title { color: #ffd700; font-size: 48px; font-weight: bold; margin: 0; padding: 0; }
+.header { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 2px solid #333; }
 .stDataFrame { background: #1a1a1a; }
 .section-title { margin-top: 10px; margin-bottom: 5px; }
 </style>
