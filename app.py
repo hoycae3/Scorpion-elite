@@ -11,6 +11,19 @@ st.set_page_config(
 )
 
 # ══════════════════════════════════════════════════════════
+# CONFIGURACIÓN
+# ══════════════════════════════════════════════════════════
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "scorpion_admin_2025")
+
+# ══════════════════════════════════════════════════════════
+# INICIALIZAR SESIÓN
+# ══════════════════════════════════════════════════════════
+if "admin_logged" not in st.session_state:
+    st.session_state.admin_logged = False
+if "page" not in st.session_state:
+    st.session_state.page = "Inicio"
+
+# ══════════════════════════════════════════════════════════
 # ESTILOS CSS
 # ══════════════════════════════════════════════════════════
 st.markdown("""
@@ -77,14 +90,52 @@ with col3:
 # ══════════════════════════════════════════════════════════
 st.markdown("<hr style='border-color: rgba(255,215,0,0.3);'>", unsafe_allow_html=True)
 
-# Menú principal
-menu_options = ["🏠 Inicio", "📊 Predicciones", "📈 Estadísticas", "⚙️ Configuración"]
-selection = st.radio("", menu_options, horizontal=True, label_visibility="collapsed")
+# Menú según estado de login
+if st.session_state.admin_logged:
+    menu_options = ["🏠 Inicio", "📊 Predicciones", "📈 Estadísticas", "⚙️ Configuración"]
+    selection = st.radio("", menu_options, horizontal=True, label_visibility="collapsed")
+else:
+    menu_options = ["🏠 Inicio"]
+    selection = st.radio("", menu_options, horizontal=True, label_visibility="collapsed")
+    
+    # Botón de login
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_a, col_b, col_c = st.columns([1, 1, 1])
+    with col_b:
+        if st.button("🔐 Panel Administrador", use_container_width=True):
+            st.session_state.page = "Login"
+            st.rerun()
+
+# ══════════════════════════════════════════════════════════
+# PÁGINA: LOGIN
+# ══════════════════════════════════════════════════════════
+if st.session_state.page == "Login":
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    col_a, col_b, col_c = st.columns([1, 2, 1])
+    with col_b:
+        st.markdown("<h2 style='text-align: center;'>🔐 Acceso Administrador</h2>", unsafe_allow_html=True)
+        
+        password = st.text_input("Contraseña", type="password")
+        
+        col_1, col_2, col_3 = st.columns([1, 1, 1])
+        with col_2:
+            if st.button("🔓 Ingresar", use_container_width=True):
+                if password == ADMIN_PASSWORD:
+                    st.session_state.admin_logged = True
+                    st.session_state.page = "Inicio"
+                    st.rerun()
+                else:
+                    st.error("❌ Contraseña incorrecta")
+        
+        if st.button("← Volver al Inicio"):
+            st.session_state.page = "Inicio"
+            st.rerun()
 
 # ══════════════════════════════════════════════════════════
 # PÁGINA: INICIO
 # ══════════════════════════════════════════════════════════
-if selection == "🏠 Inicio":
+elif selection == "🏠 Inicio":
     # Hero section
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -232,4 +283,14 @@ elif selection == "⚙️ Configuración":
 # FOOTER
 # ══════════════════════════════════════════════════════════
 st.markdown("<br><br><hr style='border-color: rgba(255,215,0,0.3);'>", unsafe_allow_html=True)
+
+# Botón de logout si está logueado
+if st.session_state.admin_logged:
+    col_f1, col_f2 = st.columns([4, 1])
+    with col_f2:
+        if st.button("🔒 Cerrar Sesión"):
+            st.session_state.admin_logged = False
+            st.session_state.page = "Inicio"
+            st.rerun()
+
 st.markdown("<p style='text-align: center; color: #555;'>🦂 Scorpion Elite © 2026 | Análisis Predictivo de Fútbol</p>", unsafe_allow_html=True)
