@@ -57,7 +57,7 @@ def get_supabase_client():
         return None
 
 
-async def scrape_liga(page, liga_nombre, url, fecha_base):
+async def scrape_liga(page, liga_nombre, url, fecha_base, year):
     """Extrae partidos de una liga específica capturando la fecha correcta"""
     try:
         await page.goto(url, timeout=60000)
@@ -69,48 +69,47 @@ async def scrape_liga(page, liga_nombre, url, fecha_base):
             await page.evaluate("window.scrollBy(0, 1500)")
             await asyncio.sleep(1)
         
-        # Extraer partidos CON la fecha correcta
+        # Extraer partidos con la fecha del evento
         data = await page.evaluate(f"""
             () => {{
                 const matches = [];
-                const sections = document.querySelectorAll('.sportSection');
+                const events = document.querySelectorAll('.event__match');
                 
-                sections.forEach(section => {{
-                    // Buscar la fecha del evento (está en el header)
-                    const eventDate = section.querySelector('.event__date');
-                    let dateStr = '';
-                    if (eventDate) {{
-                        const dateText = eventDate.textContent.trim();
-                        // Flashscore formato: "18 jul"
-                        const match = dateText.match(/(\\d+) \\w+/);
-                        if (match) {{
-                            dateStr = match[1];
-                        }}
-                    }}
-                    
-                    const events = section.querySelectorAll('.event__match');
-                    events.forEach(event => {{
-                        try {{
-                            const timeEl = event.querySelector('.event__time');
-                            let time = timeEl ? timeEl.textContent.replace(/\\n/g, ' ').trim() : '';
-                            time = time.replace('FRO', '').trim();
-                            
-                            const homeEl = event.querySelector('.event__homeParticipant');
-                            const awayEl = event.querySelector('.event__awayParticipant');
-                            
-                            const home = homeEl ? homeEl.textContent.trim() : '';
-                            const away = awayEl ? awayEl.textContent.trim() : '';
-                            
-                            if (home && away) {{
-                                matches.push({{ 
-                                    time: time || '00:00', 
-                                    home, 
-                                    away,
-                                    day: dateStr
-                                }});
+                events.forEach(event => {{
+                    try {{
+                        const timeEl = event.querySelector('.event__time');
+                        let time = timeEl ? timeEl.textContent.replace(/\\n/g, ' ').trim() : '';
+                        time = time.replace('FRO', '').trim();
+                        
+                        const homeEl = event.querySelector('.event__homeParticipant');
+                        const awayEl = event.querySelector('.event__awayParticipant');
+                        
+                        const home = homeEl ? homeEl.textContent.trim() : '';
+                        const away = awayEl ? awayEl.textContent.trim() : '';
+                        
+                        // Buscar la fecha en el header de la sección
+                        let dayNum = '';
+                        let prev = event.previousElementSibling;
+                        for (let i = 0; i < 5 && prev; i++) {{
+                            const dateEl = prev.querySelector('.event__date');
+                            if (dateEl) {{
+                                const text = dateEl.textContent;
+                                const match = text.match(/(\\d+)/);
+                                if (match) dayNum = match[1];
+                                break;
                             }}
-                        }} catch(e) {{}}
-                    }});
+                            prev = prev.previousElementSibling;
+                        }}
+                        
+                        if (home && away) {{
+                            matches.push({{ 
+                                time: time || '00:00', 
+                                home, 
+                                away,
+                                day: dayNum
+                            }});
+                        }}
+                    }} catch(e) {{}}
                 }});
                 
                 return matches;
@@ -166,7 +165,7 @@ async def main():
         
         for liga_nombre, url in LIGAS_POR_PAIS.items():
             print(f"\n🔍 {liga_nombre}...")
-            matches = await scrape_liga(page, liga_nombre, url, today)
+            matches = await scrape_liga(page, liga_nombre, url, today, year)
             
             for item in matches:
                 # Generar fecha real
