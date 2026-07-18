@@ -60,7 +60,7 @@ def calcular_prioridad(liga_nombre):
 async def scrape_flashscore():
     """Hace scraping de Flashscore usando Playwright"""
     print("=" * 60)
-    print("🦂 SCORPION ELITE - SCRAPER REAL")
+    print("🦂 SCORPION ELITE - SCRAPER REAL (7 DÍAS)")
     print("=" * 60)
     print(f"Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
@@ -78,17 +78,52 @@ async def scrape_flashscore():
         await page.goto("https://www.flashscore.com/football/", timeout=60000)
         await page.wait_for_load_state("networkidle", timeout=30000)
         print("✅ Página cargada")
-        await asyncio.sleep(3)
         
-        # Extraer partidos de la página principal
-        print("\n📅 Extrayendo partidos...")
-        matches = await extract_matches_from_page(page)
-        all_matches.extend(matches)
-        print(f"   Total encontrados: {len(matches)}")
+        # Scrapear los próximos 7 días
+        for day_offset in range(7):
+            if day_offset == 0:
+                day_name = "HOY"
+            elif day_offset == 1:
+                day_name = "MAÑANA"
+            else:
+                day_name = f"DÍA +{day_offset}"
+            
+            print(f"\n📅 Extrayendo partidos de {day_name}...")
+            
+            # Si no es el primer día, navegar al día correspondiente
+            if day_offset > 0:
+                try:
+                    # Buscar y hacer clic en el botón de siguiente día
+                    next_button = await page.query_selector('.filters__item:has-text("Mañana"), .calendarNav__next, [data-day]')
+                    if next_button:
+                        await next_button.click()
+                        await page.wait_for_load_state("networkidle", timeout=30000)
+                        await asyncio.sleep(2)
+                    else:
+                        # Intentar navegación por URL
+                        base_url = "https://www.flashscore.com/football/"
+                        day_url = f"{base_url}{day_offset}/"
+                        await page.goto(day_url, timeout=60000)
+                        await page.wait_for_load_state("networkidle", timeout=30000)
+                        await asyncio.sleep(2)
+                except Exception as e:
+                    print(f"   ⚠️  No se pudo navegar al día {day_offset}: {e}")
+                    continue
+            
+            # Extraer partidos del día actual
+            matches = await extract_matches_from_page(page)
+            
+            # Marcar con la fecha correspondiente
+            target_date = datetime.now() + timedelta(days=day_offset)
+            for match in matches:
+                match["fecha"] = target_date.strftime("%Y-%m-%d")
+            
+            all_matches.extend(matches)
+            print(f"   Partidos encontrados: {len(matches)}")
         
         await browser.close()
     
-    print(f"\n📊 Total partidos extraídos: {len(all_matches)}")
+    print(f"\n📊 Total partidos extraídos (7 días): {len(all_matches)}")
     return all_matches
 
 
