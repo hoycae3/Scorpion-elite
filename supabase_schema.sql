@@ -45,3 +45,34 @@ DROP TRIGGER IF EXISTS update_partidos_timestamp ON partidos;
 CREATE TRIGGER update_partidos_timestamp 
     BEFORE UPDATE ON partidos
     FOR EACH ROW EXECUTE FUNCTION update_partidos_timestamp();
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLA ESTADISTICAS EQUIPOS
+-- ═══════════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS estadisticas_equipos (
+    id BIGSERIAL PRIMARY KEY,
+    equipo VARCHAR(255) NOT NULL,
+    liga VARCHAR(255),
+    temporada VARCHAR(50),
+    partidos_jugados INTEGER DEFAULT 0,
+    victorias INTEGER DEFAULT 0,
+    empates INTEGER DEFAULT 0,
+    derrotas INTEGER DEFAULT 0,
+    goles_favor INTEGER DEFAULT 0,
+    goles_contra INTEGER DEFAULT 0,
+    lambda_local DECIMAL(4,2) DEFAULT 1.3,
+    lambda_visitante DECIMAL(4,2) DEFAULT 1.1,
+    actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(equipo, temporada)
+);
+
+CREATE INDEX IF NOT EXISTS idx_stats_equipo ON estadisticas_equipos(equipo);
+
+ALTER TABLE estadisticas_equipos ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow public read" ON estadisticas_equipos;
+DROP POLICY IF EXISTS "Allow public insert" ON estadisticas_equipos;
+DROP POLICY IF EXISTS "Allow public update" ON estadisticas_equipos;
+DROP POLICY IF EXISTS "Allow public delete" ON estadisticas_equipos;
+
+CREATE POLICY "stats_all" ON estadisticas_equipos FOR ALL USING (true) WITH CHECK (true);

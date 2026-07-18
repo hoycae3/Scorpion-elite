@@ -4,6 +4,7 @@ import os
 from supabase import create_client
 from data_loader import parse_flashscore_excel, validate_matches
 from analysis_models import calcular
+from stats_extractor import calculate_team_lambda
 
 st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
 
@@ -71,6 +72,10 @@ else:
         
         if st.button("📊 Analizador", use_container_width=True, type="secondary" if st.session_state.page != "Analizador" else "primary"):
             st.session_state.page = "Analizador"
+            st.rerun()
+        
+        if st.button("📈 Estadísticas", use_container_width=True, type="secondary" if st.session_state.page != "Estadisticas" else "primary"):
+            st.session_state.page = "Estadisticas"
             st.rerun()
         
         st.markdown("---")
@@ -183,11 +188,35 @@ else:
         col1, col2 = st.columns(2)
         with col1:
             home_team = st.text_input("🏠 Equipo Local", placeholder="Ej: Barcelona")
-            lambda_local = st.number_input("Lambda Local (goles esperados)", min_value=0.1, max_value=5.0, value=1.5, step=0.1)
+            # Buscar lambda desde Supabase
+            lambda_local = None
+            if home_team:
+                try:
+                    client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                    resp = client.table('estadisticas_equipos').select('lambda_local').ilike('equipo', f'%{home_team}%').execute()
+                    if resp.data:
+                        lambda_local = resp.data[0].get('lambda_local', 1.5)
+                        st.info(f"📊 Lambda local encontrado: {lambda_local}")
+                except:
+                    pass
+            if lambda_local is None:
+                lambda_local = st.number_input("Lambda Local", min_value=0.1, max_value=5.0, value=1.5, step=0.1, key="lambda_h")
         
         with col2:
             away_team = st.text_input("✈️ Equipo Visitante", placeholder="Ej: Real Madrid")
-            lambda_visitante = st.number_input("Lambda Visitante (goles esperados)", min_value=0.1, max_value=5.0, value=1.2, step=0.1)
+            # Buscar lambda desde Supabase
+            lambda_visitante = None
+            if away_team:
+                try:
+                    client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                    resp = client.table('estadisticas_equipos').select('lambda_visitante').ilike('equipo', f'%{away_team}%').execute()
+                    if resp.data:
+                        lambda_visitante = resp.data[0].get('lambda_visitante', 1.2)
+                        st.info(f"📊 Lambda visitante encontrado: {lambda_visitante}")
+                except:
+                    pass
+            if lambda_visitante is None:
+                lambda_visitante = st.number_input("Lambda Visitante", min_value=0.1, max_value=5.0, value=1.2, step=0.1, key="lambda_v")
         
         # Botón analizar
         if st.button("🎯 ANALIZAR", type="primary", use_container_width=True):
@@ -249,3 +278,123 @@ else:
                         st.metric("", f"X: {m['px']}%")
                     with col_a:
                         st.metric("", f"2: {m['p2']}%")
+    
+    # Página: Estadísticas
+    elif st.session_state.page == "Estadisticas":
+        st.markdown('<h1 class="title">📈 Estadísticas</h1>', unsafe_allow_html=True)
+        
+        st.markdown("### ➕ Agregar / Actualizar Equipo")
+        
+        # Formulario para agregar equipo
+        with st.form("form_equipo", clear_on_submit=True):
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                equipo = st.text_input("Nombre del Equipo", placeholder="Ej: Barcelona")
+            with col2:
+                liga = st.text_input("Liga", placeholder="Ej: La Liga")
+            with col3:
+                temporada = st.text_input("Temporada", value="2025")
+            
+            st.markdown("** Estadísticas de Temporada**")
+            col_pj, col_vic, col_emp, col_der = st.columns(4)
+            with col_pj:
+                partidos = st.number_input("Partidos Jugados", min_value=0, value=0)
+            with col_vic:
+                victorias = st.number_input("Victorias", min_value=0, value=0)
+            with col_emp:
+                empates = st.number_input("Empates", min_value=0, value=0)
+            with col_der:
+                derrotas = st.number_input("Derrotas", min_value=0, value=0)
+            
+            col_gf, col_gc = st.columns(2)
+            with col_gf:
+                goles_favor = st.number_input("Goles a Favor", min_value=0, value=0)
+            with col_gc:
+                goles_contra = st.number_input("Goles en Contra", min_value=0, value=0)
+            
+            submitted = st.form_submit_button("💾 Guardar Equipo", use_container_width=True)
+            
+            if submitted and equipo:
+                # Calcular lambdas
+                lambda_local = calculate_team_lambda(goles_favor, goles_contra, partidos, is_home=True)
+                lambda_visitante = calculate_team_lambda(goles_favor, goles_contra, partidos, is_home=False)
+                
+                # Guardar en Supabase
+                client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                data = {
+                    'equipo': equipo,
+                    'liga': liga,
+                    'temporada': temporada,
+                    'partidos_jugados': partidos,
+                    'victorias': victorias,
+                    'empates': empates,
+                    'derrotas': derrotas,
+                    'goles_favor': goles_favor,
+                    'goles_contra': goles_contra,
+                    'lambda_local': lambda_local,
+                    'lambda_visitante': lambda_visitante
+                }
+                
+                try:
+                    client.table('estadisticas_equipos').upsert(data, on_conflict='equipo,temporada').execute()
+                    st.success(f"✅ {equipo} guardado exitosamente")
+                except Exception as e:
+                    st.error(f"Error: {str(e)[:50]}")
+        
+        st.markdown("---")
+        st.markdown("### 🔍 Ver Estadísticas de Equipos")
+        
+        # Buscar equipo
+        equipo_buscar = st.text_input("Buscar equipo...", placeholder="Escribe el nombre del equipo")
+        
+        if equipo_buscar:
+            client = create_client(SUPABASE_URL, SUPABASE_KEY)
+            
+            try:
+                # Buscar por nombre
+                response = client.table('estadisticas_equipos').select('*').ilike('equipo', f'%{equipo_buscar}%').execute()
+                
+                if response.data:
+                    st.markdown(f"**{len(response.data)} resultado(s) encontrado(s)**")
+                    
+                    for eq in response.data:
+                        with st.expander(f"⚽ {eq['equipo']} - {eq.get('liga', 'N/A')}"):
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.markdown(f"**Temporada:** {eq.get('temporada', 'N/A')}")
+                                st.markdown(f"**Partidos:** {eq.get('partidos_jugados', 0)}")
+                                st.markdown(f"**Victorias:** {eq.get('victorias', 0)}")
+                                st.markdown(f"**Empates:** {eq.get('empates', 0)}")
+                                st.markdown(f"**Derrotas:** {eq.get('derrotas', 0)}")
+                            with col2:
+                                st.markdown(f"**Goles a Favor:** {eq.get('goles_favor', 0)}")
+                                st.markdown(f"**Goles en Contra:** {eq.get('goles_contra', 0)}")
+                                st.markdown(f"**Lambda Local:** {eq.get('lambda_local', 0):.2f}")
+                                st.markdown(f"**Lambda Visitante:** {eq.get('lambda_visitante', 0):.2f}")
+                            
+                            # Botón eliminar
+                            if st.button(f"🗑️ Eliminar {eq['equipo']}", key=f"del_{eq['id']}"):
+                                client.table('estadisticas_equipos').delete().eq('id', eq['id']).execute()
+                                st.success("✅ Eliminado")
+                                st.rerun()
+                else:
+                    st.info("No se encontraron equipos")
+            except Exception as e:
+                st.error(f"Error: {str(e)[:50]}")
+        
+        # Ver todos los equipos
+        st.markdown("---")
+        st.markdown("### 📋 Todos los Equipos")
+        
+        if st.button("📜 Ver Todos los Equipos", use_container_width=True):
+            client = create_client(SUPABASE_URL, SUPABASE_KEY)
+            try:
+                response = client.table('estadisticas_equipos').select('*').order('equipo').execute()
+                
+                if response.data:
+                    df_stats = pd.DataFrame(response.data)
+                    st.dataframe(df_stats[['equipo', 'liga', 'temporada', 'partidos_jugados', 'lambda_local', 'lambda_visitante']], use_container_width=True)
+                else:
+                    st.info("No hay equipos registrados")
+            except Exception as e:
+                st.error(f"Error: {str(e)[:50]}")
