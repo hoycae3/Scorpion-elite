@@ -227,37 +227,6 @@ def elo_1x2(elo_l: float, elo_v: float, home_advantage: float = 50) -> tuple:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# PROMEDIOS DE LIGAS
-# ═══════════════════════════════════════════════════════════════════════════════
-PROM_LIGA = {
-    "premier": {"gm": 1.54, "gc": 1.11, "tiros": 14.2, "corners": 5.2, "tarj": 1.8},
-    "la liga": {"gm": 1.62, "gc": 1.08, "tiros": 13.8, "corners": 5.5, "tarj": 2.2},
-    "bundesliga": {"gm": 1.82, "gc": 1.28, "tiros": 15.1, "corners": 5.8, "tarj": 1.6},
-    "serie a": {"gm": 1.48, "gc": 1.07, "tiros": 13.2, "corners": 5.0, "tarj": 2.4},
-    "ligue": {"gm": 1.51, "gc": 1.07, "tiros": 13.5, "corners": 5.1, "tarj": 2.0},
-    "libertadores": {"gm": 1.32, "gc": 1.08, "tiros": 12.0, "corners": 4.8, "tarj": 2.8},
-    "sudamericana": {"gm": 1.28, "gc": 1.07, "tiros": 11.8, "corners": 4.7, "tarj": 2.9},
-    "eredivisie": {"gm": 1.88, "gc": 1.32, "tiros": 15.5, "corners": 5.9, "tarj": 1.5},
-    "mls": {"gm": 1.45, "gc": 1.20, "tiros": 13.0, "corners": 5.0, "tarj": 1.9},
-    "colombia": {"gm": 1.25, "gc": 1.10, "tiros": 11.5, "corners": 4.6, "tarj": 2.6},
-    "mundial": {"gm": 1.35, "gc": 1.05, "tiros": 13.0, "corners": 4.8, "tarj": 1.8},
-    "copa america": {"gm": 1.28, "gc": 1.08, "tiros": 12.2, "corners": 4.7, "tarj": 2.2},
-    "champions": {"gm": 1.45, "gc": 1.05, "tiros": 14.0, "corners": 5.2, "tarj": 1.7},
-    "europa": {"gm": 1.42, "gc": 1.08, "tiros": 13.5, "corners": 5.0, "tarj": 1.9},
-    "default": {"gm": 1.40, "gc": 1.15, "tiros": 12.8, "corners": 4.9, "tarj": 2.0},
-}
-
-
-def get_prom(liga: str) -> Dict:
-    """Obtiene promedios de liga por nombre"""
-    l = liga.lower()
-    for key in PROM_LIGA:
-        if key in l:
-            return PROM_LIGA[key]
-    return PROM_LIGA["default"]
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
 # CÁLCULO PRINCIPAL - COMBINA LOS 4 MODELOS
 # ═══════════════════════════════════════════════════════════════════════════════
 def calcular(
@@ -265,7 +234,7 @@ def calcular(
     gcl: float = None,
     gmv: float = None,
     gcv: float = None,
-    liga: str = "default",
+    prom_liga_goles: float = 2.7,
     elo_l: float = None,
     elo_v: float = None
 ) -> Dict:
@@ -276,29 +245,27 @@ def calcular(
         gcl: Goles recibidos local
         gmv: Goles marcados visitante
         gcv: Goles recibidos visitante
-        liga: Nombre de la liga
+        prom_liga_goles: Promedio de goles de la liga (default 2.7)
         elo_l: Rating Elo local (opcional)
         elo_v: Rating Elo visitante (opcional)
     
     Returns:
         Dict con todos los resultados de los 4 modelos
     """
-    prom = get_prom(liga)
-    
     # Calcular lambda (goles esperados) ajustado
     if gml and gcv:
-        xl = round(gml * (gcv / prom["gc"]) * 1.08, 2)  # 1.08 = factor casa
+        xl = round(gml * (gcv / prom_liga_goles) * 1.08, 2)  # 1.08 = factor casa
     elif gml:
         xl = round(gml * 1.08, 2)
     else:
-        xl = round(prom["gm"] * 1.08, 2)
+        xl = round(prom_liga_goles * 0.8, 2)
     
     if gmv and gcl:
-        xv = round(gmv * (gcl / prom["gc"]), 2)
+        xv = round(gmv * (gcl / prom_liga_goles), 2)
     elif gmv:
         xv = round(gmv, 2)
     else:
-        xv = round(prom["gm"] * 0.78, 2)
+        xv = round(prom_liga_goles * 0.6, 2)
     
     # Ajustar por Elo si está disponible
     if elo_l and elo_v:
@@ -423,7 +390,7 @@ class FootballAnalyzer:
         away_goals_avg: float = None,
         home_goals_conceded: float = None,
         away_goals_conceded: float = None,
-        liga: str = "default",
+        prom_liga_goles: float = 2.7,
         elo_l: float = None,
         elo_v: float = None
     ) -> Dict:
@@ -433,7 +400,7 @@ class FootballAnalyzer:
             gcl=home_goals_conceded,
             gmv=away_goals_avg,
             gcv=away_goals_conceded,
-            liga=liga,
+            prom_liga_goles=prom_liga_goles,
             elo_l=elo_l or self.elo_ratings.get(home_team),
             elo_v=elo_v or self.elo_ratings.get(away_team)
         )
