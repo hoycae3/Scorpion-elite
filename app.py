@@ -36,7 +36,7 @@ if not st.session_state.logged:
         st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
     with col2:
         with st.expander("🔐 Login", expanded=False):
-            password = st.text_input("Password", type="password", label_visibility="collapsed", placeholder="Ingresa password")
+            password = st.text_input("Password", type="password", label_visibility="collapsed")
             if st.button("Entrar", type="primary"):
                 if password == ADMIN_PASSWORD:
                     st.session_state.logged = True
