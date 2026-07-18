@@ -2,47 +2,44 @@
 Scraper para Flashscore
 Fuente: https://www.flashscore.com/
 Captura: Partidos del día, cuotas, probabilidades, liga, equipos
+Usa Playwright para cargar contenido dinámico
 """
 import re
+import json
+import asyncio
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
+
+# Intentar importar playwright
+try:
+    from playwright.sync_api import sync_playwright
+    PLAYWRIGHT_AVAILABLE = True
+except ImportError:
+    PLAYWRIGHT_AVAILABLE = False
+
 from .base_scraper import BaseScraper
 
 
 class FlashscoreScraper(BaseScraper):
-    """Scraper específico para Flashscore"""
+    """Scraper específico para Flashscore usando Playwright"""
     
     # Mapeo de ligas a prioridades
     LIGAS_PRIORIDAD = {
-        "champions league": 15,
-        "champions": 15,
-        "premier league": 14,
-        "premier": 14,
-        "la liga": 13,
-        "liga": 13,
+        "champions league": 15, "champions": 15,
+        "premier league": 14, "premier": 14,
+        "la liga": 13, "liga": 13,
         "serie a": 12,
         "bundesliga": 11,
-        "ligue 1": 10,
-        "ligue": 10,
-        "europa league": 9,
-        "europa": 9,
-        "libertadores": 8,
-        "copa libertadores": 8,
-        "brasileiro": 7,
-        "brasil": 7,
-        "serie a brasil": 7,
+        "ligue 1": 10, "ligue": 10,
+        "europa league": 9, "europa": 9,
+        "libertadores": 8, "copa libertadores": 8,
+        "brasileiro": 7, "brasil": 7, "serie a brasil": 7,
         "eredivisie": 7,
-        "primeira liga": 6,
-        "liga mx": 6,
-        "liga mx": 6,
-        "major league soccer": 5,
-        "mls": 5,
-        "usl": 4,
-        "usl championship": 4,
-        "primera nacional": 3,
-        "copa argentina": 3,
-        "canadian premier league": 3,
-        "cpl": 3,
+        "primeira liga": 6, "liga mx": 6,
+        "major league soccer": 5, "mls": 5,
+        "usl championship": 4, "usl": 4,
+        "primera nacional": 3, "copa argentina": 3,
+        "canadian premier league": 3, "cpl": 3,
     }
     
     def __init__(self):
@@ -55,81 +52,123 @@ class FlashscoreScraper(BaseScraper):
         for key, priority in self.LIGAS_PRIORIDAD.items():
             if key in league_lower:
                 return priority
-        return 1  # Prioridad mínima por defecto
+        return 1
     
-    def get_today_matches(self, dias: int = 2) -> List[Dict]:
-        """
-        Obtiene los partidos de los próximos días
-        
-        Args:
-            dias: Número de días hacia adelante a buscar (default: 2)
-            
-        Returns:
-            Lista de diccionarios con datos de partidos
-        """
+    def _scrape_with_playwright(self, url: str, dias: int = 2) -> List[Dict]:
+        """Usa Playwright para scraping de contenido dinámico"""
         all_matches = []
         
-        for day_offset in range(dias):
-            fecha = datetime.now() + timedelta(days=day_offset)
-            fecha_str = fecha.strftime("%Y-%m-%d")
+        if not PLAYWRIGHT_AVAILABLE:
+            print("Playwright no está instalado. Instalando...")
+            import subprocess
+            subprocess.run(["pip", "install", "playwright"], capture_output=True)
+            subprocess.run(["playwright", "install", "chromium"], capture_output=True)
+            from playwright.sync_api import sync_playwright
+        
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
             
-            # Flashscore usa formato de fecha en la URL: 2024-01-15
-            url = f"{self.base_url}/partidos/{fecha_str}/"
-            
-            soup = self._fetch_with_retry(url)
-            if not soup:
-                continue
-            
-            # Buscar todos los eventos de partidos
-            eventos = soup.find_all('div', class_=re.compile(r'event^'))
-            
-            for evento in eventos:
+            for day_offset in range(dias):
+                fecha = datetime.now() + timedelta(days=day_offset)
+                fecha_str = fecha.strftime("%Y-%m-%d")
+                
+                # URL de partidos por fecha
+                page_url = f"https://www.flashscore.com/football/{fecha_str}/"
+                
                 try:
-                    partido = self._parse_match_event(evento, fecha_str)
-                    if partido:
-                        all_matches.append(partido)
+                    page.goto(page_url, wait_until="networkidle", timeout=30000)
+                    page.wait_for_timeout(2000)  # Esperar que carguen datos
+                    
+                    # Buscar eventos
+                    eventos = page.query_selector_all('[id^="g_"]')
+                    
+                    for evento in eventos:
+                        try:
+                            # Extraer datos del evento
+                            evento_html = evento.inner_html()
+                            
+                            # Parsear hora
+                            hora_elem = evento.query_selector('.event__time')
+                            hora = hora_elem.inner_text() if hora_elem else "00:00"
+                            
+                            # Parsear equipos
+                            home_elem = evento.query_selector('.event__home')
+                            away_elem = evento.query_selector('.event__away')
+                            
+                            home_name = home_elem.inner_text() if home_elem else "Local"
+                            away_name = away_elem.inner_text() if away_elem else "Visita"
+                            
+                            # Parsear liga
+                            league_elem = evento.query_selector('.event__league')
+                            liga = league_elem.inner_text() if league_elem else "Liga"
+                            
+                            if home_name and away_name:
+                                all_matches.append({
+                                    "fixture_id": self._generate_fixture_id(home_name, away_name, fecha_str),
+                                    "fecha": fecha_str,
+                                    "hora": hora,
+                                    "liga": liga,
+                                    "prioridad": self._get_priority(liga),
+                                    "equipo_local": home_name,
+                                    "equipo_visitante": away_name,
+                                    "source": "flashscore"
+                                })
+                        except Exception as e:
+                            continue
+                            
                 except Exception as e:
+                    print(f"Error en {page_url}: {e}")
                     continue
+            
+            browser.close()
         
         return all_matches
     
-    def _parse_match_event(self, evento, fecha_str: str) -> Optional[Dict]:
-        """Parsea un evento individual de partido"""
-        # Obtener ID del partido
-        event_id = evento.get('id', '')
-        if not event_id or not event_id.startswith('g_'):
-            return None
+    def _scrape_fallback(self) -> List[Dict]:
+        """Método fallback que intenta encontrar datos en scripts JSON"""
+        all_matches = []
+        fecha_str = datetime.now().strftime("%Y-%m-%d")
         
-        fixture_id = event_id.replace('g_', '')
+        try:
+            response = self.session.get(self.base_url, timeout=30)
+            if response.status_code == 200:
+                # Buscar datos JSON en scripts
+                scripts = re.findall(r'<script[^>]*>(.*?)</script>', response.text, re.DOTALL)
+                
+                for script in scripts:
+                    # Buscar patrones de datos de partidos
+                    matches = re.findall(r'"homeTeam"\s*:\s*"([^"]+)".*?"awayTeam"\s*:\s*"([^"]+)".*?"time"\s*:\s*"([^"]+)"', script, re.DOTALL)
+                    for match in matches:
+                        home, away, time = match
+                        all_matches.append({
+                            "fixture_id": self._generate_fixture_id(home, away, fecha_str),
+                            "fecha": fecha_str,
+                            "hora": time,
+                            "liga": "Various",
+                            "prioridad": 1,
+                            "equipo_local": home,
+                            "equipo_visitante": away,
+                            "source": "flashscore"
+                        })
+        except Exception as e:
+            print(f"Error en fallback: {e}")
         
-        # Obtener hora
-        time_elem = evento.find('div', class_=re.compile(r'event__time'))
-        hora = time_elem.text.strip() if time_elem else "00:00"
+        return all_matches
+    
+    def get_today_matches(self, dias: int = 2) -> List[Dict]:
+        """Obtiene los partidos de los próximos días"""
+        # Intentar con Playwright primero
+        if PLAYWRIGHT_AVAILABLE:
+            try:
+                matches = self._scrape_with_playwright(self.base_url, dias)
+                if matches:
+                    return matches
+            except Exception as e:
+                print(f"Playwright falló: {e}")
         
-        # Obtener liga
-        league_elem = evento.find('div', class_=re.compile(r'event__league'))
-        liga = self._clean_text(league_elem.text) if league_elem else "Liga"
-        
-        # Obtener equipos
-        home_elem = evento.find('div', class_=re.compile(r'event__home'))
-        away_elem = evento.find('div', class_=re.compile(r'event__away'))
-        
-        home_name = self._clean_text(home_elem.text) if home_elem else "Local"
-        away_name = self._clean_text(away_elem.text) if away_elem else "Visita"
-        
-        # Calcular prioridad
-        prioridad = self._get_priority(liga)
-        
-        return {
-            "fixture_id": self._generate_fixture_id(home_name, away_name, fecha_str),
-            "fecha": fecha_str,
-            "hora": hora,
-            "liga": liga,
-            "prioridad": prioridad,
-            "equipo_local": home_name,
-            "equipo_visitante": away_name,
-            "source": "flashscore"
-        }
+        # Fallback al método simple
+        return self._scrape_fallback()
     
     def _generate_fixture_id(self, home: str, away: str, fecha: str) -> int:
         """Genera un ID único para el partido"""
@@ -137,47 +176,8 @@ class FlashscoreScraper(BaseScraper):
         key = f"{home}{away}{fecha}".encode()
         return int(hashlib.md5(key).hexdigest()[:8], 16) % (10 ** 10)
     
-    def get_league_matches(self, league_url: str) -> List[Dict]:
-        """
-        Obtiene todos los partidos de una liga específica
-        
-        Args:
-            league_url: URL relativa de la liga en Flashscore
-            
-        Returns:
-            Lista de partidos
-        """
-        url = f"{self.base_url}/{league_url}"
-        soup = self._fetch_with_retry(url)
-        
-        if not soup:
-            return []
-        
-        matches = []
-        eventos = soup.find_all('div', class_=re.compile(r'event^'))
-        
-        for evento in eventos:
-            partido = self._parse_match_event_simple(evento)
-            if partido:
-                matches.append(partido)
-        
-        return matches
-    
-    def _parse_match_event_simple(self, evento) -> Optional[Dict]:
-        """Parse simplificado para eventos de liga"""
-        # Similar al anterior pero sin fecha
-        return None
-    
     def scrape(self, dias: int = 2) -> List[Dict]:
-        """
-        Método principal del scraper
-        
-        Args:
-            dias: Número de días hacia adelante
-            
-        Returns:
-            Lista de partidos
-        """
+        """Método principal del scraper"""
         return self.get_today_matches(dias=dias)
 
 
