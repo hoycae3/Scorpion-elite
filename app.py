@@ -54,8 +54,7 @@ else:
             st.rerun()
     
     # Sección de carga
-    st.markdown("---")
-    st.markdown('<p class="section-title">### 📂 Cargar archivos</p>', unsafe_allow_html=True)
+    st.markdown("### 📂 Cargar archivos")
     
     uploaded_file = st.file_uploader("", type=['xlsx', 'xls', 'csv'])
     
