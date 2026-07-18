@@ -27,35 +27,23 @@ st.markdown("""
 .section-title { margin-top: 5px; margin-bottom: 0; }
 div.block-container { padding-top: 1rem; }
 div[data-testid="stHorizontalBlock"] { align-items: center; }
-[data-testid="stHorizontalBlock"] [data-testid="stVerticalBlock"] { padding-top: 30px; }
 </style>
 """, unsafe_allow_html=True)
 
 # Login
-if "show_login" not in st.session_state:
-    st.session_state.show_login = False
-
 if not st.session_state.logged:
     col1, col2 = st.columns([4, 1])
     with col1:
         st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
     with col2:
-        if not st.session_state.show_login:
-            if st.button("🔐 Login", type="secondary"):
-                st.session_state.show_login = True
+        st.markdown("<br>" * 2, unsafe_allow_html=True)
+        password = st.text_input("", type="password", placeholder="Password", label_visibility="collapsed", key="login_password")
+        if st.button("🔓 Entrar", type="primary"):
+            if password == ADMIN_PASSWORD:
+                st.session_state.logged = True
                 st.rerun()
-        else:
-            password = st.text_input("", type="password", placeholder="Password", label_visibility="collapsed", key="login_password")
-            if st.button("🔓 Entrar", type="primary"):
-                if password == ADMIN_PASSWORD:
-                    st.session_state.logged = True
-                    st.session_state.show_login = False
-                    st.rerun()
-                else:
-                    st.error("❌ Incorrecta")
-            if st.button("← Volver"):
-                st.session_state.show_login = False
-                st.rerun()
+            else:
+                st.error("❌ Incorrecta")
     st.stop()
 
 # Dashboard
