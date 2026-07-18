@@ -266,101 +266,96 @@ def guardar_en_supabase(supabase, partidos_data):
 
 
 def run_scraper():
-    """Ejecuta el scraping completo"""
+    """Ejecuta el scraping para 7 días"""
     print("=" * 60)
-    print("🦂 SCORPION ELITE - SCRAPER")
+    print("🦂 SCORPION ELITE - SCRAPER (7 DÍAS)")
     print("=" * 60)
-    print(f"Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Inicio: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
     
     # Obtener cliente Supabase
     supabase = get_supabase_client()
     
-    # Obtener partidos de hoy
-    fecha_hoy = datetime.now().strftime("%Y-%m-%d")
-    print(f"📡 Obteniendo partidos para {fecha_hoy}...")
+    # Obtener fechas: hoy + 6 días siguientes
+    dias_a_buscar = []
+    for i in range(7):
+        fecha = (datetime.now() + timedelta(days=i)).strftime("%Y-%m-%d")
+        dias_a_buscar.append(fecha)
     
-    fixtures = obtener_partidos_de_apis(fecha_hoy)
-    print(f"  Total partidos encontrados: {len(fixtures)}")
+    print(f"📅 Fechas a procesar: {', '.join(dias_a_buscar)}")
+    print()
     
-    if not fixtures:
-        print("⚠️  No se encontraron partidos")
-        return
+    total_partidos = 0
     
-    # Procesar partidos
-    partidos_para_guardar = []
-    
-    for fixture in fixtures:
-        try:
-            fixture_id = fixture["fixture"]["id"]
-            home_name = fixture["teams"]["home"]["name"]
-            away_name = fixture["teams"]["away"]["name"]
-            league_name = fixture["league"]["name"]
-            league_id = fixture["league"]["id"]
-            league_country = fixture["league"]["country"]
-            hora_utc = fixture["fixture"]["date"][11:16]
-            
-            # Calcular hora local (UTC-3 para America)
+    for fecha_str in dias_a_buscar:
+        print(f"📡 {fecha_str}:")
+        
+        # Verificar si ya hay partidos para esta fecha
+        if supabase:
             try:
-                dt = datetime.strptime(hora_utc, "%H:%M")
-                dt = dt + timedelta(hours=-3)
-                hora_local = dt.strftime("%H:%M")
+                existing = supabase.table("partidos").select("id").eq("fecha", fecha_str).execute()
+                if existing.data:
+                    print(f"  ⏭️  Ya hay {len(existing.data)} partidos, saltando...")
+                    continue
             except:
-                hora_local = hora_utc
-            
-            # Calcular prioridad
-            prioridad = LIGAS_POR_ID.get(league_id, 0)
-            if prioridad == 0:
-                league_lower = league_name.lower()
-                for nombre_liga, prio in LIGAS_PRIORIDAD.items():
-                    if nombre_liga in league_lower:
-                        prioridad = prio
-                        break
-            
-            # Obtener predicciones y cuotas
-            predictions, odds = obtener_predicciones_y_cuotas(fixture_id, API_KEYS[0])
-            
-            # Calcular pick
-            pick_data = calcular_pick(
-                predictions["prob_home"],
-                predictions["prob_draw"],
-                predictions["prob_away"],
-                odds["cuota_1"],
-                odds["cuota_x"],
-                odds["cuota_2"]
-            )
-            
-            partido_data = {
-                "fixture_id": fixture_id,
-                "fecha": fecha_hoy,
-                "hora": hora_local,  # Hora local
-                "liga": league_name,
-                "equipo_local": home_name,
-                "equipo_visitante": away_name,
-            }
-            
-            partidos_para_guardar.append(partido_data)
-            
-            print(f"  ✓ {home_name} vs {away_name} ({league_name})")
-            
-        except Exception as e:
-            print(f"  ❌ Error procesando fixture: {e}")
+                pass
+        
+        # Obtener partidos de la API
+        fixtures = obtener_partidos_de_apis(fecha_str)
+        print(f"  Encontrados: {len(fixtures)} partidos")
+        
+        if not fixtures:
+            print(f"  ⚠️  Sin partidos para {fecha_str}")
             continue
+        
+        # Procesar partidos
+        partidos_para_guardar = []
+        
+        for fixture in fixtures:
+            try:
+                fixture_id = fixture["fixture"]["id"]
+                home_name = fixture["teams"]["home"]["name"]
+                away_name = fixture["teams"]["away"]["name"]
+                league_name = fixture["league"]["name"]
+                hora_utc = fixture["fixture"]["date"][11:16]
+                
+                # Calcular hora local (UTC-3)
+                try:
+                    dt = datetime.strptime(hora_utc, "%H:%M")
+                    dt = dt + timedelta(hours=-3)
+                    hora_local = dt.strftime("%H:%M")
+                except:
+                    hora_local = hora_utc
+                
+                partido_data = {
+                    "fixture_id": fixture_id,
+                    "fecha": fecha_str,
+                    "hora": hora_local,
+                    "liga": league_name,
+                    "equipo_local": home_name,
+                    "equipo_visitante": away_name,
+                }
+                
+                partidos_para_guardar.append(partido_data)
+                
+            except Exception as e:
+                print(f"  ❌ Error: {e}")
+                continue
+        
+        # Guardar en Supabase
+        if supabase and partidos_para_guardar:
+            try:
+                for partido in partidos_para_guardar:
+                    supabase.table("partidos").insert(partido).execute()
+                print(f"  ✅ {len(partidos_para_guardar)} partidos guardados")
+                total_partidos += len(partidos_para_guardar)
+            except Exception as e:
+                print(f"  ❌ Error guardando: {e}")
+        
+        print()
     
-    print()
-    
-    # Guardar en Supabase
-    if supabase and partidos_para_guardar:
-        print("💾 Guardando en Supabase...")
-        guardados = guardar_en_supabase(supabase, partidos_para_guardar)
-        print(f"  ✅ {guardados} partidos guardados")
-    elif not supabase:
-        print("⚠️  Modo demo - datos no guardados")
-        print(f"  📊 {len(partidos_para_guardar)} partidos procesados")
-    
-    print()
     print("=" * 60)
-    print("✅ SCRAPER COMPLETADO")
+    print(f"✅ SCRAPER COMPLETADO - {total_partidos} partidos totales")
     print("=" * 60)
 
 
