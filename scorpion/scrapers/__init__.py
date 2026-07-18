@@ -1,21 +1,24 @@
 """
 Scorpion Elite - Módulo de Scrapers
 ===================================
-Scraping con Playwright (JavaScript real):
+Scraping de sitios web de fútbol:
 
-- Soccerway: Partidos del día (Playwright)
+- Flashscore.co: Partidos en vivo (principal - Latinoamérica)
 - Transfermarkt: Tablas de posiciones
-- Soccerway Stats: Resultados históricos
+- Soccerway: Resultados históricos
 - WhoScored: Estadísticas avanzadas
 
 Uso:
-    from scorpion.scrapers import PlaywrightMatchesScraper
+    from scorpion.scrapers import FlashscoreCoScraper
     
-    scraper = PlaywrightMatchesScraper()
+    scraper = FlashscoreCoScraper()
     partidos = scraper.scrape()
 """
 
-# Scraper de partidos (usa Playwright)
+# Scraper de partidos (Flashscore.co - Latinoamericano)
+from .flashscore_co_scraper import FlashscoreCoScraper
+
+# Scraper legacy
 from .playwright_matches_scraper import PlaywrightMatchesScraper
 
 # Scraper de estadísticas
@@ -27,6 +30,7 @@ from .whoscored_scraper import WhoScoredScraper
 from .scraper_unificado import ScraperUnificado
 
 __all__ = [
+    "FlashscoreCoScraper",
     "PlaywrightMatchesScraper",
     "SoccerwayScraper",
     "TransfermarktScraper", 

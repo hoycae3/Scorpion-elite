@@ -48,18 +48,19 @@ jobs:
           pip install playwright
           playwright install chromium
 
-      - name: Run Match Scraper (Soccerway con Playwright)
+      - name: Run Match Scraper (Flashscore.co)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
           python -c "
-          from scorpion.scrapers import PlaywrightMatchesScraper
-          scraper = PlaywrightMatchesScraper()
+          from scorpion.scrapers import FlashscoreCoScraper
+          scraper = FlashscoreCoScraper()
           partidos = scraper.scrape()
           print(f'Partidos encontrados: {len(partidos)}')
-          for p in partidos[:10]:
-              print(f\"  {p['liga']}: {p['equipo_local']} vs {p['equipo_visitante']}\")
+          # Mostrar partidos prioritarios
+          for p in sorted(partidos, key=lambda x: -x['prioridad'])[:15]:
+              print(f\"  [{p['prioridad']}] {p['liga']}: {p['equipo_local']} vs {p['equipo_visitante']} ({p['hora']})\")
           "
 
   # ═══════════════════════════════════════════════════════════════════════════════
