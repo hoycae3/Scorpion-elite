@@ -21,11 +21,13 @@ if "df_partidos" not in st.session_state:
 st.markdown("""
 <style>
 .stApp { background: #0a0a0a; }
-.title { color: #ffd700; font-size: 48px; font-weight: bold; margin: 0; padding-top: 0; }
+.title { color: #ffd700; font-size: 48px; font-weight: bold; margin: 0; line-height: 48px; }
 .header { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 2px solid #333; }
 .stDataFrame { background: #1a1a1a; }
 .section-title { margin-top: 5px; margin-bottom: 0; }
 div.block-container { padding-top: 1rem; }
+div[data-testid="stHorizontalBlock"] { align-items: center; }
+[data-testid="stHorizontalBlock"] [data-testid="stVerticalBlock"] { padding-top: 30px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -34,10 +36,11 @@ if "show_login" not in st.session_state:
     st.session_state.show_login = False
 
 if not st.session_state.logged:
-    col1, col2, col3 = st.columns([3, 1, 1])
+    st.markdown("# Hola")
+    col1, col2 = st.columns([4, 1])
     with col1:
         st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
-    with col3:
+    with col2:
         if not st.session_state.show_login:
             if st.button("🔐 Login", type="secondary"):
                 st.session_state.show_login = True
