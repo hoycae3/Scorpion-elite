@@ -73,17 +73,13 @@ st.markdown("""
 # ══════════════════════════════════════════════════════════
 # HEADER
 # ══════════════════════════════════════════════════════════
-col1, col2, col3 = st.columns([1, 3, 1])
+col1, col2 = st.columns([1, 4])
 
 with col1:
-    st.markdown("🦂")
+    st.markdown("<h1 style='font-size: 36px;'>🦂 SCORPION ELITE</h1>", unsafe_allow_html=True)
 
 with col2:
-    st.markdown("<h1 style='text-align: center; font-size: 60px;'>SCORPION ELITE</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #888; font-size: 18px;'>Análisis Predictivo de Partidos de Fútbol</p>", unsafe_allow_html=True)
-
-with col3:
-    st.write("")
+    st.markdown("<p style='color: #888; font-size: 14px; line-height: 60px;'>Análisis Predictivo de Partidos de Fútbol</p>", unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════
 # NAVEGACIÓN PRINCIPAL
@@ -114,19 +110,30 @@ if st.session_state.page == "Login":
     
     col_a, col_b, col_c = st.columns([1, 2, 1])
     with col_b:
-        st.markdown("<h2 style='text-align: center;'>🔐 Acceso Administrador</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center;'>🔐 Acceso a Scorpion Elite</h2>", unsafe_allow_html=True)
+        
+        # Selector de tipo de usuario
+        user_type = st.radio("Tipo de usuario:", ["👤 Cliente", "👑 Administrador"], horizontal=True)
         
         password = st.text_input("Contraseña", type="password")
         
         col_1, col_2, col_3 = st.columns([1, 1, 1])
         with col_2:
             if st.button("🔓 Ingresar", use_container_width=True):
-                if password == ADMIN_PASSWORD:
+                if user_type == "👑 Administrador":
+                    if password == ADMIN_PASSWORD:
+                        st.session_state.admin_logged = True
+                        st.session_state.user_type = "admin"
+                        st.session_state.page = "Inicio"
+                        st.rerun()
+                    else:
+                        st.error("❌ Contraseña incorrecta")
+                else:
+                    # Cliente - cualquier contraseña funciona (o puedes agregar validación)
                     st.session_state.admin_logged = True
+                    st.session_state.user_type = "cliente"
                     st.session_state.page = "Inicio"
                     st.rerun()
-                else:
-                    st.error("❌ Contraseña incorrecta")
         
         if st.button("← Volver al Inicio"):
             st.session_state.page = "Inicio"
