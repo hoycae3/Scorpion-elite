@@ -38,10 +38,12 @@ LIGAS_PRIORIDAD = {
     # Libertadores (8)
     "libertadores": 8,
     
-    # Sudamérica - Alta prioridad (6-7)
-    "brasileiro": 7, "serie a betano": 7,
+    # Sudamérica - Alta prioridad (7)
+    "brasileiro": 7, "serie a betano": 7, "serie a brasil": 7,
     "liga argentina": 7, "primera nacional": 7, "liga profesional": 7,
-    "liga colombiana": 6, "liga i": 6, "categoría": 6,
+    
+    # Otras ligas importantes (6)
+    "liga colombiana": 6, "liga i": 6, "categoría primera": 6,
     "liga 1": 6, "liga perú": 6,
     "liga chile": 6, "primera division chile": 6,
     "j1 league": 6, "j league": 6, "liga japones": 6,
@@ -50,8 +52,9 @@ LIGAS_PRIORIDAD = {
     "copa argentina": 6,
     "copa libertadores": 6,
     
-    # Otras importantes (4-5)
-    "eredivisie": 5, "primeira liga": 5,
+    # Europa media-alta (5-6)
+    "eredivisie": 6, "eredivisie holanda": 6, "holanda": 6,
+    "primeira liga": 5, "liga portuguesa": 5,
     "super lig": 5, "turkish": 5,
     "mls": 5,
     "belgian": 4, "belgian pro": 4,
