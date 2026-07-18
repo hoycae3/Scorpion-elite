@@ -171,6 +171,10 @@ if st.session_state.page == "Login":
 elif selection == "🏠":
     st.markdown("<h2>📅 Partidos</h2>", unsafe_allow_html=True)
     
+    # Debug info
+    st.write(f"URL: {SUPABASE_URL[:30]}..." if SUPABASE_URL else "❌ Sin URL")
+    st.write(f"KEY: {'✅ Configurada' if SUPABASE_KEY else '❌ Sin KEY'}")
+    
     # Obtener partidos
     partidos = obtener_partidos()
     
@@ -181,7 +185,7 @@ elif selection == "🏠":
         datos_partidos = [formatear_partido(p) for p in partidos]
         st.dataframe(datos_partidos, use_container_width=True, hide_index=True)
     else:
-        st.warning("⚠️ No hay partidos")
+        st.warning("⚠️ No hay partidos - Revisa las secrets")
 
 # ══════════════════════════════════════════════════════════
 # PÁGINA: PREDICCIONES
