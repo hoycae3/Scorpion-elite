@@ -8,9 +8,13 @@ sys.path.append('/workspace/project/Scorpion-elite')
 
 st.set_page_config(page_title='SCORPION ELITE', layout='wide')
 
-# Configuración Supabase
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
+# Configuración Supabase (usa secrets.toml en Streamlit Cloud)
+try:
+    SUPABASE_URL = st.secrets.get("SUPABASE_URL", os.environ.get("SUPABASE_URL", ""))
+    SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", os.environ.get("SUPABASE_KEY", ""))
+except:
+    SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+    SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 
 # Cache global para partidos (dura 5 minutos)
 PARTIDOS_CACHE = {
