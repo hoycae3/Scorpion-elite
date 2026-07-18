@@ -71,14 +71,20 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════
-# HEADER
+# HEADER CON LOGIN A LA DERECHA
 # ══════════════════════════════════════════════════════════
-st.markdown("""
-<div style='text-align: center; margin: 0; padding: 0;'>
-    <h1 style='font-size: 32px; margin: 0;'>🦂 SCORPION ELITE</h1>
-    <p style='color: #888; font-size: 12px; margin: 0;'>Análisis Predictivo de Partidos de Fútbol</p>
-</div>
-""", unsafe_allow_html=True)
+col_header_left, col_header_right = st.columns([4, 1])
+
+with col_header_right:
+    if st.session_state.admin_logged:
+        if st.button("🔒 Cerrar Sesión", use_container_width=True):
+            st.session_state.admin_logged = False
+            st.session_state.page = "Inicio"
+            st.rerun()
+    else:
+        if st.button("🔐 Login", use_container_width=True):
+            st.session_state.page = "Login"
+            st.rerun()
 
 # ══════════════════════════════════════════════════════════
 # NAVEGACIÓN PRINCIPAL
@@ -92,14 +98,6 @@ if st.session_state.admin_logged:
 else:
     menu_options = ["🏠 Inicio"]
     selection = st.radio("", menu_options, horizontal=True, label_visibility="collapsed")
-    
-    # Botón de login
-    st.markdown("<br>", unsafe_allow_html=True)
-    col_a, col_b, col_c = st.columns([1, 1, 1])
-    with col_b:
-        if st.button("🔐 Login", use_container_width=True):
-            st.session_state.page = "Login"
-            st.rerun()
 
 # ══════════════════════════════════════════════════════════
 # PÁGINA: LOGIN
@@ -275,14 +273,4 @@ elif selection == "⚙️ Configuración":
 # FOOTER
 # ══════════════════════════════════════════════════════════
 st.markdown("<br><br><hr style='border-color: rgba(255,215,0,0.3);'>", unsafe_allow_html=True)
-
-# Botón de logout si está logueado
-if st.session_state.admin_logged:
-    col_f1, col_f2 = st.columns([4, 1])
-    with col_f2:
-        if st.button("🔒 Cerrar Sesión"):
-            st.session_state.admin_logged = False
-            st.session_state.page = "Inicio"
-            st.rerun()
-
-st.markdown("<p style='text-align: center; color: #555;'>🦂 Scorpion Elite © 2026 | Análisis Predictivo de Fútbol</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #555;'>🦂 Scorpion Elite © 2026</p>", unsafe_allow_html=True)
