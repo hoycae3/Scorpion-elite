@@ -196,7 +196,7 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
     Parsea un DataFrame de Excel formato Flashscore vertical.
     
     Formato esperado:
-    - Primera fila: Header con fecha (ej: "Hoy - 18.07.")
+    - Filas con fecha (ej: "Hoy - 18.07." o "Mañana - 19.07.")
     - Filas con países: "BRASIL:"
     - Filas con ligas: nombre de la liga (fila anterior al país)
     - Filas con horas: "HH:MM"
@@ -204,12 +204,6 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
     """
     if df.empty:
         return pd.DataFrame()
-    
-    # Obtener la fecha del header (primera celda)
-    fecha = datetime.now().strftime("%Y-%m-%d")
-    if len(df) > 0:
-        first_cell = str(df.iloc[0, 0]) if not pd.isna(df.iloc[0, 0]) else ""
-        fecha = parse_date_from_header(first_cell)
     
     # Obtener todas las filas como lista
     rows = []
@@ -220,10 +214,35 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
         else:
             rows.append(str(val).strip())
     
+    # Detectar todas las fechas (headers)
+    fecha_actual = datetime.now().strftime("%Y-%m-%d")
+    fecha_por_posicion = {}  # {posicion: fecha}
+    
+    for i, row in enumerate(rows):
+        # Detectar si es una fila de fecha
+        if any(keyword in row.lower() for keyword in ['hoy', 'mañana', 'manana', 'tomorrow', 'today', 'yesterday']):
+            fecha_por_posicion[i] = parse_date_from_header(row)
+    
+    # Si no encontró fechas con keywords, usar la primera celda
+    if not fecha_por_posicion:
+        first_cell = str(rows[0]) if rows else ""
+        if first_cell:
+            fecha_actual = parse_date_from_header(first_cell)
+        fecha_por_posicion[0] = fecha_actual
+    
     # Estados para el parser
     current_pais = ""
     current_liga = ""
     matches = []
+    
+    # Encontrar la fecha más reciente aplicable
+    def get_fecha_actual(posicion):
+        fecha = datetime.now().strftime("%Y-%m-%d")
+        for pos in sorted(fecha_por_posicion.keys(), reverse=True):
+            if pos <= posicion:
+                fecha = fecha_por_posicion[pos]
+                break
+        return fecha
     
     i = 0
     while i < len(rows):
@@ -235,7 +254,7 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
             # La liga es la fila anterior
             if i > 0:
                 prev_row = rows[i - 1]
-                if prev_row and not prev_row.endswith(':'):
+                if prev_row and not prev_row.endswith(':') and not re.match(r'^\d{1,2}:\d{2}', prev_row):
                     current_liga = prev_row.strip()
             i += 1
             continue
@@ -243,6 +262,7 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
         # Detectar hora (HH:MM o HH:MM:SS)
         if re.match(r'^\d{1,2}:\d{2}(:\d{2})?$', row):
             hora = row[:5]  # Solo HH:MM
+            fecha_partido = get_fecha_actual(i)
             
             # Los siguientes dos rows son los equipos
             home = ""
@@ -255,7 +275,7 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
             
             if home and away and home != away:
                 matches.append({
-                    'fecha': fecha,
+                    'fecha': fecha_partido,
                     'hora': hora,
                     'pais': current_pais,
                     'liga': current_liga,
