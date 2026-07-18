@@ -163,17 +163,38 @@ if st.session_state.page == "Login":
 elif selection == "🏠":
     st.markdown("<h2>📅 Partidos</h2>", unsafe_allow_html=True)
     
+    # Filtros
+    col1, col2, col3 = st.columns([1, 1, 2])
+    with col1:
+        fecha = st.date_input("Fecha", value=None)
+    with col2:
+        liga = st.selectbox("Liga", ["Todas", "MLS", "USL Championship", "Ligue 1", "Premier League"])
+    with col3:
+        ordenar = st.selectbox("Ordenar por", ["Hora", "Liga"])
+    
     # Obtener partidos
     partidos = obtener_partidos()
     
+    # Filtrar por fecha
+    if fecha:
+        partidos = [p for p in partidos if p.get("fecha") == str(fecha)]
+    
+    # Filtrar por liga
+    if liga != "Todas":
+        partidos = [p for p in partidos if p.get("liga") == liga]
+    
+    # Ordenar
+    if ordenar == "Hora":
+        partidos = sorted(partidos, key=lambda x: x.get("hora", ""))
+    else:
+        partidos = sorted(partidos, key=lambda x: x.get("liga", ""))
+    
     if partidos:
-        st.success(f"✅ {len(partidos)} partidos encontrados")
-        
-        # Mostrar partidos en tabla
+        st.success(f"✅ {len(partidos)} partidos")
         datos_partidos = [formatear_partido(p) for p in partidos]
         st.dataframe(datos_partidos, use_container_width=True, hide_index=True)
     else:
-        st.warning("⚠️ No hay partidos")
+        st.warning("⚠️ No hay partidos para esos filtros")
 
 # ══════════════════════════════════════════════════════════
 # PÁGINA: PREDICCIONES
