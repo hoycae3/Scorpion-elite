@@ -31,32 +31,10 @@ div.block-container { padding-top: 1rem; }
 
 # Login
 if not st.session_state.logged:
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        st.markdown("")
+    st.markdown('<h1 class="title" style="text-align: center; margin-top: 50px;">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("""
-        <style>
-        .login-box {
-            background-color: #1a1a1a;
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid #ffd700;
-            text-align: center;
-            max-width: 350px;
-            margin: 100px auto;
-        }
-        .login-title {
-            color: #ffd700;
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-        </style>
-        <div class="login-box">
-            <p class="login-title">🦂 Scorpion Elite</p>
-        </div>
-        """, unsafe_allow_html=True)
         password = st.text_input("", type="password", placeholder="Ingresa password...", label_visibility="collapsed", key="login_password")
         if st.button("🔓 Entrar", type="primary", use_container_width=True):
             if password == ADMIN_PASSWORD:
