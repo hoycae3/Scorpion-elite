@@ -6,13 +6,13 @@ import time
 import os
 sys.path.append('/workspace/project/Scorpion-elite')
 
-# Función para obtener la fecha en hora local (UTC-5 para América Latina: Perú, Colombia, Ecuador)
+# Función para obtener la fecha en hora local (UTC-6 para México)
 def get_local_date():
-    """Obtiene la fecha actual en zona horaria UTC-5 (América Latina)"""
+    """Obtiene la fecha actual en zona horaria UTC-6 (México)"""
     from datetime import timezone, timedelta
     utc_now = datetime.now(timezone.utc)
-    # Ajustar a UTC-5 (Perú, Colombia, Ecuador)
-    local_tz = timezone(timedelta(hours=-5))
+    # Ajustar a UTC-6 (México)
+    local_tz = timezone(timedelta(hours=-6))
     local_now = utc_now.astimezone(local_tz)
     return local_now.date()
 
@@ -31,13 +31,6 @@ try:
 except:
     SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
     SUPABASE_KEY = os.environ.get("SUPABASE_KE", "")
-
-# DEBUG: Mostrar estado de credenciales
-with st.expander("🔧 Debug Supabase"):
-    st.write(f"**SUPABASE_URL:** {'✅ Configurado' if SUPABASE_URL else '❌ VACÍO'}")
-    st.write(f"**SUPABASE_KEY:** {'✅ Configurado' if SUPABASE_KEY else '❌ VACÍO'}")
-    if SUPABASE_URL:
-        st.write(f"URL: `{SUPABASE_URL[:30]}...`")
 
 # Cache global para partidos (dura 5 minutos)
 PARTIDOS_CACHE = {
@@ -61,9 +54,9 @@ def format_date_for_query(fecha_date):
     """Convierte fecha a formato YYYY-MM-DD para consultas"""
     return fecha_date.strftime("%Y-%m-%d")
 
-# Generar opciones de fechas (hoy + 6 días) - usa hora local UTC-3
+# Generar opciones de fechas (hoy + 6 días)
 def get_date_options():
-    """Genera opciones de fechas para el selector usando hora local UTC-3"""
+    """Genera opciones de fechas para el selector usando hora local México"""
     today = get_local_date()
     options = []
     for i in range(7):
