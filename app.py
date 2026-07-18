@@ -40,6 +40,10 @@ with col2:
 
 st.markdown("---")
 
+# Debug: mostrar estado de secrets
+st.write(f"SUPABASE_URL: {'✅' if SUPABASE_URL else '❌'}")
+st.write(f"SUPABASE_KEY: {'✅' if SUPABASE_KEY else '❌'}")
+
 # Partidos
 def get_partidos():
     if not SUPABASE_URL or not SUPABASE_KEY:
@@ -48,20 +52,20 @@ def get_partidos():
         from supabase import create_client
         client = create_client(SUPABASE_URL, SUPABASE_KEY)
         return client.table('partidos').select('*').execute().data or []
-    except:
+    except Exception as e:
+        st.error(f"Error: {e}")
         return []
 
 partidos = get_partidos()
 
+st.write(f"Partidos encontrados: {len(partidos)}")
+
 if partidos:
-    st.success(f"{len(partidos)} partidos")
     data = [{
         "Hora": p.get('hora', '--:--'),
         "Liga": p.get('liga', 'N/A'),
         "Local": p.get('equipo_local', '?'),
         "Visitante": p.get('equipo_visitante', '?')
     } for p in sorted(partidos, key=lambda x: x.get('hora', ''))]
-    
+
     st.dataframe(data, use_container_width=True, hide_index=True)
-else:
-    st.info("No hay partidos")
