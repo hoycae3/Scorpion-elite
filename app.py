@@ -300,10 +300,11 @@ API_KEYS = [
 
 def obtener_partidos_de_supabase(fecha_str):
     """Obtiene partidos desde Supabase ( fuente principal )"""
-    print(f"🔍 DEBUG: SUPABASE_URL = {SUPABASE_URL[:20] if SUPABASE_URL else 'EMPTY'}...")
-    print(f"🔍 DEBUG: SUPABASE_KEY = {SUPABASE_KEY[:10] if SUPABASE_KEY else 'EMPTY'}...")
+    import traceback
     
+    # Mostrar en la UI si hay problemas
     if not SUPABASE_URL or not SUPABASE_KEY:
+        st.error("❌ Faltan credenciales de Supabase en secrets")
         print("❌ DEBUG: Faltan credenciales de Supabase")
         return None
     
@@ -319,10 +320,15 @@ def obtener_partidos_de_supabase(fecha_str):
         print(f"🔍 Response received: {len(response.data) if response.data else 0} rows")
         
         if response.data:
+            st.success(f"✅ {len(response.data)} partidos cargados de Supabase")
             return response.data
+        
+        st.warning(f"⚠️ No hay partidos para {fecha_str} en Supabase")
         return None
     except Exception as e:
+        st.error(f"❌ Error conectando a Supabase: {str(e)}")
         print(f"❌ Error conectando a Supabase: {e}")
+        traceback.print_exc()
         return None
 
 
