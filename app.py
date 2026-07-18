@@ -6,13 +6,13 @@ import time
 import os
 sys.path.append('/workspace/project/Scorpion-elite')
 
-# Función para obtener la fecha en hora local (UTC-6 para México)
+# Función para obtener la fecha en hora local (UTC-5 para Colombia)
 def get_local_date():
-    """Obtiene la fecha actual en zona horaria UTC-6 (México)"""
+    """Obtiene la fecha actual en zona horaria UTC-5 (Colombia)"""
     from datetime import timezone, timedelta
     utc_now = datetime.now(timezone.utc)
-    # Ajustar a UTC-6 (México)
-    local_tz = timezone(timedelta(hours=-6))
+    # Ajustar a UTC-5 (Colombia)
+    local_tz = timezone(timedelta(hours=-5))
     local_now = utc_now.astimezone(local_tz)
     return local_now.date()
 
