@@ -55,8 +55,8 @@ else:
     st.markdown("---")
     
     # Sección de carga de Excel
-    st.markdown("### 📥 Cargar Partidos desde Excel")
-    st.markdown("Sube el archivo Excel exportado de Flashscore (formato vertical)")
+    st.markdown("### 📂 Cargar archivos")
+    st.markdown("Sube el archivo de Flashscore")
     
     uploaded_file = st.file_uploader("Seleccionar archivo Excel", type=['xlsx', 'xls', 'csv'])
     
