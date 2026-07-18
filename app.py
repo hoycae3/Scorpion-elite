@@ -30,22 +30,17 @@ if "page" not in st.session_state:
 # ══════════════════════════════════════════════════════════
 # FUNCIONES DE SUPABASE
 # ══════════════════════════════════════════════════════════
-@st.cache_data(ttl=300)
-def obtener_partidos(fecha=None):
+def obtener_partidos():
     if not SUPABASE_URL or not SUPABASE_KEY:
         return []
     
     try:
         from supabase import create_client
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        
-        if fecha:
-            response = supabase.table("partidos").select("*").eq("fecha", str(fecha)).execute()
-        else:
-            response = supabase.table("partidos").select("*").execute()
-        
+        response = supabase.table("partidos").select("*").execute()
         return response.data if response.data else []
     except Exception as e:
+        st.error(f"Error: {e}")
         return []
 
 def formatear_partido(p):
