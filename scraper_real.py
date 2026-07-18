@@ -131,15 +131,34 @@ def calcular_prioridad(liga_nombre, pais="", equipo_home="", equipo_away=""):
         if exclude in liga_lower:
             return 0  # Excluir completamente
     
-    # EXCLUIR equipos específicos de ligas regionales (Fiji, Oceanía, etc.)
-    equipos_excluir = ["labasa", "suva", "ba", " Lautoka", "Nadi", "dro", " Rewa", 
-                       " Labasa", "ba", " Nadroga"]
+    # EXCLUIR equipos específicos de ligas regionales (Fiji, Oceanía, Kazakhstan, etc.)
+    equipos_excluir = [
+        # Fiji
+        "labasa", "suva", "ba", " Lautoka", "Nadi", "dro", " Rewa", " Nadroga",
+        # Kazakhstan
+        "okzhetpes", "zhetysu", "kyzylzhar", "tobol", "zhetysu", "zhenis", "ulytau",
+        "atyrrau", "kairat", "kaisar", "kaspij", "aktobe", "ordabasy", "shakhtyor",
+        "atakent", "maktaaral", "caspi", "tarlan",
+        # Otros regionales
+        "kallon", "abacha", "old edwardians", "slifa", "star sport", "wusum",
+        "bai bureh", "diamond stars", "bo rangers", "mighty blackpool",
+        "labasa", "suva",
+    ]
     for eq in equipos_excluir:
         if eq in home_lower or eq in away_lower:
             return 0
     
     # EXCLUIR países muy regionales
-    paises_excluir = ["fiji", "fiyi", "samoa", "tonga", "vanuatu", "solomon", "papua", "new caledonia"]
+    paises_excluir = [
+        "fiji", "fiyi", "samoa", "tonga", "vanuatu", "solomon", "papua", "new caledonia",
+        "kazakhstan", "azerbaijan", "armenia", "georgia", "moldova", "albania", "kosovo",
+        "montenegro", "luxembourg", "andorra", "malta", "cyprus", "iceland",
+        "faroe", "estonia", "latvia", "lithuania", "belarus",
+        "sierra leone", "gambia", "guinea-bissau", "liberia", "ethiopia",
+        "eritrea", "djibouti", "somalia", "south sudan", "central african",
+        "chad", "niger", "mali", "burkina faso", "guinea", "sierra leone",
+        "liberia", "cote d'ivoire", "togo", "benin",
+    ]
     for p in paises_excluir:
         if p in pais_lower:
             return 0
