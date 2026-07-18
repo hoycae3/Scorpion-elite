@@ -2,7 +2,7 @@
 """
 Scraper Simple - Scorpion Elite
 Solo extrae las 28 ligas principales
-Navega a páginas específicas por liga
+Captura la fecha correcta de cada partido
 """
 
 import asyncio
@@ -11,65 +11,37 @@ from datetime import datetime, timedelta, timezone
 from playwright.async_api import async_playwright
 from supabase import create_client
 import json
+import re
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_KE = os.environ.get("SUPABASE_KE", "")
 
 # LAS 28 LIGAS CON SUS PÁGINAS EN FLASSSCORE
 LIGAS_POR_PAIS = {
-    # Torneos Internacionales
     "Champions League": "https://www.flashscore.com/football/uefa-champions-league/",
     "Copa Libertadores": "https://www.flashscore.com/football/south-america/copa-libertadores/",
     "UEFA Europa League": "https://www.flashscore.com/football/uefa-europa-league/",
-    
-    # Inglaterra
     "Premier League": "https://www.flashscore.com/football/england/premier-league/",
     "EFL Championship": "https://www.flashscore.com/football/england/championship/",
-    
-    # España
     "LaLiga": "https://www.flashscore.com/football/spain/laliga/",
     "LaLiga 2": "https://www.flashscore.com/football/spain/laliga-2/",
-    
-    # Italia
     "Serie A": "https://www.flashscore.com/football/italy/serie-a/",
     "Serie B": "https://www.flashscore.com/football/italy/serie-b/",
-    
-    # Alemania
     "Bundesliga": "https://www.flashscore.com/football/germany/bundesliga/",
     "2. Bundesliga": "https://www.flashscore.com/football/germany/2-bundesliga/",
-    
-    # Francia
     "Ligue 1": "https://www.flashscore.com/football/france/ligue-1/",
     "Ligue 2": "https://www.flashscore.com/football/france/ligue-2/",
-    
-    # Colombia
     "Liga BetPlay Dimayor": "https://www.flashscore.com/football/colombia/liga-aguila/",
     "Torneo BetPlay Dimayor": "https://www.flashscore.com/football/colombia/primera-b/",
-    
-    # Brasil
     "Brasileirão Série A": "https://www.flashscore.com/football/brazil/serie-a/",
     "Brasileirão Série B": "https://www.flashscore.com/football/brazil/serie-b/",
-    
-    # Argentina
     "Liga Profesional Argentina": "https://www.flashscore.com/football/argentina/primera-division/",
     "Primera Nacional": "https://www.flashscore.com/football/argentina/primera-nacional/",
-    
-    # México
     "Liga MX": "https://www.flashscore.com/football/mexico/liga-mx/",
-    
-    # USA
     "MLS": "https://www.flashscore.com/football/usa/mls/",
-    
-    # Japón
     "J1 League": "https://www.flashscore.com/football/japan/j-league/",
-    
-    # Holanda
     "Eredivisie": "https://www.flashscore.com/football/netherlands/eredivisie/",
-    
-    # Bélgica
     "Jupiler Pro League": "https://www.flashscore.com/football/belgium/jupiler-pro-league/",
-    
-    # Portugal
     "Primeira Liga": "https://www.flashscore.com/football/portugal/primeira-liga/",
 }
 
@@ -85,10 +57,8 @@ def get_supabase_client():
         return None
 
 
-async def scrape_liga(page, liga_nombre, url):
-    """Extrae partidos de una liga específica"""
-    print(f"\n🔍 {liga_nombre}...")
-    
+async def scrape_liga(page, liga_nombre, url, fecha_base):
+    """Extrae partidos de una liga específica capturando la fecha correcta"""
     try:
         await page.goto(url, timeout=60000)
         await page.wait_for_load_state("networkidle", timeout=30000)
@@ -99,40 +69,77 @@ async def scrape_liga(page, liga_nombre, url):
             await page.evaluate("window.scrollBy(0, 1500)")
             await asyncio.sleep(1)
         
-        # Extraer partidos
-        data = await page.evaluate("""
-            () => {
-                const events = document.querySelectorAll('.event__match');
-                const results = [];
+        # Extraer partidos CON la fecha correcta
+        data = await page.evaluate(f"""
+            () => {{
+                const matches = [];
+                const sections = document.querySelectorAll('.sportSection');
                 
-                events.forEach(event => {
-                    try {
-                        const timeEl = event.querySelector('.event__time');
-                        let time = timeEl ? timeEl.textContent.replace(/\\n/g, ' ').trim() : '';
-                        time = time.replace('FRO', '').trim();
-                        
-                        const homeEl = event.querySelector('.event__homeParticipant');
-                        const awayEl = event.querySelector('.event__awayParticipant');
-                        
-                        const home = homeEl ? homeEl.textContent.trim() : '';
-                        const away = awayEl ? awayEl.textContent.trim() : '';
-                        
-                        if (home && away) {
-                            results.push({ time: time || '00:00', home, away });
-                        }
-                    } catch(e) {}
-                });
+                sections.forEach(section => {{
+                    // Buscar la fecha del evento (está en el header)
+                    const eventDate = section.querySelector('.event__date');
+                    let dateStr = '';
+                    if (eventDate) {{
+                        const dateText = eventDate.textContent.trim();
+                        // Flashscore formato: "18 jul"
+                        const match = dateText.match(/(\\d+) \\w+/);
+                        if (match) {{
+                            dateStr = match[1];
+                        }}
+                    }}
+                    
+                    const events = section.querySelectorAll('.event__match');
+                    events.forEach(event => {{
+                        try {{
+                            const timeEl = event.querySelector('.event__time');
+                            let time = timeEl ? timeEl.textContent.replace(/\\n/g, ' ').trim() : '';
+                            time = time.replace('FRO', '').trim();
+                            
+                            const homeEl = event.querySelector('.event__homeParticipant');
+                            const awayEl = event.querySelector('.event__awayParticipant');
+                            
+                            const home = homeEl ? homeEl.textContent.trim() : '';
+                            const away = awayEl ? awayEl.textContent.trim() : '';
+                            
+                            if (home && away) {{
+                                matches.push({{ 
+                                    time: time || '00:00', 
+                                    home, 
+                                    away,
+                                    day: dateStr
+                                }});
+                            }}
+                        }} catch(e) {{}}
+                    }});
+                }});
                 
-                return results;
-            }
+                return matches;
+            }}
         """)
         
-        print(f"   ✅ Encontrados {len(data)} partidos")
         return data
         
     except Exception as e:
         print(f"   ❌ Error: {e}")
         return []
+
+
+def parse_fecha(flashscore_date, year=2026):
+    """Convierte fecha de Flashscore (ej: '18 jul') a formato YYYY-MM-DD"""
+    meses = {
+        'ene': 1, 'feb': 2, 'mar': 3, 'abr': 4, 'may': 5, 'jun': 6,
+        'jul': 7, 'ago': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dic': 12
+    }
+    
+    try:
+        parts = flashscore_date.lower().split()
+        if len(parts) >= 2:
+            dia = int(parts[0])
+            mes = meses.get(parts[1][:3], 7)  # Default julio
+            return f"{year}-{mes:02d}-{dia:02d}"
+    except:
+        pass
+    return None
 
 
 async def main():
@@ -143,11 +150,12 @@ async def main():
     Mexico_TZ = timezone(timedelta(hours=-6))
     now_mexico = datetime.now(Mexico_TZ)
     today = now_mexico.replace(hour=0, minute=0, second=0, microsecond=0)
-    fecha_hoy = today.strftime("%Y-%m-%d")
+    year = today.year
     
-    print(f"\n📅 Fecha de México: {fecha_hoy}\n")
+    print(f"\n📅 Fecha México: {today.strftime('%Y-%m-%d')}\n")
     
     all_partidos = []
+    seen = set()  # Para evitar duplicados
     
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -157,26 +165,39 @@ async def main():
         page = await context.new_page()
         
         for liga_nombre, url in LIGAS_POR_PAIS.items():
-            matches = await scrape_liga(page, liga_nombre, url)
+            print(f"\n🔍 {liga_nombre}...")
+            matches = await scrape_liga(page, liga_nombre, url, today)
             
             for item in matches:
-                match_id = hash(f"{item['home']}{item['away']}{liga_nombre}{fecha_hoy}") % 10000000
+                # Generar fecha real
+                if item.get('day'):
+                    fecha = f"{year}-{now_mexico.month:02d}-{int(item['day']):02d}"
+                else:
+                    fecha = today.strftime("%Y-%m-%d")
                 
-                partido = {
-                    "fixture_id": match_id,
-                    "fecha": fecha_hoy,
-                    "hora": item['time'],
-                    "liga": liga_nombre,
-                    "equipo_local": item['home'],
-                    "equipo_visitante": item['away'],
-                }
+                key = f"{item['home']}{item['away']}{liga_nombre}{fecha}"
                 
-                all_partidos.append(partido)
-                print(f"   ⚽ {item['home']} vs {item['away']}")
+                if key not in seen:
+                    seen.add(key)
+                    match_id = hash(key) % 10000000
+                    
+                    partido = {
+                        "fixture_id": match_id,
+                        "fecha": fecha,
+                        "hora": item['time'],
+                        "liga": liga_nombre,
+                        "equipo_local": item['home'],
+                        "equipo_visitante": item['away'],
+                    }
+                    
+                    all_partidos.append(partido)
+                    print(f"   ⚽ {item['home']} vs {item['away']} ({fecha} {item['time']})")
+            
+            print(f"   ✅ {len(matches)} partidos")
         
         await browser.close()
     
-    print(f"\n📊 Total: {len(all_partidos)} partidos de {len(LIGAS_POR_PAIS)} ligas")
+    print(f"\n📊 Total: {len(all_partidos)} partidos")
     
     # Guardar
     supabase = get_supabase_client()
