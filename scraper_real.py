@@ -108,6 +108,9 @@ LIGAS_EXCLUIR = [
     "bahrain premier", "qatar league", "kuwait premier", "oman premier",
     "uae league", "saudi professional", "belarusian cup", "polish cup", 
     "czech cup", "romanian cup", "slovak cup", "friendly women",
+    "ykkonen", "veikkausliiga", "kakkosliiga",  # Finlandia
+    "national league", "nsfw", "nwsl women",  # Mujeres Canada
+    "super league", "elite league",  # Generic
 ]
 
 
@@ -139,29 +142,35 @@ def calcular_prioridad(liga_nombre, pais="", equipo_home="", equipo_away=""):
     # (para evitar que "Arsenal Dzerzhinsk" se confunda con Arsenal de Inglaterra)
     
     if not liga_es_generica:
+        # La Liga (SOLO si no es Serie B)
+        if "serie b" not in liga_lower and "segunda" not in liga_lower:
+            if any(e in home_lower for e in EQUIPOS_LA_LIGA) or any(e in away_lower for e in EQUIPOS_LA_LIGA):
+                return 13
+        
+        # Serie A Italia (SOLO si no es Serie B)
+        if "serie b" not in liga_lower and "segunda" not in liga_lower:
+            if any(e in home_lower for e in EQUIPOS_SERIE_A) or any(e in away_lower for e in EQUIPOS_SERIE_A):
+                return 12
+        
+        # Bundesliga (SOLO si no es 2 Bundesliga)
+        if "2. bundesliga" not in liga_lower and "bundesliga 2" not in liga_lower:
+            if any(e in home_lower for e in EQUIPOS_BUNDESLIGA) or any(e in away_lower for e in EQUIPOS_BUNDESLIGA):
+                return 11
+        
+        # Ligue 1 (SOLO si no es Ligue 2)
+        if "ligue 2" not in liga_lower:
+            if any(e in home_lower for e in EQUIPOS_LIGUE_1) or any(e in away_lower for e in EQUIPOS_LIGUE_1):
+                return 10
+        
         # Premier League Inglaterra
         if any(e in home_lower for e in EQUIPOS_PREMIER) or any(e in away_lower for e in EQUIPOS_PREMIER):
             return 14
         
-        # La Liga
-        if any(e in home_lower for e in EQUIPOS_LA_LIGA) or any(e in away_lower for e in EQUIPOS_LA_LIGA):
-            return 13
-        
-        # Serie A Italia
-        if any(e in home_lower for e in EQUIPOS_SERIE_A) or any(e in away_lower for e in EQUIPOS_SERIE_A):
-            return 12
-        
-        # Bundesliga
-        if any(e in home_lower for e in EQUIPOS_BUNDESLIGA) or any(e in away_lower for e in EQUIPOS_BUNDESLIGA):
-            return 11
-        
-        # Ligue 1
-        if any(e in home_lower for e in EQUIPOS_LIGUE_1) or any(e in away_lower for e in EQUIPOS_LIGUE_1):
-            return 10
-        
-        # Brasileirao
+        # Brasileirao (incluye Serie B)
         if any(e in home_lower for e in EQUIPOS_BRASILEIRAO) or any(e in away_lower for e in EQUIPOS_BRASILEIRAO):
-            return 7
+            if "serie b" in liga_lower:
+                return 5  # Serie B de Brasil = P5
+            return 7  # Serie A = P7
         
         # Liga MX
         if any(e in home_lower for e in EQUIPOS_LIGA_MX) or any(e in away_lower for e in EQUIPOS_LIGA_MX):
