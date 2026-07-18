@@ -256,25 +256,27 @@ with col_center:
     #         st.session_state.deporte = "TENIS"
 
 with col_right:
-    c1, c2 = st.columns([1.2, 0.8])
-    with c1:
-        # Selector de fechas compacto con formato DD/MM/YYYY
-        date_options = get_date_options()
-        date_labels = [opt[1] for opt in date_options]  # ["17/07/2026", "18/07/2026", ...]
-        date_values = [opt[0] for opt in date_options]  # [date objects]
-        
-        # Verificar que la fecha seleccionada esté en las opciones disponibles
-        today_local = get_local_date()
-        if st.session_state.fecha_seleccionada < today_local:
-            st.session_state.fecha_seleccionada = today_local
-        
-        # Encontrar el índice de la fecha seleccionada o usar 0 (hoy)
-        try:
-            selected_index = date_values.index(st.session_state.fecha_seleccionada)
-        except:
-            selected_index = 0
-            st.session_state.fecha_seleccionada = date_values[0]
-        
+    # Selector de fechas en una sola línea con LOGIN
+    date_options = get_date_options()
+    date_labels = [opt[1] for opt in date_options]
+    date_values = [opt[0] for opt in date_options]
+    
+    # Verificar que la fecha seleccionada esté en las opciones disponibles
+    today_local = get_local_date()
+    if st.session_state.fecha_seleccionada < today_local:
+        st.session_state.fecha_seleccionada = today_local
+    
+    # Encontrar el índice de la fecha seleccionada o usar 0 (hoy)
+    try:
+        selected_index = date_values.index(st.session_state.fecha_seleccionada)
+    except:
+        selected_index = 0
+        st.session_state.fecha_seleccionada = date_values[0]
+    
+    # Crear columnas para alinear fecha y login
+    col_date, col_login = st.columns([3, 1])
+    
+    with col_date:
         selected_label = st.selectbox("", date_labels, index=selected_index, key="calendario")
         
         # Actualizar la fecha seleccionada
@@ -287,7 +289,8 @@ with col_right:
             st.rerun()
         
         fecha = st.session_state.fecha_seleccionada
-    with c2:
+    
+    with col_login:
         if st.button("LOGIN", key="login_btn"):
             st.session_state.show_login = True
             st.rerun()
