@@ -7,27 +7,37 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "scorpion2026")
 
 if "logged" not in st.session_state:
     st.session_state.logged = False
+if "show_password" not in st.session_state:
+    st.session_state.show_password = False
 
-# Login con expander
-if not st.session_state.logged:
-    with st.expander("🔐 Login", expanded=False):
-        password = st.text_input("Password", type="password", label_visibility="collapsed", placeholder="Ingresa password")
-        if st.button("Entrar"):
-            if password == ADMIN_PASSWORD:
-                st.session_state.logged = True
-                st.rerun()
-            else:
-                st.error("Incorrecta")
-
-# Header
+# Header - título a la izquierda, login a la derecha
 left_col, right_col = st.columns([4, 1])
 
 with left_col:
     st.markdown('<h1 style="color: #ffd700; font-size: 52px; margin: 0;">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
 
 with right_col:
-    if st.session_state.logged:
-        st.success("✅ Conectado")
+    if not st.session_state.logged:
+        if not st.session_state.show_password:
+            # Mostrar solo el botón
+            if st.button("🔐 Login", type="primary"):
+                st.session_state.show_password = True
+                st.rerun()
+        else:
+            # Mostrar campo de contraseña y botón entrar
+            password = st.text_input("", type="password", label_visibility="collapsed", placeholder="Password", key="pw")
+            if st.button("Entrar", type="primary"):
+                if password == ADMIN_PASSWORD:
+                    st.session_state.logged = True
+                    st.session_state.show_password = False
+                    st.rerun()
+                else:
+                    st.error("Incorrecta")
+            if st.button("Cancelar"):
+                st.session_state.show_password = False
+                st.rerun()
+    else:
+        st.success("✅")
         if st.button("Logout"):
             st.session_state.logged = False
             st.rerun()
