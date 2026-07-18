@@ -116,7 +116,6 @@ else:
                                         'hora': row['hora'],
                                         'liga': row['liga'],
                                         'pais': row['pais'],
-                                        'liga_codigo': row['liga_codigo'],
                                         'equipo_local': row['equipo_local'],
                                         'equipo_visitante': row['equipo_visitante']
                                     }
