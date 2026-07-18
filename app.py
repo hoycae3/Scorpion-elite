@@ -24,13 +24,20 @@ if 'fecha_seleccionada' in st.session_state:
     if st.session_state.fecha_seleccionada < today:
         st.session_state.fecha_seleccionada = today
 
-# Configuración Supabase (usa secrets.toml en Streamlit Cloud)
+# Configuración Supabase
 try:
-    SUPABASE_URL = st.secrets.get("SUPABASE_URL", os.environ.get("SUPABASE_URL", ""))
-    SUPABASE_KEY = st.secrets.get("SUPABASE_KE", os.environ.get("SUPABASE_KE", ""))
+    SUPABASE_URL = st.secrets["SUPABASE_URL"]
+    SUPABASE_KEY = st.secrets["SUPABASE_KE"]
 except:
     SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
     SUPABASE_KEY = os.environ.get("SUPABASE_KE", "")
+
+# DEBUG: Mostrar estado de credenciales
+with st.expander("🔧 Debug Supabase"):
+    st.write(f"**SUPABASE_URL:** {'✅ Configurado' if SUPABASE_URL else '❌ VACÍO'}")
+    st.write(f"**SUPABASE_KEY:** {'✅ Configurado' if SUPABASE_KEY else '❌ VACÍO'}")
+    if SUPABASE_URL:
+        st.write(f"URL: `{SUPABASE_URL[:30]}...`")
 
 # Cache global para partidos (dura 5 minutos)
 PARTIDOS_CACHE = {
