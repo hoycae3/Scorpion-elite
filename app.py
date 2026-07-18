@@ -1,20 +1,29 @@
 import streamlit as st
+import pandas as pd
 import os
+from supabase import create_client
+from data_loader import parse_flashscore_excel, validate_matches
 
 st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
 
+# Configuración
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "scorpion2026")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://jjtifureeygvygxtpuku.supabase.co")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqdGlmdXJlZXlndnlneHRwdWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTI2NDcsImV4cCI6MjA5OTg4ODY0N30.6f8dgLmHx9x9W-5X2Ld31rPkeZ6HJGSeGgx3oq9XSRA")
 
+# Session state
 if "logged" not in st.session_state:
     st.session_state.logged = False
+if "df_partidos" not in st.session_state:
+    st.session_state.df_partidos = None
 
 # CSS
 st.markdown("""
 <style>
 .stApp { background: #0a0a0a; }
-.title { color: #ffd700; font-size: 52px; font-weight: bold; margin: 0; }
-.header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 2px solid #333; }
-.welcome { color: #ffd700; font-size: 36px; text-align: center; margin-top: 50px; }
+.title { color: #ffd700; font-size: 48px; font-weight: bold; margin: 0; }
+.header { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 2px solid #333; }
+.stDataFrame { background: #1a1a1a; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -33,9 +42,8 @@ if not st.session_state.logged:
                 else:
                     st.error("Incorrecta")
 
-# Pantalla después del login
+# Dashboard
 else:
-    # Header con logout
     col1, col2 = st.columns([4, 1])
     with col1:
         st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
@@ -44,38 +52,98 @@ else:
             st.session_state.logged = False
             st.rerun()
     
-    # Bienvenida
-    st.markdown('<h2 class="welcome">¡Bienvenido!</h2>', unsafe_allow_html=True)
+    st.markdown("---")
     
-    # Contenido de ejemplo
-    st.markdown("""
-    <style>
-    .panel {
-        background: #1a1a1a;
-        padding: 30px;
-        border-radius: 15px;
-        margin: 30px auto;
-        max-width: 800px;
-        border: 1px solid #333;
-    }
-    .panel h3 { color: #ffd700; margin-top: 0; }
-    .panel p { color: #ccc; }
-    .btn {
-        background: #ffd700;
-        color: black;
-        padding: 10px 20px;
-        border-radius: 6px;
-        text-decoration: none;
-        display: inline-block;
-        margin-top: 10px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    # Sección de carga de Excel
+    st.markdown("### 📥 Cargar Partidos desde Excel")
+    st.markdown("Sube el archivo Excel exportado de Flashscore (formato vertical)")
     
-    st.markdown("""
-    <div class="panel">
-        <h3>📊 Panel de Control</h3>
-        <p>Bienvenido a Scorpion Elite. Aquí podrás ver los partidos y predicciones.</p>
-        <p>Próximamente: datos en tiempo real.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    uploaded_file = st.file_uploader("Seleccionar archivo Excel", type=['xlsx', 'xls', 'csv'])
+    
+    if uploaded_file:
+        try:
+            # Leer archivo
+            if uploaded_file.name.endswith('.csv'):
+                df_raw = pd.read_csv(uploaded_file, header=None)
+            else:
+                df_raw = pd.read_excel(uploaded_file, header=None)
+            
+            st.success(f"Archivo cargado: {uploaded_file.name} ({len(df_raw)} filas)")
+            
+            # Parsear datos
+            with st.spinner("Procesando datos..."):
+                df_partidos = parse_flashscore_excel(df_raw)
+            
+            if not df_partidos.empty:
+                st.session_state.df_partidos = df_partidos
+                
+                # Mostrar errores de validación
+                df_validated, errors = validate_matches(df_partidos)
+                
+                if errors:
+                    with st.expander("⚠️ Errores detectados"):
+                        for err in errors[:10]:
+                            st.warning(err)
+                
+                # Previsualización
+                st.markdown(f"### 📋 Previsualización ({len(df_partidos)} partidos)")
+                
+                # Mostrar dataframe
+                st.dataframe(
+                    df_partidos[['fecha', 'hora', 'pais', 'liga', 'equipo_local', 'equipo_visitante']],
+                    use_container_width=True,
+                    height=400
+                )
+                
+                # Botón para enviar a Supabase
+                col1, col2, col3 = st.columns([1, 1, 1])
+                with col2:
+                    if st.button("✅ Guardar en Supabase", type="primary", use_container_width=True):
+                        try:
+                            client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                            
+                            guardados = 0
+                            for _, row in df_partidos.iterrows():
+                                data = {
+                                    'fixture_id': abs(hash(f"{row['equipo_local']}{row['equipo_visitante']}")) % (10**10),
+                                    'fecha': row['fecha'],
+                                    'hora': row['hora'],
+                                    'liga': row['liga'],
+                                    'pais': row['pais'],
+                                    'liga_codigo': row['liga_codigo'],
+                                    'equipo_local': row['equipo_local'],
+                                    'equipo_visitante': row['equipo_visitante']
+                                }
+                                try:
+                                    client.table('partidos').upsert(data, on_conflict='fixture_id').execute()
+                                    guardados += 1
+                                except Exception as e:
+                                    pass
+                            
+                            st.success(f"✅ {guardados} partidos guardados en Supabase")
+                            st.session_state.df_partidos = None
+                            
+                        except Exception as e:
+                            st.error(f"Error al guardar: {str(e)[:100]}")
+            else:
+                st.warning("No se encontraron partidos en el archivo")
+                
+        except Exception as e:
+            st.error(f"Error al leer archivo: {str(e)}")
+    
+    # Mostrar partidos existentes en Supabase
+    st.markdown("---")
+    st.markdown("### 📊 Partidos en Supabase")
+    
+    try:
+        client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        response = client.table('partidos').select('*').execute()
+        
+        if response.data:
+            df_db = pd.DataFrame(response.data)
+            st.dataframe(df_db, use_container_width=True, height=300)
+            st.info(f"Total: {len(response.data)} partidos")
+        else:
+            st.info("No hay partidos en la base de datos")
+    except Exception as e:
+        st.error(f"Error al cargar: {str(e)[:100]}")
