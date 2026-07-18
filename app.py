@@ -30,18 +30,30 @@ div.block-container { padding-top: 1rem; }
 """, unsafe_allow_html=True)
 
 # Login
+if "show_login" not in st.session_state:
+    st.session_state.show_login = False
+
 if not st.session_state.logged:
     col1, col2, col3 = st.columns([3, 1, 1])
     with col1:
         st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
     with col3:
-        password = st.text_input("", type="password", placeholder="Password", label_visibility="collapsed", key="login_password")
-        if st.button("🔓 Entrar", type="primary"):
-            if password == ADMIN_PASSWORD:
-                st.session_state.logged = True
+        if not st.session_state.show_login:
+            if st.button("🔐 Login", type="secondary"):
+                st.session_state.show_login = True
                 st.rerun()
-            else:
-                st.error("❌ Contraseña incorrecta")
+        else:
+            password = st.text_input("", type="password", placeholder="Password", label_visibility="collapsed", key="login_password")
+            if st.button("🔓 Entrar", type="primary"):
+                if password == ADMIN_PASSWORD:
+                    st.session_state.logged = True
+                    st.session_state.show_login = False
+                    st.rerun()
+                else:
+                    st.error("❌ Incorrecta")
+            if st.button("← Volver"):
+                st.session_state.show_login = False
+                st.rerun()
     st.stop()
 
 # Dashboard
