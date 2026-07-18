@@ -6,12 +6,12 @@ import time
 import os
 sys.path.append('/workspace/project/Scorpion-elite')
 
-# Función para obtener la fecha en hora local (UTC-5 para Colombia)
+# Función para obtener la fecha en hora local (UTC-5 para América Latina: Perú, Colombia, Ecuador)
 def get_local_date():
-    """Obtiene la fecha actual en zona horaria UTC-5 (Colombia)"""
+    """Obtiene la fecha actual en zona horaria UTC-5 (América Latina)"""
     from datetime import timezone, timedelta
     utc_now = datetime.now(timezone.utc)
-    # Ajustar a UTC-5 (Colombia)
+    # Ajustar a UTC-5 (Perú, Colombia, Ecuador)
     local_tz = timezone(timedelta(hours=-5))
     local_now = utc_now.astimezone(local_tz)
     return local_now.date()
@@ -24,13 +24,13 @@ if 'fecha_seleccionada' in st.session_state:
     if st.session_state.fecha_seleccionada < today:
         st.session_state.fecha_seleccionada = today
 
-# Configuración Supabase
+# Configuración Supabase (usa secrets.toml en Streamlit Cloud)
 try:
-    SUPABASE_URL = st.secrets["SUPABASE_URL"]
-    SUPABASE_KEY = st.secrets["SUPABASE_KE"]
+    SUPABASE_URL = st.secrets.get("SUPABASE_URL", os.environ.get("SUPABASE_URL", ""))
+    SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", os.environ.get("SUPABASE_KEY", ""))
 except:
     SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
-    SUPABASE_KEY = os.environ.get("SUPABASE_KE", "")
+    SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 
 # Cache global para partidos (dura 5 minutos)
 PARTIDOS_CACHE = {
@@ -54,9 +54,9 @@ def format_date_for_query(fecha_date):
     """Convierte fecha a formato YYYY-MM-DD para consultas"""
     return fecha_date.strftime("%Y-%m-%d")
 
-# Generar opciones de fechas (hoy + 6 días)
+# Generar opciones de fechas (hoy + 6 días) - usa hora local UTC-3
 def get_date_options():
-    """Genera opciones de fechas para el selector usando hora local México"""
+    """Genera opciones de fechas para el selector usando hora local UTC-3"""
     today = get_local_date()
     options = []
     for i in range(7):
@@ -300,35 +300,21 @@ API_KEYS = [
 
 def obtener_partidos_de_supabase(fecha_str):
     """Obtiene partidos desde Supabase ( fuente principal )"""
-    import traceback
-    
-    # Mostrar en la UI si hay problemas
     if not SUPABASE_URL or not SUPABASE_KEY:
-        st.error("❌ Faltan credenciales de Supabase en secrets")
-        print("❌ DEBUG: Faltan credenciales de Supabase")
         return None
     
     try:
         from supabase import create_client
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
         
-        print(f"🔍 Consultando Supabase para fecha: {fecha_str}")
-        
-        # Consultar partidos de la fecha (sin orden por prioridad ya que no existe)
-        response = supabase.table("partidos").select("*").eq("fecha", fecha_str).execute()
-        
-        print(f"🔍 Response received: {len(response.data) if response.data else 0} rows")
+        # Consultar partidos de la fecha, ordenados por prioridad DESCENDENTE
+        response = supabase.table("partidos").select("*").eq("fecha", fecha_str).order("prioridad", desc=True).execute()
         
         if response.data:
-            st.success(f"✅ {len(response.data)} partidos cargados de Supabase")
             return response.data
-        
-        st.warning(f"⚠️ No hay partidos para {fecha_str} en Supabase")
         return None
     except Exception as e:
-        st.error(f"❌ Error conectando a Supabase: {str(e)}")
-        print(f"❌ Error conectando a Supabase: {e}")
-        traceback.print_exc()
+        print(f"Error conectando a Supabase: {e}")
         return None
 
 
@@ -340,7 +326,7 @@ def convertir_partidos_supabase_a_fixture(datos_supabase):
         fixtures.append({
             "fixture": {
                 "id": p.get("fixture_id", 0),
-                "date": f"{p.get('fecha', '')}T{p.get('hora', '00:00')}",
+                "date": f"{p.get('fecha', '')}T{p.get('hora_utc', '00:00')}",
                 "prioridad": p.get("prioridad", 1)
             },
             "league": {
@@ -349,8 +335,8 @@ def convertir_partidos_supabase_a_fixture(datos_supabase):
                 "country": p.get("pais", "")
             },
             "teams": {
-                "home": {"id": 0, "name": p.get("equipo_local", "Local")},
-                "away": {"id": 0, "name": p.get("equipo_visitante", "Visita")}
+                "home": {"id": 0, "name": p.get("equipo_home", "Local")},
+                "away": {"id": 0, "name": p.get("equipo_away", "Visita")}
             }
         })
     return fixtures
@@ -377,13 +363,10 @@ def obtener_partidos_todas_apis(fecha_str):
     
     # 1. PRIMERO: Intentar con Supabase (fuente principal)
     datos_supabase = obtener_partidos_de_supabase(fecha_str)
-    print(f"📊 Supabase returned {len(datos_supabase) if datos_supabase else 0} partidos for {fecha_str}")
-    
+    print(f"📊 Supabase returned {len(datos_supabase)} partidos for {fecha_str}")
     if datos_supabase:
         all_partidos = convertir_partidos_supabase_a_fixture(datos_supabase)
         print(f"✅ Obtenidos {len(all_partidos)} partidos de Supabase")
-        # Guardar en cache
-        st.session_state[cache_key] = {"data": all_partidos, "time": now}
     else:
         print("📡 Supabase vacío, usando APIs como fallback...")
     
@@ -1066,20 +1049,8 @@ def obtener_partidos_en_vivo(deporte):
 deporte = st.session_state.deporte
 icono = DEPORTE_ICONS.get(deporte, "⚽")
 
-# DEBUG: Mostrar información directamente en la página
-st.markdown("---")
-col_debug1, col_debug2 = st.columns(2)
-with col_debug1:
-    st.info(f"📅 Fecha: {st.session_state.fecha_seleccionada}")
-with col_debug2:
-    if SUPABASE_URL:
-        st.success("✅ Supabase conectado")
-    else:
-        st.error("❌ Supabase sin conexión")
-
 # Obtener partidos en tiempo real
 partidos = obtener_partidos_en_vivo(deporte)
-st.info(f"⚽ Partidos obtenidos: {len(partidos)}")
 
 # Obtener el Mejor Pick del Día (analizado con modelos matemáticos)
 mejor_pick = obtener_mejor_pick()
