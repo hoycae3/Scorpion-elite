@@ -148,36 +148,24 @@ table {{border-collapse: collapse; width: 100%;}}
 th, td {{border: none;}}
 .stHorizontalBlock {{gap:0.5rem;}}
 
-/* HEADER COMPACTO */
-.header-container {{
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding: 10px 20px !important;
-    background: {CARD} !important;
-    border-bottom: 1px solid {BORDER} !important;
-    margin-bottom: 10px !important;
+/* HEADER COMPACTO CON TODO EN UNA LÍNEA */
+[data-testid="stHorizontalBlock"] {{
+    background: {CARD};
+    padding: 8px 16px;
+    border-bottom: 1px solid {BORDER};
+    margin-bottom: 10px;
 }}
 
-/* Selector de fecha compacto */
-[data-testid="stSelectbox"] {{
-    min-width: 120px !important;
-}}
+/* Selector de fecha pequeño */
+[data-testid="stSelectbox"] > div {{min-width: 100px !important;}}
+.stSelectbox label {{display: none !important;}}
 
-/* Botón FUTBOL activo */
-.stButton > button:disabled {{
-    background-color: {GREEN} !important;
-    color: {BG} !important;
-    opacity: 1 !important;
-    font-weight: bold !important;
-}}
+/* Botón LOGIN pequeño */
+.stButton {{margin-top: 0px !important;}}
+.stButton > button {{padding: 2px 10px !important; font-size: 12px !important;}}
 
-/* Alinear elementos del header */
-.header-left, .header-center, .header-right {{
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
-}}
+/* Altura fija para todas las columnas del header */
+[data-testid="stHorizontalBlock"] > div {{min-height: 36px;}}
 </style>
 ''', unsafe_allow_html=True)
 
@@ -263,7 +251,7 @@ if st.session_state.is_admin:
         st.rerun()
     st.stop()
 
-# HEADER COMPACTO CON COLUMNAS DE STREAMLIT
+# HEADER EN UNA SOLA LÍNEA CON FLEXBOX
 # Generar opciones de fecha para el selector
 date_options = get_date_options()
 date_labels = [opt[1] for opt in date_options]
@@ -281,40 +269,40 @@ for i, dv in enumerate(date_values):
         selected_index = i
         break
 
-# Header con 4 columnas: Logo | Deporte | Fecha | Login
-col_logo, col_deportes, col_fecha, col_login = st.columns([1.5, 3, 1.5, 0.8])
+# Selector de fecha
+selected_label = st.selectbox("", date_labels, index=selected_index, key="calendario")
 
-with col_logo:
-    st.markdown(f'''
-    <div style="display:flex; align-items:center; gap:6px; height:40px;">
+# Actualizar fecha si cambió
+idx = date_labels.index(selected_label)
+nueva_fecha = date_values[idx]
+if nueva_fecha != st.session_state.fecha_seleccionada:
+    old_cache_key = f"partidos_{st.session_state.fecha_seleccionada.strftime('%Y-%m-%d')}"
+    if old_cache_key in st.session_state:
+        del st.session_state[old_cache_key]
+    st.session_state.fecha_seleccionada = nueva_fecha
+    st.rerun()
+
+fecha = st.session_state.fecha_seleccionada
+
+# Header HTML con Flexbox - TODO EN UNA LÍNEA
+st.markdown(f'''
+<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 16px; background:{CARD}; border-bottom:1px solid {BORDER}; margin-bottom:10px;">
+    <div style="display:flex; align-items:center; gap:8px;">
         <span style="font-size:20px;">🦂</span>
         <span style="font-size:14px; font-weight:bold; color:white;">SCORPION</span>
         <span style="font-size:14px; font-weight:bold; color:{ORANGE};">ELITE</span>
     </div>
-    ''', unsafe_allow_html=True)
-
-with col_deportes:
-    st.markdown(f'''
-    <div style="display:flex; align-items:center; height:40px;">
+    <div style="display:flex; align-items:center; gap:8px;">
         <span style="background:#1f2937; color:white; padding:6px 14px; border-radius:4px; font-weight:bold; font-size:12px; border:1px solid #374151;">⚽ FUTBOL</span>
     </div>
-    ''', unsafe_allow_html=True)
+    <div style="display:flex; align-items:center; gap:10px;">
+        <span style="color:#9CA3AF; font-size:12px;">📅 {fecha.strftime('%d/%m')}</span>
+    </div>
+</div>
+''', unsafe_allow_html=True)
 
-with col_fecha:
-    selected_label = st.selectbox("", date_labels, index=selected_index, key="calendario")
-    
-    # Actualizar fecha si cambió
-    idx = date_labels.index(selected_label)
-    nueva_fecha = date_values[idx]
-    if nueva_fecha != st.session_state.fecha_seleccionada:
-        old_cache_key = f"partidos_{st.session_state.fecha_seleccionada.strftime('%Y-%m-%d')}"
-        if old_cache_key in st.session_state:
-            del st.session_state[old_cache_key]
-        st.session_state.fecha_seleccionada = nueva_fecha
-        st.rerun()
-    
-    fecha = st.session_state.fecha_seleccionada
-
+# Botón LOGIN debajo del header, alineado a la derecha
+col_login = st.columns([5, 1])[1]
 with col_login:
     if st.button("LOGIN", key="login_btn"):
         st.session_state.show_login = True
