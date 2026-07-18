@@ -29,7 +29,7 @@ jobs:
       - name: Run scraper
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KE: ${{ secrets.SUPABASE_KE }}
+          SUPABASE_KE: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
           python scraper_simple.py
       
