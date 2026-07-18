@@ -111,6 +111,9 @@ LIGAS_EXCLUIR = [
     "ykkonen", "veikkausliiga", "kakkosliiga",  # Finlandia
     "national league", "nsfw", "nwsl women",  # Mujeres Canada
     "super league", "elite league",  # Generic
+    # Oceanía
+    "fiji", "oceania", "solomon islands", "vanuatu", "samoa", "tonga",
+    "new zealand premier", "oceania champions",
 ]
 
 

@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import date
+from datetime import date, timedelta
 from datetime import datetime
 import sys
 import time
@@ -28,6 +28,25 @@ PARTIDO_CACHE = {
     "data": {},
     "ttl": 600  # 10 minutos
 }
+
+# Función para formatear fechas
+def format_date_display(fecha_date):
+    """Convierte fecha a formato DD/MM/YYYY"""
+    return fecha_date.strftime("%d/%m/%Y")
+
+def format_date_for_query(fecha_date):
+    """Convierte fecha a formato YYYY-MM-DD para consultas"""
+    return fecha_date.strftime("%Y-%m-%d")
+
+# Generar opciones de fechas (hoy + 6 días)
+def get_date_options():
+    """Genera opciones de fechas para el selector"""
+    today = date.today()
+    options = []
+    for i in range(7):
+        d = today + timedelta(days=i)
+        options.append((d, format_date_display(d)))
+    return options
 
 BG = '#070b0e'
 CARD = '#0d131a'
@@ -182,9 +201,24 @@ with col_center:
 with col_right:
     c1, c2 = st.columns([1.5, 1])
     with c1:
-        # Calendario nativo sin label
-        fecha = st.date_input("", value=st.session_state.fecha_seleccionada, key="calendario", label_visibility="collapsed")
-        st.session_state.fecha_seleccionada = fecha
+        # Selector de fechas con formato DD/MM/YYYY
+        date_options = get_date_options()
+        date_labels = [opt[1] for opt in date_options]  # ["17/07/2026", "18/07/2026", ...]
+        date_values = [opt[0] for opt in date_options]  # [date objects]
+        
+        # Encontrar el índice de la fecha seleccionada o usar 0 (hoy)
+        try:
+            selected_index = date_values.index(st.session_state.fecha_seleccionada)
+        except:
+            selected_index = 0
+            st.session_state.fecha_seleccionada = date_values[0]
+        
+        selected_label = st.selectbox("", date_labels, index=selected_index, key="calendario")
+        
+        # Actualizar la fecha seleccionada
+        idx = date_labels.index(selected_label)
+        st.session_state.fecha_seleccionada = date_values[idx]
+        fecha = st.session_state.fecha_seleccionada
     with c2:
         if st.button("LOGIN", key="login_btn"):
             st.session_state.show_login = True
@@ -219,8 +253,8 @@ def obtener_partidos_de_supabase(fecha_str):
         from supabase import create_client
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
         
-        # Consultar partidos de la fecha
-        response = supabase.table("partidos").select("*").eq("fecha", fecha_str).execute()
+        # Consultar partidos de la fecha, ordenados por prioridad DESCENDENTE
+        response = supabase.table("partidos").select("*").eq("fecha", fecha_str).order("prioridad", desc=True).execute()
         
         if response.data:
             return response.data
@@ -234,10 +268,12 @@ def convertir_partidos_supabase_a_fixture(datos_supabase):
     """Convierte datos de Supabase al formato de fixture que usa la app"""
     fixtures = []
     for p in datos_supabase:
+        # Mantener la prioridad para ordenar correctamente
         fixtures.append({
             "fixture": {
                 "id": p.get("fixture_id", 0),
-                "date": f"{p.get('fecha', '')}T{p.get('hora_utc', '00:00')}"
+                "date": f"{p.get('fecha', '')}T{p.get('hora_utc', '00:00')}",
+                "prioridad": p.get("prioridad", 1)
             },
             "league": {
                 "id": p.get("liga_id", 0),
@@ -458,8 +494,8 @@ def obtener_partidos_futbol(todos=False):
     
     # Buscar en TODAS las APIs
     try:
-        hoy = datetime.now()
-        fecha_str = hoy.strftime("%Y-%m-%d")
+        # Usar la fecha seleccionada por el usuario
+        fecha_str = format_date_for_query(fecha)
         
         # Usar función que busca en todas las APIs
         todos_fixture = obtener_partidos_todas_apis(fecha_str)
@@ -542,8 +578,8 @@ def obtener_mejor_pick():
     
     # Buscar en TODAS las APIs disponibles
     try:
-        hoy = datetime.now()
-        fecha_str = hoy.strftime("%Y-%m-%d")
+        # Usar la fecha seleccionada por el usuario
+        fecha_str = format_date_for_query(fecha)
         
         # Usar función que busca en todas las APIs
         todos_fixture = obtener_partidos_todas_apis(fecha_str)
