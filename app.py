@@ -282,25 +282,25 @@ for i, dv in enumerate(date_values):
         break
 
 # Header con 4 columnas: Logo | Deporte | Fecha | Login
-h1, h2, h3, h4 = st.columns([2, 1.5, 1.5, 0.5])
+col_logo, col_deportes, col_fecha, col_login = st.columns([1.5, 3, 1.5, 0.8])
 
-with h1:
+with col_logo:
     st.markdown(f'''
-    <div style="display:flex; align-items:center; gap:6px; padding-top:5px;">
+    <div style="display:flex; align-items:center; gap:6px; height:40px;">
         <span style="font-size:20px;">🦂</span>
         <span style="font-size:14px; font-weight:bold; color:white;">SCORPION</span>
         <span style="font-size:14px; font-weight:bold; color:{ORANGE};">ELITE</span>
     </div>
     ''', unsafe_allow_html=True)
 
-with h2:
+with col_deportes:
     st.markdown(f'''
-    <div style="padding-top:5px;">
-        <span style="background:{GREEN}; color:{BG}; padding:6px 12px; border-radius:4px; font-weight:bold; font-size:11px;">⚽ FUTBOL</span>
+    <div style="display:flex; align-items:center; height:40px;">
+        <span style="background:#1f2937; color:white; padding:6px 14px; border-radius:4px; font-weight:bold; font-size:12px; border:1px solid #374151;">⚽ FUTBOL</span>
     </div>
     ''', unsafe_allow_html=True)
 
-with h3:
+with col_fecha:
     selected_label = st.selectbox("", date_labels, index=selected_index, key="calendario")
     
     # Actualizar fecha si cambió
@@ -315,7 +315,7 @@ with h3:
     
     fecha = st.session_state.fecha_seleccionada
 
-with h4:
+with col_login:
     if st.button("LOGIN", key="login_btn"):
         st.session_state.show_login = True
         st.rerun()
