@@ -98,32 +98,39 @@ else:
                 col1, col2, col3 = st.columns([1, 1, 1])
                 with col2:
                     if st.button("✅ Guardar en Supabase", type="primary", use_container_width=True):
-                        try:
-                            client = create_client(SUPABASE_URL, SUPABASE_KEY)
-                            
-                            guardados = 0
-                            for _, row in df_partidos.iterrows():
-                                data = {
-                                    'fixture_id': abs(hash(f"{row['equipo_local']}{row['equipo_visitante']}")) % (10**10),
-                                    'fecha': row['fecha'],
-                                    'hora': row['hora'],
-                                    'liga': row['liga'],
-                                    'pais': row['pais'],
-                                    'liga_codigo': row['liga_codigo'],
-                                    'equipo_local': row['equipo_local'],
-                                    'equipo_visitante': row['equipo_visitante']
-                                }
-                                try:
-                                    client.table('partidos').upsert(data, on_conflict='fixture_id').execute()
-                                    guardados += 1
-                                except Exception as e:
-                                    pass
-                            
-                            st.success(f"✅ {guardados} partidos guardados en Supabase")
-                            st.session_state.df_partidos = None
-                            
-                        except Exception as e:
-                            st.error(f"Error al guardar: {str(e)[:100]}")
+                        with st.spinner("Guardando..."):
+                            try:
+                                client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                                
+                                guardados = 0
+                                errores = 0
+                                for _, row in df_partidos.iterrows():
+                                    data = {
+                                        'fixture_id': abs(hash(f"{row['equipo_local']}{row['equipo_visitante']}")) % (10**10),
+                                        'fecha': row['fecha'],
+                                        'hora': row['hora'],
+                                        'liga': row['liga'],
+                                        'pais': row['pais'],
+                                        'liga_codigo': row['liga_codigo'],
+                                        'equipo_local': row['equipo_local'],
+                                        'equipo_visitante': row['equipo_visitante']
+                                    }
+                                    try:
+                                        result = client.table('partidos').upsert(data, on_conflict='fixture_id').execute()
+                                        guardados += 1
+                                    except Exception as e:
+                                        errores += 1
+                                        st.warning(f"Error en {row['equipo_local']}: {str(e)[:50]}")
+                                
+                                if guardados > 0:
+                                    st.success(f"✅ {guardados} partidos guardados")
+                                if errores > 0:
+                                    st.warning(f"⚠️ {errores} errores")
+                                
+                                st.session_state.df_partidos = None
+                                
+                            except Exception as e:
+                                st.error(f"Error de conexión: {str(e)[:100]}")
             else:
                 st.warning("No se encontraron partidos en el archivo")
                 
