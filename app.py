@@ -95,6 +95,7 @@ with col_header_right:
 st.markdown("<hr style='border-color: rgba(255,215,0,0.3); margin: 5px 0;'>", unsafe_allow_html=True)
 
 # Menú según estado de login
+selection = "🏠"
 if st.session_state.admin_logged:
     menu_options = ["🏠", "📊 Predicciones", "📈 Estadísticas", "⚙️ Configuración"]
     selection = st.radio("", menu_options, horizontal=True, label_visibility="collapsed")
