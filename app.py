@@ -169,21 +169,10 @@ if st.session_state.page == "Login":
 # PÁGINA: INICIO
 # ══════════════════════════════════════════════════════════
 elif selection == "🏠":
-    st.markdown("<h2>📅 Partidos de Hoy</h2>", unsafe_allow_html=True)
-    
-    # Selector de fecha
-    col_fecha, col_boton = st.columns([2, 1])
-    with col_fecha:
-        fecha_seleccionada = st.date_input("Seleccionar fecha", value=None)
-    with col_boton:
-        st.markdown("<br>", unsafe_allow_html=True)
-        actualizar = st.button("🔄 Actualizar")
+    st.markdown("<h2>📅 Partidos</h2>", unsafe_allow_html=True)
     
     # Obtener partidos
-    if fecha_seleccionada:
-        partidos = obtener_partidos(str(fecha_seleccionada))
-    else:
-        partidos = obtener_partidos()
+    partidos = obtener_partidos()
     
     if partidos:
         st.success(f"✅ {len(partidos)} partidos encontrados")
@@ -192,18 +181,7 @@ elif selection == "🏠":
         datos_partidos = [formatear_partido(p) for p in partidos]
         st.dataframe(datos_partidos, use_container_width=True, hide_index=True)
     else:
-        st.warning("⚠️ No hay partidos para esta fecha")
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Info
-    st.markdown("""
-    <div class="card">
-        <p style='color: #888; font-size: 12px;'>
-        Los partidos se actualizan diariamente a las 6:00 AM UTC mediante GitHub Actions.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+        st.warning("⚠️ No hay partidos")
 
 # ══════════════════════════════════════════════════════════
 # PÁGINA: PREDICCIONES
