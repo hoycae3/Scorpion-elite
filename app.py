@@ -18,6 +18,12 @@ def get_local_date():
 
 st.set_page_config(page_title='SCORPION ELITE', layout='wide')
 
+# Limpiar cache antiguo si la fecha está desactualizada
+if 'fecha_seleccionada' in st.session_state:
+    today = get_local_date()
+    if st.session_state.fecha_seleccionada < today:
+        st.session_state.fecha_seleccionada = today
+
 # Configuración Supabase (usa secrets.toml en Streamlit Cloud)
 try:
     SUPABASE_URL = st.secrets.get("SUPABASE_URL", os.environ.get("SUPABASE_URL", ""))
@@ -250,12 +256,17 @@ with col_center:
     #         st.session_state.deporte = "TENIS"
 
 with col_right:
-    c1, c2 = st.columns([1.5, 1])
+    c1, c2 = st.columns([1.2, 0.8])
     with c1:
-        # Selector de fechas con formato DD/MM/YYYY
+        # Selector de fechas compacto con formato DD/MM/YYYY
         date_options = get_date_options()
         date_labels = [opt[1] for opt in date_options]  # ["17/07/2026", "18/07/2026", ...]
         date_values = [opt[0] for opt in date_options]  # [date objects]
+        
+        # Verificar que la fecha seleccionada esté en las opciones disponibles
+        today_local = get_local_date()
+        if st.session_state.fecha_seleccionada < today_local:
+            st.session_state.fecha_seleccionada = today_local
         
         # Encontrar el índice de la fecha seleccionada o usar 0 (hoy)
         try:
