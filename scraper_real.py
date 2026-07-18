@@ -93,82 +93,104 @@ EQUIPOS_MLS = ["los angeles", "la galaxy", "lafc", "atlanta", "seattle", "portla
 EQUIPOS_LIBERTADORES = ["palmeiras", "flamengo", "grêmio", "internacional", "athletico", "corinthians", "atletico mineiro"]
 
 
+# LIGAS A EXCLUIR (muy regionales o menores)
+LIGAS_EXCLUIR = [
+    "queensland", "npl queensland", "npl victoria", "npl nsw", "npl western australia",
+    "victoria premier", "nsw league", "sa state", "wa state",
+    "tasmania", "canadian premier", "supra", "vancouver",
+    "kazakhstan", "azerbaijan premier", "sierra leone premier",
+    "fiji premier", "malta premier", "malaysia premier", "singapore premier",
+    "hong kong premier", "taiwan league", "myanmar premier", "cambodia premier",
+    "nigerian premier", "ghana premier", "kenyan premier", "ugandan premier",
+    "zambia premier", "zimbabwe premier", "botswana premier",
+    "india i league", "bangladesh premier", "nepal premier",
+    "jordan premier", "lebanon premier", "syria premier", "iraq premier",
+    "bahrain premier", "qatar league", "kuwait premier", "oman premier",
+    "uae league", "saudi professional",
+]
+
+
 def calcular_prioridad(liga_nombre, pais="", equipo_home="", equipo_away=""):
     liga_lower = liga_nombre.lower()
     home_lower = equipo_home.lower() if equipo_home else ""
     away_lower = equipo_away.lower() if equipo_away else ""
     
+    # EXCLUIR ligas muy regionales
+    for exclude in LIGAS_EXCLUIR:
+        if exclude in liga_lower:
+            return 0  # Excluir completamente
+    
     # PREMIUM: Solo Inglaterra tiene P14 para Premier League
     if "premier league" in liga_lower:
-        if any(e in home_lower or e in away_lower for e in EQUIPOS_PREMIER):
+        if any(e in home_lower for e in EQUIPOS_PREMIER) or any(e in away_lower for e in EQUIPOS_PREMIER):
             return 14
-        return 3  # Otras Premier Leagues = P3
+        return 1  # Otras Premier Leagues = P1 (muy abajo)
     
     # Buscar coincidencias en liga
     for nombre, prio in LIGAS_PRIORIDAD.items():
         if nombre in liga_lower:
             return prio
     
-    # PREMIUM: Detectar por equipos
+    # PREMIUM: Detectar por equipos (solo si la liga no es muy genérica)
     
     # Premier League Inglaterra
-    if any(e in home_lower or e in away_lower for e in EQUIPOS_PREMIER):
+    if any(e in home_lower for e in EQUIPOS_PREMIER) or any(e in away_lower for e in EQUIPOS_PREMIER):
         return 14
     
     # La Liga
-    if any(e in home_lower or e in away_lower for e in EQUIPOS_LA_LIGA):
+    if any(e in home_lower for e in EQUIPOS_LA_LIGA) or any(e in away_lower for e in EQUIPOS_LA_LIGA):
         return 13
     
     # Serie A Italia
-    if any(e in home_lower or e in away_lower for e in EQUIPOS_SERIE_A):
+    if any(e in home_lower for e in EQUIPOS_SERIE_A) or any(e in away_lower for e in EQUIPOS_SERIE_A):
         return 12
     
     # Bundesliga
-    if any(e in home_lower or e in away_lower for e in EQUIPOS_BUNDESLIGA):
+    if any(e in home_lower for e in EQUIPOS_BUNDESLIGA) or any(e in away_lower for e in EQUIPOS_BUNDESLIGA):
         return 11
     
     # Ligue 1
-    if any(e in home_lower or e in away_lower for e in EQUIPOS_LIGUE_1):
+    if any(e in home_lower for e in EQUIPOS_LIGUE_1) or any(e in away_lower for e in EQUIPOS_LIGUE_1):
         return 10
     
     # Brasileirao
-    if any(e in home_lower or e in away_lower for e in EQUIPOS_BRASILEIRAO):
+    if any(e in home_lower for e in EQUIPOS_BRASILEIRAO) or any(e in away_lower for e in EQUIPOS_BRASILEIRAO):
         return 7
     
     # Liga MX
-    if any(e in home_lower or e in away_lower for e in EQUIPOS_LIGA_MX):
+    if any(e in home_lower for e in EQUIPOS_LIGA_MX) or any(e in away_lower for e in EQUIPOS_LIGA_MX):
         return 6
     
     # Liga Argentina
-    if any(e in home_lower or e in away_lower for e in EQUIPOS_LIGA_ARG):
+    if any(e in home_lower for e in EQUIPOS_LIGA_ARG) or any(e in away_lower for e in EQUIPOS_LIGA_ARG):
         return 7
     
     # Liga Colombia
-    if any(e in home_lower or e in away_lower for e in EQUIPOS_LIGA_COL):
+    if any(e in home_lower for e in EQUIPOS_LIGA_COL) or any(e in away_lower for e in EQUIPOS_LIGA_COL):
         return 6
     
     # Liga Peru
-    if any(e in home_lower or e in away_lower for e in EQUIPOS_LIGA_PERU):
+    if any(e in home_lower for e in EQUIPOS_LIGA_PERU) or any(e in away_lower for e in EQUIPOS_LIGA_PERU):
         return 6
     
     # Liga Chile
-    if any(e in home_lower or e in away_lower for e in EQUIPOS_LIGA_CHILE):
+    if any(e in home_lower for e in EQUIPOS_LIGA_CHILE) or any(e in away_lower for e in EQUIPOS_LIGA_CHILE):
         return 6
     
     # Liga Uruguay
-    if any(e in home_lower or e in away_lower for e in EQUIPOS_LIGA_URU):
+    if any(e in home_lower for e in EQUIPOS_LIGA_URU) or any(e in away_lower for e in EQUIPOS_LIGA_URU):
         return 6
     
     # J1 League
-    if any(e in home_lower or e in away_lower for e in EQUIPOS_J1_LEAGUE):
+    if any(e in home_lower for e in EQUIPOS_J1_LEAGUE) or any(e in away_lower for e in EQUIPOS_J1_LEAGUE):
         return 6
     
     # Eredivisie
-    if any(e in home_lower or e in away_lower for e in EQUIPOS_EREDIVISIE):
+    if any(e in home_lower for e in EQUIPOS_EREDIVISIE) or any(e in away_lower for e in EQUIPOS_EREDIVISIE):
         return 6
     
     # MLS
-    if any(e in home_lower or e in away_lower for e in EQUIPOS_MLS):
+    if any(e in home_lower for e in EQUIPOS_MLS) or any(e in away_lower for e in EQUIPOS_MLS):
         return 5
     
     # Inglaterra championship
@@ -185,11 +207,11 @@ def calcular_prioridad(liga_nombre, pais="", equipo_home="", equipo_away=""):
     if any(x in liga_lower for x in ["friendly", "amistoso", "amical"]):
         return 1
     if any(x in liga_lower for x in ["u21", "u20", "u19", "u18", "u17", "u16"]):
-        return 2
+        return 1
     if any(x in liga_lower for x in ["women", "femenino"]):
-        return 2
+        return 1
     if "championship" in liga_lower:
-        return 3
+        return 2
     
     return 1
 
@@ -369,11 +391,18 @@ async def main():
         print("\n⚠️  No se encontraron partidos")
         return
     
-    print(f"\n💾 Guardando {len(partidos)} partidos...")
+    # Filtrar partidos excluidos (prioridad 0)
+    partidos_filtrados = [p for p in partidos if p.get('prioridad', 0) > 0]
+    eliminados = len(partidos) - len(partidos_filtrados)
+    
+    if eliminados > 0:
+        print(f"📊 Excluidos {eliminados} partidos menores")
+    
+    print(f"\n💾 Guardando {len(partidos_filtrados)} partidos...")
     
     supabase = get_supabase_client()
     if supabase:
-        guardados = guardar_en_supabase(supabase, partidos)
+        guardados = guardar_en_supabase(supabase, partidos_filtrados)
         print(f"\n✅ {guardados} partidos guardados en Supabase")
     else:
         print("\n⚠️  Modo demo - datos no guardados")
