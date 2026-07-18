@@ -250,11 +250,10 @@ def guardar_en_supabase(supabase, partidos_data):
         return 0
     
     try:
-        # Limpiar partidos del día (para actualizar)
         fecha_hoy = datetime.now().strftime("%Y-%m-%d")
         
         # Eliminar partidos del día
-        supabase.table("partidos").delete().neq("id", 0).execute()
+        supabase.table("partidos").delete().eq("fecha", fecha_hoy).execute()
         
         # Insertar nuevos partidos
         for partido in partidos_data:
@@ -334,25 +333,10 @@ def run_scraper():
             partido_data = {
                 "fixture_id": fixture_id,
                 "fecha": fecha_hoy,
-                "hora_utc": hora_utc,
-                "hora_local": hora_local,
+                "hora": hora_local,  # Hora local
                 "liga": league_name,
-                "liga_id": league_id,
-                "pais": league_country,
-                "prioridad": prioridad,
-                "equipo_home": home_name,
-                "equipo_away": away_name,
-                "prob_home": predictions["prob_home"],
-                "prob_draw": predictions["prob_draw"],
-                "prob_away": predictions["prob_away"],
-                "cuota_1": odds["cuota_1"],
-                "cuota_x": odds["cuota_x"],
-                "cuota_2": odds["cuota_2"],
-                "pick": pick_data["pick"],
-                "cuota_pick": pick_data["cuota"],
-                "confianza": pick_data["confianza"],
-                "valor": pick_data["valor"],
-                "actualizado_en": datetime.now().isoformat()
+                "equipo_local": home_name,
+                "equipo_visitante": away_name,
             }
             
             partidos_para_guardar.append(partido_data)
