@@ -73,18 +73,17 @@ st.markdown("""
 # ══════════════════════════════════════════════════════════
 # HEADER
 # ══════════════════════════════════════════════════════════
-col1, col2 = st.columns([1, 4])
-
-with col1:
-    st.markdown("<h1 style='font-size: 36px;'>🦂 SCORPION ELITE</h1>", unsafe_allow_html=True)
-
-with col2:
-    st.markdown("<p style='color: #888; font-size: 14px; line-height: 60px;'>Análisis Predictivo de Partidos de Fútbol</p>", unsafe_allow_html=True)
+st.markdown("""
+<div style='text-align: center; margin: 0; padding: 0;'>
+    <h1 style='font-size: 32px; margin: 0;'>🦂 SCORPION ELITE</h1>
+    <p style='color: #888; font-size: 12px; margin: 0;'>Análisis Predictivo de Partidos de Fútbol</p>
+</div>
+""", unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════
 # NAVEGACIÓN PRINCIPAL
 # ══════════════════════════════════════════════════════════
-st.markdown("<hr style='border-color: rgba(255,215,0,0.3);'>", unsafe_allow_html=True)
+st.markdown("<hr style='border-color: rgba(255,215,0,0.3); margin: 5px 0;'>", unsafe_allow_html=True)
 
 # Menú según estado de login
 if st.session_state.admin_logged:
@@ -143,9 +142,6 @@ if st.session_state.page == "Login":
 # PÁGINA: INICIO
 # ══════════════════════════════════════════════════════════
 elif selection == "🏠 Inicio":
-    # Hero section
-    st.markdown("<br>", unsafe_allow_html=True)
-    
     col_left, col_right = st.columns([1, 1])
     
     with col_left:
