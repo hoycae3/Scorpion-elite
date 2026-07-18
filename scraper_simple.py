@@ -1,23 +1,32 @@
 #!/usr/bin/env python3
 """
 Scorpion Elite - Scraper
-Usa API-Football como fuente principal, con fallback a scraping
+Usa Playwright para hacer scraping de Flashscore
 """
 
 import os
 import json
+import asyncio
 from datetime import datetime, timedelta, timezone
+from playwright.async_api import async_playwright
 from supabase import create_client
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_KE = os.environ.get("SUPABASE_KE", "")
 
-# APIs disponibles
-API_FOOTBALL_KEYS = [
-    os.environ.get("API_FOOTBALL_KEY", ""),
-    "e3926f829cd848f4b2b54d722ca29701",
-    "124c9519df145caf883cd82f0b2a4671"
-]
+# LAS 28 LIGAS
+LIGAS = {
+    "Premier League": "https://www.flashscore.com/football/england/premier-league/",
+    "LaLiga": "https://www.flashscore.com/football/spain/laliga/",
+    "Serie A": "https://www.flashscore.com/football/italy/serie-a/",
+    "Bundesliga": "https://www.flashscore.com/football/germany/bundesliga/",
+    "Ligue 1": "https://www.flashscore.com/football/france/ligue-1/",
+    "Liga MX": "https://www.flashscore.com/football/mexico/liga-mx/",
+    "MLS": "https://www.flashscore.com/football/usa/mls/",
+    "Champions League": "https://www.flashscore.com/football/uefa-champions-league/",
+    "Copa Libertadores": "https://www.flashscore.com/football/south-america/copa-libertadores/",
+    "Brasileirão Série A": "https://www.flashscore.com/football/brazil/serie-a/",
+}
 
 
 def get_supabase_client():
@@ -37,37 +46,46 @@ def get_fecha_colombia():
     return datetime.now(COLOMBIA_TZ).strftime("%Y-%m-%d")
 
 
-def get_partidos_api_football(api_key, fecha):
-    """Obtiene partidos de API-Football"""
-    import httpx
-    
-    url = "https://v3.football.api-sports.io/fixtures"
-    
-    headers = {
-        'x-apisports-key': api_key
-    }
-    
-    params = {
-        'date': fecha,
-        'season': '2024'
-    }
-    
-    print(f"📡 Consultando API-Football para {fecha}...")
-    
+async def scrape_league(page, liga_nombre, url):
+    """Scrapea partidos de una liga"""
     try:
-        with httpx.Client(timeout=30.0) as client:
-            response = client.get(url, headers=headers, params=params)
-            data = response.json()
-            
-            if data.get('results', 0) > 0:
-                return data['response']
-            return []
+        await page.goto(url, timeout=60000, wait_until="domcontentloaded")
+        await asyncio.sleep(8)  # Esperar que carguen los eventos
+        
+        # Extraer partidos
+        data = await page.evaluate("""
+            () => {
+                const matches = [];
+                const events = document.querySelectorAll('.event__match');
+                
+                events.forEach(event => {
+                    try {
+                        const timeEl = event.querySelector('.event__time');
+                        let time = timeEl ? timeEl.textContent.replace(/\\n/g, '').trim() : '00:00';
+                        time = time.replace('FRO', '').trim();
+                        
+                        const homeEl = event.querySelector('.event__homeParticipant');
+                        const awayEl = event.querySelector('.event__awayParticipant');
+                        const home = homeEl ? homeEl.textContent.trim() : '';
+                        const away = awayEl ? awayEl.textContent.trim() : '';
+                        
+                        if (home && away && home !== away) {
+                            matches.push({ time, home, away });
+                        }
+                    } catch(e) {}
+                });
+                
+                return matches;
+            }
+        """)
+        
+        return data
     except Exception as e:
-        print(f"❌ Error API: {e}")
+        print(f"   ❌ Error: {e}")
         return []
 
 
-def main():
+async def main():
     print("=" * 60)
     print("🦂 SCORPION ELITE - SCRAPER")
     print("=" * 60)
@@ -78,116 +96,49 @@ def main():
     all_partidos = []
     seen = set()
     
-    # Intentar con API-Football
-    for api_key in API_FOOTBALL_KEYS:
-        if not api_key:
-            continue
-            
-        fixtures = get_partidos_api_football(api_key, fecha_hoy)
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        context = await browser.new_context(
+            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        )
+        page = await context.new_page()
         
-        if fixtures:
-            print(f"📊 Partidos de API: {len(fixtures)}")
+        # Bloquear scripts que pueden causar problemas
+        await context.route("**/*analytics*", lambda route: route.abort())
+        await context.route("**/*ads*", lambda route: route.abort())
+        
+        for liga_nombre, url in LIGAS.items():
+            print(f"🔍 {liga_nombre}...")
+            matches = await scrape_league(page, liga_nombre, url)
             
-            for fixture in fixtures:
-                try:
-                    league = fixture.get('league', {})
-                    teams = fixture.get('teams', {})
-                    goals = fixture.get('goals', {})
-                    fixture_info = fixture.get('fixture', {})
+            count = 0
+            for item in matches:
+                key = f"{item['home']}{item['away']}{liga_nombre}{fecha_hoy}"
+                
+                if key not in seen:
+                    seen.add(key)
+                    match_id = hash(key) % 10000000
                     
-                    liga_nombre = league.get('name', 'Unknown')
-                    home_name = teams.get('home', {}).get('name', '')
-                    away_name = teams.get('away', {}).get('name', '')
-                    time_str = fixture_info.get('timestamp', 0)
+                    partido = {
+                        "fixture_id": match_id,
+                        "fecha": fecha_hoy,
+                        "hora": item['time'] or '00:00',
+                        "liga": liga_nombre,
+                        "equipo_local": item['home'],
+                        "equipo_visitante": item['away'],
+                    }
                     
-                    if time_str:
-                        hora = datetime.fromtimestamp(time_str).strftime('%H:%M')
-                    else:
-                        hora = '00:00'
-                    
-                    # Filtrar solo ligas principales
-                    ligas_deseadas = [
-                        'Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1',
-                        'Liga MX', 'MLS', 'Champions League', 'Libertadores', 'Copa',
-                        'Serie B', '2. Bundesliga', 'Championship', 'BetPlay', 'Brasileirão',
-                        'Primera Division', 'Jupiler', 'Primeira Liga', 'Eredivisie', 'J1 League'
-                    ]
-                    
-                    es_deseada = any(l.lower() in liga_nombre.lower() for l in ligas_deseadas)
-                    
-                    if not es_deseada:
-                        continue
-                    
-                    # Limpiar nombre de liga
-                    if 'Premier' in liga_nombre:
-                        liga_nombre = "Premier League"
-                    elif 'La Liga' in liga_nombre or 'LALIGA' in liga_nombre.upper():
-                        liga_nombre = "LaLiga"
-                    elif 'Serie A' in liga_nombre:
-                        liga_nombre = "Serie A"
-                    elif 'Bundesliga' in liga_nombre:
-                        liga_nombre = "Bundesliga"
-                    elif 'Ligue 1' in liga_nombre:
-                        liga_nombre = "Ligue 1"
-                    elif 'Liga MX' in liga_nombre or 'MX' in liga_nombre:
-                        liga_nombre = "Liga MX"
-                    elif 'MLS' in liga_nombre:
-                        liga_nombre = "MLS"
-                    elif 'Champions League' in liga_nombre:
-                        liga_nombre = "Champions League"
-                    elif 'Libertadores' in liga_nombre:
-                        liga_nombre = "Copa Libertadores"
-                    elif 'Serie B' in liga_nombre:
-                        liga_nombre = "Serie B"
-                    elif '2. Bundesliga' in liga_nombre:
-                        liga_nombre = "2. Bundesliga"
-                    elif 'Championship' in liga_nombre:
-                        liga_nombre = "EFL Championship"
-                    elif 'BetPlay' in liga_nombre:
-                        liga_nombre = "Liga BetPlay Dimayor"
-                    elif 'Brasileirão' in liga_nombre:
-                        if 'Série B' in liga_nombre:
-                            liga_nombre = "Brasileirão Série B"
-                        else:
-                            liga_nombre = "Brasileirão Série A"
-                    elif 'Primera' in liga_nombre and 'Division' in liga_nombre:
-                        liga_nombre = "Liga Profesional Argentina"
-                    elif 'Jupiler' in liga_nombre:
-                        liga_nombre = "Jupiler Pro League"
-                    elif 'Primeira' in liga_nombre:
-                        liga_nombre = "Primeira Liga"
-                    elif 'Eredivisie' in liga_nombre:
-                        liga_nombre = "Eredivisie"
-                    elif 'J1' in liga_nombre:
-                        liga_nombre = "J1 League"
-                    
-                    key = f"{home_name}{away_name}{liga_nombre}{fecha_hoy}"
-                    
-                    if key not in seen and home_name and away_name:
-                        seen.add(key)
-                        match_id = hash(key) % 10000000
-                        
-                        partido = {
-                            "fixture_id": match_id,
-                            "fecha": fecha_hoy,
-                            "hora": hora,
-                            "liga": liga_nombre,
-                            "equipo_local": home_name,
-                            "equipo_visitante": away_name,
-                        }
-                        
-                        all_partidos.append(partido)
-                        print(f"   ⚽ {home_name} vs {away_name} ({liga_nombre})")
-                        
-                except Exception as e:
-                    continue
+                    all_partidos.append(partido)
+                    print(f"   ⚽ {item['home']} vs {item['away']}")
+                    count += 1
             
-            if all_partidos:
-                break  # Si tenemos datos, paramos
+            print(f"   ✅ {count} partidos\n")
+        
+        await browser.close()
     
-    print(f"\n📊 Total partidos: {len(all_partidos)}")
+    print(f"📊 Total partidos: {len(all_partidos)}")
     
-    # Guardar en Supabase
+    # Guardar
     if all_partidos:
         supabase = get_supabase_client()
         if supabase:
@@ -209,8 +160,6 @@ def main():
         else:
             with open("partidos_debug.json", "w", encoding="utf-8") as f:
                 json.dump(all_partidos, f, indent=2, ensure_ascii=False)
-    else:
-        print("\n⚠️  No se encontraron partidos")
     
     print("\n" + "=" * 60)
     print("✅ SCRAPER COMPLETADO")
@@ -218,4 +167,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
