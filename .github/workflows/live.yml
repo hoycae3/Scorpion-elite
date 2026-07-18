@@ -1,0 +1,41 @@
+name: 🦂 Scorpion Elite - Live Scraper
+
+on:
+  # Cada 5 minutos durante horas de partidos (6 AM - 11 PM UTC)
+  schedule:
+    - cron: '*/5 6-23 * * *'
+  
+  # Ejecución manual
+  workflow_dispatch:
+
+env:
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  live-scraper:
+    name: ⚽ Partidos en Vivo
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar Playwright
+        run: |
+          pip install playwright
+          playwright install chromium
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Ejecutar Live Scraper
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          python live_scraper.py --once

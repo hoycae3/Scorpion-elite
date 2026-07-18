@@ -261,7 +261,17 @@ def setup_database():
 if __name__ == "__main__":
     import sys
     
-    if len(sys.argv) > 1 and sys.argv[1] == "--setup":
-        setup_database()
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "--setup":
+            setup_database()
+        elif sys.argv[1] == "--once":
+            print("Ejecutando una vez...")
+            scraper = LiveScraper()
+            matches = scraper.scrape_live()
+            if matches:
+                saved = save_to_supabase(matches)
+                print(f"✅ Guardados: {saved}/{len(matches)} partidos")
+            else:
+                print("ℹ️ No hay partidos en vivo")
     else:
         run_live_loop(interval=60)
