@@ -74,13 +74,112 @@ def get_supabase_client():
         return None
 
 
-def calcular_prioridad(liga_nombre):
+# Equipos conocidos por liga
+EQUIPOS_PREMIER = ["manchester", "liverpool", "arsenal", "chelsea", "tottenham", "manchester utd", "manchester city", "newcastle", "brighton", "aston villa", "west ham"]
+EQUIPOS_LA_LIGA = ["barcelona", "real madrid", "atletico", "sevilla", "real sociedad", "villarreal", "bilbao", "betis", "valencia"]
+EQUIPOS_SERIE_A = ["juventus", "inter", "ac milan", "milan", "roma", "napoli", "lazio", "atalanta", "fiorentina"]
+EQUIPOS_BUNDESLIGA = ["bayern", "dortmund", "rb leipzig", "leverkusen", "frankfurt", "wolfsburg", "borussia"]
+EQUIPOS_LIGUE_1 = ["psg", "marseille", "lyon", "monaco", "lille", "nice", "rennes", "lorient"]
+EQUIPOS_BRASILEIRAO = ["flamengo", "palmeiras", "corinthians", "sao paulo", "grêmio", "internacional", "cruzeiro", "atletico mineiro", "botafogo", "fluminense", "bahia", "santos", "vasco", "bragantino", "mirassol", "chapecoense", "atletico-go"]
+EQUIPOS_LIGA_MX = ["club america", "chivas", "cruz azul", "pumas", "tigres", "monterrey", "leon", "santos", "puebla", "tijuana", "juarez", "queretaro", "pachuca", "atlas"]
+EQUIPOS_LIGA_ARG = ["river plate", "boca juniors", "independiente", "racing", "velez", "huracan", "lanus", "banfield", "estudiantes", "gimnasia", "talleres", "belgrano", "newells", "rosario central", "argentinos"]
+EQUIPOS_LIGA_COL = ["millonarios", "america", "atletico nacional", "junior", "santa fe", "tolima", "medellin", "once Caldas", "pasto", "cali"]
+EQUIPOS_LIGA_PERU = ["universitario", "cristal", "alianza lima", "sporting cristal", "melgar", "cienciano", "deportivo municipal", "sport boys", "cantolao", " Grau", "AD Tarma", "U. de Deportes"]
+EQUIPOS_LIGA_CHILE = ["colo colo", "ucatolica", "u. de chile", "huachipato", "palestino", "audax", "magallanes", "copiapo"]
+EQUIPOS_LIGA_URU = ["penarol", "nacional", "defensor", "wanderers", "cerro", "danubio", "progreso", "boston river"]
+EQUIPOS_J1_LEAGUE = ["yokohama", "kawasaki", " Cerezo", "urawa", " Kashima", "frontale", "gamba", "sanfrecce", "nagoya", "tosu"]
+EQUIPOS_EREDIVISIE = ["ajax", "psv", "feyenoord", "az", "twente", "utrecht"]
+EQUIPOS_MLS = ["los angeles", "la galaxy", "lafc", "atlanta", "seattle", "portland", "nycfc", "new york", "miami", "orlando", "charleston", "austin", "dallas", "houston", "philadelphia", "toronto", "vancouver", "montreal", "chicago", "nashville", "colorado", "salt lake", "kansas city", "philadelphia"]
+EQUIPOS_LIBERTADORES = ["palmeiras", "flamengo", "grêmio", "internacional", "athletico", "corinthians", "atletico mineiro"]
+
+
+def calcular_prioridad(liga_nombre, pais="", equipo_home="", equipo_away=""):
     liga_lower = liga_nombre.lower()
+    home_lower = equipo_home.lower() if equipo_home else ""
+    away_lower = equipo_away.lower() if equipo_away else ""
     
-    # Buscar coincidencias
+    # PREMIUM: Solo Inglaterra tiene P14 para Premier League
+    if "premier league" in liga_lower:
+        if any(e in home_lower or e in away_lower for e in EQUIPOS_PREMIER):
+            return 14
+        return 3  # Otras Premier Leagues = P3
+    
+    # Buscar coincidencias en liga
     for nombre, prio in LIGAS_PRIORIDAD.items():
         if nombre in liga_lower:
             return prio
+    
+    # PREMIUM: Detectar por equipos
+    
+    # Premier League Inglaterra
+    if any(e in home_lower or e in away_lower for e in EQUIPOS_PREMIER):
+        return 14
+    
+    # La Liga
+    if any(e in home_lower or e in away_lower for e in EQUIPOS_LA_LIGA):
+        return 13
+    
+    # Serie A Italia
+    if any(e in home_lower or e in away_lower for e in EQUIPOS_SERIE_A):
+        return 12
+    
+    # Bundesliga
+    if any(e in home_lower or e in away_lower for e in EQUIPOS_BUNDESLIGA):
+        return 11
+    
+    # Ligue 1
+    if any(e in home_lower or e in away_lower for e in EQUIPOS_LIGUE_1):
+        return 10
+    
+    # Brasileirao
+    if any(e in home_lower or e in away_lower for e in EQUIPOS_BRASILEIRAO):
+        return 7
+    
+    # Liga MX
+    if any(e in home_lower or e in away_lower for e in EQUIPOS_LIGA_MX):
+        return 6
+    
+    # Liga Argentina
+    if any(e in home_lower or e in away_lower for e in EQUIPOS_LIGA_ARG):
+        return 7
+    
+    # Liga Colombia
+    if any(e in home_lower or e in away_lower for e in EQUIPOS_LIGA_COL):
+        return 6
+    
+    # Liga Peru
+    if any(e in home_lower or e in away_lower for e in EQUIPOS_LIGA_PERU):
+        return 6
+    
+    # Liga Chile
+    if any(e in home_lower or e in away_lower for e in EQUIPOS_LIGA_CHILE):
+        return 6
+    
+    # Liga Uruguay
+    if any(e in home_lower or e in away_lower for e in EQUIPOS_LIGA_URU):
+        return 6
+    
+    # J1 League
+    if any(e in home_lower or e in away_lower for e in EQUIPOS_J1_LEAGUE):
+        return 6
+    
+    # Eredivisie
+    if any(e in home_lower or e in away_lower for e in EQUIPOS_EREDIVISIE):
+        return 6
+    
+    # MLS
+    if any(e in home_lower or e in away_lower for e in EQUIPOS_MLS):
+        return 5
+    
+    # Inglaterra championship
+    if "england" in pais.lower() or "inglaterra" in pais.lower():
+        if "championship" in liga_lower:
+            return 6
+    
+    # Inglaterra League One
+    if "england" in pais.lower() or "inglaterra" in pais.lower():
+        if "league one" in liga_lower:
+            return 4
     
     # Penalizar ligas menores
     if any(x in liga_lower for x in ["friendly", "amistoso", "amical"]):
@@ -89,7 +188,7 @@ def calcular_prioridad(liga_nombre):
         return 2
     if any(x in liga_lower for x in ["women", "femenino"]):
         return 2
-    if any(x in liga_lower for x in ["premier league", "championship"]):
+    if "championship" in liga_lower:
         return 3
     
     return 1
@@ -179,20 +278,23 @@ async def extract_matches(page):
                     seenKeys.add(key);
                     
                     let league = 'Liga';
+                    let country = '';
                     let prev = event.previousElementSibling;
                     let attempts = 0;
                     
                     while (prev && attempts < 10) {
                         const leagueTitle = prev.querySelector('.headerLeague__title');
+                        const leagueCountry = prev.querySelector('.headerLeague__country');
                         if (leagueTitle) {
                             league = leagueTitle.textContent.trim();
+                            country = leagueCountry ? leagueCountry.textContent.trim() : '';
                             break;
                         }
                         prev = prev.previousElementSibling;
                         attempts++;
                     }
                     
-                    matches.push({ time, home, away, league });
+                    matches.push({ time, home, away, league, country });
                 } catch (e) {}
             });
             
@@ -202,7 +304,7 @@ async def extract_matches(page):
     
     for item in data:
         match_id = hash(f"{item['home']}{item['away']}{item['league']}{item['time']}") % 10000000
-        prioridad = calcular_prioridad(item['league'] or "Liga")
+        prioridad = calcular_prioridad(item['league'] or "Liga", item.get('country', ''), item.get('home', ''), item.get('away', ''))
         
         match_data = {
             "fixture_id": match_id,
@@ -211,7 +313,7 @@ async def extract_matches(page):
             "hora_local": item['time'],
             "liga": item['league'] or "Liga",
             "liga_id": 0,
-            "pais": "",
+            "pais": item.get('country', ''),
             "prioridad": prioridad,
             "equipo_home": item['home'],
             "equipo_away": item['away'],
