@@ -163,21 +163,32 @@ if st.session_state.page == "Login":
 elif selection == "🏠":
     st.markdown("<h2>📅 Partidos</h2>", unsafe_allow_html=True)
     
+    # Obtener TODOS los partidos
+    partidos = obtener_partidos()
+    
+    # Obtener ligas únicas de los datos
+    ligas_unicas = ["Todas"] + sorted(set(p.get("liga", "Sin liga") for p in partidos if p.get("liga")))
+    
     # Filtros
     col1, col2, col3 = st.columns([1, 1, 2])
     with col1:
-        fecha = st.date_input("Fecha", value=None)
+        fecha = st.selectbox("Fecha", ["Todas", "Hoy", "Mañana"] + [p.get("fecha", "") for p in partidos if p.get("fecha")])
     with col2:
-        liga = st.selectbox("Liga", ["Todas", "MLS", "USL Championship", "Ligue 1", "Premier League"])
+        liga = st.selectbox("Liga", ligas_unicas)
     with col3:
         ordenar = st.selectbox("Ordenar por", ["Hora", "Liga"])
     
-    # Obtener partidos
-    partidos = obtener_partidos()
-    
     # Filtrar por fecha
-    if fecha:
-        partidos = [p for p in partidos if p.get("fecha") == str(fecha)]
+    if fecha == "Hoy":
+        from datetime import date
+        hoy = date.today().isoformat()
+        partidos = [p for p in partidos if p.get("fecha") == hoy]
+    elif fecha == "Mañana":
+        from datetime import date, timedelta
+        manana = (date.today() + timedelta(days=1)).isoformat()
+        partidos = [p for p in partidos if p.get("fecha") == manana]
+    elif fecha != "Todas":
+        partidos = [p for p in partidos if p.get("fecha") == fecha]
     
     # Filtrar por liga
     if liga != "Todas":
