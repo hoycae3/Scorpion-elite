@@ -22,22 +22,46 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 
 # Prioridades de ligas MEJORADAS
 LIGAS_PRIORIDAD = {
+    # Top tier (15)
     "champions league": 15, "uefa champions league": 15,
-    "premier league": 14, "english premier": 14,
-    "la liga": 13, "laliga": 13,
-    "serie a": 12,
-    "bundesliga": 11,
-    "ligue 1": 10,
-    "europa league": 9,
-    "libertadores": 8, "copa libertadores": 8,
+    
+    # Premier League Inglaterra (14) - específico
+    "premier league inglaterra": 14, "english premier league": 14, 
+    "inglaterra premier": 14,
+    
+    # La Liga (13)
+    "la liga": 13, "laliga": 13, "espana": 13,
+    
+    # Serie A (12)
+    "serie a italia": 12, "italian serie a": 12,
+    
+    # Bundesliga (11)
+    "bundesliga alemania": 11, "german bundesliga": 11,
+    
+    # Ligue 1 (10)
+    "ligue 1 francia": 10, "french ligue": 10,
+    
+    # Europa League (9)
+    "europa league": 9, "uefa europa league": 9,
+    
+    # Libertadores (8)
+    "copa libertadores": 8, "conmebol libertadores": 8,
+    
+    # Brasileirao (7)
     "brasileiro": 7, "serie a betano": 7,
+    
+    # Otras ligas importantes (6)
     "eredivisie": 6, "primeira liga": 6,
-    "super lig": 6, "liga turca": 6,
+    "super lig": 6, "turkish super lig": 6,
     "liga mx": 6, "liga mexicana": 6,
-    "mls": 5, "major league soccer": 5,
-    "championship": 4,
-    "copa argentina": 4, "copa del rey": 4, "fa cup": 4,
-    "superliga": 4,
+    
+    # MLS (5)
+    "major league soccer": 5,
+    
+    # Championship/FA Cup (4)
+    "championship": 4, "copa argentina": 4, "fa cup": 4,
+    
+    # Equipos juvenil/reservas (2)
     "u21": 2, "u20": 2, "women": 2, "femenino": 2,
 }
 
