@@ -37,13 +37,16 @@ if not st.session_state.logged:
         st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
     with col2:
         st.markdown("<br>" * 2, unsafe_allow_html=True)
-        password = st.text_input("", type="password", placeholder="Password", label_visibility="collapsed", key="login_password")
-        if st.button("🔓 Entrar", type="primary"):
-            if password == ADMIN_PASSWORD:
-                st.session_state.logged = True
-                st.rerun()
-            else:
-                st.error("❌ Incorrecta")
+        col_pass, col_btn = st.columns([2, 1])
+        with col_pass:
+            password = st.text_input("", type="password", placeholder="Password", label_visibility="collapsed", key="login_password")
+        with col_btn:
+            if st.button("🔓 Entrar", type="primary", use_container_width=True):
+                if password == ADMIN_PASSWORD:
+                    st.session_state.logged = True
+                    st.rerun()
+                else:
+                    st.error("❌ Incorrecta")
     st.stop()
 
 # Dashboard
