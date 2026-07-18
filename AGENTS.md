@@ -3,7 +3,11 @@
 ## 📌 Estado Actual (Julio 2026)
 
 ### Descripción
-App de análisis de partidos de fútbol con predicciones matemáticas y datos reales de scraping de Flashscore.
+App de análisis de partidos de fútbol con predicciones matemáticas y scraping multi-fuente:
+- **Flashscore**: Partidos del día y cuotas
+- **Transfermarkt**: Tablas de posiciones y valor de mercado
+- **Soccerway**: Resultados históricos y forma actual
+- **WhoScored**: Estadísticas avanzadas (corners, tarjetas, posesión)
 
 ### Repositorio
 https://github.com/hoycae3/Scorpion-elite
@@ -11,16 +15,15 @@ https://github.com/hoycae3/Scorpion-elite
 ### App Desplegada
 https://scorpion-elite-go7zv8dgdaa3uarwfsxph6.streamlit.app/
 
-### Pull Request
-https://github.com/hoycae3/Scorpion-elite/pull/3
-
 ---
 
 ## 🔧 Stack Tecnológico
 
 - **Frontend**: Streamlit (Python)
 - **Base de datos**: Supabase (configurado y funcionando)
-- **Scraping**: Playwright para extraer datos reales de Flashscore
+- **Scraping**: 
+  - BeautifulSoup para scraping ligero
+  - Múltiples fuentes de datos
 - **CI/CD**: GitHub Actions (scraper diario automático)
 
 ---
@@ -29,120 +32,136 @@ https://github.com/hoycae3/Scorpion-elite/pull/3
 
 ```
 Scorpion-elite/
-├── app.py                 # App principal de Streamlit
-├── scraper_real.py       # Scraper con Playwright (Flashscore)
-├── scraper.py            # Scraper legacy con APIs
-├── supabase_schema.sql   # Schema de la base de datos
-├── requirements.txt      # Dependencias de Python
-├── styles.css            # Estilos CSS
+├── app.py                      # App principal de Streamlit
+├── scraper.py                  # Scraper legacy con APIs
+├── supabase_schema.sql         # Schema extendido de la base de datos
+├── requirements.txt           # Dependencias de Python
+├── styles.css                  # Estilos CSS
 ├── .github/workflows/
-│   └── scraper.yml       # GitHub Actions (scraper diario)
-└── scorpion/             # Módulo interno
+│   └── scraper.yml            # GitHub Actions (multi-source scraper)
+└── scorpion/
+    ├── __init__.py
+    └── scrapers/
+        ├── __init__.py        # Exports de scrapers
+        ├── base_scraper.py    # Clase base para scrapers
+        ├── flashscore_scraper.py    # Partidos y cuotas
+        ├── transfermarkt_scraper.py  # Tablas y estadísticas
+        ├── soccerway_scraper.py      # Resultados históricos
+        ├── whoscored_scraper.py      # Estadísticas avanzadas
+        └── scraper_unificado.py      # Combina todos los scrapers
 ```
 
 ---
 
-## ✅ Estado Completado
+## 🔄 Sistema de Scraping Multi-Fuente
 
-### 1. Supabase Configurado ✅
-- Schema SQL ejecutado
-- Secrets configurados en GitHub:
-  - `SUPABASE_URL`
-  - `SUPABASE_KEY`
+### Fuentes de Datos
 
-### 2. Scraper Real con Playwright ✅
-El nuevo `scraper_real.py` usa Playwright para extraer datos reales de Flashscore:
-- Partidos de hoy y mañana (próximas 48 horas)
-- Todas las ligas disponibles (principales y secundarias)
-- Nombres correctos de equipos y ligas
-- Priorización automática por importancia de liga
+| Fuente | Datos | Uso Principal |
+|--------|-------|---------------|
+| **Flashscore** | Partidos, horarios, ligas | Partidos del día |
+| **Transfermarkt** | Tablas de posiciones, puntos, valor de mercado | Análisis de equipos |
+| **Soccerway** | Resultados históricos, goleadores | Forma actual |
+| **WhoScored** | Corners, tarjetas, posesión, duelos | Estadísticas avanzadas |
 
-### 3. Datos en Supabase ✅
-- 246 partidos únicos guardados
-- Ligas incluyen: Serie A Brasil, MLS, Liga MX, Primera Nacional Argentina, Copa Argentina, Canadian Premier League, etc.
+### Uso del Scraper Unificado
 
----
+```python
+from scorpion.scrapers import ScraperUnificado
 
-## 🔄 Flujo de Datos
+scraper = ScraperUnificado()
+
+# Opción 1: Scraping completo
+summary = scraper.run_full_scrape()
+
+# Opción 2: Scraping por fuente
+partidos = scraper.scrape_partidos(dias=2)
+equipos = scraper.scrape_transfermarkt("Premier League")
+resultados = scraper.scrape_soccerway("Premier League")
+stats = scraper.scrape_whoscored("England")
+```
+
+### Flujo de Datos
 
 ```
 GitHub Actions (6AM UTC)
-    ↓
-scraper_real.py → Playwright → Flashscore
-    ↓
-Supabase (almacena partidos del día)
-    ↓
-app.py → Supabase (primario) o APIs (fallback)
-    ↓
-Streamlit Cloud → Usuario ve la app
+    │
+    ├── Flashscore ──────► Partidos del día
+    ├── Transfermarkt ───► Tablas de posiciones
+    ├── Soccerway ───────► Resultados históricos
+    └── WhoScored ───────► Estadísticas avanzadas
+            │
+            ▼
+       Supabase (almacena todo)
+            │
+            ▼
+       app.py (Streamlit)
+            │
+            ▼
+      Usuario final
 ```
 
 ---
 
-## 📊 Tablas de Supabase
+## 📊 Schema de Supabase (Extendido)
 
-### partidos
-| Campo | Descripción |
-|-------|-------------|
-| fixture_id | ID único |
-| fecha | Fecha del partido |
-| hora_local | Hora del partido |
-| liga | Nombre de la liga |
-| prioridad | 1-15 según importancia |
-| equipo_home | Equipo local |
-| equipo_away | Equipo visitante |
-| prob_home/px/away | Probabilidades % (placeholder) |
-| cuota_1/x/2 | Cuotas del mercado (placeholder) |
-| pick | 1, X, o 2 |
-| cuota_pick | Cuota del pick |
-| confianza | % de confianza |
+### Tablas Principales
 
-### historial_picks
-Para seguimiento de resultados de picks.
+| Tabla | Descripción | Fuente |
+|-------|-------------|--------|
+| `partidos` | Partidos con probabilidades y cuotas | Flashscore |
+| `historial_picks` | Seguimiento de picks | App |
+| `estadisticas_equipos` | Stats de equipos | Transfermarkt/Soccerway/WhoScored |
+| `estadisticas_partidos` | Stats detalladas de partidos | WhoScored |
+| `cuotas_mercado` | Cuotas de bookmakers | Múltiples |
+| `resultados_historicos` | Resultados pasados | Soccerway |
+
+### Campos de `partidos`
+- fixture_id, fecha, hora, hora_utc
+- liga, prioridad, equipo_local, equipo_visitante
+- prob_home/prob_draw/prob_away
+- cuota_1, cuota_x, cuota_2
+- pick, cuota_pick, confianza
+- source_flashscore, source_transfermarkt, source_soccerway, source_whoscored
+- estado (programado/en_vivo/finalizado)
 
 ---
 
 ## 🔑 Secrets en GitHub
 
-Los secrets están configurados en:
+Configurados en:
 https://github.com/hoycae3/Scorpion-elite/settings/secrets/actions
+
+- `SUPABASE_URL`
+- `SUPABASE_KEY`
 
 ---
 
 ## 📝 Notas Importantes
 
 - **Costo total: $0/mes** (Supabase free tier + Streamlit Cloud free)
-- El scraper usa Playwright para extraer datos reales de Flashscore
+- Los scrapers usan requests + BeautifulSoup (sin Playwright)
 - Se ejecuta automáticamente cada día a las 6AM UTC
-- También puede ejecutarse manualmente desde GitHub Actions
+- También puede ejecutarse manualmente desde GitHub Actions con parámetro de fuente
 
 ---
 
 ## ⏳ Pendiente por Mejorar
 
-1. **Extraer cuotas reales** - Se agregó schema para estadísticas, pero las cuotas aún son placeholder
-2. **Extraer estadísticas históricas** - Schema creado, falta implementar scraping
-3. **Crear tabla estadisticas_equipos** - Ejecutar SQL en Supabase
+1. ✅ **Scraping multi-fuente implementado** - Flashscore, Transfermarkt, Soccerway, WhoScored
+2. ✅ **Schema extendido creado** - Nuevas tablas para estadísticas avanzadas
+3. ⏳ **Integrar stats en app.py** - Mostrar estadísticas de equipos/partidos
+4. ⏳ **Extraer cuotas reales** - Implementar scraping de cuotas de bookmakers
 
 ---
 
 ## 🔄 Cómo Continuar en Nuevo Chat
 
 1. Leer este archivo AGENTS.md primero
-2. Merge el PR #3 para actualizar el scraper
-3. Ejecutar SQL adicional en Supabase para crear tabla estadisticas_equipos:
-   ```sql
-   CREATE TABLE IF NOT EXISTS estadisticas_equipos (
-       id BIGSERIAL PRIMARY KEY,
-       equipo VARCHAR(255) NOT NULL,
-       liga VARCHAR(255),
-       partido_jugados INTEGER DEFAULT 0,
-       promedio_corners_home DECIMAL(4,2) DEFAULT 0,
-       promedio_corners_away DECIMAL(4,2) DEFAULT 0,
-       promedio_tarjetas_home DECIMAL(4,2) DEFAULT 0,
-       promedio_tarjetas_away DECIMAL(4,2) DEFAULT 0,
-       UNIQUE(equipo, liga)
-   );
+2. Ejecutar el nuevo schema SQL en Supabase (supabase_schema.sql)
+3. Probar los scrapers localmente:
+   ```bash
+   python -c "from scorpion.scrapers import ScraperUnificado; print('OK')"
    ```
-4. Ejecutar scraper_real.py diariamente a las 12PM UTC
-5. Verificar que la app muestra los datos correctamente
+4. Ejecutar workflow manualmente desde GitHub Actions
+5. Actualizar app.py para mostrar nuevas estadísticas
