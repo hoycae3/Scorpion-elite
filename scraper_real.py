@@ -12,13 +12,16 @@ Ejecución: python scraper_real.py
 
 import asyncio
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from playwright.async_api import async_playwright
 from supabase import create_client
 import json
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_KE = os.environ.get("SUPABASE_KE", "")
+
+# Zona horaria para México (UTC-6)
+MEXICO_TZ = timezone(timedelta(hours=-6))
 
 # Prioridades de ligas MEJORADAS
 LIGAS_PRIORIDAD = {
@@ -298,8 +301,9 @@ async def scrape_flashscore():
         )
         page = await context.new_page()
         
-        # Obtener la fecha actual y los próximos 7 días
-        today = datetime.now()
+        # Obtener la fecha actual en zona horaria de México y los próximos 7 días
+        now_mexico = datetime.now(MEXICO_TZ)
+        today = now_mexico.replace(hour=0, minute=0, second=0, microsecond=0)
         dates_to_scrape = [(today + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(7)]
         
         print("📅 Extrayendo partidos de los próximos 7 días...")
