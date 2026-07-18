@@ -10,12 +10,24 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
-# Intentar importar playwright
-try:
-    from playwright.sync_api import sync_playwright
-    PLAYWRIGHT_AVAILABLE = True
-except ImportError:
-    PLAYWRIGHT_AVAILABLE = False
+# Playwright se instala en runtime
+PLAYWRIGHT_AVAILABLE = False
+
+def _ensure_playwright():
+    global PLAYWRIGHT_AVAILABLE
+    if not PLAYWRIGHT_AVAILABLE:
+        try:
+            from playwright.sync_api import sync_playwright
+            PLAYWRIGHT_AVAILABLE = True
+        except ImportError:
+            import subprocess
+            subprocess.run(["pip", "install", "playwright"], capture_output=True)
+            subprocess.run(["playwright", "install", "chromium"], capture_output=True)
+            try:
+                from playwright.sync_api import sync_playwright
+                PLAYWRIGHT_AVAILABLE = True
+            except:
+                PLAYWRIGHT_AVAILABLE = False
 
 from .base_scraper import BaseScraper
 
@@ -58,12 +70,12 @@ class FlashscoreScraper(BaseScraper):
         """Usa Playwright para scraping de contenido dinámico"""
         all_matches = []
         
+        _ensure_playwright()
+        
         if not PLAYWRIGHT_AVAILABLE:
-            print("Playwright no está instalado. Instalando...")
-            import subprocess
-            subprocess.run(["pip", "install", "playwright"], capture_output=True)
-            subprocess.run(["playwright", "install", "chromium"], capture_output=True)
-            from playwright.sync_api import sync_playwright
+            return []
+        
+        from playwright.sync_api import sync_playwright
         
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
