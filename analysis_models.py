@@ -4,404 +4,460 @@ Scorpion Elite - Modelos de Análisis Matemático
 4 modelos combinados para predecir resultados de fútbol:
 - Poisson (35%): Distribución de probabilidad para goles
 - Dixon-Coles (30%): Corrige dependencia entre goles marcados/recibidos
-- Monte Carlo (20%): Simulación de 1000 partidos
+- Monte Carlo (20%): Simulación de 3000 partidos
 - Elo (15%): Rating histórico de equipos
 """
 
-import numpy as np
-import pandas as pd
-from scipy.stats import poisson
-from typing import Tuple, Dict
 import random
+from typing import Dict
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# FUNCIONES BASE - PROBABILIDAD POISSON
+# ═══════════════════════════════════════════════════════════════════════════════
+def pp(lmbda: float, k: int) -> float:
+    """Función de masa de probabilidad de Poisson P(X=k) = lambda^k * e^(-lambda) / k!"""
+    if lmbda <= 0 or k < 0:
+        return 0.0
+    # Usar aproximación para estabilidad numérica
+    log_p = k * log_factorial_approx(lmbda) - lmbda
+    return exp_approx(log_p)
+
+
+def log_factorial_approx(n: float) -> float:
+    """Aproximación log(n!) usando Stirling"""
+    if n <= 1:
+        return 0.0
+    if n < 60:
+        # Calcular directamente para valores pequeños
+        result = 0.0
+        for i in range(2, int(n) + 1):
+            result += log_approx(i)
+        return result
+    return n * log_approx(n) - n + 0.5 * log_approx(6.28 * n)
+
+
+def log_approx(x: float) -> float:
+    """Logaritmo natural aproximado"""
+    if x <= 0:
+        return -float('inf')
+    return x - 1 if abs(x - 1) < 0.5 else log_approx(x / 2.71828)
+
+
+def exp_approx(x: float) -> float:
+    """Exponencial aproximada"""
+    if x < -20:
+        return 0.0
+    if x > 10:
+        return 22026.0
+    # Serie de Taylor para e^x
+    result = 1.0
+    term = 1.0
+    for i in range(1, 20):
+        term *= x / i
+        result += term
+        if abs(term) < 1e-10:
+            break
+    return max(0.0, result)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MODELO 1: POISSON
+# ═══════════════════════════════════════════════════════════════════════════════
+def poisson_1x2(xl: float, xv: float) -> tuple:
+    """Modelo Poisson básico - calcula probabilidades 1X2
+    
+    Args:
+        xl: Lambda (goles esperados) equipo local
+        xv: Lambda (goles esperados) equipo visitante
+    
+    Returns:
+        (prob_home, prob_draw, prob_away) en porcentaje
+    """
+    p1 = px = p2 = 0.0
+    for i in range(9):  # 0-8 goles
+        for j in range(9):
+            p = pp(xl, i) * pp(xv, j)
+            if i > j:
+                p1 += p
+            elif i == j:
+                px += p
+            else:
+                p2 += p
+    return round(p1 * 100, 1), round(px * 100, 1), round(p2 * 100, 1)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MODELO 2: DIXON-COLES
+# ═══════════════════════════════════════════════════════════════════════════════
+def dc_tau_func(i: int, j: int, rho: float) -> float:
+    """Función tau de Dixon-Coles - corrige dependencia entre goles"""
+    if i <= 1 and j <= 1:
+        if i == 0 and j == 0:
+            return 1 + rho
+        elif i == j:
+            return 1
+        else:
+            return 1 + rho * 0.5
+    else:
+        return 1 - rho * (i + j) / 16
+
+
+def dc_1x2(xl: float, xv: float, rho: float = -0.1) -> tuple:
+    """Modelo Dixon-Coles - corrige scores 0-0, 0-1, 1-0
+    
+    Args:
+        xl: Lambda equipo local
+        xv: Lambda equipo visitante
+        rho: Parámetro de correlación (-0.25 a 0.25, típicamente -0.1)
+    
+    Returns:
+        (prob_home, prob_draw, prob_away) en porcentaje
+    """
+    m = {}
+    for i in range(9):
+        for j in range(9):
+            p = pp(xl, i) * pp(xv, j) * dc_tau_func(i, j, rho)
+            m[(i, j)] = max(0, p)
+    
+    total = sum(m.values())
+    if total > 0:
+        m = {k: v / total for k, v in m.items()}
+    
+    p1 = sum(v for (i, j), v in m.items() if i > j)
+    px = sum(v for (i, j), v in m.items() if i == j)
+    p2 = sum(v for (i, j), v in m.items() if i < j)
+    
+    return round(p1 * 100, 1), round(px * 100, 1), round(p2 * 100, 1)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MODELO 3: MONTE CARLO
+# ═══════════════════════════════════════════════════════════════════════════════
+def monte_carlo(xl: float, xv: float, n: int = 3000) -> Dict:
+    """Simulación Monte Carlo - simula n partidos
+    
+    Args:
+        xl: Lambda equipo local
+        xv: Lambda equipo visitante
+        n: Número de simulaciones (default 3000)
+    
+    Returns:
+        Dict con probabilidades y estadísticas
+    """
+    v1 = vx = v2 = 0
+    goals_total = []
+    score_map = {}
+    
+    random.seed(42)  # Reproducibilidad
+    
+    for _ in range(n):
+        # Simular goles del local usando Poisson
+        gl = 0
+        u = random.random()
+        cum_prob = 0.0
+        for k in range(15):
+            cum_prob += pp(xl, k)
+            if u <= cum_prob:
+                gl = k
+                break
+        
+        # Simular goles del visitante
+        gv = 0
+        u = random.random()
+        cum_prob = 0.0
+        for k in range(15):
+            cum_prob += pp(xv, k)
+            if u <= cum_prob:
+                gv = k
+                break
+        
+        # Clasificar resultado
+        if gl > gv:
+            v1 += 1
+        elif gl == gv:
+            vx += 1
+        else:
+            v2 += 1
+        
+        # Goals totales para Over/Under
+        goals_total.append(gl + gv)
+        
+        # Score más frecuente
+        score_key = f"{gl}-{gv}"
+        score_map[score_key] = score_map.get(score_key, 0) + 1
+    
+    # Top 6 scores más probables
+    top_scores = dict(sorted(score_map.items(), key=lambda x: x[1], reverse=True)[:6])
+    top_scores = {k: round(v / n * 100, 1) for k, v in top_scores.items()}
+    
+    return {
+        "p1": round(v1 / n * 100, 1),
+        "px": round(vx / n * 100, 1),
+        "p2": round(v2 / n * 100, 1),
+        "avg_goals": round(sum(goals_total) / n, 2),
+        "over_25": round(sum(1 for g in goals_total if g > 2) / n * 100, 1),
+        "top_scores": top_scores,
+        "simulations": n
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MODELO 4: ELO
+# ═══════════════════════════════════════════════════════════════════════════════
+def elo_1x2(elo_l: float, elo_v: float, home_advantage: float = 50) -> tuple:
+    """Modelo Elo - rating histórico de equipos
+    
+    Args:
+        elo_l: Rating Elo equipo local
+        elo_v: Rating Elo equipo visitante
+        home_advantage: Ventaja local en puntos Elo (default 50)
+    
+    Returns:
+        (prob_home, prob_draw, prob_away) en porcentaje
+    """
+    # Esperanza de victoria del local
+    expected = 1 / (1 + 10 ** ((elo_v - (elo_l + home_advantage)) / 400))
+    
+    p1 = round(expected * 100, 1)
+    p2 = round((1 - expected) * 100, 1)
+    px = max(0, round(100 - p1 - p2, 1))
+    
+    return p1, px, p2
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PROMEDIOS DE LIGAS
+# ═══════════════════════════════════════════════════════════════════════════════
+PROM_LIGA = {
+    "premier": {"gm": 1.54, "gc": 1.11, "tiros": 14.2, "corners": 5.2, "tarj": 1.8},
+    "la liga": {"gm": 1.62, "gc": 1.08, "tiros": 13.8, "corners": 5.5, "tarj": 2.2},
+    "bundesliga": {"gm": 1.82, "gc": 1.28, "tiros": 15.1, "corners": 5.8, "tarj": 1.6},
+    "serie a": {"gm": 1.48, "gc": 1.07, "tiros": 13.2, "corners": 5.0, "tarj": 2.4},
+    "ligue": {"gm": 1.51, "gc": 1.07, "tiros": 13.5, "corners": 5.1, "tarj": 2.0},
+    "libertadores": {"gm": 1.32, "gc": 1.08, "tiros": 12.0, "corners": 4.8, "tarj": 2.8},
+    "sudamericana": {"gm": 1.28, "gc": 1.07, "tiros": 11.8, "corners": 4.7, "tarj": 2.9},
+    "eredivisie": {"gm": 1.88, "gc": 1.32, "tiros": 15.5, "corners": 5.9, "tarj": 1.5},
+    "mls": {"gm": 1.45, "gc": 1.20, "tiros": 13.0, "corners": 5.0, "tarj": 1.9},
+    "colombia": {"gm": 1.25, "gc": 1.10, "tiros": 11.5, "corners": 4.6, "tarj": 2.6},
+    "mundial": {"gm": 1.35, "gc": 1.05, "tiros": 13.0, "corners": 4.8, "tarj": 1.8},
+    "copa america": {"gm": 1.28, "gc": 1.08, "tiros": 12.2, "corners": 4.7, "tarj": 2.2},
+    "champions": {"gm": 1.45, "gc": 1.05, "tiros": 14.0, "corners": 5.2, "tarj": 1.7},
+    "europa": {"gm": 1.42, "gc": 1.08, "tiros": 13.5, "corners": 5.0, "tarj": 1.9},
+    "default": {"gm": 1.40, "gc": 1.15, "tiros": 12.8, "corners": 4.9, "tarj": 2.0},
+}
+
+
+def get_prom(liga: str) -> Dict:
+    """Obtiene promedios de liga por nombre"""
+    l = liga.lower()
+    for key in PROM_LIGA:
+        if key in l:
+            return PROM_LIGA[key]
+    return PROM_LIGA["default"]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CÁLCULO PRINCIPAL - COMBINA LOS 4 MODELOS
+# ═══════════════════════════════════════════════════════════════════════════════
+def calcular(
+    gml: float = None,
+    gcl: float = None,
+    gmv: float = None,
+    gcv: float = None,
+    liga: str = "default",
+    elo_l: float = None,
+    elo_v: float = None
+) -> Dict:
+    """Calcula probabilidades usando los 4 modelos combinados
+    
+    Args:
+        gml: Goles marcados local (promedio temporada)
+        gcl: Goles recibidos local
+        gmv: Goles marcados visitante
+        gcv: Goles recibidos visitante
+        liga: Nombre de la liga
+        elo_l: Rating Elo local (opcional)
+        elo_v: Rating Elo visitante (opcional)
+    
+    Returns:
+        Dict con todos los resultados de los 4 modelos
+    """
+    prom = get_prom(liga)
+    
+    # Calcular lambda (goles esperados) ajustado
+    if gml and gcv:
+        xl = round(gml * (gcv / prom["gc"]) * 1.08, 2)  # 1.08 = factor casa
+    elif gml:
+        xl = round(gml * 1.08, 2)
+    else:
+        xl = round(prom["gm"] * 1.08, 2)
+    
+    if gmv and gcl:
+        xv = round(gmv * (gcl / prom["gc"]), 2)
+    elif gmv:
+        xv = round(gmv, 2)
+    else:
+        xv = round(prom["gm"] * 0.78, 2)
+    
+    # Ajustar por Elo si está disponible
+    if elo_l and elo_v:
+        factor = 1 + (elo_l - elo_v) / 4000
+        xl = round(xl * min(max(factor, 0.7), 1.4), 2)
+        xv = round(xv * min(max(1 / factor, 0.7), 1.4), 2)
+    
+    xl = max(0.15, xl)
+    xv = max(0.10, xv)
+    xt = round(xl + xv, 2)
+    
+    # Ejecutar los 4 modelos
+    p1_po, px_po, p2_po = poisson_1x2(xl, xv)
+    p1_dc, px_dc, p2_dc = dc_1x2(xl, xv)
+    
+    mc = monte_carlo(xl, xv)
+    p1_mc, px_mc, p2_mc = mc["p1"], mc["px"], mc["p2"]
+    
+    if elo_l and elo_v:
+        p1_el, px_el, p2_el = elo_1x2(elo_l, elo_v)
+    else:
+        p1_el, px_el, p2_el = p1_po, px_po, p2_po
+    
+    # Combinar con pesos
+    p1 = round(p1_po * 0.35 + p1_dc * 0.30 + p1_mc * 0.20 + p1_el * 0.15, 1)
+    px = round(px_po * 0.35 + px_dc * 0.30 + px_mc * 0.20 + px_el * 0.15, 1)
+    p2 = round(max(0, 100 - p1 - px), 1)
+    
+    # Calcular confianza basada en convergencia de modelos
+    conv = 100 - (
+        abs(p1_po - p1_dc) * 0.4 +
+        abs(p1_po - p1_mc) * 0.3 +
+        abs(p1_po - p1_el) * 0.3
+    )
+    conf = round(max(0, min(100, conv)))
+    
+    # Determinar rating
+    datos_reales = gml is not None and gmv is not None
+    if datos_reales and conf >= 75:
+        rango = "A+"
+    elif datos_reales and conf >= 55:
+        rango = "B"
+    elif conf >= 40:
+        rango = "C"
+    else:
+        rango = "D"
+    
+    # Over/Under
+    p0 = pp(xt, 0)
+    p1_ = pp(xt, 1)
+    p2_ = pp(xt, 2)
+    p3_ = pp(xt, 3)
+    
+    over_05 = round((1 - p0) * 100)
+    over_15 = round((1 - p0 - p1_) * 100)
+    over_25 = round((1 - p0 - p1_ - p2_) * 100)
+    over_35 = round((1 - p0 - p1_ - p2_ - p3_) * 100)
+    
+    # BTTS (Both Teams To Score)
+    btts_yes = round((1 - pp(xl, 0)) * (1 - pp(xv, 0)) * 100)
+    btts_no = 100 - btts_yes
+    
+    # Pick recomendado
+    if p1 > px and p1 > p2:
+        pick = "1"
+        prob_pick = p1
+    elif p2 > px and p2 > p1:
+        pick = "2"
+        prob_pick = p2
+    else:
+        pick = "X"
+        prob_pick = px
+    
+    return {
+        # Lambdas
+        "lambda_local": xl,
+        "lambda_visitante": xv,
+        "lambda_total": xt,
+        
+        # Modelo individual
+        "poisson": {"p1": p1_po, "px": px_po, "p2": p2_po},
+        "dixon_coles": {"p1": p1_dc, "px": px_dc, "p2": p2_dc},
+        "monte_carlo": {"p1": p1_mc, "px": px_mc, "p2": p2_mc, **mc},
+        "elo": {"p1": p1_el, "px": px_el, "p2": p2_el, "elo_l": elo_l, "elo_v": elo_v},
+        
+        # Combinado
+        "p1": p1,
+        "px": px,
+        "p2": p2,
+        
+        # Mercados
+        "over_05": over_05,
+        "over_15": over_15,
+        "over_25": over_25,
+        "over_35": over_35,
+        "btts_yes": btts_yes,
+        "btts_no": btts_no,
+        
+        # Pick
+        "pick": pick,
+        "prob_pick": prob_pick,
+        "confianza": conf,
+        "rango": rango,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CLASE PRINCIPAL
+# ═══════════════════════════════════════════════════════════════════════════════
 class FootballAnalyzer:
     """Analizador de partidos con 4 modelos matemáticos."""
     
     def __init__(self):
-        self.elo_ratings = {}  # Cache de ratings Elo por equipo
-        self.default_elo = 1500  # Elo inicial para equipos nuevos
-        self.elo_k_factor = 32  # Factor K para actualizaciones Elo
+        self.elo_ratings = {}
+        self.default_elo = 1500
     
-    def analyze_match(
-        self, 
-        home_team: str, 
+    def analyze(
+        self,
+        home_team: str,
         away_team: str,
-        home_goals_avg: float = 1.5,
-        away_goals_avg: float = 1.2,
-        home_attack: float = 1.0,
-        home_defense: float = 1.0,
-        away_attack: float = 1.0,
-        away_defense: float = 1.0,
-        liga_promedio_goles: float = 2.7,
-        dc_tau: float = 0.1  # Parámetro de correlación Dixon-Coles
+        home_goals_avg: float = None,
+        away_goals_avg: float = None,
+        home_goals_conceded: float = None,
+        away_goals_conceded: float = None,
+        liga: str = "default",
+        elo_l: float = None,
+        elo_v: float = None
     ) -> Dict:
-        """
-        Analiza un partido usando los 4 modelos.
-        
-        Args:
-            home_team: Nombre equipo local
-            away_team: Nombre equipo visitante
-            home_goals_avg: Promedio histórico de goles del local
-            away_goals_avg: Promedio histórico de goles del visitante
-            home_attack: Factor de ataque del local (1.0 = promedio)
-            home_defense: Factor de defensa del local (1.0 = promedio)
-            away_attack: Factor de ataque del visitante
-            away_defense: Factor de defensa del visitante
-            liga_promedio_goles: Promedio de goles de la liga
-            dc_tau: Parámetro de correlación Dixon-Coles (-0.25 a 0.25)
-        
-        Returns:
-            Dict con resultados de cada modelo y combinada
-        """
-        # Calcular lambda (media de goles esperados) ajustado
-        lambda_home = self._calculate_lambda(
-            home_goals_avg, away_goals_avg,
-            home_attack, home_defense, away_attack, away_defense,
-            liga_promedio_goles, is_home=True
+        """Analiza un partido"""
+        return calcular(
+            gml=home_goals_avg,
+            gcl=home_goals_conceded,
+            gmv=away_goals_avg,
+            gcv=away_goals_conceded,
+            liga=liga,
+            elo_l=elo_l or self.elo_ratings.get(home_team),
+            elo_v=elo_v or self.elo_ratings.get(away_team)
         )
-        lambda_away = self._calculate_lambda(
-            home_goals_avg, away_goals_avg,
-            home_attack, home_defense, away_attack, away_defense,
-            liga_promedio_goles, is_home=False
-        )
-        
-        # Ejecutar los 4 modelos
-        poisson_result = self._poisson_model(lambda_home, lambda_away, dc_tau)
-        dc_result = self._dixon_coles_model(lambda_home, lambda_away, dc_tau)
-        mc_result = self._monte_carlo_model(lambda_home, lambda_away, simulations=1000)
-        elo_result = self._elo_model(home_team, away_team)
-        
-        # Combinar resultados con pesos
-        combined = self._combine_models(poisson_result, dc_result, mc_result, elo_result)
-        
-        return {
-            'equipo_local': home_team,
-            'equipo_visitante': away_team,
-            'lambda_local': lambda_home,
-            'lambda_visitante': lambda_away,
-            'poisson': poisson_result,
-            'dixon_coles': dc_result,
-            'monte_carlo': mc_result,
-            'elo': elo_result,
-            'combined': combined
-        }
     
-    def _calculate_lambda(
-        self, home_avg: float, away_avg: float,
-        home_attack: float, home_defense: float,
-        away_attack: float, away_defense: float,
-        liga_avg: float, is_home: bool
-    ) -> float:
-        """Calcula el lambda (goles esperados) ajustado."""
-        if is_home:
-            # Lambda local: ataque propio × defensa rival / promedio de liga × factor casa
-            lam = home_avg * home_attack * away_defense / liga_avg
-            lam *= 1.12  # Factor de ventaja local (~12%)
-        else:
-            # Lambda visitante
-            lam = away_avg * away_attack * home_defense / liga_avg
-            lam *= 0.88  # Factor desventaja visitante
+    def update_elo(self, home: str, away: str, home_goals: int, away_goals: int):
+        """Actualiza ratings Elo después de un partido"""
+        elo_h = self.elo_ratings.get(home, self.default_elo)
+        elo_a = self.elo_ratings.get(away, self.default_elo)
         
-        return max(lam, 0.1)  # Mínimo 0.1 goles
-    
-    def _poisson_model(self, lambda_home: float, lambda_away: float, tau: float) -> Dict:
-        """Modelo Poisson básico con corrección Dixon-Coles."""
-        results = {
-            'prob_home': 0, 'prob_draw': 0, 'prob_away': 0,
-            'prob_under_15': 0, 'prob_over_15': 0,
-            'prob_btts_yes': 0, 'prob_btts_no': 0,
-            'score_probs': {}
-        }
+        expected_h = 1 / (1 + 10 ** ((elo_a - elo_h) / 400))
         
-        max_goals = 7  # Máximos goles a considerar
-        
-        # Distribución Poisson corregida
-        for home_goals in range(max_goals):
-            for away_goals in range(max_goals):
-                # Probabilidad Poisson base
-                p_home = poisson.pmf(home_goals, lambda_home)
-                p_away = poisson.pmf(away_goals, lambda_away)
-                
-                # Corrección Dixon-Coles (dependencia entre goles)
-                dc_correction = 1 + tau * min(home_goals, away_goals) * (1 - home_goals/(max_goals-1)) * (1 - away_goals/(max_goals-1))
-                p_joint = p_home * p_away * dc_correction
-                
-                # Guardar probabilidad del score
-                results['score_probs'][f"{home_goals}-{away_goals}"] = p_joint
-                
-                # 1X2
-                if home_goals > away_goals:
-                    results['prob_home'] += p_joint
-                elif home_goals == away_goals:
-                    results['prob_draw'] += p_joint
-                else:
-                    results['prob_away'] += p_joint
-                
-                # Over/Under 1.5
-                if home_goals + away_goals > 1.5:
-                    results['prob_over_15'] += p_joint
-                else:
-                    results['prob_under_15'] += p_joint
-                
-                # BTTS
-                if home_goals > 0 and away_goals > 0:
-                    results['prob_btts_yes'] += p_joint
-                else:
-                    results['prob_btts_no'] += p_joint
-        
-        # Normalizar
-        total = results['prob_home'] + results['prob_draw'] + results['prob_away']
-        if total > 0:
-            results['prob_home'] /= total
-            results['prob_draw'] /= total
-            results['prob_away'] /= total
-        
-        results['peso'] = 0.35
-        results['nombre'] = 'Poisson'
-        
-        return results
-    
-    def _dixon_coles_model(self, lambda_home: float, lambda_away: float, tau: float) -> Dict:
-        """Modelo Dixon-Coles mejorado con correlación de pequeños scores."""
-        results = {
-            'prob_home': 0, 'prob_draw': 0, 'prob_away': 0,
-            'prob_under_15': 0, 'prob_over_15': 0,
-            'prob_btts_yes': 0, 'prob_btts_no': 0,
-            'score_probs': {}
-        }
-        
-        max_goals = 6
-        
-        for home_goals in range(max_goals):
-            for away_goals in range(max_goals):
-                # Modelo DC con correlación rho
-                rho = tau  # Parámetro de correlación
-                
-                # Poisson inflado/deflacionado para 0-0, 0-1, 1-0
-                if home_goals <= 1 and away_goals <= 1:
-                    if home_goals == 0 and away_goals == 0:
-                        correction = 1 + rho
-                    elif home_goals == away_goals:
-                        correction = 1
-                    else:
-                        correction = 1 + rho * 0.5
-                else:
-                    correction = 1 - rho * (home_goals + away_goals) / (2 * max_goals)
-                
-                p_home = poisson.pmf(home_goals, lambda_home)
-                p_away = poisson.pmf(away_goals, lambda_away)
-                p_joint = p_home * p_away * correction
-                
-                results['score_probs'][f"{home_goals}-{away_goals}"] = p_joint
-                
-                # 1X2
-                if home_goals > away_goals:
-                    results['prob_home'] += p_joint
-                elif home_goals == away_goals:
-                    results['prob_draw'] += p_joint
-                else:
-                    results['prob_away'] += p_joint
-                
-                # Over/Under 1.5
-                if home_goals + away_goals > 1.5:
-                    results['prob_over_15'] += p_joint
-                else:
-                    results['prob_under_15'] += p_joint
-                
-                # BTTS
-                if home_goals > 0 and away_goals > 0:
-                    results['prob_btts_yes'] += p_joint
-                else:
-                    results['prob_btts_no'] += p_joint
-        
-        # Normalizar
-        total = results['prob_home'] + results['prob_draw'] + results['prob_away']
-        if total > 0:
-            results['prob_home'] /= total
-            results['prob_draw'] /= total
-            results['prob_away'] /= total
-        
-        results['peso'] = 0.30
-        results['nombre'] = 'Dixon-Coles'
-        
-        return results
-    
-    def _monte_carlo_model(self, lambda_home: float, lambda_away: float, simulations: int = 1000) -> Dict:
-        """Simulación Monte Carlo."""
-        results = {
-            'prob_home': 0, 'prob_draw': 0, 'prob_away': 0,
-            'prob_under_15': 0, 'prob_over_15': 0,
-            'prob_btts_yes': 0, 'prob_btts_no': 0,
-            'score_probs': {},
-            'simulations': simulations
-        }
-        
-        # Contadores
-        home_wins, draws, away_wins = 0, 0, 0
-        under_15, over_15 = 0, 0
-        btts_yes, btts_no = 0, 0
-        score_count = {}
-        
-        # Semilla para reproducibilidad (opcional)
-        random.seed(42)
-        np.random.seed(42)
-        
-        for _ in range(simulations):
-            # Simular goles con Poisson
-            home_goals = min(int(np.random.poisson(lambda_home)), 8)
-            away_goals = min(int(np.random.poisson(lambda_away)), 8)
-            
-            # Contar resultados
-            if home_goals > away_goals:
-                home_wins += 1
-            elif home_goals == away_goals:
-                draws += 1
-            else:
-                away_wins += 1
-            
-            # Over/Under 1.5
-            if home_goals + away_goals > 1.5:
-                over_15 += 1
-            else:
-                under_15 += 1
-            
-            # BTTS
-            if home_goals > 0 and away_goals > 0:
-                btts_yes += 1
-            else:
-                btts_no += 1
-            
-            # Score
-            score = f"{home_goals}-{away_goals}"
-            score_count[score] = score_count.get(score, 0) + 1
-        
-        # Convertir a probabilidades
-        results['prob_home'] = home_wins / simulations
-        results['prob_draw'] = draws / simulations
-        results['prob_away'] = away_wins / simulations
-        results['prob_over_15'] = over_15 / simulations
-        results['prob_under_15'] = under_15 / simulations
-        results['prob_btts_yes'] = btts_yes / simulations
-        results['prob_btts_no'] = btts_no / simulations
-        results['score_probs'] = {k: v/simulations for k, v in score_count.items()}
-        
-        results['peso'] = 0.20
-        results['nombre'] = 'Monte Carlo'
-        
-        return results
-    
-    def _elo_model(self, home_team: str, away_team: str) -> Dict:
-        """Modelo Elo simple."""
-        # Obtener o inicializar ratings
-        home_elo = self.elo_ratings.get(home_team, self.default_elo)
-        away_elo = self.elo_ratings.get(away_team, self.default_elo)
-        
-        # Calcular expectativa de victoria (Elo)
-        elo_diff = home_elo - away_elo
-        expected_home = 1 / (1 + 10 ** (-elo_diff / 400))
-        expected_away = 1 - expected_home
-        
-        # Convertir a probabilidades 1X2 (asumiendo ~27% de empates base)
-        draw_base = 0.27
-        home_adj = expected_home * (1 - draw_base)
-        away_adj = expected_away * (1 - draw_base)
-        total = home_adj + away_adj + draw_base
-        
-        results = {
-            'prob_home': home_adj / total,
-            'prob_draw': draw_base / total,
-            'prob_away': away_adj / total,
-            'elo_local': home_elo,
-            'elo_visitante': away_elo,
-            'elo_diff': elo_diff
-        }
-        
-        # Para mercados adicionales, estimar basándose en diferencia Elo
-        goal_diff_factor = abs(elo_diff) / 400
-        
-        if elo_diff > 0:
-            results['prob_over_15'] = 0.45 + min(goal_diff_factor * 0.2, 0.15)
-            results['prob_btts_yes'] = 0.50 + min(goal_diff_factor * 0.1, 0.10)
-        else:
-            results['prob_over_15'] = 0.45 - min(goal_diff_factor * 0.1, 0.10)
-            results['prob_btts_yes'] = 0.50 - min(goal_diff_factor * 0.05, 0.05)
-        
-        results['prob_under_15'] = 1 - results['prob_over_15']
-        results['prob_btts_no'] = 1 - results['prob_btts_yes']
-        
-        results['peso'] = 0.15
-        results['nombre'] = 'Elo'
-        
-        return results
-    
-    def _combine_models(self, poisson: Dict, dc: Dict, mc: Dict, elo: Dict) -> Dict:
-        """Combina los 4 modelos con sus pesos."""
-        combined = {}
-        
-        mercados = ['prob_home', 'prob_draw', 'prob_away', 'prob_over_15', 'prob_under_15', 'prob_btts_yes', 'prob_btts_no']
-        
-        for mercado in mercados:
-            p_val = poisson.get(mercado, 0) * 0.35
-            dc_val = dc.get(mercado, 0) * 0.30
-            mc_val = mc.get(mercado, 0) * 0.20
-            elo_val = elo.get(mercado, 0) * 0.15
-            combined[mercado] = p_val + dc_val + mc_val + elo_val
-        
-        # Determinar pick recomendado
-        if combined['prob_home'] > combined['prob_draw'] and combined['prob_home'] > combined['prob_away']:
-            combined['pick'] = '1'
-            combined['prob_pick'] = combined['prob_home']
-        elif combined['prob_away'] > combined['prob_draw'] and combined['prob_away'] > combined['prob_home']:
-            combined['pick'] = '2'
-            combined['prob_pick'] = combined['prob_away']
-        else:
-            combined['pick'] = 'X'
-            combined['prob_pick'] = combined['prob_draw']
-        
-        # Calcular confianza (0-100%)
-        confianza = int(combined['prob_pick'] * 100)
-        combined['confianza'] = confianza
-        
-        # Clasificación A+, B, C, D
-        if confianza >= 75:
-            combined['rating'] = 'A+'
-        elif confianza >= 55:
-            combined['rating'] = 'B'
-        elif confianza >= 40:
-            combined['rating'] = 'C'
-        else:
-            combined['rating'] = 'D'
-        
-        return combined
-    
-    def update_elo(self, home_team: str, away_team: str, home_goals: int, away_goals: int):
-        """Actualiza ratings Elo después de un partido."""
-        home_elo = self.elo_ratings.get(home_team, self.default_elo)
-        away_elo = self.elo_ratings.get(away_team, self.default_elo)
-        
-        # Calcular esperado
-        expected_home = 1 / (1 + 10 ** ((away_elo - home_elo) / 400))
-        expected_away = 1 - expected_home
-        
-        # Resultado real
         if home_goals > away_goals:
-            actual_home, actual_away = 1, 0
+            actual_h, actual_a = 1, 0
         elif home_goals < away_goals:
-            actual_home, actual_away = 0, 1
+            actual_h, actual_a = 0, 1
         else:
-            actual_home, actual_away = 0.5, 0.5
+            actual_h, actual_a = 0.5, 0.5
         
-        # Actualizar
-        new_home_elo = home_elo + self.elo_k_factor * (actual_home - expected_home)
-        new_away_elo = away_elo + self.elo_k_factor * (actual_away - expected_away)
-        
-        self.elo_ratings[home_team] = new_home_elo
-        self.elo_ratings[away_team] = new_away_elo
+        k = 32
+        self.elo_ratings[home] = elo_h + k * (actual_h - expected_h)
+        self.elo_ratings[away] = elo_a + k * (actual_a - (1 - expected_h))
 
 
-# Función helper para usar directamente
+# Función helper simple
 def analyze(home: str, away: str, **kwargs) -> Dict:
-    """Función simple para analizar un partido."""
-    analyzer = FootballAnalyzer()
-    return analyzer.analyze_match(home, away, **kwargs)
+    """Función simple para analizar un partido"""
+    return FootballAnalyzer().analyze(home, away, **kwargs)
