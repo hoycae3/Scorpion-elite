@@ -1066,22 +1066,20 @@ def obtener_partidos_en_vivo(deporte):
 deporte = st.session_state.deporte
 icono = DEPORTE_ICONS.get(deporte, "⚽")
 
+# DEBUG: Mostrar información directamente en la página
+st.markdown("---")
+col_debug1, col_debug2 = st.columns(2)
+with col_debug1:
+    st.info(f"📅 Fecha: {st.session_state.fecha_seleccionada}")
+with col_debug2:
+    if SUPABASE_URL:
+        st.success("✅ Supabase conectado")
+    else:
+        st.error("❌ Supabase sin conexión")
+
 # Obtener partidos en tiempo real
 partidos = obtener_partidos_en_vivo(deporte)
-
-# DEBUG: Mostrar información directamente
-st.sidebar.markdown("---")
-with st.sidebar.expander("🔧 DEBUG"):
-    st.write(f"**Fecha seleccionada:** {st.session_state.fecha_seleccionada}")
-    st.write(f"**Partidos obtenidos:** {len(partidos)}")
-    if SUPABASE_URL:
-        st.success("✅ SUPABASE_URL configurado")
-    else:
-        st.error("❌ SUPABASE_URL vacío")
-    if SUPABASE_KEY:
-        st.success("✅ SUPABASE_KEY configurado")
-    else:
-        st.error("❌ SUPABASE_KEY vacío")
+st.info(f"⚽ Partidos obtenidos: {len(partidos)}")
 
 # Obtener el Mejor Pick del Día (analizado con modelos matemáticos)
 mejor_pick = obtener_mejor_pick()
