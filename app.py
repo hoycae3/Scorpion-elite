@@ -372,9 +372,12 @@ def obtener_partidos_todas_apis(fecha_str):
     # 1. PRIMERO: Intentar con Supabase (fuente principal)
     datos_supabase = obtener_partidos_de_supabase(fecha_str)
     print(f"📊 Supabase returned {len(datos_supabase) if datos_supabase else 0} partidos for {fecha_str}")
+    
     if datos_supabase:
         all_partidos = convertir_partidos_supabase_a_fixture(datos_supabase)
         print(f"✅ Obtenidos {len(all_partidos)} partidos de Supabase")
+        # Guardar en cache
+        st.session_state[cache_key] = {"data": all_partidos, "time": now}
     else:
         print("📡 Supabase vacío, usando APIs como fallback...")
     
