@@ -54,11 +54,10 @@ else:
     
     st.markdown("---")
     
-    # Sección de carga de Excel
+    # Sección de carga
     st.markdown("### 📂 Cargar archivos")
-    st.markdown("Sube el archivo de Flashscore")
     
-    uploaded_file = st.file_uploader("Seleccionar archivo Excel", type=['xlsx', 'xls', 'csv'])
+    uploaded_file = st.file_uploader("", type=['xlsx', 'xls', 'csv'])
     
     if uploaded_file:
         try:
