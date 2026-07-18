@@ -161,51 +161,9 @@ if st.session_state.page == "Login":
 # PÁGINA: INICIO
 # ══════════════════════════════════════════════════════════
 elif selection == "🏠":
-    st.markdown("<h2>📅 Partidos</h2>", unsafe_allow_html=True)
+    st.markdown("<h2>🦂 Scorpion Elite</h2>", unsafe_allow_html=True)
     
-    # Obtener TODOS los partidos
-    partidos = obtener_partidos()
-    
-    # Obtener ligas únicas de los datos
-    ligas_unicas = ["Todas"] + sorted(set(p.get("liga", "Sin liga") for p in partidos if p.get("liga")))
-    
-    # Filtros
-    col1, col2, col3 = st.columns([1, 1, 2])
-    with col1:
-        fecha = st.selectbox("Fecha", ["Todas", "Hoy", "Mañana"] + [p.get("fecha", "") for p in partidos if p.get("fecha")])
-    with col2:
-        liga = st.selectbox("Liga", ligas_unicas)
-    with col3:
-        ordenar = st.selectbox("Ordenar por", ["Hora", "Liga"])
-    
-    # Filtrar por fecha
-    if fecha == "Hoy":
-        from datetime import date
-        hoy = date.today().isoformat()
-        partidos = [p for p in partidos if p.get("fecha") == hoy]
-    elif fecha == "Mañana":
-        from datetime import date, timedelta
-        manana = (date.today() + timedelta(days=1)).isoformat()
-        partidos = [p for p in partidos if p.get("fecha") == manana]
-    elif fecha != "Todas":
-        partidos = [p for p in partidos if p.get("fecha") == fecha]
-    
-    # Filtrar por liga
-    if liga != "Todas":
-        partidos = [p for p in partidos if p.get("liga") == liga]
-    
-    # Ordenar
-    if ordenar == "Hora":
-        partidos = sorted(partidos, key=lambda x: x.get("hora", ""))
-    else:
-        partidos = sorted(partidos, key=lambda x: x.get("liga", ""))
-    
-    if partidos:
-        st.success(f"✅ {len(partidos)} partidos")
-        datos_partidos = [formatear_partido(p) for p in partidos]
-        st.dataframe(datos_partidos, use_container_width=True, hide_index=True)
-    else:
-        st.warning("⚠️ No hay partidos para esos filtros")
+    st.info("👆 Selecciona una opción del menú lateral")
 
 # ══════════════════════════════════════════════════════════
 # PÁGINA: PREDICCIONES
