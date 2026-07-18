@@ -1,10 +1,20 @@
 import streamlit as st
 from datetime import date, timedelta
-from datetime import datetime
+from datetime import datetime, timezone
 import sys
 import time
 import os
 sys.path.append('/workspace/project/Scorpion-elite')
+
+# Función para obtener la fecha en hora local (UTC-3 para América)
+def get_local_date():
+    """Obtiene la fecha actual en zona horaria UTC-3 (América)"""
+    from datetime import timezone, timedelta
+    utc_now = datetime.now(timezone.utc)
+    # Ajustar a UTC-3 (America/Argentina, Chile, etc.)
+    local_tz = timezone(timedelta(hours=-3))
+    local_now = utc_now.astimezone(local_tz)
+    return local_now.date()
 
 st.set_page_config(page_title='SCORPION ELITE', layout='wide')
 
@@ -38,10 +48,10 @@ def format_date_for_query(fecha_date):
     """Convierte fecha a formato YYYY-MM-DD para consultas"""
     return fecha_date.strftime("%Y-%m-%d")
 
-# Generar opciones de fechas (hoy + 6 días)
+# Generar opciones de fechas (hoy + 6 días) - usa hora local UTC-3
 def get_date_options():
-    """Genera opciones de fechas para el selector"""
-    today = date.today()
+    """Genera opciones de fechas para el selector usando hora local UTC-3"""
+    today = get_local_date()
     options = []
     for i in range(7):
         d = today + timedelta(days=i)
@@ -118,7 +128,7 @@ if 'show_login' not in st.session_state:
 if 'deporte' not in st.session_state:
     st.session_state.deporte = "FUTBOL"
 if 'fecha_seleccionada' not in st.session_state:
-    st.session_state.fecha_seleccionada = date.today()
+    st.session_state.fecha_seleccionada = get_local_date()
 
 st.markdown(f'''
 <style>
