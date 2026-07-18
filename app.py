@@ -334,7 +334,7 @@ def convertir_partidos_supabase_a_fixture(datos_supabase):
         fixtures.append({
             "fixture": {
                 "id": p.get("fixture_id", 0),
-                "date": f"{p.get('fecha', '')}T{p.get('hora_utc', '00:00')}",
+                "date": f"{p.get('fecha', '')}T{p.get('hora', '00:00')}",
                 "prioridad": p.get("prioridad", 1)
             },
             "league": {
@@ -343,8 +343,8 @@ def convertir_partidos_supabase_a_fixture(datos_supabase):
                 "country": p.get("pais", "")
             },
             "teams": {
-                "home": {"id": 0, "name": p.get("equipo_home", "Local")},
-                "away": {"id": 0, "name": p.get("equipo_away", "Visita")}
+                "home": {"id": 0, "name": p.get("equipo_local", "Local")},
+                "away": {"id": 0, "name": p.get("equipo_visitante", "Visita")}
             }
         })
     return fixtures

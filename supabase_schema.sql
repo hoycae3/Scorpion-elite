@@ -1,4 +1,4 @@
--- Scorpion Elite - Supabase Schema
+-- Scorpion Elite - Supabase Schema (Simplificado)
 -- Ejecutar este script en el SQL Editor de Supabase
 
 -- Tabla principal de partidos
@@ -6,31 +6,16 @@ CREATE TABLE IF NOT EXISTS partidos (
     id BIGSERIAL PRIMARY KEY,
     fixture_id BIGINT UNIQUE NOT NULL,
     fecha DATE NOT NULL,
-    hora_utc VARCHAR(10),
-    hora_local VARCHAR(10),
+    hora VARCHAR(10),
     liga VARCHAR(255),
-    liga_id INTEGER,
-    pais VARCHAR(100),
-    prioridad INTEGER DEFAULT 0,
-    equipo_home VARCHAR(255) NOT NULL,
-    equipo_away VARCHAR(255) NOT NULL,
-    prob_home INTEGER DEFAULT 50,
-    prob_draw INTEGER DEFAULT 30,
-    prob_away INTEGER DEFAULT 20,
-    cuota_1 DECIMAL(5,2) DEFAULT 1.90,
-    cuota_x DECIMAL(5,2) DEFAULT 3.50,
-    cuota_2 DECIMAL(5,2) DEFAULT 4.00,
-    pick VARCHAR(5),
-    cuota_pick DECIMAL(5,2) DEFAULT 1.90,
-    confianza INTEGER DEFAULT 50,
-    valor DECIMAL(5,2) DEFAULT 0,
+    equipo_local VARCHAR(255) NOT NULL,
+    equipo_visitante VARCHAR(255) NOT NULL,
     actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Índices para búsqueda
 CREATE INDEX IF NOT EXISTS idx_partidos_fecha ON partidos(fecha);
-CREATE INDEX IF NOT EXISTS idx_partidos_liga ON partidos(liga_id);
-CREATE INDEX IF NOT EXISTS idx_partidos_prioridad ON partidos(prioridad DESC);
+CREATE INDEX IF NOT EXISTS idx_partidos_liga ON partidos(liga);
 
 -- Tabla de historial de picks (para estadísticas)
 CREATE TABLE IF NOT EXISTS historial_picks (

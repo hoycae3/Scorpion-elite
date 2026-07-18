@@ -31,7 +31,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KE: ${{ secrets.SUPABASE_KE }}
         run: |
-          python scraper_real.py
+          python scraper_simple.py
       
       - name: Check for errors
         if: success()
