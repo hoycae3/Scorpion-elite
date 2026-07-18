@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from supabase import create_client
 from data_loader import parse_flashscore_excel, validate_matches
+from analysis_models import FootballAnalyzer
 
 st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
 
@@ -176,13 +177,122 @@ else:
     elif st.session_state.page == "Analizador":
         st.markdown('<h1 class="title">📊 Analizador</h1>', unsafe_allow_html=True)
         
-        st.info("🚧 Esta sección está en construcción...")
+        # Inicializar analizador
+        if 'analyzer' not in st.session_state:
+            st.session_state.analyzer = FootballAnalyzer()
         
-        # Aquí irá la lógica del analizador
-        st.markdown("""
-        ### Funcionalidades próximas:
-        - Análisis de partidos
-        - Predicciones matemáticas
-        - Estadísticas de equipos
-        - Picks del día
-        """)
+        # Formulario de análisis
+        st.markdown("### 🔍 Analizar Partido")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            home_team = st.text_input("🏠 Equipo Local", placeholder="Ej: Barcelona")
+            home_goles = st.number_input("Goles promedio local (temporada)", min_value=0.1, max_value=4.0, value=1.5, step=0.1)
+            home_ataque = st.slider("Factor Ataque Local", 0.5, 2.0, 1.0, 0.1)
+            home_defensa = st.slider("Factor Defensa Local", 0.5, 2.0, 1.0, 0.1)
+        
+        with col2:
+            away_team = st.text_input("✈️ Equipo Visitante", placeholder="Ej: Real Madrid")
+            away_goles = st.number_input("Goles promedio visitante (temporada)", min_value=0.1, max_value=4.0, value=1.2, step=0.1)
+            away_ataque = st.slider("Factor Ataque Visitante", 0.5, 2.0, 1.0, 0.1)
+            away_defensa = st.slider("Factor Defensa Visitante", 0.5, 2.0, 1.0, 0.1)
+        
+        # Configuración avanzada
+        with st.expander("⚙️ Configuración Avanzada"):
+            col_a, col_b, col_c = st.columns(3)
+            with col_a:
+                liga_goles = st.number_input("Promedio goles liga", min_value=1.5, max_value=4.0, value=2.7, step=0.1)
+            with col_b:
+                dc_tau = st.slider("Dixon-Coles Tau", -0.25, 0.25, 0.10, 0.05)
+            with col_c:
+                sims = st.selectbox("Simulaciones MC", [500, 1000, 2000], index=1)
+        
+        # Botón analizar
+        if st.button("🎯 ANALIZAR", type="primary", use_container_width=True):
+            if home_team and away_team:
+                with st.spinner("Analizando..."):
+                    result = st.session_state.analyzer.analyze_match(
+                        home_team, away_team,
+                        home_goles, away_goles,
+                        home_ataque, home_defensa,
+                        away_ataque, away_defensa,
+                        liga_goles, dc_tau
+                    )
+                    st.session_state.analysis_result = result
+                    st.session_state.mc_simulations = sims
+            else:
+                st.error("⚠️ Ingresa ambos equipos")
+        
+        # Mostrar resultados
+        if 'analysis_result' in st.session_state:
+            r = st.session_state.analysis_result
+            combined = r['combined']
+            
+            st.markdown("---")
+            st.markdown(f"## 📊 Resultado: {r['equipo_local']} vs {r['equipo_visitante']}")
+            
+            # Pick principal
+            col_pick, col_conf = st.columns([1, 1])
+            with col_pick:
+                rating_color = {"A+": "🟢", "B": "🔵", "C": "🟡", "D": "🔴"}
+                st.metric("Pick Recomendado", f"{combined['pick']} {rating_color.get(combined['rating'], '')}")
+            with col_conf:
+                st.metric("Confianza", f"{combined['confianza']}% ({combined['rating']})")
+            
+            # Probabilidades 1X2
+            st.markdown("### 🎯 Probabilidades 1X2 (Combinadas)")
+            col1, col2, col3 = st.columns(3)
+            prob_h = combined['prob_home'] * 100
+            prob_d = combined['prob_draw'] * 100
+            prob_a = combined['prob_away'] * 100
+            
+            with col1:
+                st.markdown(f"**1 (Local)**")
+                st.markdown(f"# {prob_h:.1f}%")
+                st.progress(prob_h/100, color="green")
+            
+            with col2:
+                st.markdown(f"**X (Empate)**")
+                st.markdown(f"# {prob_d:.1f}%")
+                st.progress(prob_d/100, color="gray")
+            
+            with col3:
+                st.markdown(f"**2 (Visitante)**")
+                st.markdown(f"# {prob_a:.1f}%")
+                st.progress(prob_a/100, color="blue")
+            
+            # Otros mercados
+            st.markdown("### 📈 Mercados Adicionales")
+            col_ou, col_btts = st.columns(2)
+            
+            with col_ou:
+                st.markdown("**Over/Under 1.5**")
+                ou = combined['prob_over_15'] * 100
+                st.markdown(f"Over 1.5: **{ou:.1f}%** | Under 1.5: **{100-ou:.1f}%**")
+                st.progress(ou/100, color="orange")
+            
+            with col_btts:
+                st.markdown("**Ambos Marcan (BTTS)**")
+                btts = combined['prob_btts_yes'] * 100
+                st.markdown(f"Sí: **{btts:.1f}%** | No: **{100-btts:.1f}%**")
+                st.progress(btts/100, color="purple")
+            
+            # Detalle por modelo
+            with st.expander("📋 Detalle por Modelo"):
+                modelos = [
+                    ("Poisson (35%)", r['poisson']),
+                    ("Dixon-Coles (30%)", r['dixon_coles']),
+                    ("Monte Carlo (20%)", r['monte_carlo']),
+                    ("Elo (15%)", r['elo'])
+                ]
+                
+                for nombre, modelo in modelos:
+                    st.markdown(f"**{nombre}**")
+                    col_h, col_d, col_a = st.columns(3)
+                    with col_h:
+                        st.metric("1", f"{modelo['prob_home']*100:.1f}%")
+                    with col_d:
+                        st.metric("X", f"{modelo['prob_draw']*100:.1f}%")
+                    with col_a:
+                        st.metric("2", f"{modelo['prob_away']*100:.1f}%")
+                    st.markdown("---")
