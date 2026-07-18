@@ -120,9 +120,9 @@ https://github.com/hoycae3/Scorpion-elite/settings/secrets/actions
 
 ## ⏳ Pendiente por Mejorar
 
-1. **Extraer cuotas reales** - El scraper actualmente usa valores placeholder
-2. **Extraer estadísticas históricas** - Para análisis de córners y tarjetas
-3. **Mejorar priorización de ligas** - Agregar más ligas importantes
+1. **Extraer cuotas reales** - Se agregó schema para estadísticas, pero las cuotas aún son placeholder
+2. **Extraer estadísticas históricas** - Schema creado, falta implementar scraping
+3. **Crear tabla estadisticas_equipos** - Ejecutar SQL en Supabase
 
 ---
 
@@ -130,6 +130,19 @@ https://github.com/hoycae3/Scorpion-elite/settings/secrets/actions
 
 1. Leer este archivo AGENTS.md primero
 2. Merge el PR #3 para actualizar el scraper
-3. Verificar conexión a Supabase
-4. Ejecutar scraper_real.py si hay nuevos partidos
+3. Ejecutar SQL adicional en Supabase para crear tabla estadisticas_equipos:
+   ```sql
+   CREATE TABLE IF NOT EXISTS estadisticas_equipos (
+       id BIGSERIAL PRIMARY KEY,
+       equipo VARCHAR(255) NOT NULL,
+       liga VARCHAR(255),
+       partido_jugados INTEGER DEFAULT 0,
+       promedio_corners_home DECIMAL(4,2) DEFAULT 0,
+       promedio_corners_away DECIMAL(4,2) DEFAULT 0,
+       promedio_tarjetas_home DECIMAL(4,2) DEFAULT 0,
+       promedio_tarjetas_away DECIMAL(4,2) DEFAULT 0,
+       UNIQUE(equipo, liga)
+   );
+   ```
+4. Ejecutar scraper_real.py diariamente a las 12PM UTC
 5. Verificar que la app muestra los datos correctamente
