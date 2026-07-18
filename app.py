@@ -59,6 +59,54 @@ ORANGE = '#f59e0b'
 ADMIN_USER = "admin"
 ADMIN_PASS = "scorpion_admin_2025"
 
+# Equipos y ligas a EXCLUIR de los resultados
+EQUIPOS_EXCLUIR_APP = [
+    "labasa", "suva", "ba", "lautoka", "nadi", "rewa", "nadroga",
+    "okzhetpes", "zhetysu", "kyzylzhar", "tobol", "zhenis", "ulytau",
+    "atyrrau", "kairat", "kaisar", "aktobe", "ordabasy", "shakhtyor",
+    "maktaaral", "caspi", "kallon", "old edwardians", "diamond stars",
+    "bo rangers", "mighty blackpool", "wusum", "bai bureh", "slifa",
+]
+
+LIGAS_EXCLUIR_APP = [
+    "queensland", "npl", "tasmania", "fiji", "oceania", "solomon",
+    "vanuatu", "samoa", "tonga", "new zealand", "kazakhstan", "azerbaijan",
+    "sierra leone", "malta premier", "malaysia", "singapore", "hong kong",
+    "taiwan", "myanmar", "cambodia", "india i-league", "bangladesh",
+    "friendly women", "ykkonen", "veikkausliiga", "national league",
+    "super league", "elite league",  # genéricos sin contexto
+]
+
+PAISES_EXCLUIR_APP = [
+    "fiji", "samoa", "tonga", "vanuatu", "solomon", "papua", "kazakhstan",
+    "azerbaijan", "armenia", "malta", "cyprus", "iceland", "faroe",
+    "estonia", "latvia", "lithuania", "belarus", "luxembourg", "andorra",
+]
+
+def debe_excluir_partido(home, away, league_name="", country=""):
+    """Determina si un partido debe ser excluido de los resultados"""
+    home_lower = home.lower() if home else ""
+    away_lower = away.lower() if away else ""
+    league_lower = league_name.lower() if league_name else ""
+    country_lower = country.lower() if country else ""
+    
+    # Verificar equipos
+    for eq in EQUIPOS_EXCLUIR_APP:
+        if eq in home_lower or eq in away_lower:
+            return True
+    
+    # Verificar ligas
+    for lg in LIGAS_EXCLUIR_APP:
+        if lg in league_lower:
+            return True
+    
+    # Verificar países
+    for pc in PAISES_EXCLUIR_APP:
+        if pc in country_lower:
+            return True
+    
+    return False
+
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 if 'is_admin' not in st.session_state:
@@ -510,6 +558,10 @@ def obtener_partidos_futbol(todos=False):
                     country = fixture["league"]["country"]
                     hora = fixture["fixture"]["date"][11:16]
                     
+                    # EXCLUIR partidos de ligas/equipos regionales
+                    if debe_excluir_partido(home, away, league, country):
+                        continue
+                    
                     # Convertir UTC a UTC-3 (America)
                     try:
                         dt = datetime.strptime(hora, "%H:%M")
@@ -594,6 +646,10 @@ def obtener_mejor_pick():
                     country = fixture["league"]["country"]
                     fixture_id = fixture["fixture"]["id"]
                     hora = fixture["fixture"]["date"][11:16]
+                    
+                    # EXCLUIR partidos de ligas/equipos regionales
+                    if debe_excluir_partido(home, away, league, country):
+                        continue
                     
                     # Convertir UTC a UTC-3 (America)
                     try:
