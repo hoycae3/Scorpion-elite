@@ -120,13 +120,6 @@ if 'deporte' not in st.session_state:
 if 'fecha_seleccionada' not in st.session_state:
     st.session_state.fecha_seleccionada = date.today()
 
-# Asegurar que la fecha siempre sea valida
-try:
-    if st.session_state.fecha_seleccionada > date.today():
-        st.session_state.fecha_seleccionada = date.today()
-except:
-    st.session_state.fecha_seleccionada = date.today()
-
 st.markdown(f'''
 <style>
 .stApp {{background-color:{BG}; padding-top:0px !important;}}
@@ -261,11 +254,17 @@ with col_right:
             selected_index = 0
             st.session_state.fecha_seleccionada = date_values[0]
         
-        selected_label = st.selectbox("", date_labels, index=selected_index, key="calendario")
+        selected_label = st.selectbox("📅 Fecha", date_labels, index=selected_index, key="calendario")
         
         # Actualizar la fecha seleccionada
         idx = date_labels.index(selected_label)
-        st.session_state.fecha_seleccionada = date_values[idx]
+        nueva_fecha = date_values[idx]
+        
+        # Si cambió la fecha, guardar y rerun
+        if nueva_fecha != st.session_state.fecha_seleccionada:
+            st.session_state.fecha_seleccionada = nueva_fecha
+            st.rerun()
+        
         fecha = st.session_state.fecha_seleccionada
     with c2:
         if st.button("LOGIN", key="login_btn"):
