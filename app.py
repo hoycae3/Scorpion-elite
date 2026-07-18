@@ -313,8 +313,8 @@ def obtener_partidos_de_supabase(fecha_str):
         
         print(f"🔍 Consultando Supabase para fecha: {fecha_str}")
         
-        # Consultar partidos de la fecha, ordenados por prioridad DESCENDENTE
-        response = supabase.table("partidos").select("*").eq("fecha", fecha_str).order("prioridad", desc=True).execute()
+        # Consultar partidos de la fecha (sin orden por prioridad ya que no existe)
+        response = supabase.table("partidos").select("*").eq("fecha", fecha_str).execute()
         
         print(f"🔍 Response received: {len(response.data) if response.data else 0} rows")
         
