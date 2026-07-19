@@ -114,31 +114,14 @@ def get_last_5_matches_soccerway(team_url: str) -> List[Dict]:
     return matches[:5]
 
 
-def calculate_averages(matches: List[Dict], is_local: bool) -> Dict:
-    """Calcula promedios de los ultimos 5 partidos."""
+def calculate_averages(matches: List[Dict], is_local: bool) -> Optional[Dict]:
+    """Calcula promedios de los ultimos 5 partidos. Retorna None si no hay datos."""
     if not matches:
-        # Valores por defecto si no hay partidos
-        return {
-            'prom_goles_favor': 1.3,
-            'prom_goles_contra': 1.0,
-            'prom_corners': 5.0,
-            'prom_tarjetas_amarillas': 2.0,
-            'prom_tarjetas_rojas': 0.1,
-            'prom_remates': 12.0,
-            'prom_atajadas': 3.0
-        }
+        return None
     
     valid_matches = [m for m in matches if isinstance(m, dict) and 'goles_local' in m]
     if not valid_matches:
-        return {
-            'prom_goles_favor': 1.3,
-            'prom_goles_contra': 1.0,
-            'prom_corners': 5.0,
-            'prom_tarjetas_amarillas': 2.0,
-            'prom_tarjetas_rojas': 0.1,
-            'prom_remates': 12.0,
-            'prom_atajadas': 3.0
-        }
+        return None
     
     total = len(valid_matches)
     
@@ -150,13 +133,8 @@ def calculate_averages(matches: List[Dict], is_local: bool) -> Dict:
         goles_contra = sum(m.get('goles_local', 0) for m in valid_matches)
     
     return {
-        'prom_goles_favor': round(goles_favor / total, 2) if total > 0 else 1.3,
-        'prom_goles_contra': round(goles_contra / total, 2) if total > 0 else 1.0,
-        'prom_corners': 5.0,
-        'prom_tarjetas_amarillas': 2.0,
-        'prom_tarjetas_rojas': 0.1,
-        'prom_remates': 12.0,
-        'prom_atajadas': 3.0
+        'prom_goles_favor': round(goles_favor / total, 2),
+        'prom_goles_contra': round(goles_contra / total, 2)
     }
 
 
@@ -216,6 +194,11 @@ def run_robot_for_team(team_name: str) -> Dict:
     # Calcular promedios
     stats_local = calculate_averages(matches, is_local=True)
     stats_away = calculate_averages(matches, is_local=False)
+    
+    # Solo guardar si tiene DATOS REALES
+    if stats_local is None or stats_away is None:
+        print(f"  ⚠️ Sin datos reales - NO se guarda")
+        return result
     
     print(f"  📊 Lambda local: {stats_local['prom_goles_favor']:.2f}")
     

@@ -193,7 +193,7 @@ else:
         with col2:
             away_team = st.text_input("✈️ Equipo Visitante", placeholder="Ej: Real Madrid")
         
-        # Validar que ambos equipos existan en Supabase
+        # Validar que ambos equipos tengan DATOS REALES en Supabase
         lambda_local = None
         lambda_visitante = None
         equipo_local_ok = False
@@ -204,10 +204,10 @@ else:
             try:
                 client = create_client(SUPABASE_URL, SUPABASE_KEY)
                 resp = client.table('estadisticas_equipos').select('lambda_local').ilike('equipo', f'%{home_team}%').execute()
-                if resp.data:
+                if resp.data and resp.data[0].get('lambda_local', 0) > 0:
                     lambda_local = resp.data[0].get('lambda_local')
                     equipo_local_ok = True
-                    st.success(f"✅ {home_team} encontrado")
+                    st.success(f"✅ {home_team} - λ={lambda_local}")
                 else:
                     equipos_faltantes.append(home_team)
             except:
@@ -217,10 +217,10 @@ else:
             try:
                 client = create_client(SUPABASE_URL, SUPABASE_KEY)
                 resp = client.table('estadisticas_equipos').select('lambda_visitante').ilike('equipo', f'%{away_team}%').execute()
-                if resp.data:
+                if resp.data and resp.data[0].get('lambda_visitante', 0) > 0:
                     lambda_visitante = resp.data[0].get('lambda_visitante')
                     equipo_visitante_ok = True
-                    st.success(f"✅ {away_team} encontrado")
+                    st.success(f"✅ {away_team} - λ={lambda_visitante}")
                 else:
                     equipos_faltantes.append(away_team)
             except:
