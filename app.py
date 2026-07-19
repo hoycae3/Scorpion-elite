@@ -5,6 +5,7 @@ from supabase import create_client
 from data_loader import parse_flashscore_excel, validate_matches
 from analysis_models import calcular
 from stats_extractor import calculate_team_lambda
+from stats_robot import run_robot_batch
 
 st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
 
@@ -283,7 +284,39 @@ else:
     elif st.session_state.page == "Estadisticas":
         st.markdown('<h1 class="title">📈 Estadísticas</h1>', unsafe_allow_html=True)
         
-        st.markdown("### ➕ Agregar / Actualizar Equipo")
+        # Botón robot
+        st.markdown("### 🤖 Actualizar Estadísticas Automáticamente")
+        st.info("El robot buscará los últimos 5 partidos de cada equipo en Flashscore y extraerá: goles, córners, tarjetas, remates y atajadas.")
+        
+        if st.button("🔄 Actualizar Estadísticas de la Semana", type="primary", use_container_width=True):
+            with st.spinner("Ejecutando robot... esto puede tardar unos minutos"):
+                # Lista de equipos a actualizar
+                equipos = [
+                    "Barcelona", "Real Madrid", "Manchester United", "Liverpool",
+                    "Bayern Munich", "PSG", "Juventus", "AC Milan",
+                    "Borussia Dortmund", "Atletico Madrid", "Chelsea", "Arsenal",
+                    "Manchester City", "Inter Milan", "Napoli", "Roma",
+                    "Sevilla", "Villarreal", "Real Sociedad", "Athletic Bilbao"
+                ]
+                
+                results = run_robot_batch(equipos)
+                
+                exitos = sum(1 for r in results if r['exito'])
+                encontrados = sum(1 for r in results if r['encontrado'])
+                
+                st.success(f"✅ Proceso completado: {exitos}/{len(equipos)} equipos actualizados")
+                
+                # Mostrar resumen
+                for r in results:
+                    if r['exito']:
+                        st.markdown(f"✅ **{r['equipo']}** - {r['partidos']} partidos - Guardado")
+                    elif r['encontrado']:
+                        st.markdown(f"⚠️ **{r['equipo']}** - Encontrado pero sin datos")
+                    else:
+                        st.markdown(f"❌ **{r['equipo']}** - No encontrado")
+        
+        st.markdown("---")
+        st.markdown("### ➕ Agregar / Actualizar Equipo (Manual)")
         
         # Formulario para agregar equipo
         with st.form("form_equipo", clear_on_submit=True):
