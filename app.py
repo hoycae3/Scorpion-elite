@@ -334,21 +334,36 @@ else:
             "Fortaleza", "Goias", "Gremio", "Internacional", "Palmeiras", 
             "Santos", "Sao Paulo", "Sport", "Vasco",
             # Argentina
-            "Argentinos Juniors", " Arsenal", "Atletico Tucuman", "Banfield", 
+            "Argentinos Juniors", "Arsenal", "Atletico Tucuman", "Banfield", 
             "Barracas Central", "Belgrano", "Boca Juniors", "Central Cordoba",
             "Colon", "Defensa y Justicia", "Estudiantes", "Gimnasia", "Godoy Cruz",
             "Huracan", "Independiente", "Instituto", "Lanus", "Newells Old Boys",
             "Patronato", "Racing Club", "River Plate", "Rosario Central", 
             "San Lorenzo", "Sarmiento", "Talleres", "Tigre", "Union", "Velez",
-            # Paises Bajos
+            # Colombia - Categoria Primera A
+            "Alianza Petrolera", "America de Cali", "Atletico Bucaramanga", 
+            "Atletico Nacional", "Boyaca Chico", "Cali", "Carlos Sarmiento",
+            "Deportivo Pasto", "Deportivo Pereira", "Envigado", "Equidad",
+            "Fortaleza", "Independiente Santa Fe", "Jaguares", "La Equidad",
+            "Millonarios", "Once Caldas", "Patriotas", "Rionegro", 
+            "Santa Fe", "Tolima", "Union Magdalena", "Junior",
+            # Latinoamerica
             "Ajax", "AZ", "Feyenoord", "PSV", "Twente", "Utrecht",
-            # Belgica
-            " Anderlecht", "Club Brugge", "Standard Liege",
-            # Portugal
             "Benfica", "Porto", "Sporting CP",
-            # Mexico
             "America", "Atlas", "Cruz Azul", "Chivas", "Leon", "Monterrey", 
-            "Necaxa", "Pumas", "Queretaro", "Santos", "Tigres", "Tijuana", "Toluca",
+            "Necaxa", "Pumas", "Santos Laguna", "Tigres", "Tijuana", "Toluca",
+            # Ecuador
+            "Barcelona SC", "Cuenca", "Emelec", "Guillermo", "Ind. del Valle",
+            "LDU Quito", "Macara", "Mushuc Runa", "Nacional", "Orense",
+            # Peru
+            "Alianza Lima", "Athletico Grau", "Boys", "Cesar Vallejo", 
+            "Deportivo Municipal", "FBC Melgar", "Huaral", "Los Andes",
+            "Sport Boys", "Sport Huancayo", "Universitario",
+            # Chile
+            "Audax Italiano", "Cobreloa", "Cobresal", "Colo Colo", "Concepcion",
+            "Coquimbo", "Curico", "Deportes Iquique", "Huachipato", "La Serena",
+            "Nublense", "O Higgins", "Palestino", "Puerto Montt", "Santiago Morning",
+            "Santiago Wanderers", "Union La Calera", "Union Espanola",
         ]
         
         equipo_seleccionado = st.selectbox("O selecciona de la lista:", equipos_populares)
