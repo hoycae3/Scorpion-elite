@@ -1,7 +1,7 @@
 """
 Scorpion Elite - Robot Extractor de Estadisticas
 ================================================
-Usa football-data.co.uk + Soccerway para extraer estadisticas de equipos
+Busca automaticamente equipos del Excel en football-data y Soccerway
 """
 
 import requests
@@ -16,7 +16,7 @@ from typing import Dict, List, Optional
 SUPABASE_URL = "https://jjtifureeygvygxtpuku.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqdGlmdXJlZXlndnlneHRwdWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTI2NDcsImV4cCI6MjA5OTg4ODY0N30.6f8dgLmHx9x9W-5X2Ld31rPkeZ6HJGSeGgx3oq9XSRA"
 
-# ===== FOOTBALL-DATA.CO.UK =====
+# Fuentes de datos
 FD_LEAGUE_URLS = {
     'Premier League': 'https://www.football-data.co.uk/england.csv',
     'La Liga': 'https://www.football-data.co.uk/spain.csv',
@@ -30,56 +30,89 @@ FD_LEAGUE_URLS = {
     'Liga MX': 'https://www.football-data.co.uk/mexico.csv',
 }
 
-# ===== SOCCERWAY =====
 SOCCERWAY_LEAGUES = {
-    'Categoria Primera A (Colombia)': 'https://pt.soccerway.com/national/colombia/categoria-primera-a/2024/regular-season/r76545/',
-    'Ecuador Serie A': 'https://pt.soccerway.com/national/ecuador/serie-a/2024/regular-season/',
-    'Peru Liga 1': 'https://pt.soccerway.com/national/peru/liga-1/2024/regular-season/',
-    'Chile Primera': 'https://pt.soccerway.com/national/chile/primera-division/2024/regular-season/',
-    'Uruguay Primera': 'https://pt.soccerway.com/national/uruguay/primera-division/2024/regular-season/',
-    'Paraguay Primera': 'https://pt.soccerway.com/national/paraguay/primera-division/2024/regular-season/',
-    'Bolivia Liga': 'https://pt.soccerway.com/national/bolivia/liga-de-futbol-profesional/2024/regular-season/',
-    'Venezuela Primera': 'https://pt.soccerway.com/national/venezuela/primera-division/2024/regular-season/',
+    'Colombia Primera A': 'https://pt.soccerway.com/national/colombia/categoria-primera-a/2024/regular-season/r76545/',
+    'Colombia Primera B': 'https://pt.soccerway.com/national/colombia/categoria-primera-b/2024/regular-season/',
+    'Ecuador': 'https://pt.soccerway.com/national/ecuador/serie-a/2024/regular-season/',
+    'Peru': 'https://pt.soccerway.com/national/peru/liga-1/2024/regular-season/',
+    'Chile': 'https://pt.soccerway.com/national/chile/primera-division/2024/regular-season/',
+    'Uruguay': 'https://pt.soccerway.com/national/uruguay/primera-division/2024/regular-season/',
+    'Paraguay': 'https://pt.soccerway.com/national/paraguay/primera-division/2024/regular-season/',
+    'Bolivia': 'https://pt.soccerway.com/national/bolivia/liga-de-futbol-profesional/2024/regular-season/',
+    'Venezuela': 'https://pt.soccerway.com/national/venezuela/primera-division/2024/regular-season/',
     'Costa Rica': 'https://pt.soccerway.com/national/costa-rica/primera-division/2024/regular-season/',
+    'Guatemala': 'https://pt.soccerway.com/national/guatemala/liga-nacional/2024/regular-season/',
+    'Honduras': 'https://pt.soccerway.com/national/honduras/liguilla/2024/regular-season/',
+    'El Salvador': 'https://pt.soccerway.com/national/el-salvador/primera-division/2024/regular-season/',
+    'Panama': 'https://pt.soccerway.com/national/panama/lpf/2024/regular-season/',
     'Copa Libertadores': 'https://pt.soccerway.com/international-tournaments/south-america/copa-libertadores/2024/group-stage/',
     'Copa Sudamericana': 'https://pt.soccerway.com/international-tournaments/south-america/copa-sudamericana/2024/group-stage/',
 }
 
-SOCCERWAY_HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-}
+HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
 
-# Cache
-_cached_stats = None
+# Cache de estadisticas
+_fd_cache = None
+_sw_cache = None
+
+
+def get_football_data_stats() -> Dict:
+    """Obtiene estadisticas de football-data.co.uk"""
+    global _fd_cache
+    if _fd_cache is not None:
+        return _fd_cache
+    
+    all_stats = {}
+    for league, url in FD_LEAGUE_URLS.items():
+        try:
+            r = requests.get(url, timeout=10)
+            if r.status_code != 200:
+                continue
+            reader = csv.DictReader(StringIO(r.text))
+            for row in reader:
+                home = row.get('HomeTeam', '').strip()
+                away = row.get('AwayTeam', '').strip()
+                fthg, ftag = row.get('FTHG'), row.get('FTAG')
+                if not home or not fthg or not ftag:
+                    continue
+                try:
+                    gh, ga = int(fthg), int(ftag)
+                except:
+                    continue
+                for team, gf, ga_team, is_home in [(home, gh, ga, True), (away, ga, gh, False)]:
+                    if team not in all_stats:
+                        all_stats[team] = {'gf': 0, 'ga': 0, 'home': 0, 'away': 0, 'source': 'FD', 'league': league}
+                    all_stats[team]['gf'] += gf
+                    all_stats[team]['ga'] += ga_team
+                    if is_home:
+                        all_stats[team]['home'] += 1
+                    else:
+                        all_stats[team]['away'] += 1
+        except:
+            continue
+    _fd_cache = all_stats
+    return all_stats
 
 
 def scrape_soccerway(url: str) -> Dict:
-    """Extrae equipos de Soccerway."""
+    """Extrae equipos de una pagina de Soccerway"""
+    stats = {}
     try:
-        response = requests.get(url, headers=SOCCERWAY_HEADERS, timeout=15)
-        if response.status_code != 200:
-            return {}
-        
-        soup = BeautifulSoup(response.content, 'html.parser')
-        stats = {}
-        
+        r = requests.get(url, headers=HEADERS, timeout=10)
+        if r.status_code != 200:
+            return stats
+        soup = BeautifulSoup(r.text, 'html.parser')
         tables = soup.find_all('table')
         for table in tables:
             rows = table.find_all('tr')
             for row in rows:
                 cells = row.find_all('td')
                 if len(cells) >= 2:
-                    cell_texts = [c.get_text(strip=True) for c in cells]
-                    text = ' '.join(cell_texts)
-                    
+                    text = ' '.join([c.get_text(strip=True) for c in cells])
                     match = re.search(r'(\w[\w\s]+?)\s+(\d+)\s*[-–]\s*(\d+)\s+(\w[\w\s]+)', text)
                     if match:
-                        team1 = match.group(1).strip()
-                        score1 = int(match.group(2))
-                        score2 = int(match.group(3))
-                        team2 = match.group(4).strip()
-                        
-                        for team, gf, ga, is_home in [(team1, score1, score2, True), (team2, score2, score1, False)]:
+                        t1, s1, s2, t2 = match.group(1).strip(), int(match.group(2)), int(match.group(3)), match.group(4).strip()
+                        for team, gf, ga, is_home in [(t1, s1, s2, True), (t2, s2, s1, False)]:
                             if team and len(team) > 2:
                                 if team not in stats:
                                     stats[team] = {'gf': 0, 'ga': 0, 'home': 0, 'away': 0}
@@ -89,160 +122,115 @@ def scrape_soccerway(url: str) -> Dict:
                                     stats[team]['home'] += 1
                                 else:
                                     stats[team]['away'] += 1
-        return stats
     except:
-        return {}
+        pass
+    return stats
 
 
-def get_all_stats() -> Dict:
-    """Obtiene estadisticas de TODAS las ligas (cache)."""
-    global _cached_stats
-    
-    if _cached_stats is not None:
-        return _cached_stats
+def get_soccerway_stats() -> Dict:
+    """Obtiene estadisticas de Soccerway"""
+    global _sw_cache
+    if _sw_cache is not None:
+        return _sw_cache
     
     all_stats = {}
-    
-    # 1. Football-data.co.uk
-    for league, url in FD_LEAGUE_URLS.items():
-        try:
-            response = requests.get(url, timeout=15)
-            if response.status_code != 200:
-                continue
-            
-            reader = csv.DictReader(StringIO(response.text))
-            for row in reader:
-                home = row.get('HomeTeam', '').strip()
-                away = row.get('AwayTeam', '').strip()
-                fthg = row.get('FTHG')
-                ftag = row.get('FTAG')
-                
-                if not home or not fthg or not ftag:
-                    continue
-                try:
-                    goals_home = int(fthg)
-                    goals_away = int(ftag)
-                except:
-                    continue
-                
-                for team, gf, ga, is_home in [(home, goals_home, goals_away, True), (away, goals_away, goals_home, False)]:
-                    if team not in all_stats:
-                        all_stats[team] = {'gf': 0, 'ga': 0, 'home_games': 0, 'away_games': 0, 'league': league}
-                    all_stats[team]['gf'] += gf
-                    all_stats[team]['ga'] += ga
-                    if is_home:
-                        all_stats[team]['home_games'] += 1
-                    else:
-                        all_stats[team]['away_games'] += 1
-        except:
-            continue
-    
-    # 2. Soccerway (Latinoamerica)
     for league, url in SOCCERWAY_LEAGUES.items():
         stats = scrape_soccerway(url)
         for team, data in stats.items():
             if team not in all_stats:
-                all_stats[team] = {'gf': 0, 'ga': 0, 'home_games': 0, 'away_games': 0, 'league': league}
+                all_stats[team] = {'gf': 0, 'ga': 0, 'home': 0, 'away': 0, 'source': 'SW', 'league': league}
             all_stats[team]['gf'] += data['gf']
             all_stats[team]['ga'] += data['ga']
-            all_stats[team]['home_games'] += data['home']
-            all_stats[team]['away_games'] += data['away']
-    
-    _cached_stats = all_stats
+            all_stats[team]['home'] += data['home']
+            all_stats[team]['away'] += data['away']
+    _sw_cache = all_stats
     return all_stats
 
 
 def clear_cache():
-    """Limpia el cache de estadisticas."""
-    global _cached_stats
-    _cached_stats = None
+    """Limpia el cache"""
+    global _fd_cache, _sw_cache
+    _fd_cache = None
+    _sw_cache = None
 
 
 def search_team(team_name: str) -> Optional[Dict]:
-    """Busca un equipo por nombre y retorna sus estadisticas."""
+    """Busca un equipo en ambas fuentes"""
+    team_lower = team_name.lower()
     
-    all_stats = get_all_stats()
-    team_name_lower = team_name.lower()
+    # Primero football-data
+    fd_stats = get_football_data_stats()
+    for team, data in fd_stats.items():
+        if team_lower in team.lower() or team.lower() in team_lower:
+            return {'equipo': team, **data}
     
-    # Buscar coincidencia parcial
-    for team, data in all_stats.items():
-        if team_name_lower in team.lower() or team.lower() in team_name_lower:
-            return {
-                'equipo': team,
-                'liga': data['league'],
-                'partidos_local': data['home_games'],
-                'partidos_visitante': data['away_games'],
-                'goles_favor': data['gf'],
-                'goles_contra': data['ga'],
-            }
+    # Luego Soccerway
+    sw_stats = get_soccerway_stats()
+    for team, data in sw_stats.items():
+        if team_lower in team.lower() or team.lower() in team_lower:
+            return {'equipo': team, **data}
     
     return None
 
 
-def calculate_lambda(gf: int, games: int, is_home: bool = True) -> float:
-    if games == 0:
-        return 0.0
-    avg = gf / games
-    if is_home:
-        return round(avg * 1.1, 2)
-    else:
-        return round(avg * 0.85, 2)
-
-
-def run_robot_for_team(team_name: str) -> Dict:
-    """Busca un equipo y guarda sus estadisticas."""
-    
-    print(f"Buscando: {team_name}")
-    
-    team_data = search_team(team_name)
-    
-    if not team_data:
-        return {'equipo': team_name, 'encontrado': False, 'exito': False}
-    
-    print(f"Encontrado: {team_data['equipo']} ({team_data['liga']})")
-    
-    lambda_local = calculate_lambda(
-        team_data['goles_favor'], 
-        team_data['partidos_local'], 
-        True
-    )
-    lambda_visitante = calculate_lambda(
-        team_data['goles_favor'], 
-        team_data['partidos_visitante'], 
-        False
-    )
-    
+def run_robot_batch(team_names: List[str]) -> List[Dict]:
+    """Busca multiples equipos y guarda en Supabase"""
+    results = []
     client = create_client(SUPABASE_URL, SUPABASE_KEY)
     
-    data = {
-        'equipo': team_data['equipo'],
-        'liga': team_data['liga'],
-        'partidos_jugados': team_data['partidos_local'] + team_data['partidos_visitante'],
-        'goles_favor': team_data['goles_favor'],
-        'goles_contra': team_data['goles_contra'],
-        'lambda_local': lambda_local,
-        'lambda_visitante': lambda_visitante,
-    }
-    
-    try:
-        client.table('estadisticas_equipos').upsert(data, on_conflict='equipo').execute()
-        return {
-            'equipo': team_data['equipo'],
-            'liga': team_data['liga'],
-            'lambda_local': lambda_local,
-            'lambda_visitante': lambda_visitante,
-            'partidos': data['partidos_jugados'],
-            'encontrado': True,
-            'exito': True
-        }
-    except Exception as e:
-        return {'equipo': team_name, 'encontrado': True, 'exito': False, 'error': str(e)}
-
-
-def run_robot_batch(team_names: List[str]) -> List[Dict]:
-    """Busca multiples equipos."""
-    results = []
     for team in team_names:
-        result = run_robot_for_team(team)
+        result = {
+            'equipo': team,
+            'encontrado': False,
+            'exito': False,
+            'lambda_local': None,
+            'lambda_visitante': None
+        }
+        
+        # Buscar en fuentes
+        data = search_team(team)
+        
+        if data:
+            result['encontrado'] = True
+            result['liga'] = data.get('league', 'N/A')
+            result['source'] = data.get('source', 'N/A')
+            
+            # Calcular lambdas
+            home_games = data.get('home', 0)
+            away_games = data.get('away', 0)
+            gf = data.get('gf', 0)
+            
+            if home_games > 0:
+                lambda_local = round((gf / (home_games + away_games)) * 1.1, 2) if (home_games + away_games) > 0 else 1.5
+            else:
+                lambda_local = 1.5
+                
+            if away_games > 0:
+                lambda_visitante = round((gf / (home_games + away_games)) * 0.85, 2) if (home_games + away_games) > 0 else 1.2
+            else:
+                lambda_visitante = 1.2
+            
+            result['lambda_local'] = lambda_local
+            result['lambda_visitante'] = lambda_visitante
+            
+            # Guardar en Supabase
+            try:
+                supa_data = {
+                    'equipo': data.get('equipo', team),
+                    'liga': data.get('league', 'N/A'),
+                    'partidos_jugados': home_games + away_games,
+                    'goles_favor': gf,
+                    'goles_contra': data.get('ga', 0),
+                    'lambda_local': lambda_local,
+                    'lambda_visitante': lambda_visitante,
+                }
+                client.table('estadisticas_equipos').upsert(supa_data, on_conflict='equipo').execute()
+                result['exito'] = True
+                result['equipo_real'] = data.get('equipo', team)
+            except Exception as e:
+                result['error'] = str(e)[:50]
+        
         results.append(result)
+        print(f"{'OK' if result['exito'] else 'X'}: {team} -> {result.get('liga', 'NO ENCONTRADO')}")
+    
     return results

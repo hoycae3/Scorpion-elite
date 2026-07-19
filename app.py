@@ -298,98 +298,53 @@ else:
     elif st.session_state.page == "Estadisticas":
         st.markdown('<h1 class="title">📈 Estadísticas</h1>', unsafe_allow_html=True)
         
-        # Sección: Robot por equipo
-        st.markdown("### 🔍 Buscar Equipo")
-        st.info("Busca un equipo por nombre y extrae sus estadísticas de football-data.co.uk")
+        # Sección: Robot automático
+        st.markdown("### 🤖 Buscar Todos los Equipos del Excel")
+        st.info("Sube tu Excel con partidos → Presiona el botón → El robot busca automáticamente TODOS los equipos en football-data y Soccerway")
         
-        # Selector rápido de equipos populares
-        equipos_populares = [
-            "",
-            # Inglaterra
-            "Arsenal", "Aston Villa", "Bournemouth", "Brentford", "Brighton", 
-            "Burnley", "Chelsea", "Crystal Palace", "Everton", "Fulham", 
-            "Liverpool", "Man City", "Man United", "Newcastle", "Nott'm Forest", 
-            "Sheffield Utd", "Southampton", "Tottenham", "West Ham", "Wolves",
-            # Espana
-            "Alaves", "Almeria", "Athletic Bilbao", "Atletico Madrid", "Barcelona", 
-            "Cadiz", "Celta Vigo", "Girona", "Granada", "Getafe", 
-            "Las Palmas", "Mallorca", "Osasuna", "Rayo Vallecano", "Real Betis", 
-            "Real Madrid", "Real Sociedad", "Sevilla", "Valencia", "Villarreal",
-            # Alemania
-            "Augsburg", "Bayer Leverkusen", "Bayern Munich", "Bochum", "Dortmund", 
-            "Eintracht Frankfurt", "Freiburg", "Heidenheim", "Hoffenheim", "Koln", 
-            "Leverkusen", "Mainz", "Monchengladbach", "RB Leipzig", "Stuttgart", 
-            "Union Berlin", "Werder Bremen", "Wolfsburg",
-            # Italia
-            "Atalanta", "Bologna", "Cagliari", "Empoli", "Fiorentina", "Frosinone",
-            "Genoa", "Inter", "Juventus", "Lazio", "Lecce", "Milan", "Monza",
-            "Napoli", "Roma", "Salernitana", "Sassuolo", "Torino", "Udinese", "Verona",
-            # Francia
-            "Brest", "Clermont", "Le Havre", "Lens", "Lille", "Lyon", "Marseille",
-            "Metz", "Monaco", "Montpellier", "Nantes", "Nice", "PSG", "Reims",
-            "Rennes", "Strasbourg", "Toulouse",
-            # Brasil
-            "Athletico Paranaense", "Atletico Goianiense", "Bahia", "Botafogo", 
-            "Corinthians", "Cruzeiro", "Cuiaba", "Flamengo", "Fluminense", 
-            "Fortaleza", "Goias", "Gremio", "Internacional", "Palmeiras", 
-            "Santos", "Sao Paulo", "Sport", "Vasco",
-            # Argentina
-            "Argentinos Juniors", "Arsenal", "Atletico Tucuman", "Banfield", 
-            "Barracas Central", "Belgrano", "Boca Juniors", "Central Cordoba",
-            "Colon", "Defensa y Justicia", "Estudiantes", "Gimnasia", "Godoy Cruz",
-            "Huracan", "Independiente", "Instituto", "Lanus", "Newells Old Boys",
-            "Patronato", "Racing Club", "River Plate", "Rosario Central", 
-            "San Lorenzo", "Sarmiento", "Talleres", "Tigre", "Union", "Velez",
-            # Colombia - Categoria Primera A
-            "Alianza Petrolera", "America de Cali", "Atletico Bucaramanga", 
-            "Atletico Nacional", "Boyaca Chico", "Cali", "Carlos Sarmiento",
-            "Deportivo Pasto", "Deportivo Pereira", "Envigado", "Equidad",
-            "Fortaleza", "Independiente Santa Fe", "Jaguares", "La Equidad",
-            "Millonarios", "Once Caldas", "Patriotas", "Rionegro", 
-            "Santa Fe", "Tolima", "Union Magdalena", "Junior",
-            # Latinoamerica
-            "Ajax", "AZ", "Feyenoord", "PSV", "Twente", "Utrecht",
-            "Benfica", "Porto", "Sporting CP",
-            "America", "Atlas", "Cruz Azul", "Chivas", "Leon", "Monterrey", 
-            "Necaxa", "Pumas", "Santos Laguna", "Tigres", "Tijuana", "Toluca",
-            # Ecuador
-            "Barcelona SC", "Cuenca", "Emelec", "Guillermo", "Ind. del Valle",
-            "LDU Quito", "Macara", "Mushuc Runa", "Nacional", "Orense",
-            # Peru
-            "Alianza Lima", "Athletico Grau", "Boys", "Cesar Vallejo", 
-            "Deportivo Municipal", "FBC Melgar", "Huaral", "Los Andes",
-            "Sport Boys", "Sport Huancayo", "Universitario",
-            # Chile
-            "Audax Italiano", "Cobreloa", "Cobresal", "Colo Colo", "Concepcion",
-            "Coquimbo", "Curico", "Deportes Iquique", "Huachipato", "La Serena",
-            "Nublense", "O Higgins", "Palestino", "Puerto Montt", "Santiago Morning",
-            "Santiago Wanderers", "Union La Calera", "Union Espanola",
-        ]
-        
-        equipo_seleccionado = st.selectbox("O selecciona de la lista:", equipos_populares)
-        nombre_equipo = st.text_input("O escribe el nombre del equipo:", value=equipo_seleccionado)
-        
-        if st.button("🔍 Buscar", type="primary", use_container_width=True):
-            if nombre_equipo:
-                with st.spinner("Buscando estadísticas..."):
-                    try:
-                        result = run_robot_for_team(nombre_equipo)
+        if st.button("🔄 Buscar Equipos del Excel", type="primary", use_container_width=True):
+            with st.spinner("Buscando equipos..."):
+                try:
+                    # Obtener equipos de Supabase
+                    client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                    response = client.table('partidos').select('equipo_local, equipo_visitante').execute()
+                    
+                    if not response.data:
+                        st.warning("⚠️ No hay partidos en Supabase. Sube un Excel primero.")
+                    else:
+                        # Extraer equipos únicos
+                        equipos = set()
+                        for p in response.data:
+                            if p.get('equipo_local'):
+                                equipos.add(p['equipo_local'])
+                            if p.get('equipo_visitante'):
+                                equipos.add(p['equipo_visitante'])
                         
-                        if result.get('exito'):
-                            st.success(f"✅ **{result['equipo']}** encontrado!")
-                            st.markdown(f"""
-                            - **Liga:** {result.get('liga', 'N/A')}
-                            - **Partidos:** {result.get('partidos', 'N/A')}
-                            - **λ Local:** {result.get('lambda_local', 'N/A')}
-                            - **λ Visitante:** {result.get('lambda_visitante', 'N/A')}
-                            """)
-                        elif result.get('encontrado'):
-                            st.warning("⚠️ Equipo encontrado pero sin datos suficientes")
-                        else:
-                            st.error("❌ Equipo no encontrado. Prueba con otro nombre.")
-                            
-                    except Exception as e:
-                        st.error(f"Error: {str(e)[:100]}")
+                        equipos = sorted(list(equipos))
+                        st.info(f"📊 {len(equipos)} equipos encontrados. Buscando...")
+                        
+                        # Buscar todos
+                        results = run_robot_batch(equipos)
+                        
+                        # Resumen
+                        exitos = [r for r in results if r['exito']]
+                        no_encontrados = [r for r in results if not r['encontrado']]
+                        
+                        st.success(f"✅ **{len(exitos)} equipos encontrados** de {len(equipos)}")
+                        
+                        if no_encontrados:
+                            st.warning(f"❌ {len(no_encontrados)} equipos NO encontrados:")
+                            for r in no_encontrados:
+                                st.markdown(f"- {r['equipo']}")
+                        
+                        # Mostrar encontrados
+                        if exitos:
+                            with st.expander("Ver equipos encontrados"):
+                                for r in exitos:
+                                    st.markdown(f"✅ **{r.get('equipo_real', r['equipo'])}** ({r.get('liga', 'N/A')}) - λL:{r['lambda_local']} λV:{r['lambda_visitante']}")
+                                
+                except Exception as e:
+                    st.error(f"Error: {str(e)[:100]}")
         
         st.markdown("---")
         st.markdown("### ➕ Agregar / Actualizar Equipo (Manual)")
