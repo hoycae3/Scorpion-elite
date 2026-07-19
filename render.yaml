@@ -1,0 +1,14 @@
+# render.yaml - Configuración para deploy en Render
+services:
+  - type: web
+    name: scorpion-elite
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
