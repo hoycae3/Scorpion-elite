@@ -521,7 +521,8 @@ class FBrefScraper:
 
 def scrape_team_advanced(team_name: str, league: str = None) -> Dict:
     """
-    Busca estadísticas avanzadas de un equipo en WhoScored y FBref.
+    Busca estadísticas avanzadas de un equipo en todas las fuentes.
+    Orden: WhoScored → Flashscore → Sofascore → FBref
     """
     result = {
         'equipo': team_name,
@@ -532,34 +533,75 @@ def scrape_team_advanced(team_name: str, league: str = None) -> Dict:
         'tiros_avg': None,
         'tiros_arco_avg': None,
         'posesion': None,
+        'goles_promedio': None,
+        'partidos': 0,
     }
     
     # 1. Intentar WhoScored
-    ws = WhoScoredScraper()
-    ws_url = ws.search_team(team_name)
+    try:
+        ws = WhoScoredScraper()
+        ws_url = ws.search_team(team_name)
+        if ws_url:
+            ws_stats = ws.get_team_stats(ws_url)
+            if ws_stats:
+                result['source'] = 'whoscored'
+                if 'corners_avg' in ws_stats:
+                    result['corners_avg'] = ws_stats['corners_avg']
+                if 'yellows_avg' in ws_stats:
+                    result['amarillas_avg'] = ws_stats['yellows_avg']
+    except Exception as e:
+        logger.debug(f"WhoScored error: {e}")
     
-    if ws_url:
-        ws_stats = ws.get_team_stats(ws_url)
-        if ws_stats:
-            result['source'] = 'whoscored'
-            if 'corners_avg' in ws_stats:
-                result['corners_avg'] = ws_stats['corners_avg']
-            if 'yellows_avg' in ws_stats:
-                result['amarillas_avg'] = ws_stats['yellows_avg']
+    # 2. Intentar Flashscore
+    try:
+        from scrapers import FlashscoreScraper
+        fs = FlashscoreScraper()
+        fs_result = fs.search_team(team_name)
+        if fs_result and not result['source']:
+            result['source'] = 'flashscore'
+            fs_stats = fs.get_team_stats(fs_result['url'])
+            if fs_stats:
+                if 'goles' in fs_stats:
+                    result['goles_promedio'] = fs_stats['goles']
+                if 'partidos' in fs_stats:
+                    result['partidos'] = fs_stats['partidos']
+    except Exception as e:
+        logger.debug(f"Flashscore error: {e}")
     
-    # 2. Intentar FBref
-    fb = FBrefScraper()
-    fb_team = fb.find_team(team_name, league)
+    # 3. Intentar Sofascore
+    try:
+        from scrapers import SofascoreScraper
+        sf = SofascoreScraper()
+        sf_result = sf.search_team(team_name)
+        if sf_result and not result['source']:
+            result['source'] = 'sofascore'
+            sf_stats = sf.get_team_stats(sf_result['url'])
+            if sf_stats:
+                if 'corners_avg' in sf_stats:
+                    result['corners_avg'] = sf_stats['corners_avg']
+                if 'goles_promedio' in sf_stats:
+                    result['goles_promedio'] = sf_stats['goles_promedio']
+    except Exception as e:
+        logger.debug(f"Sofascore error: {e}")
     
-    if fb_team:
-        fb_stats = fb.get_team_stats(fb_team['url'])
-        if fb_stats:
-            result['source'] = 'fbref' if not result['source'] else result['source']
-            for key in ['corners_avg', 'amarillas_avg', 'tiros_avg', 'tiros_arco_avg', 'posesion']:
-                if key in fb_stats:
-                    result[key] = fb_stats[key]
+    # 4. Intentar FBref (backup)
+    if not result['source']:
+        try:
+            fb = FBrefScraper()
+            fb_team = fb.find_team(team_name, league)
+            if fb_team:
+                fb_stats = fb.get_team_stats(fb_team['url'])
+                if fb_stats:
+                    result['source'] = 'fbref'
+                    for key in ['corners_avg', 'amarillas_avg', 'tiros_avg', 'tiros_arco_avg', 'posesion']:
+                        if key in fb_stats:
+                            result[key] = fb_stats[key]
+        except Exception as e:
+            logger.debug(f"FBref error: {e}")
     
     return result
+
+
 
 
 def run_robot_batch_v2(team_names: List[str], leagues: List[str] = None) -> List[Dict]:
