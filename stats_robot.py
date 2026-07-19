@@ -8,7 +8,7 @@ import requests
 from io import StringIO
 import csv
 from supabase import create_client
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 SUPABASE_URL = "https://jjtifureeygvygxtpuku.supabase.co"
@@ -24,56 +24,77 @@ LEAGUE_URLS = {
 }
 
 
-def get_league_stats(league_key: str) -> Dict:
-    url = LEAGUE_URLS.get(league_key.lower())
-    if not url:
-        return {}
+def get_all_stats() -> Dict:
+    """Obtiene estadisticas de TODAS las ligas."""
+    all_stats = {}
     
-    try:
-        response = requests.get(url, timeout=15)
-        if response.status_code != 200:
-            return {}
-        
-        reader = csv.DictReader(StringIO(response.text))
-        stats = {}
-        
-        for row in reader:
-            home = row.get('HomeTeam', '').strip()
-            away = row.get('AwayTeam', '').strip()
-            fthg = row.get('FTHG')
-            ftag = row.get('FTAG')
-            
-            if not home or not fthg or not ftag:
+    for league, url in LEAGUE_URLS.items():
+        try:
+            response = requests.get(url, timeout=15)
+            if response.status_code != 200:
                 continue
             
-            try:
-                goals_home = int(fthg)
-                goals_away = int(ftag)
-            except:
-                continue
+            reader = csv.DictReader(StringIO(response.text))
             
-            if home not in stats:
-                stats[home] = {'gf': 0, 'ga': 0, 'home_games': 0, 'away_games': 0}
-            if away not in stats:
-                stats[away] = {'gf': 0, 'ga': 0, 'home_games': 0, 'away_games': 0}
-            
-            stats[home]['gf'] += goals_home
-            stats[home]['ga'] += goals_away
-            stats[home]['home_games'] += 1
-            
-            stats[away]['gf'] += goals_away
-            stats[away]['ga'] += goals_home
-            stats[away]['away_games'] += 1
-        
-        return stats
-    except Exception as e:
-        print(f"Error: {e}")
-        return {}
+            for row in reader:
+                home = row.get('HomeTeam', '').strip()
+                away = row.get('AwayTeam', '').strip()
+                fthg = row.get('FTHG')
+                ftag = row.get('FTAG')
+                
+                if not home or not fthg or not ftag:
+                    continue
+                
+                try:
+                    goals_home = int(fthg)
+                    goals_away = int(ftag)
+                except:
+                    continue
+                
+                # Acumular para cada equipo
+                for team, gf, ga, is_home in [(home, goals_home, goals_away, True), (away, goals_away, goals_home, False)]:
+                    if team not in all_stats:
+                        all_stats[team] = {'gf': 0, 'ga': 0, 'home_games': 0, 'away_games': 0, 'league': league}
+                    
+                    all_stats[team]['gf'] += gf
+                    all_stats[team]['ga'] += ga
+                    if is_home:
+                        all_stats[team]['home_games'] += 1
+                    else:
+                        all_stats[team]['away_games'] += 1
+                        
+        except Exception as e:
+            print(f"Error {league}: {e}")
+            continue
+    
+    return all_stats
+
+
+def search_team(team_name: str) -> Optional[Dict]:
+    """Busca un equipo por nombre y retorna sus estadisticas."""
+    
+    all_stats = get_all_stats()
+    
+    # Buscar coincidencia parcial
+    team_name_lower = team_name.lower()
+    
+    for team, data in all_stats.items():
+        if team_name_lower in team.lower() or team.lower() in team_name_lower:
+            return {
+                'equipo': team,
+                'liga': data['league'],
+                'partidos_local': data['home_games'],
+                'partidos_visitante': data['away_games'],
+                'goles_favor': data['gf'],
+                'goles_contra': data['ga'],
+            }
+    
+    return None
 
 
 def calculate_lambda(gf: int, games: int, is_home: bool = True) -> float:
     if games == 0:
-        return None
+        return 0.0
     avg = gf / games
     if is_home:
         return round(avg * 1.1, 2)
@@ -81,58 +102,63 @@ def calculate_lambda(gf: int, games: int, is_home: bool = True) -> float:
         return round(avg * 0.85, 2)
 
 
-def run_robot_for_league(league_name: str) -> List[Dict]:
-    print(f"Procesando: {league_name}")
-    results = []
-    league_stats = get_league_stats(league_name)
+def run_robot_for_team(team_name: str) -> Dict:
+    """Busca un equipo y guarda sus estadisticas."""
     
-    if not league_stats:
-        print(f"  Sin datos")
-        return results
+    print(f"Buscando: {team_name}")
     
-    print(f"  {len(league_stats)} equipos")
+    # Buscar en todas las ligas
+    team_data = search_team(team_name)
     
+    if not team_data:
+        return {'equipo': team_name, 'encontrado': False, 'exito': False}
+    
+    print(f"Encontrado: {team_data['equipo']} ({team_data['liga']})")
+    
+    # Calcular lambdas
+    lambda_local = calculate_lambda(
+        team_data['goles_favor'], 
+        team_data['partidos_local'], 
+        True
+    )
+    lambda_visitante = calculate_lambda(
+        team_data['goles_favor'], 
+        team_data['partidos_visitante'], 
+        False
+    )
+    
+    # Guardar en Supabase
     client = create_client(SUPABASE_URL, SUPABASE_KEY)
     
-    for team, data in league_stats.items():
-        total_games = data['home_games'] + data['away_games']
-        if total_games < 5:
-            continue
-        
-        lambda_local = calculate_lambda(data['gf'], data['home_games'], True)
-        lambda_visitante = calculate_lambda(data['gf'], data['away_games'], False)
-        
-        if lambda_local is None:
-            continue
-        
-        team_data = {
-            'equipo': team,
-            'liga': league_name,
-            'partidos_jugados': total_games,
-            'goles_favor': data['gf'],
-            'goles_contra': data['ga'],
+    data = {
+        'equipo': team_data['equipo'],
+        'liga': team_data['liga'],
+        'partidos_jugados': team_data['partidos_local'] + team_data['partidos_visitante'],
+        'goles_favor': team_data['goles_favor'],
+        'goles_contra': team_data['goles_contra'],
+        'lambda_local': lambda_local,
+        'lambda_visitante': lambda_visitante,
+    }
+    
+    try:
+        client.table('estadisticas_equipos').upsert(data, on_conflict='equipo').execute()
+        return {
+            'equipo': team_data['equipo'],
+            'liga': team_data['liga'],
             'lambda_local': lambda_local,
             'lambda_visitante': lambda_visitante,
+            'partidos': data['partidos_jugados'],
+            'encontrado': True,
+            'exito': True
         }
-        
-        try:
-            client.table('estadisticas_equipos').upsert(team_data, on_conflict='equipo').execute()
-            results.append({'equipo': team, 'exito': True})
-            print(f"  OK: {team}")
-        except Exception as e:
-            print(f"  Error: {team} - {e}")
-    
+    except Exception as e:
+        return {'equipo': team_name, 'encontrado': True, 'exito': False, 'error': str(e)}
+
+
+def run_robot_batch(team_names: List[str]) -> List[Dict]:
+    """Busca multiples equipos."""
+    results = []
+    for team in team_names:
+        result = run_robot_for_team(team)
+        results.append(result)
     return results
-
-
-def run_robot_batch(league_names: List[str]) -> List[Dict]:
-    all_results = []
-    for league in league_names:
-        results = run_robot_for_league(league)
-        all_results.extend(results)
-    return all_results
-
-
-if __name__ == "__main__":
-    result = run_robot_for_league('premier')
-    print(f"Total: {len(result)}")

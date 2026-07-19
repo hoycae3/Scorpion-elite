@@ -298,46 +298,47 @@ else:
     elif st.session_state.page == "Estadisticas":
         st.markdown('<h1 class="title">📈 Estadísticas</h1>', unsafe_allow_html=True)
         
-        # Sección: Robot football-data
-        st.markdown("### 🤖 Actualizar Estadísticas")
-        st.info("Extrae estadísticas de football-data.co.uk. Selecciona las ligas que quieres actualizar.")
+        # Sección: Robot por equipo
+        st.markdown("### 🔍 Buscar Equipo")
+        st.info("Busca un equipo por nombre y extrae sus estadísticas de football-data.co.uk")
         
-        # Selector de ligas
-        opciones_ligas = [
-            "Premier League (Inglaterra)",
-            "La Liga (España)",
-            "Bundesliga (Alemania)",
-            "Serie A (Italia)",
-            "Ligue 1 (Francia)",
-            "Brasileirao (Brasil)",
+        # Selector rápido de equipos populares
+        equipos_populares = [
+            "", "Arsenal", "Aston Villa", "Bournemouth", "Brentford", "Brighton", 
+            "Burnley", "Chelsea", "Crystal Palace", "Everton", "Fulham", 
+            "Liverpool", "Luton", "Man City", "Man United", "Newcastle", 
+            "Nott'm Forest", "Sheffield Utd", "Tottenham", "West Ham", "Wolves",
+            "Barcelona", "Real Madrid", "Atletico Madrid", "Sevilla", "Valencia",
+            "Bayern Munich", "Dortmund", "RB Leipzig", "Bayer Leverkusen", "Eintracht",
+            "Inter", "Milan", "Juventus", "Napoli", "Roma", "Lazio",
+            "PSG", "Marseille", "Monaco", "Lyon", "Lille",
+            "Palmeiras", "Flamengo", "Fluminense", "Corinthians", "São Paulo"
         ]
         
-        liga_seleccionada = st.selectbox("Selecciona una liga:", opciones_ligas)
+        equipo_seleccionado = st.selectbox("O selecciona de la lista:", equipos_populares)
+        nombre_equipo = st.text_input("O escribe el nombre del equipo:", value=equipo_seleccionado)
         
-        # Mapear a ключ для robot
-        liga_key = {
-            "Premier League (Inglaterra)": "premier",
-            "La Liga (España)": "la liga",
-            "Bundesliga (Alemania)": "bundesliga",
-            "Serie A (Italia)": "serie a",
-            "Ligue 1 (Francia)": "ligue 1",
-            "Brasileirao (Brasil)": "brasileirao",
-        }.get(liga_seleccionada, "premier")
-        
-        if st.button("🔄 Actualizar Liga", type="primary", use_container_width=True):
-            with st.spinner("Extrayendo estadísticas..."):
-                try:
-                    results = run_robot_for_league(liga_key)
-                    
-                    if results:
-                        st.success(f"✅ {len(results)} equipos actualizados de {liga_seleccionada}")
-                        for r in results:
-                            st.markdown(f"✅ **{r['equipo']}**")
-                    else:
-                        st.warning("⚠️ No se pudieron obtener datos. Intenta otra liga.")
+        if st.button("🔍 Buscar", type="primary", use_container_width=True):
+            if nombre_equipo:
+                with st.spinner("Buscando estadísticas..."):
+                    try:
+                        result = run_robot_for_team(nombre_equipo)
                         
-                except Exception as e:
-                    st.error(f"Error: {str(e)[:100]}")
+                        if result.get('exito'):
+                            st.success(f"✅ **{result['equipo']}** encontrado!")
+                            st.markdown(f"""
+                            - **Liga:** {result.get('liga', 'N/A')}
+                            - **Partidos:** {result.get('partidos', 'N/A')}
+                            - **λ Local:** {result.get('lambda_local', 'N/A')}
+                            - **λ Visitante:** {result.get('lambda_visitante', 'N/A')}
+                            """)
+                        elif result.get('encontrado'):
+                            st.warning("⚠️ Equipo encontrado pero sin datos suficientes")
+                        else:
+                            st.error("❌ Equipo no encontrado. Prueba con otro nombre.")
+                            
+                    except Exception as e:
+                        st.error(f"Error: {str(e)[:100]}")
         
         st.markdown("---")
         st.markdown("### ➕ Agregar / Actualizar Equipo (Manual)")
