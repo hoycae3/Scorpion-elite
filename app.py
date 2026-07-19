@@ -290,30 +290,45 @@ else:
         
         if st.button("🔄 Actualizar Estadísticas de la Semana", type="primary", use_container_width=True):
             with st.spinner("Ejecutando robot... esto puede tardar unos minutos"):
-                # Lista de equipos a actualizar
-                equipos = [
-                    "Barcelona", "Real Madrid", "Manchester United", "Liverpool",
-                    "Bayern Munich", "PSG", "Juventus", "AC Milan",
-                    "Borussia Dortmund", "Atletico Madrid", "Chelsea", "Arsenal",
-                    "Manchester City", "Inter Milan", "Napoli", "Roma",
-                    "Sevilla", "Villarreal", "Real Sociedad", "Athletic Bilbao"
-                ]
+                # Obtener equipos de los partidos guardados en Supabase
+                client = create_client(SUPABASE_URL, SUPABASE_KEY)
                 
-                results = run_robot_batch(equipos)
-                
-                exitos = sum(1 for r in results if r['exito'])
-                encontrados = sum(1 for r in results if r['encontrado'])
-                
-                st.success(f"✅ Proceso completado: {exitos}/{len(equipos)} equipos actualizados")
-                
-                # Mostrar resumen
-                for r in results:
-                    if r['exito']:
-                        st.markdown(f"✅ **{r['equipo']}** - {r['partidos']} partidos - Guardado")
-                    elif r['encontrado']:
-                        st.markdown(f"⚠️ **{r['equipo']}** - Encontrado pero sin datos")
+                try:
+                    # Obtener todos los partidos
+                    response = client.table('partidos').select('equipo_local, equipo_visitante').execute()
+                    
+                    if not response.data:
+                        st.warning("⚠️ No hay partidos guardados. Sube un archivo Excel primero.")
                     else:
-                        st.markdown(f"❌ **{r['equipo']}** - No encontrado")
+                        # Extraer equipos únicos
+                        equipos_set = set()
+                        for p in response.data:
+                            if p.get('equipo_local'):
+                                equipos_set.add(p['equipo_local'])
+                            if p.get('equipo_visitante'):
+                                equipos_set.add(p['equipo_visitante'])
+                        
+                        equipos = sorted(list(equipos_set))
+                        st.info(f"📊 {len(equipos)} equipos encontrados en tus partidos")
+                        
+                        # Ejecutar robot para cada equipo
+                        results = run_robot_batch(equipos)
+                        
+                        exitos = sum(1 for r in results if r['exito'])
+                        
+                        st.success(f"✅ Proceso completado: {exitos}/{len(equipos)} equipos actualizados")
+                        
+                        # Mostrar resumen
+                        for r in results:
+                            if r['exito']:
+                                st.markdown(f"✅ **{r['equipo']}** - {r['partidos']} partidos - Guardado")
+                            elif r['encontrado']:
+                                st.markdown(f"⚠️ **{r['equipo']}** - Encontrado pero sin datos")
+                            else:
+                                st.markdown(f"❌ **{r['equipo']}** - No encontrado")
+                                
+                except Exception as e:
+                    st.error(f"Error: {str(e)[:100]}")
         
         st.markdown("---")
         st.markdown("### ➕ Agregar / Actualizar Equipo (Manual)")
