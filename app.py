@@ -326,36 +326,38 @@ else:
                         # Buscar todos
                         results = run_robot_batch(equipos)
                         
-                        # Resumen por fuente
+                        # Resumen
                         exitos = [r for r in results if r['exito']]
+                        sin_stats = [r for r in exitos if r.get('sin_estadisticas')]
+                        con_stats = [r for r in exitos if not r.get('sin_estadisticas')]
                         no_encontrados = [r for r in results if not r['encontrado']]
                         
-                        # Contar por fuente
-                        fuente_stats = {}
-                        for r in exitos:
-                            src = r.get('fuentes_probadas', ['?'])[-1]
-                            fuente_stats[src] = fuente_stats.get(src, 0) + 1
-                        
+                        # Estadisticas reales vs estimados
                         st.success(f"✅ **{len(exitos)} equipos encontrados** de {len(equipos)}")
                         
-                        # Mostrar por fuente
-                        if fuente_stats:
-                            fuentes_texto = ", ".join([f"**{k}**: {v}" for k, v in fuente_stats.items()])
-                            st.info(f"Fuentes: {fuentes_texto}")
-                        
+                        if con_stats:
+                            st.markdown(f"📊 **{len(con_stats)} con estadísticas reales**")
+                        if sin_stats:
+                            st.markdown(f"📋 **{len(sin_stats)} con datos estimados** (sin estadísticas disponibles)")
                         if no_encontrados:
-                            st.warning(f"❌ {len(no_encontrados)} equipos NO encontrados")
+                            st.warning(f"❌ **{len(no_encontrados)} NO encontrados**")
                             with st.expander("Ver equipos no encontrados"):
                                 for r in no_encontrados:
                                     st.markdown(f"- {r['equipo']}")
                         
-                        # Mostrar encontrados
-                        if exitos:
-                            with st.expander("Ver equipos encontrados"):
-                                for r in exitos:
+                        # Mostrar equipos con stats
+                        if con_stats:
+                            with st.expander(f"📊 Ver {len(con_stats)} equipos con estadísticas reales"):
+                                for r in con_stats:
                                     src = r.get('fuentes_probadas', ['?'])[-1]
-                                    src_emoji = {"FD": "📊", "SW": "🌐", "TSDB": "🔍"}.get(src, "❓")
+                                    src_emoji = {"FD": "📊", "SW": "🌐"}.get(src, "❓")
                                     st.markdown(f"{src_emoji} **{r.get('equipo_real', r['equipo'])}** ({r.get('liga', 'N/A')}) - λL:{r['lambda_local']} λV:{r['lambda_visitante']}")
+                        
+                        # Mostrar equipos sin stats (estimados)
+                        if sin_stats:
+                            with st.expander(f"📋 Ver {len(sin_stats)} equipos con datos estimados"):
+                                for r in sin_stats:
+                                    st.markdown(f"⚠️ **{r.get('equipo_real', r['equipo'])}** ({r.get('liga', 'N/A')}) - λL:{r['lambda_local']} λV:{r['lambda_visitante']} *(estimado)*")
                                 
                 except Exception as e:
                     st.error(f"Error: {str(e)[:100]}")
