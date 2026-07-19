@@ -1,14 +1,13 @@
 """
 Scorpion Elite - Robot Extractor de Estadisticas
 ================================================
-Scraping de ultimos 5 partidos por equipo
+Scraping desde FBref
 """
 
 import requests
 from bs4 import BeautifulSoup
 import re
 import time
-import json
 from supabase import create_client
 from typing import Dict, List, Optional
 
@@ -18,148 +17,149 @@ SUPABASE_URL = "https://jjtifureeygvygxtpuku.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqdGlmdXJlZXlndnlneHRwdWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTI2NDcsImV4cCI6MjA5OTg4ODY0N30.6f8dgLmHx9x9W-5X2Ld31rPkeZ6HJGSeGgx3oq9XSRA"
 
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-    'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9',
     'Accept-Encoding': 'gzip, deflate, br',
     'Connection': 'keep-alive',
 }
 
-BASE_URL_FLASHSCORE = "https://www.flashscore.com.ar"
-BASE_URL_SOCCERWAY = "https://pt.soccerway.com"
+BASE_URL = "https://fbref.com"
 
 
-def search_team_flashscore(team_name: str) -> Optional[str]:
-    """Busca un equipo en Flashscore y retorna su URL."""
+def search_team_fbref(team_name: str) -> Optional[str]:
+    """Busca un equipo en FBref y retorna su URL."""
     try:
-        search_url = f"{BASE_URL_FLASHSCORE}/buscar/?q={requests.utils.quote(team_name)}"
-        response = requests.get(search_url, headers=HEADERS, timeout=10)
-        
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
-            links = soup.find_all('a', href=True)
-            for link in links:
-                href = str(link.get('href', ''))
-                if '/equipo/' in href:
-                    return href
-    except Exception as e:
-        print(f"Error Flashscore: {e}")
-    return None
-
-
-def search_team_soccerway(team_name: str) -> Optional[str]:
-    """Busca un equipo en Soccerway y retorna su URL."""
-    try:
-        search_url = f"{BASE_URL_SOCCERWAY}/search/?q={requests.utils.quote(team_name)}"
-        response = requests.get(search_url, headers=HEADERS, timeout=10)
-        
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
-            links = soup.find_all('a', href=True)
-            for link in links:
-                href = str(link.get('href', ''))
-                if '/teams/' in href:
-                    return href
-    except Exception as e:
-        print(f"Error Soccerway: {e}")
-    return None
-
-
-def get_last_5_matches_soccerway(team_url: str) -> List[Dict]:
-    """Obtiene los ultimos 5 partidos desde Soccerway."""
-    matches = []
-    try:
-        url = BASE_URL_SOCCERWAY + team_url if team_url.startswith('/') else team_url
-        response = requests.get(url, headers=HEADERS, timeout=15)
+        search_url = f"{BASE_URL}/en/search/search/?q={requests.utils.quote(team_name)}"
+        response = requests.get(search_url, headers=HEADERS, timeout=15)
         
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             
-            # Buscar tabla de partidos recientes
-            tables = soup.find_all('table')
-            for table in tables:
-                rows = table.find_all('tr')
-                for row in rows:
-                    cells = row.find_all('td')
-                    if len(cells) >= 3:
-                        # Buscar fecha, equipos y marcador
-                        date_text = cells[0].get_text(strip=True) if cells else ""
-                        team1 = cells[1].get_text(strip=True) if len(cells) > 1 else ""
-                        team2 = cells[2].get_text(strip=True) if len(cells) > 2 else ""
-                        
-                        # Buscar marcador
-                        score_text = ""
-                        for cell in cells:
-                            text = cell.get_text(strip=True)
-                            if re.search(r'\d+-\d+', text):
-                                score_text = text
-                                break
-                        
-                        if team1 and team2:
-                            score_match = re.search(r'(\d+)\s*[-–]\s*(\d+)', score_text)
-                            if score_match:
-                                matches.append({
-                                    'local': team1,
-                                    'visitante': team2,
-                                    'goles_local': int(score_match.group(1)),
-                                    'goles_visitante': int(score_match.group(2))
-                                })
+            # Buscar en resultados de busqueda
+            results = soup.find_all('a', href=re.compile(r'/en/squads/'))
+            
+            for result in results[:3]:  # Probar los primeros 3
+                href = result.get('href', '')
+                name = result.get_text(strip=True)
                 
-                if len(matches) >= 5:
-                    break
-                    
+                if team_name.lower() in name.lower() or name.lower() in team_name.lower():
+                    return href
+            
+            # Retornar el primero si hay resultados
+            if results:
+                return results[0].get('href')
+                
     except Exception as e:
-        print(f"Error obteniendo partidos: {e}")
+        print(f"Error FBref: {e}")
     
-    return matches[:5]
+    return None
 
 
-def calculate_averages(matches: List[Dict], is_local: bool) -> Optional[Dict]:
-    """Calcula promedios de los ultimos 5 partidos. Retorna None si no hay datos."""
-    if not matches:
-        return None
-    
-    valid_matches = [m for m in matches if isinstance(m, dict) and 'goles_local' in m]
-    if not valid_matches:
-        return None
-    
-    total = len(valid_matches)
-    
-    if is_local:
-        goles_favor = sum(m.get('goles_local', 0) for m in valid_matches)
-        goles_contra = sum(m.get('goles_visitante', 0) for m in valid_matches)
-    else:
-        goles_favor = sum(m.get('goles_visitante', 0) for m in valid_matches)
-        goles_contra = sum(m.get('goles_local', 0) for m in valid_matches)
-    
-    return {
-        'prom_goles_favor': round(goles_favor / total, 2),
-        'prom_goles_contra': round(goles_contra / total, 2)
-    }
-
-
-def update_team_in_supabase(team_name: str, stats_local: Dict, stats_away: Dict):
-    """Actualiza las estadisticas del equipo en Supabase."""
-    client = create_client(SUPABASE_URL, SUPABASE_KEY)
-    
-    lambda_local = round(stats_local.get('prom_goles_favor', 1.3) * 1.1, 2)
-    lambda_visitante = round(stats_away.get('prom_goles_favor', 1.1) * 0.85, 2)
-    
-    data = {
-        'equipo': team_name,
-        'partidos_jugados': 5,
-        'goles_favor': int(stats_local.get('prom_goles_favor', 0) * 5),
-        'goles_contra': int(stats_local.get('prom_goles_contra', 0) * 5),
-        'lambda_local': lambda_local,
-        'lambda_visitante': lambda_visitante,
-    }
-    
+def get_team_stats_fbref(team_url: str) -> Optional[Dict]:
+    """Obtiene estadisticas del equipo desde FBref."""
     try:
-        client.table('estadisticas_equipos').upsert(data, on_conflict='equipo').execute()
-        return True
+        url = BASE_URL + team_url if team_url.startswith('/') else team_url
+        response = requests.get(url, headers=HEADERS, timeout=15)
+        
+        if response.status_code != 200:
+            return None
+        
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        stats = {}
+        
+        # Buscar la tabla de estadisticas generales (Resumen)
+        tables = soup.find_all('table', id=re.compile(r'stats|shooting|passing|defensive'))
+        
+        for table in tables:
+            # Intentar encontrar filas con datos
+            rows = table.find_all('tr')
+            
+            for row in rows:
+                # Skip header rows
+                if 'thead' in str(row) or row.find('th'):
+                    continue
+                
+                cells = row.find_all('td')
+                if not cells:
+                    continue
+                
+                # Primera celda es el nombre del equipo
+                if cells and len(cells) > 1:
+                    # Buscar estadisticas de goles/disparo
+                    for i, cell in enumerate(cells[:20]):
+                        text = cell.get_text(strip=True)
+                        
+                        # Goles
+                        if text.isdigit() and 'goles' not in stats:
+                            stats['goles'] = int(text)
+                        
+                        # Disparos
+                        if 'Sh' in cell.get('data-stat', ''):
+                            try:
+                                stats['disparos'] = float(text)
+                            except:
+                                pass
+                        
+                        # Disparos a puerta
+                        if 'SoT' in cell.get('data-stat', ''):
+                            try:
+                                stats['disparos_puerta'] = float(text)
+                            except:
+                                pass
+                        
+                        # xG (expected goals)
+                        if 'xg' in cell.get('data-stat', '').lower():
+                            try:
+                                stats['xg'] = float(text)
+                            except:
+                                pass
+                
+                break  # Solo primera fila de datos
+        
+        # Alternativa: buscar en el texto de la pagina
+        if not stats:
+            page_text = soup.get_text()
+            
+            # Buscar patrones numericos para estadisticas
+            # GF = Goals For, GA = Goals Against
+            gf_match = re.search(r'GF\s+(\d+)', page_text)
+            ga_match = re.search(r'GA\s+(\d+)', page_text)
+            
+            if gf_match:
+                stats['goles'] = int(gf_match.group(1))
+            if ga_match:
+                stats['goles_contra'] = int(ga_match.group(1))
+        
+        return stats if stats else None
+        
     except Exception as e:
-        print(f"Error guardando {team_name}: {e}")
-        return False
+        print(f"Error obteniendo stats: {e}")
+        return None
+
+
+def calculate_lambda_from_stats(stats: Dict, is_local: bool = True) -> float:
+    """Calcula lambda desde estadisticas de FBref."""
+    if not stats:
+        return None
+    
+    # Usar xG si esta disponible, sino goles
+    xg = stats.get('xg')
+    goles = stats.get('goles')
+    
+    if xg and xg > 0:
+        value = xg
+    elif goles and goles > 0:
+        value = goles
+    else:
+        return None
+    
+    # Ajustar por local/visitante
+    if is_local:
+        return round(value * 1.1, 2)
+    else:
+        return round(value * 0.85, 2)
 
 
 def run_robot_for_team(team_name: str) -> Dict:
@@ -169,45 +169,56 @@ def run_robot_for_team(team_name: str) -> Dict:
     result = {
         'equipo': team_name,
         'encontrado': False,
-        'partidos': 0,
-        'exito': False
+        'exito': False,
+        'lambda_local': None,
+        'lambda_visitante': None
     }
     
-    # Intentar buscar en Soccerway primero (mas estable)
-    team_url = search_team_soccerway(team_name)
-    
-    if not team_url:
-        # Intentar Flashscore
-        team_url = search_team_flashscore(team_name)
+    # 1. Buscar equipo
+    team_url = search_team_fbref(team_name)
     
     if not team_url:
         print(f"  ❌ Equipo no encontrado: {team_name}")
         return result
     
     result['encontrado'] = True
-    print(f"  ✓ URL encontrada: {team_url}")
+    print(f"  ✓ URL: {team_url[:50]}...")
     
-    # Obtener partidos
-    matches = get_last_5_matches_soccerway(team_url)
-    result['partidos'] = len(matches)
+    # 2. Obtener estadisticas
+    stats = get_team_stats_fbref(team_url)
     
-    # Calcular promedios
-    stats_local = calculate_averages(matches, is_local=True)
-    stats_away = calculate_averages(matches, is_local=False)
-    
-    # Solo guardar si tiene DATOS REALES
-    if stats_local is None or stats_away is None:
-        print(f"  ⚠️ Sin datos reales - NO se guarda")
+    if not stats:
+        print(f"  ⚠️ Sin estadisticas disponibles")
         return result
     
-    print(f"  📊 Lambda local: {stats_local['prom_goles_favor']:.2f}")
+    print(f"  📊 Stats: {stats}")
     
-    # Guardar
-    if update_team_in_supabase(team_name, stats_local, stats_away):
+    # 3. Calcular lambdas
+    lambda_local = calculate_lambda_from_stats(stats, is_local=True)
+    lambda_visitante = calculate_lambda_from_stats(stats, is_local=False)
+    
+    if not lambda_local or not lambda_visitante:
+        print(f"  ⚠️ No se pudo calcular lambda")
+        return result
+    
+    result['lambda_local'] = lambda_local
+    result['lambda_visitante'] = lambda_visitante
+    
+    # 4. Guardar en Supabase
+    client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    data = {
+        'equipo': team_name,
+        'lambda_local': lambda_local,
+        'lambda_visitante': lambda_visitante,
+        'partidos_jugados': 10
+    }
+    
+    try:
+        client.table('estadisticas_equipos').upsert(data, on_conflict='equipo').execute()
         result['exito'] = True
-        print(f"  ✅ Guardado en Supabase")
-    else:
-        print(f"  ❌ Error guardando")
+        print(f"  ✅ Guardado - λ_local={lambda_local}, λ_away={lambda_visitante}")
+    except Exception as e:
+        print(f"  ❌ Error guardando: {e}")
     
     return result
 
@@ -222,6 +233,12 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
         results.append(result)
         
         if i < len(team_names) - 1:
-            time.sleep(2)
+            time.sleep(1.5)  # Pausa para no saturar
     
     return results
+
+
+# Prueba rapida
+if __name__ == "__main__":
+    result = run_robot_for_team("Barcelona")
+    print(result)
