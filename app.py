@@ -203,7 +203,7 @@ else:
         if home_team:
             try:
                 client = create_client(SUPABASE_URL, SUPABASE_KEY)
-                resp = client.table('estadisticas_equipos').select('lambda_local').ilike('equipo', f'%{home_team}%').execute()
+                resp = client.table('equipos_stats').select('lambda_local').ilike('equipo', f'%{home_team}%').execute()
                 if resp.data and resp.data[0].get('lambda_local', 0) > 0:
                     lambda_local = resp.data[0].get('lambda_local')
                     equipo_local_ok = True
@@ -216,7 +216,7 @@ else:
         if away_team:
             try:
                 client = create_client(SUPABASE_URL, SUPABASE_KEY)
-                resp = client.table('estadisticas_equipos').select('lambda_visitante').ilike('equipo', f'%{away_team}%').execute()
+                resp = client.table('equipos_stats').select('lambda_visitante').ilike('equipo', f'%{away_team}%').execute()
                 if resp.data and resp.data[0].get('lambda_visitante', 0) > 0:
                     lambda_visitante = resp.data[0].get('lambda_visitante')
                     equipo_visitante_ok = True
@@ -416,7 +416,7 @@ else:
                 }
                 
                 try:
-                    client.table('estadisticas_equipos').upsert(data, on_conflict='equipo,temporada').execute()
+                    client.table('equipos_stats').upsert(data, on_conflict='equipo,temporada').execute()
                     st.success(f"✅ {equipo} guardado exitosamente")
                 except Exception as e:
                     st.error(f"Error: {str(e)[:50]}")
@@ -432,7 +432,7 @@ else:
             
             try:
                 # Buscar por nombre
-                response = client.table('estadisticas_equipos').select('*').ilike('equipo', f'%{equipo_buscar}%').execute()
+                response = client.table('equipos_stats').select('*').ilike('equipo', f'%{equipo_buscar}%').execute()
                 
                 if response.data:
                     st.markdown(f"**{len(response.data)} resultado(s) encontrado(s)**")
@@ -454,7 +454,7 @@ else:
                             
                             # Botón eliminar
                             if st.button(f"🗑️ Eliminar {eq['equipo']}", key=f"del_{eq['id']}"):
-                                client.table('estadisticas_equipos').delete().eq('id', eq['id']).execute()
+                                client.table('equipos_stats').delete().eq('id', eq['id']).execute()
                                 st.success("✅ Eliminado")
                                 st.rerun()
                 else:
@@ -469,7 +469,7 @@ else:
         if st.button("📜 Ver Todos los Equipos", use_container_width=True):
             client = create_client(SUPABASE_URL, SUPABASE_KEY)
             try:
-                response = client.table('estadisticas_equipos').select('*').order('equipo').execute()
+                response = client.table('equipos_stats').select('*').order('equipo').execute()
                 
                 if response.data:
                     df_stats = pd.DataFrame(response.data)
