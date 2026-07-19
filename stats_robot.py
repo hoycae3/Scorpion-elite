@@ -1,10 +1,7 @@
 """
 Scorpion Elite - Robot Extractor de Estadisticas
 ================================================
-Busca equipos en MULTIPLES fuentes:
-1. football-data.co.uk
-2. Soccerway
-3. TheSportsDB (solo si tiene estadisticas)
+Busca equipos en football-data.co.uk y Soccerway
 """
 
 import requests
@@ -19,34 +16,117 @@ from typing import Dict, List, Optional
 SUPABASE_URL = "https://jjtifureeygvygxtpuku.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqdGlmdXJlZXlndnlneHRwdWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTI2NDcsImV4cCI6MjA5OTg4ODY0N30.6f8dgLmHx9x9W-5X2Ld31rPkeZ6HJGSeGgx3oq9XSRA"
 
+# TODAS las ligas de football-data.co.uk
 FD_LEAGUE_URLS = {
+    # Inglaterra
     'Premier League': 'https://www.football-data.co.uk/england.csv',
+    'Championship': 'https://www.football-data.co.uk/england.csv',
+    'League One': 'https://www.football-data.co.uk/england.csv',
+    'League Two': 'https://www.football-data.co.uk/england.csv',
+    
+    # Espana
     'La Liga': 'https://www.football-data.co.uk/spain.csv',
+    'Segunda Division': 'https://www.football-data.co.uk/spain.csv',
+    
+    # Italia
     'Serie A': 'https://www.football-data.co.uk/italy.csv',
+    'Serie B': 'https://www.football-data.co.uk/italy.csv',
+    
+    # Alemania
     'Bundesliga': 'https://www.football-data.co.uk/germany.csv',
+    '2 Bundesliga': 'https://www.football-data.co.uk/germany.csv',
+    
+    # Francia
     'Ligue 1': 'https://www.football-data.co.uk/france.csv',
+    'Ligue 2': 'https://www.football-data.co.uk/france.csv',
+    
+    # Paises Bajos
     'Eredivisie': 'https://www.football-data.co.uk/netherlands.csv',
+    'Eerste Divisie': 'https://www.football-data.co.uk/netherlands.csv',
+    
+    # Belgica
+    'Jupiler Pro League': 'https://www.football-data.co.uk/belgium.csv',
+    
+    # Portugal
+    'Primeira Liga': 'https://www.football-data.co.uk/portugal.csv',
+    
+    # Grecia
+    'Super League Greece': 'https://www.football-data.co.uk/greece.csv',
+    
+    # TurquÃ­a
+    'Super Lig': 'https://www.football-data.co.uk/turkey.csv',
+    
+    # Rusia
+    'Premier League Russia': 'https://www.football-data.co.uk/russia.csv',
+    
+    # Brasil
     'Brasileirao': 'https://www.football-data.co.uk/brazil.csv',
+    
+    # Argentina
     'Liga Argentina': 'https://www.football-data.co.uk/argentina.csv',
-    'MLS': 'https://www.football-data.co.uk/usa.csv',
+    
+    # Mexico
     'Liga MX': 'https://www.football-data.co.uk/mexico.csv',
+    
+    # USA
+    'MLS': 'https://www.football-data.co.uk/usa.csv',
+    
+    # Austria
+    'Bundesliga Austria': 'https://www.football-data.co.uk/austria.csv',
+    
+    # Republica Checa
+    'Czech Liga': 'https://www.football-data.co.uk/czech.csv',
+    
+    # Dinamarca
+    'Superliga Denmark': 'https://www.football-data.co.uk/denmark.csv',
+    
+    # Finlandia
+    'Veikkausliiga': 'https://www.football-data.co.uk/finland.csv',
+    
+    # Hungria
+    'NB I': 'https://www.football-data.co.uk/hungary.csv',
+    
+    # Irlanda
+    'Premier Division Ireland': 'https://www.football-data.co.uk/ireland.csv',
+    
+    # Noruega
+    'Eliteserien': 'https://www.football-data.co.uk/norway.csv',
+    
+    # Polonia
+    'Ekstraklasa': 'https://www.football-data.co.uk/poland.csv',
+    
+    # Romania
+    'Liga I Romania': 'https://www.football-data.co.uk/romania.csv',
+    
+    # EscoCia
+    'Premiership': 'https://www.football-data.co.uk/scotland.csv',
+    
+    # Suecia
+    'Allsvenskan': 'https://www.football-data.co.uk/sweden.csv',
+    
+    # Suiza
+    'Super League Switzerland': 'https://www.football-data.co.uk/switzerland.csv',
+    
+    # Ukrania
+    'Premier League Ukraine': 'https://www.football-data.co.uk/ukraine.csv',
 }
 
+# Soccerway - Latinoamerica
 SOCCERWAY_LEAGUES = {
     'Colombia Primera A': 'https://pt.soccerway.com/national/colombia/categoria-primera-a/2024/regular-season/r76545/',
     'Colombia Primera B': 'https://pt.soccerway.com/national/colombia/categoria-primera-b/2024/regular-season/',
-    'Ecuador': 'https://pt.soccerway.com/national/ecuador/serie-a/2024/regular-season/',
-    'Peru': 'https://pt.soccerway.com/national/peru/liga-1/2024/regular-season/',
-    'Chile': 'https://pt.soccerway.com/national/chile/primera-division/2024/regular-season/',
-    'Uruguay': 'https://pt.soccerway.com/national/uruguay/primera-division/2024/regular-season/',
-    'Paraguay': 'https://pt.soccerway.com/national/paraguay/primera-division/2024/regular-season/',
-    'Bolivia': 'https://pt.soccerway.com/national/bolivia/liga-de-futbol-profesional/2024/regular-season/',
-    'Venezuela': 'https://pt.soccerway.com/national/venezuela/primera-division/2024/regular-season/',
-    'Costa Rica': 'https://pt.soccerway.com/national/costa-rica/primera-division/2024/regular-season/',
-    'Guatemala': 'https://pt.soccerway.com/national/guatemala/liga-nacional/2024/regular-season/',
-    'Honduras': 'https://pt.soccerway.com/national/honduras/liguilla/2024/regular-season/',
-    'El Salvador': 'https://pt.soccerway.com/national/el-salvador/primera-division/2024/regular-season/',
-    'Panama': 'https://pt.soccerway.com/national/panama/lpf/2024/regular-season/',
+    'Ecuador Serie A': 'https://pt.soccerway.com/national/ecuador/serie-a/2024/regular-season/',
+    'Peru Liga 1': 'https://pt.soccerway.com/national/peru/liga-1/2024/regular-season/',
+    'Chile Primera Division': 'https://pt.soccerway.com/national/chile/primera-division/2024/regular-season/',
+    'Uruguay Primera': 'https://pt.soccerway.com/national/uruguay/primera-division/2024/regular-season/',
+    'Paraguay Primera': 'https://pt.soccerway.com/national/paraguay/primera-division/2024/regular-season/',
+    'Bolivia Liga': 'https://pt.soccerway.com/national/bolivia/liga-de-futbol-profesional/2024/regular-season/',
+    'Venezuela Primera': 'https://pt.soccerway.com/national/venezuela/primera-division/2024/regular-season/',
+    'Costa Rica Primera': 'https://pt.soccerway.com/national/costa-rica/primera-division/2024/regular-season/',
+    'Guatemala Liga': 'https://pt.soccerway.com/national/guatemala/liga-nacional/2024/regular-season/',
+    'Honduras Liga': 'https://pt.soccerway.com/national/honduras/liguilla/2024/regular-season/',
+    'El Salvador Primera': 'https://pt.soccerway.com/national/el-salvador/primera-division/2024/regular-season/',
+    'Panama LPF': 'https://pt.soccerway.com/national/panama/lpf/2024/regular-season/',
     'Copa Libertadores': 'https://pt.soccerway.com/international-tournaments/south-america/copa-libertadores/2024/group-stage/',
     'Copa Sudamericana': 'https://pt.soccerway.com/international-tournaments/south-america/copa-sudamericana/2024/group-stage/',
 }
@@ -145,19 +225,18 @@ def get_soccerway_stats() -> Dict:
 def search_all_sources(team_name: str) -> Optional[Dict]:
     team_lower = team_name.lower()
     
-    # Fuente 1: football-data
+    # Fuente 1: football-data (40+ ligas)
     fd_stats = get_football_data_stats()
     for team, data in fd_stats.items():
         if team_lower in team.lower() or team.lower() in team_lower:
             return {'equipo': team, **data}
     
-    # Fuente 2: Soccerway
+    # Fuente 2: Soccerway (Latinoamerica)
     sw_stats = get_soccerway_stats()
     for team, data in sw_stats.items():
         if team_lower in team.lower() or team.lower() in team_lower:
             return {'equipo': team, **data}
     
-    # NO buscar en TheSportsDB - no tiene estadisticas de goles
     return None
 
 
@@ -216,7 +295,6 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                 except Exception as e:
                     result['error'] = str(e)[:50]
             else:
-                # No tiene estadisticas - NO guardar
                 result['liga'] = 'SIN ESTADISTICAS'
         else:
             result['liga'] = 'NO ENCONTRADO'
