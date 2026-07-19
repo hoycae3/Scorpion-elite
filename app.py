@@ -298,44 +298,44 @@ else:
     elif st.session_state.page == "Estadisticas":
         st.markdown('<h1 class="title">📈 Estadísticas</h1>', unsafe_allow_html=True)
         
-        # Sección: Robot FBref
-        st.markdown("### 🤖 Actualizar Estadísticas (FBref)")
-        st.info("Busca automáticamente estadísticas de tus equipos en FBref. Extrae xG, goles y calcula los lambdas.")
+        # Sección: Robot football-data
+        st.markdown("### 🤖 Actualizar Estadísticas")
+        st.info("Extrae estadísticas de football-data.co.uk. Selecciona las ligas que quieres actualizar.")
         
-        if st.button("🔄 Actualizar desde FBref", type="primary", use_container_width=True):
+        # Selector de ligas
+        opciones_ligas = [
+            "Premier League (Inglaterra)",
+            "La Liga (España)",
+            "Bundesliga (Alemania)",
+            "Serie A (Italia)",
+            "Ligue 1 (Francia)",
+            "Brasileirao (Brasil)",
+        ]
+        
+        liga_seleccionada = st.selectbox("Selecciona una liga:", opciones_ligas)
+        
+        # Mapear a ключ для robot
+        liga_key = {
+            "Premier League (Inglaterra)": "premier",
+            "La Liga (España)": "la liga",
+            "Bundesliga (Alemania)": "bundesliga",
+            "Serie A (Italia)": "serie a",
+            "Ligue 1 (Francia)": "ligue 1",
+            "Brasileirao (Brasil)": "brasileirao",
+        }.get(liga_seleccionada, "premier")
+        
+        if st.button("🔄 Actualizar Liga", type="primary", use_container_width=True):
             with st.spinner("Extrayendo estadísticas..."):
-                client = create_client(SUPABASE_URL, SUPABASE_KEY)
                 try:
-                    response = client.table('partidos').select('equipo_local, equipo_visitante').execute()
+                    results = run_robot_for_league(liga_key)
                     
-                    if not response.data:
-                        st.warning("⚠️ No hay partidos guardados. Sube un archivo Excel primero.")
-                    else:
-                        equipos_set = set()
-                        for p in response.data:
-                            if p.get('equipo_local'):
-                                equipos_set.add(p['equipo_local'])
-                            if p.get('equipo_visitante'):
-                                equipos_set.add(p['equipo_visitante'])
-                        
-                        equipos = sorted(list(equipos_set))
-                        st.info(f"📊 {len(equipos)} equipos - procesando...")
-                        
-                        results = run_robot_batch(equipos)
-                        
-                        exitos = sum(1 for r in results if r['exito'])
-                        encontrados = sum(1 for r in results if r['encontrado'])
-                        
-                        st.success(f"✅ {exitos}/{encontrados} equipos actualizados")
-                        
+                    if results:
+                        st.success(f"✅ {len(results)} equipos actualizados de {liga_seleccionada}")
                         for r in results:
-                            if r['exito']:
-                                st.markdown(f"✅ **{r['equipo']}** - λL:{r['lambda_local']} λV:{r['lambda_visitante']}")
-                            elif r['encontrado']:
-                                st.markdown(f"⚠️ **{r['equipo']}** - Sin datos en FBref")
-                            else:
-                                st.markdown(f"❌ **{r['equipo']}** - No encontrado")
-                                
+                            st.markdown(f"✅ **{r['equipo']}**")
+                    else:
+                        st.warning("⚠️ No se pudieron obtener datos. Intenta otra liga.")
+                        
                 except Exception as e:
                     st.error(f"Error: {str(e)[:100]}")
         
