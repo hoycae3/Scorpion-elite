@@ -298,51 +298,76 @@ else:
     elif st.session_state.page == "Estadisticas":
         st.markdown('<h1 class="title">📈 Estadísticas</h1>', unsafe_allow_html=True)
         
-        # Botón robot
-        st.markdown("### 🤖 Actualizar Estadísticas Automáticamente")
-        st.info("El robot buscará los últimos 5 partidos de cada equipo en Flashscore y extraerá: goles, córners, tarjetas, remates y atajadas.")
+        # Sección: Cargar desde partidos guardados
+        st.markdown("### 📋 Cargar Equipos desde Partidos")
+        st.info("Carga automáticamente los equipos que subiste en el Excel para agregarlos manualmente.")
         
-        if st.button("🔄 Actualizar Estadísticas de la Semana", type="primary", use_container_width=True):
-            with st.spinner("Ejecutando robot... esto puede tardar unos minutos"):
-                # Obtener equipos de los partidos guardados en Supabase
-                client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        if st.button("📥 Cargar Equipos del Excel", use_container_width=True):
+            client = create_client(SUPABASE_URL, SUPABASE_KEY)
+            try:
+                response = client.table('partidos').select('equipo_local, equipo_visitante').execute()
                 
-                try:
-                    # Obtener todos los partidos
-                    response = client.table('partidos').select('equipo_local, equipo_visitante').execute()
+                if not response.data:
+                    st.warning("⚠️ No hay partidos guardados. Sube un archivo Excel primero.")
+                else:
+                    # Extraer equipos únicos
+                    equipos_set = set()
+                    for p in response.data:
+                        if p.get('equipo_local'):
+                            equipos_set.add(p['equipo_local'])
+                        if p.get('equipo_visitante'):
+                            equipos_set.add(p['equipo_visitante'])
                     
-                    if not response.data:
-                        st.warning("⚠️ No hay partidos guardados. Sube un archivo Excel primero.")
-                    else:
-                        # Extraer equipos únicos
-                        equipos_set = set()
-                        for p in response.data:
-                            if p.get('equipo_local'):
-                                equipos_set.add(p['equipo_local'])
-                            if p.get('equipo_visitante'):
-                                equipos_set.add(p['equipo_visitante'])
-                        
-                        equipos = sorted(list(equipos_set))
-                        st.info(f"📊 {len(equipos)} equipos encontrados en tus partidos")
-                        
-                        # Ejecutar robot para cada equipo
-                        results = run_robot_batch(equipos)
-                        
-                        exitos = sum(1 for r in results if r['exito'])
-                        
-                        st.success(f"✅ Proceso completado: {exitos}/{len(equipos)} equipos actualizados")
-                        
-                        # Mostrar resumen
-                        for r in results:
-                            if r['exito']:
-                                st.markdown(f"✅ **{r['equipo']}** - {r['partidos']} partidos - Guardado")
-                            elif r['encontrado']:
-                                st.markdown(f"⚠️ **{r['equipo']}** - Encontrado pero sin datos")
-                            else:
-                                st.markdown(f"❌ **{r['equipo']}** - No encontrado")
-                                
-                except Exception as e:
-                    st.error(f"Error: {str(e)[:100]}")
+                    equipos = sorted(list(equipos_set))
+                    st.session_state.equipos_para_agregar = equipos
+                    st.success(f"📊 {len(equipos)} equipos cargados")
+                    
+            except Exception as e:
+                st.error(f"Error: {str(e)[:100]}")
+        
+        # Si hay equipos cargados, mostrarlos para agregar
+        if 'equipos_para_agregar' in st.session_state and st.session_state.equipos_para_agregar:
+            st.markdown("---")
+            st.markdown("### ➕ Agregar Estadísticas")
+            
+            equipos = st.session_state.equipos_para_agregar
+            
+            # Seleccionar equipo
+            equipo_seleccionado = st.selectbox("Selecciona un equipo:", [""] + equipos)
+            
+            if equipo_seleccionado:
+                # Formulario rápido
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    lambda_local = st.number_input("Lambda Local", min_value=0.1, max_value=5.0, value=1.5, step=0.1)
+                with col2:
+                    lambda_visitante = st.number_input("Lambda Visitante", min_value=0.1, max_value=5.0, value=1.2, step=0.1)
+                with col3:
+                    st.markdown("")  # Espacio
+                    st.markdown("")  # Espacio
+                    if st.button("💾 Guardar", use_container_width=True):
+                        client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                        data = {
+                            'equipo': equipo_seleccionado,
+                            'lambda_local': lambda_local,
+                            'lambda_visitante': lambda_visitante,
+                            'partidos_jugados': 5
+                        }
+                        try:
+                            client.table('estadisticas_equipos').upsert(data, on_conflict='equipo').execute()
+                            st.success(f"✅ {equipo_seleccionado} guardado")
+                            # Remover de la lista
+                            st.session_state.equipos_para_agregar.remove(equipo_seleccionado)
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error: {str(e)[:50]}")
+            
+            # Mostrar equipos pendientes
+            if len(equipos) > 1:
+                st.markdown(f"**Pendientes:** {len(st.session_state.equipos_para_agregar)} equipos")
+                with st.expander("Ver lista de pendientes"):
+                    for eq in st.session_state.equipos_para_agregar:
+                        st.markdown(f"- {eq}")
         
         st.markdown("---")
         st.markdown("### ➕ Agregar / Actualizar Equipo (Manual)")
