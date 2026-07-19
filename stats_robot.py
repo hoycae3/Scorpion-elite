@@ -655,7 +655,7 @@ def run_robot_batch_v2(team_names: List[str], leagues: List[str] = None) -> List
                     'promedio_amarillas': result.get('amarillas_avg'),
                     'promedio_tiros': result.get('tiros_avg'),
                 }
-                client.table('equipos_stas').upsert(supa_data, on_conflict='equipo,temporada').execute()
+                client.table('equipos_stats').upsert(supa_data, on_conflict='equipo,temporada').execute()
             except Exception as e:
                 logger.error(f"Error guardando {team}: {e}")
         
