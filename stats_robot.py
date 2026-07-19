@@ -4,7 +4,7 @@ Scorpion Elite - Robot Extractor de Estadisticas
 Busca equipos en MULTIPLES fuentes:
 1. football-data.co.uk
 2. Soccerway
-3. TheSportsDB
+3. TheSportsDB (solo si tiene estadisticas)
 """
 
 import requests
@@ -142,42 +142,22 @@ def get_soccerway_stats() -> Dict:
     return all_stats
 
 
-def search_thesportsdb(team_name: str) -> Optional[Dict]:
-    try:
-        url = f"https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t={team_name.replace(' ', '+')}"
-        r = requests.get(url, timeout=10)
-        if r.status_code == 200:
-            data = r.json()
-            if data.get('teams'):
-                team_data = data['teams'][0]
-                return {
-                    'equipo': team_data.get('strTeam'),
-                    'liga': team_data.get('strLeague', 'N/A'),
-                    'source': 'TSDB'
-                }
-    except:
-        pass
-    return None
-
-
 def search_all_sources(team_name: str) -> Optional[Dict]:
     team_lower = team_name.lower()
+    
+    # Fuente 1: football-data
     fd_stats = get_football_data_stats()
     for team, data in fd_stats.items():
         if team_lower in team.lower() or team.lower() in team_lower:
             return {'equipo': team, **data}
+    
+    # Fuente 2: Soccerway
     sw_stats = get_soccerway_stats()
     for team, data in sw_stats.items():
         if team_lower in team.lower() or team.lower() in team_lower:
             return {'equipo': team, **data}
-    tsdb = search_thesportsdb(team_name)
-    if tsdb:
-        return {
-            'equipo': tsdb['equipo'],
-            'gf': 0, 'ga': 0, 'home': 0, 'away': 0,
-            'source': 'TSDB',
-            'league': tsdb.get('liga', 'N/A')
-        }
+    
+    # NO buscar en TheSportsDB - no tiene estadisticas de goles
     return None
 
 
@@ -198,8 +178,7 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
             'exito': False,
             'fuentes_probadas': [],
             'lambda_local': None,
-            'lambda_visitante': None,
-            'sin_estadisticas': False
+            'lambda_visitante': None
         }
         
         data = search_all_sources(team)
@@ -217,36 +196,33 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
             if total > 0 and gf > 0:
                 lambda_local = round((gf / total) * 1.1, 2)
                 lambda_visitante = round((gf / total) * 0.85, 2)
+                
+                result['lambda_local'] = lambda_local
+                result['lambda_visitante'] = lambda_visitante
+                
+                try:
+                    supa_data = {
+                        'equipo': data.get('equipo', team),
+                        'liga': data.get('league', 'N/A'),
+                        'partidos_jugados': total,
+                        'goles_favor': gf,
+                        'goles_contra': data.get('ga', 0),
+                        'lambda_local': lambda_local,
+                        'lambda_visitante': lambda_visitante,
+                    }
+                    client.table('estadisticas_equipos').upsert(supa_data, on_conflict='equipo').execute()
+                    result['exito'] = True
+                    result['equipo_real'] = data.get('equipo', team)
+                except Exception as e:
+                    result['error'] = str(e)[:50]
             else:
-                result['sin_estadisticas'] = True
-                lambda_local = 1.5
-                lambda_visitante = 1.2
-            
-            result['lambda_local'] = lambda_local
-            result['lambda_visitante'] = lambda_visitante
-            
-            try:
-                supa_data = {
-                    'equipo': data.get('equipo', team),
-                    'liga': data.get('league', 'N/A'),
-                    'partidos_jugados': total if total > 0 else 0,
-                    'goles_favor': gf if gf > 0 else 0,
-                    'goles_contra': data.get('ga', 0) if data.get('ga', 0) else 0,
-                    'lambda_local': lambda_local,
-                    'lambda_visitante': lambda_visitante,
-                }
-                client.table('estadisticas_equipos').upsert(supa_data, on_conflict='equipo').execute()
-                result['exito'] = True
-                result['equipo_real'] = data.get('equipo', team)
-            except Exception as e:
-                result['error'] = str(e)[:50]
+                # No tiene estadisticas - NO guardar
+                result['liga'] = 'SIN ESTADISTICAS'
         else:
             result['liga'] = 'NO ENCONTRADO'
         
         results.append(result)
         status = "OK" if result['exito'] else "X"
-        source = result['fuentes_probadas'][-1] if result['fuentes_probadas'] else "NO"
-        sin_stats = " (sin datos)" if result.get('sin_estadisticas') else ""
-        print(f"[{status}] {team} -> {source} ({result.get('liga', 'NO')}){sin_stats}")
+        print(f"[{status}] {team} -> {result.get('liga', 'NO')}")
     
     return results
