@@ -326,22 +326,36 @@ else:
                         # Buscar todos
                         results = run_robot_batch(equipos)
                         
-                        # Resumen
+                        # Resumen por fuente
                         exitos = [r for r in results if r['exito']]
                         no_encontrados = [r for r in results if not r['encontrado']]
                         
+                        # Contar por fuente
+                        fuente_stats = {}
+                        for r in exitos:
+                            src = r.get('fuentes_probadas', ['?'])[-1]
+                            fuente_stats[src] = fuente_stats.get(src, 0) + 1
+                        
                         st.success(f"✅ **{len(exitos)} equipos encontrados** de {len(equipos)}")
                         
+                        # Mostrar por fuente
+                        if fuente_stats:
+                            fuentes_texto = ", ".join([f"**{k}**: {v}" for k, v in fuente_stats.items()])
+                            st.info(f"Fuentes: {fuentes_texto}")
+                        
                         if no_encontrados:
-                            st.warning(f"❌ {len(no_encontrados)} equipos NO encontrados:")
-                            for r in no_encontrados:
-                                st.markdown(f"- {r['equipo']}")
+                            st.warning(f"❌ {len(no_encontrados)} equipos NO encontrados")
+                            with st.expander("Ver equipos no encontrados"):
+                                for r in no_encontrados:
+                                    st.markdown(f"- {r['equipo']}")
                         
                         # Mostrar encontrados
                         if exitos:
                             with st.expander("Ver equipos encontrados"):
                                 for r in exitos:
-                                    st.markdown(f"✅ **{r.get('equipo_real', r['equipo'])}** ({r.get('liga', 'N/A')}) - λL:{r['lambda_local']} λV:{r['lambda_visitante']}")
+                                    src = r.get('fuentes_probadas', ['?'])[-1]
+                                    src_emoji = {"FD": "📊", "SW": "🌐", "TSDB": "🔍"}.get(src, "❓")
+                                    st.markdown(f"{src_emoji} **{r.get('equipo_real', r['equipo'])}** ({r.get('liga', 'N/A')}) - λL:{r['lambda_local']} λV:{r['lambda_visitante']}")
                                 
                 except Exception as e:
                     st.error(f"Error: {str(e)[:100]}")

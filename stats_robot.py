@@ -1,7 +1,10 @@
 """
 Scorpion Elite - Robot Extractor de Estadisticas
 ================================================
-Busca automaticamente equipos del Excel en football-data y Soccerway
+Busca equipos en MULTIPLES fuentes:
+1. football-data.co.uk
+2. Soccerway
+3. TheSportsDB
 """
 
 import requests
@@ -16,7 +19,7 @@ from typing import Dict, List, Optional
 SUPABASE_URL = "https://jjtifureeygvygxtpuku.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqdGlmdXJlZXlndnlneHRwdWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTI2NDcsImV4cCI6MjA5OTg4ODY0N30.6f8dgLmHx9x9W-5X2Ld31rPkeZ6HJGSeGgx3oq9XSRA"
 
-# Fuentes de datos
+# ===== FUENTE 1: football-data.co.uk =====
 FD_LEAGUE_URLS = {
     'Premier League': 'https://www.football-data.co.uk/england.csv',
     'La Liga': 'https://www.football-data.co.uk/spain.csv',
@@ -30,6 +33,7 @@ FD_LEAGUE_URLS = {
     'Liga MX': 'https://www.football-data.co.uk/mexico.csv',
 }
 
+# ===== FUENTE 2: Soccerway =====
 SOCCERWAY_LEAGUES = {
     'Colombia Primera A': 'https://pt.soccerway.com/national/colombia/categoria-primera-a/2024/regular-season/r76545/',
     'Colombia Primera B': 'https://pt.soccerway.com/national/colombia/categoria-primera-b/2024/regular-season/',
@@ -51,13 +55,13 @@ SOCCERWAY_LEAGUES = {
 
 HEADERS = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
 
-# Cache de estadisticas
+# Cache
 _fd_cache = None
 _sw_cache = None
 
 
 def get_football_data_stats() -> Dict:
-    """Obtiene estadisticas de football-data.co.uk"""
+    """Fuente 1: football-data.co.uk"""
     global _fd_cache
     if _fd_cache is not None:
         return _fd_cache
@@ -95,7 +99,7 @@ def get_football_data_stats() -> Dict:
 
 
 def scrape_soccerway(url: str) -> Dict:
-    """Extrae equipos de una pagina de Soccerway"""
+    """Extrae equipos de Soccerway"""
     stats = {}
     try:
         r = requests.get(url, headers=HEADERS, timeout=10)
@@ -128,7 +132,7 @@ def scrape_soccerway(url: str) -> Dict:
 
 
 def get_soccerway_stats() -> Dict:
-    """Obtiene estadisticas de Soccerway"""
+    """Fuente 2: Soccerway"""
     global _sw_cache
     if _sw_cache is not None:
         return _sw_cache
@@ -147,34 +151,62 @@ def get_soccerway_stats() -> Dict:
     return all_stats
 
 
-def clear_cache():
-    """Limpia el cache"""
-    global _fd_cache, _sw_cache
-    _fd_cache = None
-    _sw_cache = None
+def search_thesportsdb(team_name: str) -> Optional[Dict]:
+    """Fuente 3: TheSportsDB - busca equipo"""
+    try:
+        url = f"https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t={team_name.replace(' ', '+')}"
+        r = requests.get(url, timeout=10)
+        if r.status_code == 200:
+            data = r.json()
+            if data.get('teams'):
+                team_data = data['teams'][0]
+                return {
+                    'equipo': team_data.get('strTeam'),
+                    'liga': team_data.get('strLeague', 'N/A'),
+                    'source': 'TSDB'
+                }
+    except:
+        pass
+    return None
 
 
-def search_team(team_name: str) -> Optional[Dict]:
-    """Busca un equipo en ambas fuentes"""
+def search_all_sources(team_name: str) -> Optional[Dict]:
+    """Busca en TODAS las fuentes"""
     team_lower = team_name.lower()
     
-    # Primero football-data
+    # Fuente 1: football-data
     fd_stats = get_football_data_stats()
     for team, data in fd_stats.items():
         if team_lower in team.lower() or team.lower() in team_lower:
             return {'equipo': team, **data}
     
-    # Luego Soccerway
+    # Fuente 2: Soccerway
     sw_stats = get_soccerway_stats()
     for team, data in sw_stats.items():
         if team_lower in team.lower() or team.lower() in team_lower:
             return {'equipo': team, **data}
     
+    # Fuente 3: TheSportsDB
+    tsdb = search_thesportsdb(team_name)
+    if tsdb:
+        return {
+            'equipo': tsdb['equipo'],
+            'gf': 0, 'ga': 0, 'home': 0, 'away': 0,
+            'source': 'TSDB',
+            'league': tsdb.get('liga', 'N/A')
+        }
+    
     return None
 
 
+def clear_cache():
+    global _fd_cache, _sw_cache
+    _fd_cache = None
+    _sw_cache = None
+
+
 def run_robot_batch(team_names: List[str]) -> List[Dict]:
-    """Busca multiples equipos y guarda en Supabase"""
+    """Busca multiples equipos en todas las fuentes"""
     results = []
     client = create_client(SUPABASE_URL, SUPABASE_KEY)
     
@@ -183,31 +215,31 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
             'equipo': team,
             'encontrado': False,
             'exito': False,
+            'fuentes_probadas': [],
             'lambda_local': None,
             'lambda_visitante': None
         }
         
-        # Buscar en fuentes
-        data = search_team(team)
+        # Buscar en todas las fuentes
+        data = search_all_sources(team)
         
         if data:
             result['encontrado'] = True
+            result['fuentes_probadas'].append(data.get('source', '?'))
             result['liga'] = data.get('league', 'N/A')
-            result['source'] = data.get('source', 'N/A')
             
             # Calcular lambdas
             home_games = data.get('home', 0)
             away_games = data.get('away', 0)
+            total = home_games + away_games
             gf = data.get('gf', 0)
             
-            if home_games > 0:
-                lambda_local = round((gf / (home_games + away_games)) * 1.1, 2) if (home_games + away_games) > 0 else 1.5
+            if total > 0 and gf > 0:
+                lambda_local = round((gf / total) * 1.1, 2)
+                lambda_visitante = round((gf / total) * 0.85, 2)
             else:
+                # TheSportsDB no tiene estadisticas de goles
                 lambda_local = 1.5
-                
-            if away_games > 0:
-                lambda_visitante = round((gf / (home_games + away_games)) * 0.85, 2) if (home_games + away_games) > 0 else 1.2
-            else:
                 lambda_visitante = 1.2
             
             result['lambda_local'] = lambda_local
@@ -218,7 +250,7 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                 supa_data = {
                     'equipo': data.get('equipo', team),
                     'liga': data.get('league', 'N/A'),
-                    'partidos_jugados': home_games + away_games,
+                    'partidos_jugados': total,
                     'goles_favor': gf,
                     'goles_contra': data.get('ga', 0),
                     'lambda_local': lambda_local,
@@ -231,6 +263,8 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                 result['error'] = str(e)[:50]
         
         results.append(result)
-        print(f"{'OK' if result['exito'] else 'X'}: {team} -> {result.get('liga', 'NO ENCONTRADO')}")
+        status = "OK" if result['exito'] else "X"
+        source = result['fuentes_probadas'][-1] if result['fuentes_probadas'] else "NO"
+        print(f"[{status}] {team} -> {source} ({result.get('liga', 'NO ENCONTRADO')})")
     
     return results
