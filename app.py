@@ -304,15 +304,51 @@ else:
         
         # Selector rápido de equipos populares
         equipos_populares = [
-            "", "Arsenal", "Aston Villa", "Bournemouth", "Brentford", "Brighton", 
+            "",
+            # Inglaterra
+            "Arsenal", "Aston Villa", "Bournemouth", "Brentford", "Brighton", 
             "Burnley", "Chelsea", "Crystal Palace", "Everton", "Fulham", 
-            "Liverpool", "Luton", "Man City", "Man United", "Newcastle", 
-            "Nott'm Forest", "Sheffield Utd", "Tottenham", "West Ham", "Wolves",
-            "Barcelona", "Real Madrid", "Atletico Madrid", "Sevilla", "Valencia",
-            "Bayern Munich", "Dortmund", "RB Leipzig", "Bayer Leverkusen", "Eintracht",
-            "Inter", "Milan", "Juventus", "Napoli", "Roma", "Lazio",
-            "PSG", "Marseille", "Monaco", "Lyon", "Lille",
-            "Palmeiras", "Flamengo", "Fluminense", "Corinthians", "São Paulo"
+            "Liverpool", "Man City", "Man United", "Newcastle", "Nott'm Forest", 
+            "Sheffield Utd", "Southampton", "Tottenham", "West Ham", "Wolves",
+            # Espana
+            "Alaves", "Almeria", "Athletic Bilbao", "Atletico Madrid", "Barcelona", 
+            "Cadiz", "Celta Vigo", "Girona", "Granada", "Getafe", 
+            "Las Palmas", "Mallorca", "Osasuna", "Rayo Vallecano", "Real Betis", 
+            "Real Madrid", "Real Sociedad", "Sevilla", "Valencia", "Villarreal",
+            # Alemania
+            "Augsburg", "Bayer Leverkusen", "Bayern Munich", "Bochum", "Dortmund", 
+            "Eintracht Frankfurt", "Freiburg", "Heidenheim", "Hoffenheim", "Koln", 
+            "Leverkusen", "Mainz", "Monchengladbach", "RB Leipzig", "Stuttgart", 
+            "Union Berlin", "Werder Bremen", "Wolfsburg",
+            # Italia
+            "Atalanta", "Bologna", "Cagliari", "Empoli", "Fiorentina", "Frosinone",
+            "Genoa", "Inter", "Juventus", "Lazio", "Lecce", "Milan", "Monza",
+            "Napoli", "Roma", "Salernitana", "Sassuolo", "Torino", "Udinese", "Verona",
+            # Francia
+            "Brest", "Clermont", "Le Havre", "Lens", "Lille", "Lyon", "Marseille",
+            "Metz", "Monaco", "Montpellier", "Nantes", "Nice", "PSG", "Reims",
+            "Rennes", "Strasbourg", "Toulouse",
+            # Brasil
+            "Athletico Paranaense", "Atletico Goianiense", "Bahia", "Botafogo", 
+            "Corinthians", "Cruzeiro", "Cuiaba", "Flamengo", "Fluminense", 
+            "Fortaleza", "Goias", "Gremio", "Internacional", "Palmeiras", 
+            "Santos", "Sao Paulo", "Sport", "Vasco",
+            # Argentina
+            "Argentinos Juniors", " Arsenal", "Atletico Tucuman", "Banfield", 
+            "Barracas Central", "Belgrano", "Boca Juniors", "Central Cordoba",
+            "Colon", "Defensa y Justicia", "Estudiantes", "Gimnasia", "Godoy Cruz",
+            "Huracan", "Independiente", "Instituto", "Lanus", "Newells Old Boys",
+            "Patronato", "Racing Club", "River Plate", "Rosario Central", 
+            "San Lorenzo", "Sarmiento", "Talleres", "Tigre", "Union", "Velez",
+            # Paises Bajos
+            "Ajax", "AZ", "Feyenoord", "PSV", "Twente", "Utrecht",
+            # Belgica
+            " Anderlecht", "Club Brugge", "Standard Liege",
+            # Portugal
+            "Benfica", "Porto", "Sporting CP",
+            # Mexico
+            "America", "Atlas", "Cruz Azul", "Chivas", "Leon", "Monterrey", 
+            "Necaxa", "Pumas", "Queretaro", "Santos", "Tigres", "Tijuana", "Toluca",
         ]
         
         equipo_seleccionado = st.selectbox("O selecciona de la lista:", equipos_populares)

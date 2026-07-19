@@ -14,18 +14,111 @@ from typing import Dict, List, Optional
 SUPABASE_URL = "https://jjtifureeygvygxtpuku.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqdGlmdXJlZXlndnlneHRwdWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTI2NDcsImV4cCI6MjA5OTg4ODY0N30.6f8dgLmHx9x9W-5X2Ld31rPkeZ6HJGSeGgx3oq9XSRA"
 
+# TODAS las ligas disponibles en football-data.co.uk
 LEAGUE_URLS = {
-    'premier': 'https://www.football-data.co.uk/england.csv',
-    'la liga': 'https://www.football-data.co.uk/spain.csv',
-    'bundesliga': 'https://www.football-data.co.uk/germany.csv',
-    'serie a': 'https://www.football-data.co.uk/italy.csv',
-    'ligue 1': 'https://www.football-data.co.uk/france.csv',
-    'brasileirao': 'https://www.football-data.co.uk/brazil.csv',
+    # Inglaterra
+    'Premier League': 'https://www.football-data.co.uk/england.csv',
+    'Championship': 'https://www.football-data.co.uk/england.csv',
+    'League One': 'https://www.football-data.co.uk/england.csv',
+    
+    # Espana
+    'La Liga': 'https://www.football-data.co.uk/spain.csv',
+    'Segunda Division': 'https://www.football-data.co.uk/spain.csv',
+    
+    # Italia
+    'Serie A': 'https://www.football-data.co.uk/italy.csv',
+    'Serie B': 'https://www.football-data.co.uk/italy.csv',
+    
+    # Alemania
+    'Bundesliga': 'https://www.football-data.co.uk/germany.csv',
+    '2 Bundesliga': 'https://www.football-data.co.uk/germany.csv',
+    
+    # Francia
+    'Ligue 1': 'https://www.football-data.co.uk/france.csv',
+    'Ligue 2': 'https://www.football-data.co.uk/france.csv',
+    
+    # Paises Bajos
+    'Eredivisie': 'https://www.football-data.co.uk/netherlands.csv',
+    'Eerste Divisie': 'https://www.football-data.co.uk/netherlands.csv',
+    
+    # Belgica
+    'Jupiler Pro League': 'https://www.football-data.co.uk/belgium.csv',
+    
+    # Portugal
+    'Primeira Liga': 'https://www.football-data.co.uk/portugal.csv',
+    
+    # Grecia
+    'Super League': 'https://www.football-data.co.uk/greece.csv',
+    
+    # TurquÃ­a
+    'Super Lig': 'https://www.football-data.co.uk/turkey.csv',
+    
+    # Rusia
+    'Premier League Rusia': 'https://www.football-data.co.uk/russia.csv',
+    
+    # Brasil
+    'Brasileirao': 'https://www.football-data.co.uk/brazil.csv',
+    
+    # Argentina
+    'Liga Argentina': 'https://www.football-data.co.uk/argentina.csv',
+    
+    # Mexico
+    'Liga MX': 'https://www.football-data.co.uk/mexico.csv',
+    
+    # USA
+    'MLS': 'https://www.football-data.co.uk/usa.csv',
+    
+    # Austria
+    'Bundesliga Austria': 'https://www.football-data.co.uk/austria.csv',
+    
+    # Republica Checa
+    'Czech Liga': 'https://www.football-data.co.uk/czech.csv',
+    
+    # Dinamarca
+    'Superliga': 'https://www.football-data.co.uk/denmark.csv',
+    
+    # Finlandia
+    'Veikkausliiga': 'https://www.football-data.co.uk/finland.csv',
+    
+    # Hungria
+    'NB I': 'https://www.football-data.co.uk/hungary.csv',
+    
+    # Irlanda
+    'Premier Division': 'https://www.football-data.co.uk/ireland.csv',
+    
+    # Noruega
+    'Eliteserien': 'https://www.football-data.co.uk/norway.csv',
+    
+    # Polonia
+    'Ekstraklasa': 'https://www.football-data.co.uk/poland.csv',
+    
+    # Romania
+    'Liga I': 'https://www.football-data.co.uk/romania.csv',
+    
+    # EscoCia
+    'Premiership': 'https://www.football-data.co.uk/scotland.csv',
+    
+    # Suecia
+    'Allsvenskan': 'https://www.football-data.co.uk/sweden.csv',
+    
+    # Suiza
+    'Super League': 'https://www.football-data.co.uk/switzerland.csv',
+    
+    # Ukrania
+    'Premier League Ukrania': 'https://www.football-data.co.uk/ukraine.csv',
 }
+
+# Equipos en cache
+_cached_stats = None
 
 
 def get_all_stats() -> Dict:
-    """Obtiene estadisticas de TODAS las ligas."""
+    """Obtiene estadisticas de TODAS las ligas (cache)."""
+    global _cached_stats
+    
+    if _cached_stats is not None:
+        return _cached_stats
+    
     all_stats = {}
     
     for league, url in LEAGUE_URLS.items():
@@ -67,17 +160,23 @@ def get_all_stats() -> Dict:
             print(f"Error {league}: {e}")
             continue
     
+    _cached_stats = all_stats
     return all_stats
+
+
+def clear_cache():
+    """Limpia el cache de estadisticas."""
+    global _cached_stats
+    _cached_stats = None
 
 
 def search_team(team_name: str) -> Optional[Dict]:
     """Busca un equipo por nombre y retorna sus estadisticas."""
     
     all_stats = get_all_stats()
-    
-    # Buscar coincidencia parcial
     team_name_lower = team_name.lower()
     
+    # Buscar coincidencia parcial
     for team, data in all_stats.items():
         if team_name_lower in team.lower() or team.lower() in team_name_lower:
             return {
@@ -107,7 +206,6 @@ def run_robot_for_team(team_name: str) -> Dict:
     
     print(f"Buscando: {team_name}")
     
-    # Buscar en todas las ligas
     team_data = search_team(team_name)
     
     if not team_data:
@@ -115,7 +213,6 @@ def run_robot_for_team(team_name: str) -> Dict:
     
     print(f"Encontrado: {team_data['equipo']} ({team_data['liga']})")
     
-    # Calcular lambdas
     lambda_local = calculate_lambda(
         team_data['goles_favor'], 
         team_data['partidos_local'], 
@@ -127,7 +224,6 @@ def run_robot_for_team(team_name: str) -> Dict:
         False
     )
     
-    # Guardar en Supabase
     client = create_client(SUPABASE_URL, SUPABASE_KEY)
     
     data = {
