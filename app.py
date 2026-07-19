@@ -189,46 +189,60 @@ else:
         col1, col2 = st.columns(2)
         with col1:
             home_team = st.text_input("🏠 Equipo Local", placeholder="Ej: Barcelona")
-            # Buscar lambda desde Supabase
-            lambda_local = None
-            if home_team:
-                try:
-                    client = create_client(SUPABASE_URL, SUPABASE_KEY)
-                    resp = client.table('estadisticas_equipos').select('lambda_local').ilike('equipo', f'%{home_team}%').execute()
-                    if resp.data:
-                        lambda_local = resp.data[0].get('lambda_local', 1.5)
-                        st.info(f"📊 Lambda local encontrado: {lambda_local}")
-                except:
-                    pass
-            if lambda_local is None:
-                lambda_local = st.number_input("Lambda Local", min_value=0.1, max_value=5.0, value=1.5, step=0.1, key="lambda_h")
         
         with col2:
             away_team = st.text_input("✈️ Equipo Visitante", placeholder="Ej: Real Madrid")
-            # Buscar lambda desde Supabase
-            lambda_visitante = None
-            if away_team:
-                try:
-                    client = create_client(SUPABASE_URL, SUPABASE_KEY)
-                    resp = client.table('estadisticas_equipos').select('lambda_visitante').ilike('equipo', f'%{away_team}%').execute()
-                    if resp.data:
-                        lambda_visitante = resp.data[0].get('lambda_visitante', 1.2)
-                        st.info(f"📊 Lambda visitante encontrado: {lambda_visitante}")
-                except:
-                    pass
-            if lambda_visitante is None:
-                lambda_visitante = st.number_input("Lambda Visitante", min_value=0.1, max_value=5.0, value=1.2, step=0.1, key="lambda_v")
         
-        # Botón analizar
-        if st.button("🎯 ANALIZAR", type="primary", use_container_width=True):
-            if home_team and away_team:
+        # Validar que ambos equipos existan en Supabase
+        lambda_local = None
+        lambda_visitante = None
+        equipo_local_ok = False
+        equipo_visitante_ok = False
+        equipos_faltantes = []
+        
+        if home_team:
+            try:
+                client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                resp = client.table('estadisticas_equipos').select('lambda_local').ilike('equipo', f'%{home_team}%').execute()
+                if resp.data:
+                    lambda_local = resp.data[0].get('lambda_local')
+                    equipo_local_ok = True
+                    st.success(f"✅ {home_team} encontrado")
+                else:
+                    equipos_faltantes.append(home_team)
+            except:
+                equipos_faltantes.append(home_team)
+        
+        if away_team:
+            try:
+                client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                resp = client.table('estadisticas_equipos').select('lambda_visitante').ilike('equipo', f'%{away_team}%').execute()
+                if resp.data:
+                    lambda_visitante = resp.data[0].get('lambda_visitante')
+                    equipo_visitante_ok = True
+                    st.success(f"✅ {away_team} encontrado")
+                else:
+                    equipos_faltantes.append(away_team)
+            except:
+                equipos_faltantes.append(away_team)
+        
+        # Mostrar error si faltan equipos
+        if equipos_faltantes:
+            st.error(f"⚠️ Equipos sin estadísticas: {', '.join(set(equipos_faltantes))}")
+            st.info("📝 Ve a la pestaña 'Estadísticas' y ejecuta 'Actualizar Estadísticas de la Semana' para agregarlos.")
+        
+        # Botón analizar - solo si ambos equipos existen
+        analizar_disabled = not (equipo_local_ok and equipo_visitante_ok)
+        
+        if st.button("🎯 ANALIZAR", type="primary", use_container_width=True, disabled=analizar_disabled):
+            if home_team and away_team and lambda_local and lambda_visitante:
                 with st.spinner("Analizando..."):
                     result = calcular(lambda_local, lambda_visitante)
                     st.session_state.analysis_result = result
                     st.session_state.home = home_team
                     st.session_state.away = away_team
             else:
-                st.error("⚠️ Ingresa ambos equipos")
+                st.error("⚠️ Ambos equipos deben tener estadísticas. Ejecuta el robot primero.")
         
         # Mostrar resultados
         if 'analysis_result' in st.session_state:
