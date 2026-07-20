@@ -131,6 +131,16 @@ curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploy
 | 2026-07-20 | Completada extracción de datos reales en scrapers |
 | 2026-07-20 | Creados archivos de compatibilidad para elite.py (NO ELIMINAR) |
 | 2026-07-20 | Actualizado AGENTS.md con estado actual |
+| 2026-07-20 | Corregido formato de datos en run_robot_batch y scrape_team_fallback |
+| 2026-07-20 | Corregido import requests faltante en robot_extractor.py |
+
+## 🔴 Errores Corregidos (para referencia)
+
+| Error | Solución |
+|-------|----------|
+| `ModuleNotFoundError: 'stats_extractor'` | Creado archivo de compatibilidad `stats_extractor.py` |
+| `ModuleNotFoundError: 'bs4'` | Agregado `import requests` en robot_extractor.py |
+| Error "solicitudes" en botón Buscar Equipos | Corregido formato de datos en `run_robot_batch` y `scrape_team_fallback` |
 
 ---
 
