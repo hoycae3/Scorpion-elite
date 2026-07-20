@@ -396,33 +396,38 @@ else:
                         if equipos_con_stats:
                             st.info("💾 Guardando estadísticas en Supabase...")
                             guardados = 0
+                            errores = 0
                             for r in equipos_con_stats:
                                 try:
+                                    equipo_nombre = r.get('equipo_real', r['equipo'])
                                     data = {
-                                        'equipo': r.get('equipo_real', r['equipo']),
+                                        'equipo': equipo_nombre,
                                         'liga': r.get('liga', 'Desconocida'),
                                         'temporada': '2024-25',
-                                        'partidos_jugados': r.get('partidos_jugados', 0),
-                                        'goles_favor': r.get('goles_favor', 0),
-                                        'goles_contra': r.get('goles_contra', 0),
-                                        'lambda_local': r.get('lambda_local', 1.3),
-                                        'lambda_visitante': r.get('lambda_visitante', 1.1),
+                                        'partidos_jugados': r.get('partidos_jugados', 0) or 0,
+                                        'goles_favor': r.get('goles_favor', 0) or 0,
+                                        'goles_contra': r.get('goles_contra', 0) or 0,
+                                        'lambda_local': float(r.get('lambda_local', 1.3)) or 1.3,
+                                        'lambda_visitante': float(r.get('lambda_visitante', 1.1)) or 1.1,
                                     }
-                                    # Marcar fuente
-                                    src = r.get('fuentes_probadas', ['?'])[-1]
-                                    if src == 'FD':
-                                        data['source_fbdata'] = True
-                                    elif src == 'SW':
-                                        data['source_soccerway'] = True
-                                    elif src == 'LOCAL_DB':
-                                        data['source_fbref'] = True
                                     
-                                    client.table('equipos_stas').upsert(data, on_conflict='equipo,temporada').execute()
+                                    # Intentar upsert (actualizar si existe)
+                                    try:
+                                        client.table('equipos_stas').upsert(data).execute()
+                                    except:
+                                        # Si falla upsert, intentar insert directo
+                                        client.table('equipos_stas').insert(data).execute()
+                                    
                                     guardados += 1
+                                    st.info(f"✅ {equipo_nombre}")
                                 except Exception as e:
+                                    errores += 1
                                     logger.error(f"Error guardando {r.get('equipo')}: {e}")
                             
-                            st.success(f"✅ {guardados} estadísticas guardadas en Supabase")
+                            if guardados > 0:
+                                st.success(f"✅ {guardados} estadísticas guardadas en Supabase")
+                            if errores > 0:
+                                st.warning(f"⚠️ {errores} equipos no se pudieron guardar")
                                 
                 except Exception as e:
                     st.error(f"Error: {str(e)[:100]}")
@@ -491,22 +496,27 @@ else:
         
         # Botón para ver todos
         if st.button("📊 Ver Todos los Equipos", use_container_width=True):
-            client = create_client(SUPABASE_URL, SUPABASE_KEY)
-            try:
-                response = client.table('equipos_stas').select('*').order('equipo').execute()
-                
-                if response.data:
-                    st.success(f"✅ {len(response.data)} equipos con estadísticas")
+            with st.spinner("Cargando..."):
+                client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                try:
+                    st.info("Conectando a Supabase...")
+                    response = client.table('equipos_stas').select('equipo,liga,partidos_jugados,lambda_local,lambda_visitante,goles_favor,goles_contra').execute()
+                    st.info(f"Respuesta: {len(response.data)} registros")
                     
-                    # Crear DataFrame
-                    df = pd.DataFrame(response.data)
-                    df = df[['equipo', 'liga', 'partidos_jugados', 'lambda_local', 'lambda_visitante', 'goles_favor', 'goles_contra']]
-                    df.columns = ['Equipo', 'Liga', 'PJ', 'λ Local', 'λ Visitante', 'GF', 'GC']
-                    st.dataframe(df, use_container_width=True)
-                else:
-                    st.info("No hay equipos guardados. Sube un Excel y busca equipos primero.")
-            except Exception as e:
-                st.error(f"Error: {str(e)[:100]}")
+                    if response.data and len(response.data) > 0:
+                        st.success(f"✅ {len(response.data)} equipos con estadísticas")
+                        
+                        # Crear DataFrame
+                        df = pd.DataFrame(response.data)
+                        st.dataframe(df, use_container_width=True)
+                    else:
+                        st.warning("⚠️ No hay equipos guardados. Sube un Excel y busca equipos primero.")
+                except Exception as e:
+                    st.error(f"❌ Error al conectar: {str(e)}")
+                    st.info("Posibles causas:")
+                    st.info("1. ¿Ya buscaste equipos después de subir el Excel?")
+                    st.info("2. ¿La tabla 'equipos_stas' existe en Supabase?")
+                    st.info("3. ¿Hay conexión a internet?")
         
         st.markdown("---")
         st.markdown("### 🔍 Buscar Equipo Específico")
