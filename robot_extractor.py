@@ -4,7 +4,7 @@ Scorpion Elite - Robot Extractor Anti-Bloqueo
 Scraper robusto con técnicas antibloqueo para FBref.
 
 Características:
-- cloudcraper para evadir Cloudflare
+- cloudscraper para evadir Cloudflare
 - Headers realistas de Chrome
 - Throttling inteligente
 - Fallback a API proxy
@@ -44,10 +44,10 @@ CHROME_HEADERS = {
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def get_scraper():
-    """Obtiene cliente cloudcraper configurado."""
+    """Obtiene cliente cloudscraper configurado."""
     try:
-        import cloudcraper
-        scraper = cloudcraper.create_scraper(
+        import cloudscraper
+        scraper = cloudscraper.create_scraper(
             browser={
                 'browser': 'chrome',
                 'platform': 'windows',
@@ -57,7 +57,7 @@ def get_scraper():
         scraper.headers = CHROME_HEADERS.copy()
         return scraper
     except ImportError:
-        logger.warning("cloudcraper no instalado, usando requests básico")
+        logger.warning("cloudscraper no instalado, usando requests básico")
         import requests
         return requests.Session()
 
@@ -281,7 +281,7 @@ class RobotExtractor:
                         logger.warning(f"Proxy error: {response.status_code}")
                         return None
             
-            # Solicitud normal con cloudcraper
+            # Solicitud normal con cloudscraper
             scraper = self._get_scraper()
             response = scraper.get(url, timeout=30)
             
