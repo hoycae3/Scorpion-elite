@@ -19,5 +19,9 @@ COPY . .
 # Puerto de Streamlit
 EXPOSE 8501
 
+# Configurar Streamlit para evitar errores de inotify
+ENV STREAMLIT_SERVER_FILE_WATCHER_TYPE=none
+ENV STREAMLIT_SERVER_HEADLESS=true
+
 # Comando - elite.py
-CMD ["streamlit", "run", "elite.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true", "--server.fileWatcherType=none"]
+CMD ["streamlit", "run", "elite.py", "--server.port=8501", "--server.address=0.0.0.0"]
