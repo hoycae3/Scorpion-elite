@@ -40,6 +40,52 @@ CHROME_HEADERS = {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# football-data.co.uk (SIN CLOUDFLARE - Acceso directo)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+FD_LEAGUE_URLS = {
+    # Inglaterra
+    'Premier League': 'https://www.football-data.co.uk/england.csv',
+    'Championship': 'https://www.football-data.co.uk/england.csv',
+    'League One': 'https://www.football-data.co.uk/england.csv',
+    # España
+    'La Liga': 'https://www.football-data.co.uk/spain.csv',
+    'Segunda Division': 'https://www.football-data.co.uk/spain.csv',
+    # Italia
+    'Serie A': 'https://www.football-data.co.uk/italy.csv',
+    'Serie B': 'https://www.football-data.co.uk/italy.csv',
+    # Alemania
+    'Bundesliga': 'https://www.football-data.co.uk/germany.csv',
+    '2 Bundesliga': 'https://www.football-data.co.uk/germany.csv',
+    # Francia
+    'Ligue 1': 'https://www.football-data.co.uk/france.csv',
+    'Ligue 2': 'https://www.football-data.co.uk/france.csv',
+    # Portugal
+    'Primeira Liga': 'https://www.football-data.co.uk/portugal.csv',
+    # Holanda
+    'Eredivisie': 'https://www.football-data.co.uk/netherlands.csv',
+    # Belgica
+    'Jupiler Pro League': 'https://www.football-data.co.uk/belgium.csv',
+    # Grecia
+    'Super League Greece': 'https://www.football-data.co.uk/greece.csv',
+    # Escoci
+    'Scottish Premier League': 'https://www.football-data.co.uk/scotland.csv',
+    'Scottish League One': 'https://www.football-data.co.uk/scotland.csv',
+    # Turqua
+    'Super Lig': 'https://www.football-data.co.uk/turkey.csv',
+    # Rusia
+    'Premier League Russia': 'https://www.football-data.co.uk/russia.csv',
+    # Ukrania
+    'Premier League Ukraine': 'https://www.football-data.co.uk/ukraine.csv',
+    # Polonia
+    'Ekstraklasa': 'https://www.football-data.co.uk/poland.csv',
+    # Austria
+    'Bundesliga Austria': 'https://www.football-data.co.uk/austria.csv',
+    # Suiza
+    'Super League Switzerland': 'https://www.football-data.co.uk/switzerland.csv',
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # CLIENTE CLOUDSCRAPER
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -497,6 +543,147 @@ def run_robot_fbref(teams: List[str], use_proxy: bool = False, proxy_api_key: st
 # ═══════════════════════════════════════════════════════════════════════════════
 # PRUEBA
 # ═══════════════════════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# football-data.co.uk - DESCARGAR DATOS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_fd_cache = {}
+
+def get_football_data_stats() -> Dict:
+    """Descarga estadísticas de football-data.co.uk (acceso directo, sin Cloudflare)."""
+    global _fd_cache
+    if _fd_cache:
+        return _fd_cache
+    
+    import csv
+    from io import StringIO
+    import requests
+    
+    all_stats = {}
+    
+    logger.info(f"📥 Descargando datos de football-data.co.uk ({len(FD_LEAGUE_URLS)} ligas)...")
+    
+    for league, url in FD_LEAGUE_URLS.items():
+        try:
+            # football-data no tiene Cloudflare, delay pequeño
+            delay = random.uniform(1, 3)
+            time.sleep(delay)
+            
+            r = requests.get(url, timeout=15, headers=CHROME_HEADERS)
+            if r.status_code != 200:
+                continue
+            
+            reader = csv.DictReader(StringIO(r.text))
+            for row in reader:
+                home = row.get('HomeTeam', '').strip()
+                away = row.get('AwayTeam', '').strip()
+                fthg, ftag = row.get('FTHG'), row.get('FTAG')
+                
+                if not home or not fthg or not ftag:
+                    continue
+                
+                try:
+                    gh, ga = int(fthg), int(ftag)
+                except:
+                    continue
+                
+                # Guardar stats del equipo local
+                if home not in all_stats:
+                    all_stats[home] = {
+                        'equipo': home,
+                        'liga': league,
+                        'partidos': 0,
+                        'goles_favor': 0,
+                        'goles_contra': 0,
+                        'victorias': 0,
+                        'empates': 0,
+                        'derrotas': 0,
+                        'source': 'football-data.co.uk'
+                    }
+                all_stats[home]['partidos'] += 1
+                all_stats[home]['goles_favor'] += gh
+                all_stats[home]['goles_contra'] += ga
+                if gh > ga:
+                    all_stats[home]['victorias'] += 1
+                elif gh == ga:
+                    all_stats[home]['empates'] += 1
+                else:
+                    all_stats[home]['derrotas'] += 1
+                
+                # Guardar stats del equipo visitante
+                if away not in all_stats:
+                    all_stats[away] = {
+                        'equipo': away,
+                        'liga': league,
+                        'partidos': 0,
+                        'goles_favor': 0,
+                        'goles_contra': 0,
+                        'victorias': 0,
+                        'empates': 0,
+                        'derrotas': 0,
+                        'source': 'football-data.co.uk'
+                    }
+                all_stats[away]['partidos'] += 1
+                all_stats[away]['goles_favor'] += ga
+                all_stats[away]['goles_contra'] += gh
+                if ga > gh:
+                    all_stats[away]['victorias'] += 1
+                elif ga == gh:
+                    all_stats[away]['empates'] += 1
+                else:
+                    all_stats[away]['derrotas'] += 1
+                    
+            logger.info(f"   ✅ {league}: {len(reader)} partidos")
+            
+        except Exception as e:
+            logger.error(f"   ❌ Error en {league}: {e}")
+    
+    _fd_cache = all_stats
+    logger.info(f"📊 Total equipos cargados: {len(all_stats)}")
+    return all_stats
+
+
+def get_team_stats_from_football_data(team_name: str) -> Optional[Dict]:
+    """Busca estadísticas de un equipo específico."""
+    stats = get_football_data_stats()
+    
+    # Busqueda exacta primero
+    if team_name in stats:
+        return stats[team_name]
+    
+    # Busqueda parcial (ignorar acentos y mayusculas)
+    team_lower = team_name.lower().replace('á','a').replace('é','e').replace('í','i').replace('ó','o').replace('ú','u')
+    for equipo, data in stats.items():
+        eq_lower = equipo.lower().replace('á','a').replace('é','e').replace('í','i').replace('ó','o').replace('ú','u')
+        if team_lower in eq_lower or eq_lower in team_lower:
+            return data
+    
+    return None
+
+
+def run_football_data_batch(team_names: List[str]) -> List[Dict]:
+    """Procesa una lista de equipos y retorna sus estadísticas."""
+    results = []
+    
+    for team in team_names:
+        stats = get_team_stats_from_football_data(team)
+        if stats:
+            results.append({
+                'equipo': team,
+                'encontrado': True,
+                'stats': stats,
+                'source': 'football-data.co.uk'
+            })
+        else:
+            results.append({
+                'equipo': team,
+                'encontrado': False,
+                'source': 'football-data.co.uk'
+            })
+    
+    return results
+
 
 if __name__ == '__main__':
     # Prueba con algunos equipos
