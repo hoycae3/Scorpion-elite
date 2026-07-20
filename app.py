@@ -494,29 +494,21 @@ else:
         st.markdown("---")
         st.markdown("### 📋 Equipos con Estadísticas")
         
-        # Botón para ver todos
-        if st.button("📊 Ver Todos los Equipos", use_container_width=True):
-            with st.spinner("Cargando..."):
-                client = create_client(SUPABASE_URL, SUPABASE_KEY)
-                try:
-                    st.info("Conectando a Supabase...")
-                    response = client.table('equipos_stas').select('equipo,liga,partidos_jugados,lambda_local,lambda_visitante,goles_favor,goles_contra').execute()
-                    st.info(f"Respuesta: {len(response.data)} registros")
-                    
-                    if response.data and len(response.data) > 0:
-                        st.success(f"✅ {len(response.data)} equipos con estadísticas")
-                        
-                        # Crear DataFrame
-                        df = pd.DataFrame(response.data)
-                        st.dataframe(df, use_container_width=True)
-                    else:
-                        st.warning("⚠️ No hay equipos guardados. Sube un Excel y busca equipos primero.")
-                except Exception as e:
-                    st.error(f"❌ Error al conectar: {str(e)}")
-                    st.info("Posibles causas:")
-                    st.info("1. ¿Ya buscaste equipos después de subir el Excel?")
-                    st.info("2. ¿La tabla 'equipos_stas' existe en Supabase?")
-                    st.info("3. ¿Hay conexión a internet?")
+        # Mostrar tabla directamente
+        client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        try:
+            response = client.table('equipos_stas').select('equipo,liga,partidos_jugados,lambda_local,lambda_visitante,goles_favor,goles_contra').execute()
+            
+            if response.data and len(response.data) > 0:
+                st.success(f"✅ {len(response.data)} equipos con estadísticas guardadas")
+                
+                # Crear DataFrame
+                df = pd.DataFrame(response.data)
+                st.dataframe(df, use_container_width=True)
+            else:
+                st.info("📭 No hay equipos guardados. Sube un Excel y busca equipos primero.")
+        except Exception as e:
+            st.error(f"❌ Error al conectar: {str(e)}")
         
         st.markdown("---")
         st.markdown("### 🔍 Buscar Equipo Específico")
