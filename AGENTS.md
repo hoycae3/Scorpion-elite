@@ -26,14 +26,19 @@ Scorpion-elite/
 ├── backups/                # Backups de archivos eliminados
 │   ├── streamlit.py
 │   └── dash2026_backup.py
+├── stats_extractor.py     # ✅ Compatibilidad -> robot_extractor
+├── stats_robot.py          # ✅ Compatibilidad -> robot_extractor
+├── scrapers_fallback.py    # ✅ Compatibilidad -> robot_extractor
 └── .github/workflows/      # GitHub Actions
 ```
 
-**Archivos ELIMINADOS (funciones integradas en robot_extractor.py):**
-- stats_robot.py ❌
-- stats_extractor.py ❌
-- scrapers.py ❌
-- scrapers_fallback.py ❌
+**NOTA IMPORTANTE - ARCHIVOS DE COMPATIBILIDAD:**
+Estos archivos NO son duplicados. Son necesarios para que `elite.py` pueda importar las funciones:
+- `stats_extractor.py` → redirige a `robot_extractor.calculate_team_lambda`
+- `stats_robot.py` → redirige a `robot_extractor.run_robot_batch`
+- `scrapers_fallback.py` → redirige a `robot_extractor.scrape_team_fallback`
+
+**NO ELIMINAR estos archivos de compatibilidad** o elite.py dejará de funcionar.
 
 ---
 
@@ -124,6 +129,8 @@ curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploy
 | 2026-07-20 | Corregido nombre de tabla `estadisticas_equipos` → `equipos_stats` |
 | 2026-07-20 | Agregado cloudscraper a WhoScored y Soccerway |
 | 2026-07-20 | Completada extracción de datos reales en scrapers |
+| 2026-07-20 | Creados archivos de compatibilidad para elite.py (NO ELIMINAR) |
+| 2026-07-20 | Actualizado AGENTS.md con estado actual |
 
 ---
 
