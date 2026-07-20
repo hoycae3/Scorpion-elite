@@ -1254,28 +1254,92 @@ def calculate_team_lambda(goles_favor: int, goles_contra: int, partidos: int, is
 def run_robot_batch(team_names: List[str]) -> List[Dict]:
     """
     Función de compatibilidad para stats_robot.run_robot_batch
-    Procesa una lista de equipos y retorna estadísticas.
+    Procesa una lista de equipos y retorna estadísticas en formato compatible con elite.py.
     """
-    robot = SuperRobot()
-    return robot.run_batch(team_names)
+    results = []
+    
+    # Cargar datos de football-data primero
+    fd_stats = get_football_data_stats()
+    
+    for team_name in team_names:
+        # Buscar en football-data
+        fd_data = get_team_stats_from_football_data(team_name)
+        
+        if fd_data:
+            # Calcular lambdas
+            gf = fd_data.get('goles_favor', 0)
+            gc = fd_data.get('goles_contra', 0)
+            p = fd_data.get('partidos', 0)
+            
+            lambda_local = calculate_team_lambda(gf, gc, p, is_home=True)
+            lambda_visitante = calculate_team_lambda(gf, gc, p, is_home=False)
+            
+            result = {
+                'equipo': team_name,
+                'encontrado': True,
+                'exito': True,
+                'sin_estadisticas': False,
+                'equipo_real': fd_data.get('equipo', team_name),
+                'liga': fd_data.get('liga', ''),
+                'lambda_local': lambda_local,
+                'lambda_visitante': lambda_visitante,
+                'goles_favor': gf,
+                'goles_contra': gc,
+                'partidos_jugados': p,
+                'victorias': fd_data.get('victorias', 0),
+                'empates': fd_data.get('empates', 0),
+                'derrotas': fd_data.get('derrotas', 0),
+                'fuentes_probadas': ['football-data.co.uk'],
+            }
+        else:
+            result = {
+                'equipo': team_name,
+                'encontrado': False,
+                'exito': False,
+                'sin_estadisticas': True,
+                'fuentes_probadas': [],
+            }
+        
+        results.append(result)
+        
+        # Delay entre equipos para evitar bloqueos
+        time.sleep(random.uniform(1, 3))
+    
+    return results
 
 
 def scrape_team_fallback(team_name: str) -> Dict:
     """
     Función de compatibilidad para scrapers_fallback.scrape_team_fallback
-    Busca un equipo en todas las fuentes disponibles.
+    Busca un equipo en football-data.co.uk
     """
-    result = get_team_stats_from_football_data(team_name)
-    if result:
+    fd_data = get_team_stats_from_football_data(team_name)
+    
+    if fd_data:
+        # Calcular lambdas
+        gf = fd_data.get('goles_favor', 0)
+        gc = fd_data.get('goles_contra', 0)
+        p = fd_data.get('partidos', 0)
+        
         return {
             'equipo': team_name,
             'encontrado': True,
-            'stats': result,
+            'stats': {
+                'equipo': fd_data.get('equipo', team_name),
+                'liga': fd_data.get('liga', ''),
+                'partidos': p,
+                'goles_favor': gf,
+                'goles_contra': gc,
+                'lambda_local': calculate_team_lambda(gf, gc, p, is_home=True),
+                'lambda_visitante': calculate_team_lambda(gf, gc, p, is_home=False),
+            },
             'source': 'football-data.co.uk'
         }
+    
     return {
         'equipo': team_name,
         'encontrado': False,
+        'stats': {},
         'source': 'fallback'
     }
 
