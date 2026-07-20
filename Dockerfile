@@ -19,5 +19,5 @@ COPY . .
 # Puerto de Streamlit
 EXPOSE 8501
 
-# Comando - streamlit.py
-CMD ["streamlit", "run", "streamlit.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Comando - elite.py
+CMD ["streamlit", "run", "elite.py", "--server.port=8501", "--server.address=0.0.0.0"]
