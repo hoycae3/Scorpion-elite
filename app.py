@@ -390,6 +390,39 @@ else:
                             with st.expander(f"📋 Ver {len(sin_stats)} equipos con datos estimados"):
                                 for r in sin_stats:
                                     st.markdown(f"⚠️ **{r.get('equipo_real', r['equipo'])}** ({r.get('liga', 'N/A')}) - λL:{r['lambda_local']} λV:{r['lambda_visitante']} *(estimado)*")
+                        
+                        # Guardar estadísticas en Supabase
+                        equipos_con_stats = con_stats + sin_stats
+                        if equipos_con_stats:
+                            st.info("💾 Guardando estadísticas en Supabase...")
+                            guardados = 0
+                            for r in equipos_con_stats:
+                                try:
+                                    data = {
+                                        'equipo': r.get('equipo_real', r['equipo']),
+                                        'liga': r.get('liga', 'Desconocida'),
+                                        'temporada': '2024-25',
+                                        'partidos_jugados': r.get('partidos_jugados', 0),
+                                        'goles_favor': r.get('goles_favor', 0),
+                                        'goles_contra': r.get('goles_contra', 0),
+                                        'lambda_local': r.get('lambda_local', 1.3),
+                                        'lambda_visitante': r.get('lambda_visitante', 1.1),
+                                    }
+                                    # Marcar fuente
+                                    src = r.get('fuentes_probadas', ['?'])[-1]
+                                    if src == 'FD':
+                                        data['source_fbdata'] = True
+                                    elif src == 'SW':
+                                        data['source_soccerway'] = True
+                                    elif src == 'LOCAL_DB':
+                                        data['source_fbref'] = True
+                                    
+                                    client.table('equipos_stats').upsert(data, on_conflict='equipo,temporada').execute()
+                                    guardados += 1
+                                except Exception as e:
+                                    logger.error(f"Error guardando {r.get('equipo')}: {e}")
+                            
+                            st.success(f"✅ {guardados} estadísticas guardadas en Supabase")
                                 
                 except Exception as e:
                     st.error(f"Error: {str(e)[:100]}")
