@@ -285,8 +285,10 @@ else:
                                     guardados = 0
                                     errores = 0
                                     for _, row in df_partidos.iterrows():
+                                        # Incluir fecha en el fixture_id para que sea único
+                                        fecha_str = str(row['fecha']) if pd.notna(row['fecha']) else ''
                                         data = {
-                                            'fixture_id': abs(hash(f"{row['equipo_local']}{row['equipo_visitante']}")) % (10**10),
+                                            'fixture_id': abs(hash(f"{fecha_str}{row['equipo_local']}{row['equipo_visitante']}")) % (10**10),
                                             'fecha': row['fecha'],
                                             'hora': row['hora'],
                                             'liga': row['liga'],
