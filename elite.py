@@ -34,10 +34,14 @@ def init_db():
     c = get_conn()
     c.executescript("""
     CREATE TABLE IF NOT EXISTS usuarios (
-        cedula TEXT PRIMARY KEY, nombre TEXT, plan TEXT DEFAULT 'gratis',
-        fecha_inicio TEXT, dias INTEGER DEFAULT 36500, activo INTEGER DEFAULT 1,
-        es_admin INTEGER DEFAULT 0, pwd_hash TEXT,
-        consultas_hoy INTEGER DEFAULT 0, fecha_reset TEXT,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        password TEXT UNIQUE NOT NULL,
+        nombre TEXT,
+        plan TEXT DEFAULT 'gratis',
+        fecha_inicio TEXT,
+        dias INTEGER DEFAULT 36500,
+        activo INTEGER DEFAULT 1,
+        es_admin INTEGER DEFAULT 0,
         creado TEXT DEFAULT CURRENT_TIMESTAMP
     );
     CREATE TABLE IF NOT EXISTS picks (
@@ -47,54 +51,64 @@ def init_db():
         confianza REAL, rango TEXT, notas TEXT, plan_min TEXT DEFAULT 'gratis'
     );
     """)
+    # Crear admin si no existe
     h = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()
-    c.execute("INSERT OR IGNORE INTO usuarios (cedula,nombre,plan,fecha_inicio,dias,activo,es_admin,pwd_hash) VALUES (?,?,?,?,?,?,?,?)",
-              ("admin","Administrador","admin",get_hoy(),36500,1,1,h))
+    c.execute("INSERT OR IGNORE INTO usuarios (password,nombre,plan,fecha_inicio,dias,activo,es_admin) VALUES (?,?,?,?,?,?,?)",
+              (h,"Administrador","admin",get_hoy(),36500,1,1))
     c.commit(); c.close()
 
-def db_get(cedula):
+def db_get_by_password(pwd_hash):
     c = get_conn()
-    r = c.execute("SELECT * FROM usuarios WHERE cedula=?", (cedula,)).fetchone()
+    r = c.execute("SELECT * FROM usuarios WHERE password=?", (pwd_hash,)).fetchone()
+    c.close()
+    return dict(r) if r else None
+
+def db_get_by_id(user_id):
+    c = get_conn()
+    r = c.execute("SELECT * FROM usuarios WHERE id=?", (user_id,)).fetchone()
     c.close()
     return dict(r) if r else None
 
 def db_todos():
     c = get_conn()
-    r = c.execute("SELECT * FROM usuarios ORDER BY creado DESC").fetchall()
+    r = c.execute("SELECT * FROM usuarios ORDER BY id ASC").fetchall()
     c.close()
     return [dict(x) for x in r]
 
-def db_guardar_usuario(cedula, nombre, plan, dias, fi, activo=1):
+def db_crear_usuario(password, nombre, plan, dias):
+    """Crea un nuevo usuario con password"""
     c = get_conn()
-    c.execute("""INSERT OR REPLACE INTO usuarios
-        (cedula,nombre,plan,fecha_inicio,dias,activo,es_admin,pwd_hash,creado)
-        VALUES(?,?,?,?,?,?,
-        COALESCE((SELECT es_admin FROM usuarios WHERE cedula=?),0),
-        COALESCE((SELECT pwd_hash FROM usuarios WHERE cedula=?),NULL),
-        COALESCE((SELECT creado FROM usuarios WHERE cedula=?),CURRENT_TIMESTAMP))""",
-        (cedula, nombre, plan, str(fi), int(dias), int(activo), cedula, cedula, cedula))
+    pwd_hash = hashlib.sha256(password.encode()).hexdigest()
+    try:
+        c.execute("""INSERT INTO usuarios (password, nombre, plan, fecha_inicio, dias, activo)
+                      VALUES (?, ?, ?, ?, ?, 1)""",
+                  (pwd_hash, nombre, plan, get_hoy(), dias))
+        c.commit()
+        success = True
+    except sqlite3.IntegrityError:
+        success = False
+    c.close()
+    return success
+
+def db_eliminar_usuario(user_id):
+    """Elimina un usuario por ID"""
+    c = get_conn()
+    c.execute("DELETE FROM usuarios WHERE id=? AND es_admin=0", (user_id,))
+    c.commit()
+    affected = c.total_changes
+    c.close()
+    return affected > 0
+
+def db_actualizar_plan(user_id, plan, dias):
+    c = get_conn()
+    c.execute("UPDATE usuarios SET plan=?, dias=?, fecha_inicio=? WHERE id=?", 
+               (plan, dias, get_hoy(), user_id))
     c.commit(); c.close()
 
-def db_acceso(cedula):
-    u = db_get(cedula)
-    if not u: return False, "no_existe", 0
-    if not u["activo"]: return False, "inactivo", 0
-    if u["es_admin"]: return True, "admin", 99999
-    if u["plan"] == "gratis": return True, "gratis", 99999
-    inicio = date.fromisoformat(u["fecha_inicio"])
-    vence = inicio + timedelta(days=u["dias"])
-    if date.today() > vence: return False, "vencido", 0
-    return True, u["plan"], (vence - date.today()).days
-
-def db_login_admin(pwd):
-    u = db_get("admin")
-    return u and u.get("pwd_hash") == hashlib.sha256(pwd.encode()).hexdigest()
-
-def db_actualizar_plan(cedula, plan, dias):
-    c = get_conn()
-    c.execute("UPDATE usuarios SET plan=?, dias=?, fecha_inicio=? WHERE cedula=?", 
-               (plan, dias, get_hoy(), cedula))
-    c.commit(); c.close()
+def db_login(password):
+    """Verifica password y retorna usuario"""
+    pwd_hash = hashlib.sha256(password.encode()).hexdigest()
+    return db_get_by_password(pwd_hash)
 
 init_db()
 
@@ -141,10 +155,11 @@ if not st.session_state.logged:
             if not password.strip():
                 st.error("Ingresa la password")
             else:
-                if db_login_admin(password.strip()):
+                user = db_login(password.strip())
+                if user:
                     st.session_state.logged = True
-                    st.session_state.is_admin = True
-                    st.session_state.user_data = db_get("admin")
+                    st.session_state.is_admin = (user.get('es_admin') == 1)
+                    st.session_state.user_data = user
                     st.rerun()
                 else:
                     st.error("Password incorrecta")
@@ -176,6 +191,10 @@ else:
         
         if st.button("📈 Estadísticas", use_container_width=True, type="secondary" if st.session_state.page != "Estadisticas" else "primary"):
             st.session_state.page = "Estadisticas"
+            st.rerun()
+        
+        if st.button("🔑 Claves", use_container_width=True, type="secondary" if st.session_state.page != "Claves" else "primary"):
+            st.session_state.page = "Claves"
             st.rerun()
         
         st.markdown("---")
@@ -649,3 +668,79 @@ else:
                     st.info("No se encontraron equipos")
             except Exception as e:
                 st.error(f"Error: {str(e)[:50]}")
+
+    # Página: Gestión de Claves
+    elif st.session_state.page == "Claves":
+        st.markdown('<h1 class="title">🔑 Gestión de Claves</h1>', unsafe_allow_html=True)
+        
+        # Crear nueva clave
+        st.markdown("### ➕ Crear Nueva Clave de Acceso")
+        
+        with st.form("form_clave", clear_on_submit=True):
+            col_nom, col_plan = st.columns(2)
+            with col_nom:
+                nombre = st.text_input("Nombre / Cliente", placeholder="Ej: Juan, Carlos, Cliente1")
+            with col_plan:
+                plan = st.selectbox("Plan", ["gratis", "dia", "semana", "mes"])
+            
+            dias_opciones = {"gratis": 36500, "dia": 1, "semana": 7, "mes": 30}
+            dias = dias_opciones.get(plan, 30)
+            
+            nueva_clave = st.text_input("Nueva Clave", placeholder="Escribe la clave que quieres dar")
+            
+            if st.form_submit_button("🔑 Crear Clave", use_container_width=True):
+                if not nombre.strip():
+                    st.error("Ingresa un nombre")
+                elif not nueva_clave.strip():
+                    st.error("Ingresa una clave")
+                else:
+                    if db_crear_usuario(nueva_clave.strip(), nombre.strip(), plan, dias):
+                        st.success(f"✅ Clave '{nueva_clave}' creada para {nombre}")
+                        st.rerun()
+                    else:
+                        st.error("❌ Esta clave ya existe. Usa otra.")
+        
+        st.markdown("---")
+        st.markdown("### 📋 Claves Existentes")
+        
+        usuarios = db_todos()
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Total Claves", len(usuarios))
+        with col2:
+            st.metric("Admins", sum(1 for u in usuarios if u.get('es_admin') == 1))
+        
+        if usuarios:
+            for u in usuarios:
+                es_admin = u.get('es_admin') == 1
+                plan_icon = {"gratis": "🆓", "dia": "📅", "semana": "📆", "mes": "👑"}.get(u.get('plan', 'gratis'), "❓")
+                
+                if es_admin:
+                    with st.expander(f"⚙️ {u.get('nombre', 'Admin')} - {plan_icon} {u.get('plan', 'admin')} **(Admin)**"):
+                        st.info("Esta es la cuenta de administrador principal")
+                else:
+                    with st.expander(f"👤 {u.get('nombre', 'Sin nombre')} - {plan_icon} {u.get('plan', 'gratis')}"):
+                        st.write(f"**Nombre:** {u.get('nombre', '')}")
+                        st.write(f"**Plan:** {u.get('plan', 'gratis')}")
+                        st.write(f"**Dias:** {u.get('dias', 0)}")
+                        st.write(f"**Creado:** {u.get('creado', '')}")
+                        
+                        col_a, col_b, col_c = st.columns(3)
+                        with col_a:
+                            if st.button(f"👑 Mes", key=f"mes_{u['id']}"):
+                                db_actualizar_plan(u['id'], "mes", 30)
+                                st.success("Plan actualizado a Mes")
+                                st.rerun()
+                        with col_b:
+                            if st.button(f"📆 Semana", key=f"sem_{u['id']}"):
+                                db_actualizar_plan(u['id'], "semana", 7)
+                                st.success("Plan actualizado a Semana")
+                                st.rerun()
+                        with col_c:
+                            if st.button(f"🗑️ Eliminar", key=f"del_{u['id']}"):
+                                if db_eliminar_usuario(u['id']):
+                                    st.success("✅ Eliminado")
+                                    st.rerun()
+                                else:
+                                    st.error("No se pudo eliminar")
