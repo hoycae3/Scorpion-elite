@@ -58,16 +58,28 @@ def init_db():
     c.commit(); c.close()
 
 def db_get_by_password(pwd_hash):
-    c = get_conn()
-    r = c.execute("SELECT * FROM usuarios WHERE password=?", (pwd_hash,)).fetchone()
-    c.close()
-    return dict(r) if r else None
+    try:
+        c = get_conn()
+        c.row_factory = sqlite3.Row
+        # Verificar que la tabla existe
+        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='usuarios'")
+        if not c.fetchone():
+            return None
+        r = c.execute("SELECT * FROM usuarios WHERE password=?", (pwd_hash,)).fetchone()
+        c.close()
+        return dict(r) if r else None
+    except Exception as e:
+        return None
 
 def db_get_by_id(user_id):
-    c = get_conn()
-    r = c.execute("SELECT * FROM usuarios WHERE id=?", (user_id,)).fetchone()
-    c.close()
-    return dict(r) if r else None
+    try:
+        c = get_conn()
+        c.row_factory = sqlite3.Row
+        r = c.execute("SELECT * FROM usuarios WHERE id=?", (user_id,)).fetchone()
+        c.close()
+        return dict(r) if r else None
+    except Exception as e:
+        return None
 
 def db_todos():
     c = get_conn()
@@ -107,10 +119,10 @@ def db_actualizar_plan(user_id, plan, dias):
 
 def db_login(password):
     """Verifica password y retorna usuario"""
+    # Asegurar que la DB existe
+    init_db()
     pwd_hash = hashlib.sha256(password.encode()).hexdigest()
     return db_get_by_password(pwd_hash)
-
-init_db()
 
 # ══════════════════════════════════════════════════════════
 # SESSION STATE
