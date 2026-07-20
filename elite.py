@@ -170,23 +170,22 @@ if not st.session_state.logged:
         st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
     with col2:
         st.markdown("<br>" * 2, unsafe_allow_html=True)
+    # Login simple con password
+    password = st.text_input("Password", type="password", placeholder="Ingresa la clave de acceso")
     
-    # Formulario de login solo con password
-    with st.form("login_form", clear_on_submit=True):
-        password = st.text_input("Password", type="password", placeholder="Ingresa la clave de acceso", label_visibility="collapsed")
-        
-        if st.form_submit_button("🔓 Entrar", use_container_width=True):
-            if not password.strip():
-                st.error("Ingresa la password")
+    if st.button("Entrar", use_container_width=True):
+        if not password.strip():
+            st.error("Ingresa la password")
+        else:
+            user = db_login(password.strip())
+            if user:
+                st.session_state.logged = True
+                st.session_state.is_admin = (user.get('es_admin') == 1)
+                st.session_state.user_data = user
+                st.rerun()
             else:
-                user = db_login(password.strip())
-                if user:
-                    st.session_state.logged = True
-                    st.session_state.is_admin = (user.get('es_admin') == 1)
-                    st.session_state.user_data = user
-                    st.rerun()
-                else:
-                    st.error("Password incorrecta")
+                st.error("Password incorrecta")
+
     
     st.stop()
 
