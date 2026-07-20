@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 import os
+import sqlite3
+import hashlib
+from datetime import date, timedelta
 from supabase import create_client
 from data_loader import parse_flashscore_excel, validate_matches
 from analysis_models import calcular
@@ -10,18 +13,104 @@ from scrapers_fallback import scrape_team_fallback
 
 st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
 
-# Configuración
+# ══════════════════════════════════════════════════════════
+# CONFIGURACION
+# ══════════════════════════════════════════════════════════
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "scorpion2026")
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://jjtifureeygvygxtpuku.supabase.co")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqdGlmdXJlZXlndnlneHRwdWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTI2NDcsImV4cCI6MjA5OTg4ODY0N30.6f8dgLmHx9x9W-5X2Ld31rPkeZ6HJGSeGgx3oq9XSRA")
+DB_PATH = "/tmp/scorpion_users.db"
 
-# Session state
+# ══════════════════════════════════════════════════════════
+# SISTEMA DE USUARIOS (SQLite local)
+# ══════════════════════════════════════════════════════════
+def get_hoy():
+    return str(date.today())
+
+def get_conn():
+    return sqlite3.connect(DB_PATH, check_same_thread=False)
+
+def init_db():
+    c = get_conn()
+    c.executescript("""
+    CREATE TABLE IF NOT EXISTS usuarios (
+        cedula TEXT PRIMARY KEY, nombre TEXT, plan TEXT DEFAULT 'gratis',
+        fecha_inicio TEXT, dias INTEGER DEFAULT 36500, activo INTEGER DEFAULT 1,
+        es_admin INTEGER DEFAULT 0, pwd_hash TEXT,
+        consultas_hoy INTEGER DEFAULT 0, fecha_reset TEXT,
+        creado TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS picks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        fecha TEXT, liga TEXT, local TEXT, visitante TEXT, hora TEXT,
+        mercado TEXT, detalle TEXT, cuota REAL, edge REAL,
+        confianza REAL, rango TEXT, notas TEXT, plan_min TEXT DEFAULT 'gratis'
+    );
+    """)
+    h = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()
+    c.execute("INSERT OR IGNORE INTO usuarios (cedula,nombre,plan,fecha_inicio,dias,activo,es_admin,pwd_hash) VALUES (?,?,?,?,?,?,?,?)",
+              ("admin","Administrador","admin",get_hoy(),36500,1,1,h))
+    c.commit(); c.close()
+
+def db_get(cedula):
+    c = get_conn()
+    r = c.execute("SELECT * FROM usuarios WHERE cedula=?", (cedula,)).fetchone()
+    c.close()
+    return dict(r) if r else None
+
+def db_todos():
+    c = get_conn()
+    r = c.execute("SELECT * FROM usuarios ORDER BY creado DESC").fetchall()
+    c.close()
+    return [dict(x) for x in r]
+
+def db_guardar_usuario(cedula, nombre, plan, dias, fi, activo=1):
+    c = get_conn()
+    c.execute("""INSERT OR REPLACE INTO usuarios
+        (cedula,nombre,plan,fecha_inicio,dias,activo,es_admin,pwd_hash,creado)
+        VALUES(?,?,?,?,?,?,
+        COALESCE((SELECT es_admin FROM usuarios WHERE cedula=?),0),
+        COALESCE((SELECT pwd_hash FROM usuarios WHERE cedula=?),NULL),
+        COALESCE((SELECT creado FROM usuarios WHERE cedula=?),CURRENT_TIMESTAMP))""",
+        (cedula, nombre, plan, str(fi), int(dias), int(activo), cedula, cedula, cedula))
+    c.commit(); c.close()
+
+def db_acceso(cedula):
+    u = db_get(cedula)
+    if not u: return False, "no_existe", 0
+    if not u["activo"]: return False, "inactivo", 0
+    if u["es_admin"]: return True, "admin", 99999
+    if u["plan"] == "gratis": return True, "gratis", 99999
+    inicio = date.fromisoformat(u["fecha_inicio"])
+    vence = inicio + timedelta(days=u["dias"])
+    if date.today() > vence: return False, "vencido", 0
+    return True, u["plan"], (vence - date.today()).days
+
+def db_login_admin(pwd):
+    u = db_get("admin")
+    return u and u.get("pwd_hash") == hashlib.sha256(pwd.encode()).hexdigest()
+
+def db_actualizar_plan(cedula, plan, dias):
+    c = get_conn()
+    c.execute("UPDATE usuarios SET plan=?, dias=?, fecha_inicio=? WHERE cedula=?", 
+               (plan, dias, get_hoy(), cedula))
+    c.commit(); c.close()
+
+init_db()
+
+# ══════════════════════════════════════════════════════════
+# SESSION STATE
+# ══════════════════════════════════════════════════════════
 if "logged" not in st.session_state:
     st.session_state.logged = False
 if "df_partidos" not in st.session_state:
     st.session_state.df_partidos = None
 if "page" not in st.session_state:
     st.session_state.page = "Carga"
+if "user_data" not in st.session_state:
+    st.session_state.user_data = None
+if "is_admin" not in st.session_state:
+    st.session_state.is_admin = False
 
 # CSS
 st.markdown("""
@@ -43,16 +132,62 @@ if not st.session_state.logged:
         st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
     with col2:
         st.markdown("<br>" * 2, unsafe_allow_html=True)
-        col_pass, col_btn = st.columns([2, 1])
+    
+    # Formulario de login con usuario y password
+    with st.form("login_form", clear_on_submit=True):
+        col_user, col_pass = st.columns(2)
+        with col_user:
+            usuario = st.text_input("Usuario / Cedula", placeholder="admin o tu cedula")
         with col_pass:
-            password = st.text_input("", type="password", placeholder="Password", label_visibility="collapsed", key="login_password")
-        with col_btn:
-            if st.button("🔓 Entrar", type="primary", use_container_width=True):
-                if password == ADMIN_PASSWORD:
-                    st.session_state.logged = True
-                    st.rerun()
+            password = st.text_input("Password", type="password", placeholder="Password")
+        
+        if st.form_submit_button("🔓 Entrar", use_container_width=True):
+            if not usuario.strip():
+                st.error("Ingresa tu usuario")
+            elif not password.strip():
+                st.error("Ingresa tu password")
+            else:
+                es_admin = usuario.strip().lower() == "admin"
+                
+                if es_admin:
+                    # Login admin
+                    if db_login_admin(password.strip()):
+                        st.session_state.logged = True
+                        st.session_state.is_admin = True
+                        st.session_state.user_data = db_get("admin")
+                        st.rerun()
+                    else:
+                        st.error("Password incorrecta")
                 else:
-                    st.error("❌ Incorrecta")
+                    # Login usuario normal
+                    u = db_get(usuario.strip())
+                    if not u:
+                        # Crear usuario gratis automaticamente
+                        db_guardar_usuario(usuario.strip(), f"Usuario {usuario.strip()[:6]}", "gratis", 36500, get_hoy())
+                        u = db_get(usuario.strip())
+                    
+                    ok, plan, dr = db_acceso(usuario.strip())
+                    if not ok:
+                        st.error(f"Acceso {plan}. Contacta al administrador.")
+                    else:
+                        st.session_state.logged = True
+                        st.session_state.is_admin = (plan == "admin")
+                        st.session_state.user_data = u
+                        st.rerun()
+    
+    # Mostrar planes disponibles
+    st.markdown("---")
+    st.markdown("### 📋 Planes Disponibles")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.info("**🆓 Gratis**\n\n- Sube Excel\n- Max 5 partidos/dia")
+    with c2:
+        st.info("**📅 Plan Dia**\n\n- 1 liga a eleccion\n- Picks del dia")
+    with c3:
+        st.info("**📆 Plan Semana**\n\n- Semana completa\n- Multi-liga")
+    with c4:
+        st.info("**👑 Plan Mes**\n\n- Todo ilimitado\n- Escalera + Combinadas")
+    
     st.stop()
 
 # Dashboard
@@ -66,6 +201,8 @@ else:
     
     with st.sidebar:
         st.markdown("## 🦂 Menú")
+        st.markdown(f"**Usuario:** {st.session_state.user_data.get('nombre', 'Admin') if st.session_state.user_data else 'Admin'}")
+        st.markdown(f"**Plan:** {st.session_state.user_data.get('plan', 'admin') if st.session_state.user_data else 'admin'}")
         st.markdown("---")
         
         if st.button("📂 Carga", use_container_width=True, type="secondary" if st.session_state.page != "Carga" else "primary"):
@@ -80,10 +217,16 @@ else:
             st.session_state.page = "Estadisticas"
             st.rerun()
         
+        if st.session_state.is_admin:
+            if st.button("👥 Usuarios", use_container_width=True, type="secondary" if st.session_state.page != "Usuarios" else "primary"):
+                st.session_state.page = "Usuarios"
+                st.rerun()
+        
         st.markdown("---")
-        st.markdown(f"**Usuario:** Admin")
         if st.button("🔓 Logout", use_container_width=True):
             st.session_state.logged = False
+            st.session_state.user_data = None
+            st.session_state.is_admin = False
             st.rerun()
     
     # Página: Carga
@@ -550,3 +693,83 @@ else:
                     st.info("No se encontraron equipos")
             except Exception as e:
                 st.error(f"Error: {str(e)[:50]}")
+
+    # Página: Administracion de Usuarios
+    elif st.session_state.page == "Usuarios" and st.session_state.is_admin:
+        st.markdown('<h1 class="title">👥 Administracion de Usuarios</h1>', unsafe_allow_html=True)
+        
+        usuarios = db_todos()
+        activos = sum(1 for u in usuarios if u.get('es_admin') != 1 and db_acceso(u['cedula'])[0])
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total Usuarios", len(usuarios))
+        with col2:
+            st.metric("Usuarios Activos", activos)
+        with col3:
+            st.metric("Admins", sum(1 for u in usuarios if u.get('es_admin') == 1))
+        
+        st.markdown("---")
+        st.markdown("### ➕ Crear / Actualizar Usuario")
+        
+        with st.form("form_usuario", clear_on_submit=True):
+            col_ced, col_nom = st.columns(2)
+            with col_ced:
+                cedula = st.text_input("Cedula / DNI", placeholder="12345678")
+            with col_nom:
+                nombre = st.text_input("Nombre", placeholder="Nombre del usuario")
+            
+            col_plan, col_dias = st.columns(2)
+            with col_plan:
+                plan = st.selectbox("Plan", ["gratis", "dia", "semana", "mes"])
+            with col_dias:
+                dias_opciones = {"gratis": 36500, "dia": 1, "semana": 7, "mes": 30}
+                dias = dias_opciones.get(plan, 30)
+                st.info(f"Dias: {dias}")
+            
+            if st.form_submit_button("💾 Guardar Usuario", use_container_width=True):
+                if cedula.strip() and nombre.strip():
+                    db_guardar_usuario(cedula.strip(), nombre.strip(), plan, dias, get_hoy())
+                    st.success(f"✅ Usuario {nombre} guardado con plan {plan}")
+                    st.rerun()
+                else:
+                    st.error("Completa cedula y nombre")
+        
+        st.markdown("---")
+        st.markdown("### 📋 Lista de Usuarios")
+        
+        if usuarios:
+            for u in usuarios:
+                ok, plan, dr = db_acceso(u['cedula'])
+                estado_color = "🟢" if ok else "🔴"
+                plan_emoji = {"gratis": "🆓", "dia": "📅", "semana": "📆", "mes": "👑", "admin": "⚙️"}.get(u.get('plan', 'gratis'), "❓")
+                
+                with st.expander(f"{estado_color} {u.get('nombre', 'Sin nombre')} ({u.get('cedula', '')}) - {plan_emoji} {u.get('plan', 'gratis')}"):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.write(f"**Cedula:** {u.get('cedula', '')}")
+                        st.write(f"**Nombre:** {u.get('nombre', '')}")
+                        st.write(f"**Plan:** {u.get('plan', 'gratis')}")
+                    with col2:
+                        st.write(f"**Fecha Inicio:** {u.get('fecha_inicio', 'N/A')}")
+                        st.write(f"**Dias:** {u.get('dias', 0)}")
+                        st.write(f"**Activo:** {'Si' if u.get('activo') else 'No'}")
+                    
+                    col_a, col_b, col_c = st.columns(3)
+                    with col_a:
+                        if st.button(f"📅 Mes", key=f"mes_{u['cedula']}"):
+                            db_actualizar_plan(u['cedula'], "mes", 30)
+                            st.success("Plan actualizado a Mes")
+                            st.rerun()
+                    with col_b:
+                        if st.button(f"📆 Semana", key=f"sem_{u['cedula']}"):
+                            db_actualizar_plan(u['cedula'], "semana", 7)
+                            st.success("Plan actualizado a Semana")
+                            st.rerun()
+                    with col_c:
+                        if st.button(f"🆓 Gratis", key=f"grt_{u['cedula']}"):
+                            db_actualizar_plan(u['cedula'], "gratis", 36500)
+                            st.success("Plan actualizado a Gratis")
+                            st.rerun()
+        else:
+            st.info("No hay usuarios registrados")
