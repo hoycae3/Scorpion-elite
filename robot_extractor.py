@@ -566,15 +566,26 @@ def get_football_data_stats() -> Dict:
     
     for league, url in FD_LEAGUE_URLS.items():
         try:
-            # football-data no tiene Cloudflare, delay pequeño
+            # football-data puede dar 300 redirects, seguimos la ubicación final
             delay = random.uniform(1, 3)
             time.sleep(delay)
             
-            r = requests.get(url, timeout=15, headers=CHROME_HEADERS)
-            if r.status_code != 200:
+            session = requests.Session()
+            r = session.get(url, timeout=15, headers=CHROME_HEADERS, allow_redirects=True)
+            
+            if r.status_code != 200 or not r.content:
+                logger.warning(f"   ⚠️ {league}: Sin datos (status {r.status_code})")
                 continue
             
-            reader = csv.DictReader(StringIO(r.text))
+            # Detectar si es CSV o HTML (si hay redirect a página HTML)
+            content = r.content
+            if b'<html' in content.lower() or b'<!doctype' in content.lower():
+                logger.warning(f"   ⚠️ {league}: Redirigió a HTML, no CSV")
+                continue
+            
+            reader = csv.DictReader(StringIO(content.decode('utf-8', errors='ignore')))
+            row_count = 0
+            
             for row in reader:
                 home = row.get('HomeTeam', '').strip()
                 away = row.get('AwayTeam', '').strip()
@@ -634,7 +645,10 @@ def get_football_data_stats() -> Dict:
                 else:
                     all_stats[away]['derrotas'] += 1
                     
-            logger.info(f"   ✅ {league}: {len(reader)} partidos")
+                row_count += 1
+            
+            if row_count > 0:
+                logger.info(f"   ✅ {league}: {row_count} partidos")
             
         except Exception as e:
             logger.error(f"   ❌ Error en {league}: {e}")
@@ -695,14 +709,15 @@ class WhoScoredScraper:
     BASE_URL = "https://www.whoscored.com"
     
     def __init__(self):
-        self.session = requests.Session()
-        self.session.headers.update(CHROME_HEADERS)
+        # Usar cloudscraper para evadir Cloudflare
+        self.scraper = get_scraper()
     
     def search_team(self, team_name: str) -> Optional[str]:
         """Busca un equipo y devuelve su URL."""
         try:
             url = f"{self.BASE_URL}/Search/?keyword={team_name.replace(' ', '+')}"
-            response = self.session.get(url, timeout=10)
+            response = self.scraper.get(url, timeout=15)
+            
             if response.status_code != 200:
                 return None
             
@@ -720,24 +735,83 @@ class WhoScoredScraper:
     def get_team_stats(self, team_url: str) -> Optional[Dict]:
         """Obtiene estadísticas avanzadas del equipo."""
         try:
-            delay = random.randint(3, 6)
+            delay = random.randint(5, 10)
             time.sleep(delay)
             
-            response = self.session.get(team_url, timeout=15)
+            response = self.scraper.get(team_url, timeout=15)
             if response.status_code != 200:
                 return None
             
             soup = BeautifulSoup(response.text, 'html.parser')
+            
             stats = {
                 'source': 'whoscored',
                 'promedio_corners': 0,
                 'promedio_tarjetas': 0,
                 'promedio_posesion': 50.0,
+                'promedio_remates': 0,
+                'promedio_rematesPuerta': 0,
+                'faltas': 0,
+                'tarjetas_amarillas': 0,
+                'tarjetas_rojas': 0,
+                'posesion_local': 0,
+                'posesion_visitante': 0,
+                'corners_local': 0,
+                'corners_visitante': 0,
                 'ultimos_partidos': []
             }
             
-            # Extraer estadísticas de la página
-            # Esta es una versión simplificada - ajustar selectores según la web
+            # Buscar estadísticas en la página
+            # WhoScored muestra stats en tablas con clase "matchStats"
+            stats_table = soup.find('div', {'id': 'team-match-stats'})
+            if stats_table:
+                rows = stats_table.find_all('tr')
+                for row in rows:
+                    cells = row.find_all('td')
+                    if len(cells) >= 3:
+                        label = cells[0].get_text(strip=True).lower()
+                        local_val = cells[1].get_text(strip=True)
+                        away_val = cells[2].get_text(strip=True)
+                        
+                        try:
+                            if 'corner' in label:
+                                stats['corners_local'] = float(local_val) if local_val else 0
+                                stats['corners_visitante'] = float(away_val) if away_val else 0
+                                stats['promedio_corners'] = (stats['corners_local'] + stats['corners_visitante']) / 2
+                            elif 'yellow card' in label:
+                                stats['tarjetas_amarillas'] = int(local_val) if local_val else 0
+                            elif 'red card' in label:
+                                stats['tarjetas_rojas'] = int(local_val) if local_val else 0
+                            elif 'foul' in label:
+                                stats['faltas'] = int(local_val) if local_val else 0
+                            elif 'shot' in label and 'on target' not in label:
+                                stats['promedio_remates'] = float(local_val) if local_val else 0
+                        except:
+                            pass
+            
+            # Buscar posesión
+            possession_div = soup.find('div', {'id': 'team-possession'})
+            if possession_div:
+                spans = possession_div.find_all('span')
+                for span in spans:
+                    text = span.get_text(strip=True)
+                    if '%' in text:
+                        try:
+                            val = float(text.replace('%', ''))
+                            if stats['promedio_posesion'] == 50.0:
+                                stats['promedio_posesion'] = val
+                            else:
+                                stats['promedio_posesion'] = (stats['promedio_posesion'] + val) / 2
+                        except:
+                            pass
+            
+            # Extraer últimos partidos del equipo
+            recent_matches = soup.find_all('div', {'class': 'match'})
+            for match in recent_matches[:5]:
+                score = match.find('div', {'class': 'scoreboard'})
+                if score:
+                    stats['ultimos_partidos'].append(score.get_text(strip=True))
+            
             return stats
         except Exception as e:
             logger.debug(f"Error en WhoScored get_team_stats: {e}")
@@ -831,15 +905,77 @@ class FBrefAdvancedScraper:
                 return None
             
             soup = BeautifulSoup(response.text, 'html.parser')
+            
             stats = {
                 'source': 'fbref',
+                'partidos': 0,
+                'goles_favor': 0,
+                'goles_contra': 0,
+                'victorias': 0,
+                'empates': 0,
+                'derrotas': 0,
                 'promedio_goles': 0,
                 'promedio_posesion': 50.0,
                 'promedio_remates': 0,
+                'promedio_rematesPuerta': 0,
                 'promedio_faltas': 0,
+                'promedio_corners': 0,
+                'promedio_tarjetas': 0,
             }
             
-            # Extraer estadísticas de la tabla
+            # FBref tiene tablas con estadísticas de equipo
+            # Buscar la tabla principal de estadísticas
+            tables = soup.find_all('table')
+            
+            for table in tables:
+                # Buscar la tabla de "Stats" del equipo
+                thead = table.find('thead')
+                if thead:
+                    headers = [th.get_text(strip=True).lower() for th in thead.find_all('th')]
+                    
+                    # Si es una tabla de estadísticas de equipo
+                    if 'mp' in headers or 'matches' in headers or 'games' in headers:
+                        tbody = table.find('tbody')
+                        if tbody:
+                            rows = tbody.find_all('tr')
+                            for row in rows:
+                                cells = row.find_all('td')
+                                if cells and len(cells) >= len(headers):
+                                    try:
+                                        # Parsear según los headers
+                                        cell_dict = dict(zip(headers, [c.get_text(strip=True) for c in cells]))
+                                        
+                                        # Extraer datos relevantes
+                                        if 'mp' in cell_dict:
+                                            stats['partidos'] = int(cell_dict['mp'].replace(',', ''))
+                                        if 'gf' in cell_dict:
+                                            stats['goles_favor'] = int(cell_dict['gf'].replace(',', ''))
+                                        if 'ga' in cell_dict:
+                                            stats['goles_contra'] = int(cell_dict['ga'].replace(',', ''))
+                                        if 'w' in cell_dict:
+                                            stats['victorias'] = int(cell_dict['w'].replace(',', ''))
+                                        if 'd' in cell_dict:
+                                            stats['empates'] = int(cell_dict['d'].replace(',', ''))
+                                        if 'l' in cell_dict:
+                                            stats['derrotas'] = int(cell_dict['l'].replace(',', ''))
+                                            
+                                        # Calcular promedios
+                                        if stats['partidos'] > 0:
+                                            stats['promedio_goles'] = round(stats['goles_favor'] / stats['partidos'], 2)
+                                            
+                                    except Exception as e:
+                                        continue
+            
+            # Buscar estadísticas avanzadas en divs específicos
+            stat_groups = soup.find_all('div', {'class': 'stat_group'})
+            for group in stat_groups:
+                group_text = group.get_text(strip=True).lower()
+                if 'possession' in group_text:
+                    # Extraer posesión
+                    numbers = re.findall(r'(\d+(?:\.\d+)?)\s*%', group_text)
+                    if numbers:
+                        stats['promedio_posesion'] = float(numbers[0])
+            
             return stats
         except Exception as e:
             logger.debug(f"Error en FBref get_team_stats: {e}")
@@ -856,24 +992,26 @@ class SoccerwayScraper:
     BASE_URL = "https://int.soccerway.com"
     
     def __init__(self):
-        self.session = requests.Session()
-        self.session.headers.update(CHROME_HEADERS)
+        # Usar cloudscraper para evadir posibles bloqueos
+        self.scraper = get_scraper()
     
     def search_team(self, team_name: str) -> Optional[str]:
         """Busca un equipo y devuelve su URL."""
         try:
             url = f"{self.BASE_URL}/search/?q={team_name.replace(' ', '+')}"
-            response = self.session.get(url, timeout=10)
+            response = self.scraper.get(url, timeout=15)
             
             if response.status_code != 200:
                 return None
             
             soup = BeautifulSoup(response.text, 'html.parser')
-            links = soup.find_all('a', href=re.compile(r'/teams/'))
+            links = soup.find_all('a', href=re.compile(r'/teams/[a-z-]+/\d+'))
             
             for link in links:
                 if team_name.lower() in link.get_text().lower():
-                    return self.BASE_URL + link.get('href')
+                    href = link.get('href')
+                    if href:
+                        return self.BASE_URL + href if href.startswith('/') else href
             return None
         except Exception as e:
             logger.debug(f"Error en Soccerway search: {e}")
@@ -883,20 +1021,112 @@ class SoccerwayScraper:
         """Obtiene los últimos resultados del equipo."""
         results = []
         try:
-            delay = random.randint(3, 6)
+            delay = random.randint(5, 10)
             time.sleep(delay)
             
-            response = self.session.get(team_url, timeout=15)
+            response = self.scraper.get(team_url, timeout=15)
             if response.status_code != 200:
                 return results
             
             soup = BeautifulSoup(response.text, 'html.parser')
-            # Extraer resultados de la tabla
-            # Versión simplificada
+            
+            # Soccerway tiene tablas con resultados
+            # Buscar la tabla de resultados recientes
+            match_rows = soup.find_all('tr', {'class': 'match'})
+            
+            for row in match_rows[:num_matches]:
+                try:
+                    # Extraer fecha
+                    date_cell = row.find('td', {'class': 'date'})
+                    date = date_cell.get_text(strip=True) if date_cell else ''
+                    
+                    # Extraer equipo local
+                    home_cell = row.find('td', {'class': 'team-a'})
+                    home_link = home_cell.find('a') if home_cell else None
+                    home_team = home_link.get_text(strip=True) if home_link else ''
+                    home_href = home_link.get('href') if home_link else ''
+                    
+                    # Extraer equipo visitante
+                    away_cell = row.find('td', {'class': 'team-b'})
+                    away_link = away_cell.find('a') if away_cell else None
+                    away_team = away_link.get_text(strip=True) if away_link else ''
+                    
+                    # Extraer marcador
+                    score_cell = row.find('td', {'class': 'score'})
+                    if score_cell:
+                        score_text = score_cell.get_text(strip=True)
+                        # Parsear "2 - 1" o "2-1"
+                        parts = re.split(r'[-\s]+', score_text)
+                        if len(parts) >= 2:
+                            try:
+                                home_score = int(parts[0])
+                                away_score = int(parts[1])
+                            except:
+                                home_score, away_score = 0, 0
+                        else:
+                            home_score, away_score = 0, 0
+                    else:
+                        home_score, away_score = 0, 0
+                    
+                    # Extraer liga/competencia
+                    competition_cell = row.find('td', {'class': 'competition'})
+                    competition = competition_cell.get_text(strip=True) if competition_cell else ''
+                    
+                    result = {
+                        'fecha': date,
+                        'liga': competition,
+                        'local': home_team,
+                        'visitante': away_team,
+                        'goles_local': home_score,
+                        'goles_visitante': away_score,
+                        'marcador': f"{home_score}-{away_score}",
+                        'resultado': 'victoria' if home_score > away_score else ('derrota' if home_score < away_score else 'empate')
+                    }
+                    results.append(result)
+                    
+                except Exception as e:
+                    logger.debug(f"Error parseando partido: {e}")
+                    continue
+            
             return results
         except Exception as e:
             logger.debug(f"Error en Soccerway get_team_results: {e}")
             return results
+    
+    def get_team_stats_summary(self, team_url: str) -> Dict:
+        """Obtiene resumen de estadísticas del equipo."""
+        results = self.get_team_results(team_url, num_matches=20)
+        
+        if not results:
+            return {}
+        
+        stats = {
+            'partidos': len(results),
+            'victorias': 0,
+            'empates': 0,
+            'derrotas': 0,
+            'goles_favor': 0,
+            'goles_contra': 0,
+            'promedio_goles': 0,
+            'victorias_local': 0,
+            'victorias_visitante': 0,
+            'source': 'soccerway'
+        }
+        
+        for r in results:
+            stats['goles_favor'] += r['goles_local']
+            stats['goles_contra'] += r['goles_visitante']
+            
+            if r['resultado'] == 'victoria':
+                stats['victorias'] += 1
+            elif r['resultado'] == 'empate':
+                stats['empates'] += 1
+            else:
+                stats['derrotas'] += 1
+        
+        stats['promedio_goles'] = round((stats['goles_favor'] + stats['goles_contra']) / stats['partidos'], 2) if stats['partidos'] > 0 else 0
+        
+        return stats
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
