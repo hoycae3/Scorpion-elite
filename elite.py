@@ -133,60 +133,21 @@ if not st.session_state.logged:
     with col2:
         st.markdown("<br>" * 2, unsafe_allow_html=True)
     
-    # Formulario de login con usuario y password
+    # Formulario de login solo con password
     with st.form("login_form", clear_on_submit=True):
-        col_user, col_pass = st.columns(2)
-        with col_user:
-            usuario = st.text_input("Usuario / Cedula", placeholder="admin o tu cedula")
-        with col_pass:
-            password = st.text_input("Password", type="password", placeholder="Password")
+        password = st.text_input("Password", type="password", placeholder="Ingresa la clave de acceso", label_visibility="collapsed")
         
         if st.form_submit_button("🔓 Entrar", use_container_width=True):
-            if not usuario.strip():
-                st.error("Ingresa tu usuario")
-            elif not password.strip():
-                st.error("Ingresa tu password")
+            if not password.strip():
+                st.error("Ingresa la password")
             else:
-                es_admin = usuario.strip().lower() == "admin"
-                
-                if es_admin:
-                    # Login admin
-                    if db_login_admin(password.strip()):
-                        st.session_state.logged = True
-                        st.session_state.is_admin = True
-                        st.session_state.user_data = db_get("admin")
-                        st.rerun()
-                    else:
-                        st.error("Password incorrecta")
+                if db_login_admin(password.strip()):
+                    st.session_state.logged = True
+                    st.session_state.is_admin = True
+                    st.session_state.user_data = db_get("admin")
+                    st.rerun()
                 else:
-                    # Login usuario normal
-                    u = db_get(usuario.strip())
-                    if not u:
-                        # Crear usuario gratis automaticamente
-                        db_guardar_usuario(usuario.strip(), f"Usuario {usuario.strip()[:6]}", "gratis", 36500, get_hoy())
-                        u = db_get(usuario.strip())
-                    
-                    ok, plan, dr = db_acceso(usuario.strip())
-                    if not ok:
-                        st.error(f"Acceso {plan}. Contacta al administrador.")
-                    else:
-                        st.session_state.logged = True
-                        st.session_state.is_admin = (plan == "admin")
-                        st.session_state.user_data = u
-                        st.rerun()
-    
-    # Mostrar planes disponibles
-    st.markdown("---")
-    st.markdown("### 📋 Planes Disponibles")
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.info("**🆓 Gratis**\n\n- Sube Excel\n- Max 5 partidos/dia")
-    with c2:
-        st.info("**📅 Plan Dia**\n\n- 1 liga a eleccion\n- Picks del dia")
-    with c3:
-        st.info("**📆 Plan Semana**\n\n- Semana completa\n- Multi-liga")
-    with c4:
-        st.info("**👑 Plan Mes**\n\n- Todo ilimitado\n- Escalera + Combinadas")
+                    st.error("Password incorrecta")
     
     st.stop()
 
@@ -216,11 +177,6 @@ else:
         if st.button("📈 Estadísticas", use_container_width=True, type="secondary" if st.session_state.page != "Estadisticas" else "primary"):
             st.session_state.page = "Estadisticas"
             st.rerun()
-        
-        if st.session_state.is_admin:
-            if st.button("👥 Usuarios", use_container_width=True, type="secondary" if st.session_state.page != "Usuarios" else "primary"):
-                st.session_state.page = "Usuarios"
-                st.rerun()
         
         st.markdown("---")
         if st.button("🔓 Logout", use_container_width=True):
@@ -693,83 +649,3 @@ else:
                     st.info("No se encontraron equipos")
             except Exception as e:
                 st.error(f"Error: {str(e)[:50]}")
-
-    # Página: Administracion de Usuarios
-    elif st.session_state.page == "Usuarios" and st.session_state.is_admin:
-        st.markdown('<h1 class="title">👥 Administracion de Usuarios</h1>', unsafe_allow_html=True)
-        
-        usuarios = db_todos()
-        activos = sum(1 for u in usuarios if u.get('es_admin') != 1 and db_acceso(u['cedula'])[0])
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Total Usuarios", len(usuarios))
-        with col2:
-            st.metric("Usuarios Activos", activos)
-        with col3:
-            st.metric("Admins", sum(1 for u in usuarios if u.get('es_admin') == 1))
-        
-        st.markdown("---")
-        st.markdown("### ➕ Crear / Actualizar Usuario")
-        
-        with st.form("form_usuario", clear_on_submit=True):
-            col_ced, col_nom = st.columns(2)
-            with col_ced:
-                cedula = st.text_input("Cedula / DNI", placeholder="12345678")
-            with col_nom:
-                nombre = st.text_input("Nombre", placeholder="Nombre del usuario")
-            
-            col_plan, col_dias = st.columns(2)
-            with col_plan:
-                plan = st.selectbox("Plan", ["gratis", "dia", "semana", "mes"])
-            with col_dias:
-                dias_opciones = {"gratis": 36500, "dia": 1, "semana": 7, "mes": 30}
-                dias = dias_opciones.get(plan, 30)
-                st.info(f"Dias: {dias}")
-            
-            if st.form_submit_button("💾 Guardar Usuario", use_container_width=True):
-                if cedula.strip() and nombre.strip():
-                    db_guardar_usuario(cedula.strip(), nombre.strip(), plan, dias, get_hoy())
-                    st.success(f"✅ Usuario {nombre} guardado con plan {plan}")
-                    st.rerun()
-                else:
-                    st.error("Completa cedula y nombre")
-        
-        st.markdown("---")
-        st.markdown("### 📋 Lista de Usuarios")
-        
-        if usuarios:
-            for u in usuarios:
-                ok, plan, dr = db_acceso(u['cedula'])
-                estado_color = "🟢" if ok else "🔴"
-                plan_emoji = {"gratis": "🆓", "dia": "📅", "semana": "📆", "mes": "👑", "admin": "⚙️"}.get(u.get('plan', 'gratis'), "❓")
-                
-                with st.expander(f"{estado_color} {u.get('nombre', 'Sin nombre')} ({u.get('cedula', '')}) - {plan_emoji} {u.get('plan', 'gratis')}"):
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.write(f"**Cedula:** {u.get('cedula', '')}")
-                        st.write(f"**Nombre:** {u.get('nombre', '')}")
-                        st.write(f"**Plan:** {u.get('plan', 'gratis')}")
-                    with col2:
-                        st.write(f"**Fecha Inicio:** {u.get('fecha_inicio', 'N/A')}")
-                        st.write(f"**Dias:** {u.get('dias', 0)}")
-                        st.write(f"**Activo:** {'Si' if u.get('activo') else 'No'}")
-                    
-                    col_a, col_b, col_c = st.columns(3)
-                    with col_a:
-                        if st.button(f"📅 Mes", key=f"mes_{u['cedula']}"):
-                            db_actualizar_plan(u['cedula'], "mes", 30)
-                            st.success("Plan actualizado a Mes")
-                            st.rerun()
-                    with col_b:
-                        if st.button(f"📆 Semana", key=f"sem_{u['cedula']}"):
-                            db_actualizar_plan(u['cedula'], "semana", 7)
-                            st.success("Plan actualizado a Semana")
-                            st.rerun()
-                    with col_c:
-                        if st.button(f"🆓 Gratis", key=f"grt_{u['cedula']}"):
-                            db_actualizar_plan(u['cedula'], "gratis", 36500)
-                            st.success("Plan actualizado a Gratis")
-                            st.rerun()
-        else:
-            st.info("No hay usuarios registrados")
