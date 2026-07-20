@@ -23,5 +23,5 @@ COPY . .
 # Puerto de Streamlit
 EXPOSE 8501
 
-# Comando - Dashboard V2
-CMD ["streamlit", "run", "app_streamlit_dashboard_v2.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Comando - dash2026 (NUNCA CAMBIAR EL NOMBRE)
+CMD ["streamlit", "run", "dash2026.py", "--server.port=8501", "--server.address=0.0.0.0"]
