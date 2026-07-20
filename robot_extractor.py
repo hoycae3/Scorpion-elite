@@ -13,6 +13,7 @@ Características:
 import time
 import random
 import logging
+import requests
 from typing import Dict, List, Optional
 from bs4 import BeautifulSoup
 import re
