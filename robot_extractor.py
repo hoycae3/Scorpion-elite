@@ -567,12 +567,12 @@ def get_football_data_stats() -> Dict:
     
     for league, url in FD_LEAGUE_URLS.items():
         try:
-            # football-data puede dar 300 redirects, seguimos la ubicación final
-            delay = random.uniform(1, 3)
+            # Delay menor - 0.5 segundos entre descargas
+            delay = random.uniform(0.3, 0.8)
             time.sleep(delay)
             
             session = requests.Session()
-            r = session.get(url, timeout=15, headers=CHROME_HEADERS, allow_redirects=True)
+            r = session.get(url, timeout=10, headers=CHROME_HEADERS, allow_redirects=True)
             
             if r.status_code != 200 or not r.content:
                 logger.warning(f"   ⚠️ {league}: Sin datos (status {r.status_code})")
@@ -1258,11 +1258,13 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
     """
     results = []
     
-    # Cargar datos de football-data primero
+    # Cargar datos de football-data UNA SOLA VEZ al inicio
+    logger.info(f"📥 Cargando datos de football-data.co.uk...")
     fd_stats = get_football_data_stats()
+    logger.info(f"📊 {len(fd_stats)} equipos cargados en cache")
     
     for team_name in team_names:
-        # Buscar en football-data
+        # Buscar en football-data (ya está en cache)
         fd_data = get_team_stats_from_football_data(team_name)
         
         if fd_data:
@@ -1302,8 +1304,7 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
         
         results.append(result)
         
-        # Delay entre equipos para evitar bloqueos
-        time.sleep(random.uniform(1, 3))
+        # NO hay delay - los datos ya están en cache!
     
     return results
 
