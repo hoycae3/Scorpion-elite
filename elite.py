@@ -177,11 +177,12 @@ if not st.session_state.logged:
         if not password.strip():
             st.error("Ingresa la password")
         else:
-            user = db_login(password.strip())
-            if user:
+            # Debug
+            st.write(f"Debug: password={password.strip()}, admin={ADMIN_PASSWORD}")
+            if password.strip() == ADMIN_PASSWORD:
                 st.session_state.logged = True
-                st.session_state.is_admin = (user.get('es_admin') == 1)
-                st.session_state.user_data = user
+                st.session_state.is_admin = True
+                st.session_state.user_data = {"nombre": "Admin", "plan": "admin", "es_admin": 1}
                 st.rerun()
             else:
                 st.error("Password incorrecta")
