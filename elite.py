@@ -122,7 +122,19 @@ def db_login(password):
     # Asegurar que la DB existe
     init_db()
     pwd_hash = hashlib.sha256(password.encode()).hexdigest()
-    return db_get_by_password(pwd_hash)
+    result = db_get_by_password(pwd_hash)
+    if result:
+        return result
+    # Fallback: crear admin si no existe
+    if password == ADMIN_PASSWORD:
+        h = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()
+        c = get_conn()
+        c.execute("INSERT OR IGNORE INTO usuarios (password,nombre,plan,fecha_inicio,dias,activo,es_admin) VALUES (?,?,?,?,?,?,?)",
+                  (h,"Administrador","admin",get_hoy(),36500,1,1))
+        c.commit()
+        c.close()
+        return db_get_by_password(pwd_hash)
+    return None
 
 # ══════════════════════════════════════════════════════════
 # SESSION STATE
