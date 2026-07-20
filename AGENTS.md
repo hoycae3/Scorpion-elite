@@ -5,6 +5,16 @@
 ### Descripción
 App de análisis de partidos de fútbol con **Excel + Scraping multi-fuente + 4 Modelos matemáticos**.
 
+### Dashboard V2 ✅ (NUEVO!)
+Ahora disponible en `app_streamlit_dashboard_v2.py` con:
+- 50+ ligas con datos reales
+- API-Football integración
+- Comparador de cuotas (Bet365, Betano, Pinnacle)
+- Sistema de alertas
+- Planes de usuario (Gratis, Día, Semana, Mes, Admin)
+- Stats Mundial 2026
+- Motor análisis con type hints y validación
+
 ### Flujo:
 1. Usuario sube Excel con partidos
 2. Robot busca estadísticas de equipos (4 fuentes)
@@ -25,6 +35,7 @@ https://scorpion-elite-go7zv8dgdaa3uarwfsxph6.streamlit.app/
 - **Base de datos**: Supabase
 - **Scraping**: 4 fuentes (ver abajo)
 - **Modelos**: Poisson, Dixon-Coles, Monte Carlo, Elo
+- **API**: API-Football, Sofascore
 
 ---
 
@@ -32,14 +43,27 @@ https://scorpion-elite-go7zv8dgdaa3uarwfsxph6.streamlit.app/
 
 ```
 Scorpion-elite/
-├── app.py              ✅ App principal de Streamlit
-├── data_loader.py      ✅ Parser de Excel
-├── analysis_models.py  ✅ 4 modelos de análisis
-├── stats_extractor.py  ✅ Cálculo de lambdas
-├── stats_robot.py      ✅ Busca equipos en 4 fuentes
-├── stats_advanced.py   ✅ Scraper WhoScored + FBref
-├── supabase_schema.sql ✅ Schema simplificado de BD
-└── requirements.txt    ✅ Dependencias
+├── app.py                        ✅ App principal (3 secciones)
+├── app_streamlit_dashboard_v2.py  ✅ Dashboard V2 completo (NUEVO!)
+├── data_loader.py                ✅ Parser de Excel
+├── analysis_models.py             ✅ 4 modelos de análisis
+├── stats_extractor.py             ✅ Cálculo de lambdas
+├── stats_robot.py                ✅ Busca equipos en 4 fuentes
+├── stats_advanced.py              ✅ Scraper WhoScored + FBref
+├── robot_extractor.py            ✅ Robot con técnicas antibloqueo
+├── scrapers.py                    ✅ Scraper Flashscore + Soccerway
+├── scraper_fbref.py              ✅ Scraper dedicado FBref
+├── supabase_schema.sql           ✅ Schema simplificado de BD
+│
+├── scorpion/                     ✅ Módulo modular (NUEVO!)
+│   ├── models/math.py            ✅ Motor análisis refactorizado
+│   ├── ui/components.py          ✅ Componentes UI reutilizables
+│   ├── api/football.py           ✅ Integración API-Football
+│   ├── api/scraper.py            ✅ Scraper modular
+│   ├── db/database.py            ✅ Base de datos SQLite
+│   └── config.py                 ✅ Configuración centralizada
+│
+└── requirements.txt              ✅ Dependencias
 ```
 
 ---
