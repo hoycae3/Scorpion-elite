@@ -487,7 +487,29 @@ else:
                     st.error(f"Error: {str(e)[:50]}")
         
         st.markdown("---")
-        st.markdown("### 🔍 Ver Estadísticas de Equipos")
+        st.markdown("### 📋 Equipos con Estadísticas")
+        
+        # Botón para ver todos
+        if st.button("📊 Ver Todos los Equipos", use_container_width=True):
+            client = create_client(SUPABASE_URL, SUPABASE_KEY)
+            try:
+                response = client.table('equipos_stats').select('*').order('equipo').execute()
+                
+                if response.data:
+                    st.success(f"✅ {len(response.data)} equipos con estadísticas")
+                    
+                    # Crear DataFrame
+                    df = pd.DataFrame(response.data)
+                    df = df[['equipo', 'liga', 'partidos_jugados', 'lambda_local', 'lambda_visitante', 'goles_favor', 'goles_contra']]
+                    df.columns = ['Equipo', 'Liga', 'PJ', 'λ Local', 'λ Visitante', 'GF', 'GC']
+                    st.dataframe(df, use_container_width=True)
+                else:
+                    st.info("No hay equipos guardados. Sube un Excel y busca equipos primero.")
+            except Exception as e:
+                st.error(f"Error: {str(e)[:100]}")
+        
+        st.markdown("---")
+        st.markdown("### 🔍 Buscar Equipo Específico")
         
         # Buscar equipo
         equipo_buscar = st.text_input("Buscar equipo...", placeholder="Escribe el nombre del equipo")
