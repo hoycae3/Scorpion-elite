@@ -305,7 +305,7 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                         'lambda_local': lambda_local,
                         'lambda_visitante': lambda_visitante,
                     }
-                    client.table('estadisticas_equipos').upsert(supa_data, on_conflict='equipo').execute()
+                    client.table('equipos_stats').upsert(supa_data, on_conflict='equipo').execute()
                     result['exito'] = True
                     result['equipo_real'] = data.get('equipo', team)
                 except Exception as e:
