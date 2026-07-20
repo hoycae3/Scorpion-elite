@@ -1226,6 +1226,63 @@ class SuperRobot:
 # PRUEBA
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# FUNCIONES DE COMPATIBILIDAD PARA elite.py
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def calculate_team_lambda(goles_favor: int, goles_contra: int, partidos: int, is_home: bool = True) -> float:
+    """
+    Calcula el lambda (promedio de goles esperados) para un equipo.
+    is_home=True: Lambda para cuando juega de local
+    is_home=False: Lambda para cuando juega de visitante
+    """
+    if partidos == 0:
+        return 1.5 if is_home else 1.2
+    
+    # Promedio de goles por partido
+    promedio_goles = (goles_favor + goles_contra) / partidos
+    
+    # Ajuste por local/visitante
+    # Equipos locales marcan ~0.3 goles más que visitantes
+    if is_home:
+        return round(promedio_goles * 1.15, 2)  # Un poco más de gol como local
+    else:
+        return round(promedio_goles * 0.85, 2)  # Un poco menos como visitante
+
+
+def run_robot_batch(team_names: List[str]) -> List[Dict]:
+    """
+    Función de compatibilidad para stats_robot.run_robot_batch
+    Procesa una lista de equipos y retorna estadísticas.
+    """
+    robot = SuperRobot()
+    return robot.run_batch(team_names)
+
+
+def scrape_team_fallback(team_name: str) -> Dict:
+    """
+    Función de compatibilidad para scrapers_fallback.scrape_team_fallback
+    Busca un equipo en todas las fuentes disponibles.
+    """
+    result = get_team_stats_from_football_data(team_name)
+    if result:
+        return {
+            'equipo': team_name,
+            'encontrado': True,
+            'stats': result,
+            'source': 'football-data.co.uk'
+        }
+    return {
+        'equipo': team_name,
+        'encontrado': False,
+        'source': 'fallback'
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PRUEBA
+# ═══════════════════════════════════════════════════════════════════════════════
+
 if __name__ == '__main__':
     # Prueba con algunos equipos
     test_teams = ['Barcelona', 'Real Madrid', 'PSG']
