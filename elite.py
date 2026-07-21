@@ -606,9 +606,9 @@ else:
                 """, unsafe_allow_html=True)
             
             # ========================
-            # ESTADÍSTICAS DEL LOCAL
+            # ESTADÍSTICAS DEL ROBOT
             # ========================
-            st.markdown(f"### 📊 Estadísticas: 🏠 {home}")
+            st.markdown("### 📊 Estadísticas del Robot")
             
             # Obtener datos del local
             gf_local = stats_local.get('goles_favor', 0) if stats_local else 0
@@ -617,40 +617,74 @@ else:
             c_local = stats_local.get('promedio_corners_total', 10) if stats_local else 10
             t_local = stats_local.get('promedio_tiros', 12) if stats_local else 12
             ta_local = stats_local.get('promedio_amarillas', 3) if stats_local else 3
+            lambda_local = stats_local.get('lambda_local', 0) if stats_local else 0
             
-            col_l1, col_l2, col_l3, col_l4 = st.columns(4)
-            with col_l1:
-                st.metric("Goles a Favor", gf_local)
-            with col_l2:
-                st.metric("Goles en Contra", gc_local)
-            with col_l3:
-                st.metric("Remates/Partido", f"{t_local:.1f}")
-            with col_l4:
-                st.metric("Córners/Partido", f"{c_local:.1f}")
-            
-            # ========================
-            # ESTADÍSTICAS DEL VISITANTE
-            # ========================
-            st.markdown(f"### 📊 Estadísticas: ✈️ {away}")
-            
+            # Obtener datos del visitante
             gf_visitante = stats_visitante.get('goles_favor', 0) if stats_visitante else 0
             gc_visitante = stats_visitante.get('goles_contra', 0) if stats_visitante else 0
             pj_visitante = stats_visitante.get('partidos_jugados', 0) if stats_visitante else 0
             c_visitante = stats_visitante.get('promedio_corners_total', 10) if stats_visitante else 10
             t_visitante = stats_visitante.get('promedio_tiros', 12) if stats_visitante else 12
             ta_visitante = stats_visitante.get('promedio_amarillas', 3) if stats_visitante else 3
+            lambda_visitante = stats_visitante.get('lambda_visitante', 0) if stats_visitante else 0
             
-            col_v1, col_v2, col_v3, col_v4 = st.columns(4)
-            with col_v1:
-                st.metric("Goles a Favor", gf_visitante)
-            with col_v2:
-                st.metric("Goles en Contra", gc_visitante)
-            with col_v3:
-                st.metric("Remates/Partido", f"{t_visitante:.1f}")
-            with col_v4:
-                st.metric("Córners/Partido", f"{c_visitante:.1f}")
+            # Mostrar en formato comparativo
+            col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
             
-
+            with col1:
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 10px; border-radius: 10px; text-align: center;">
+                    <p style="color: #888; margin: 0; font-size: 10px;">🏠 LOCAL</p>
+                    <h4 style="color: #00ff88; margin: 5px 0; font-size: 14px;">{home}</h4>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.metric("Partidos", pj_local)
+            
+            with col3:
+                st.metric("Goles", f"{gf_local}/{gc_local}")
+            
+            with col4:
+                st.metric("λ Local", f"{lambda_local:.2f}")
+            
+            with col5:
+                st.metric("Remates", f"{t_local:.0f}")
+            
+            with col6:
+                st.metric("Córners", f"{c_local:.1f}")
+            
+            with col7:
+                st.metric("Tarjetas", f"{ta_local:.1f}")
+            
+            # Visitante
+            col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
+            
+            with col1:
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 10px; border-radius: 10px; text-align: center;">
+                    <p style="color: #888; margin: 0; font-size: 10px;">✈️ VISITANTE</p>
+                    <h4 style="color: #ff6b6b; margin: 5px 0; font-size: 14px;">{away}</h4>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.metric("Partidos", pj_visitante)
+            
+            with col3:
+                st.metric("Goles", f"{gf_visitante}/{gc_visitante}")
+            
+            with col4:
+                st.metric("λ Visit", f"{lambda_visitante:.2f}")
+            
+            with col5:
+                st.metric("Remates", f"{t_visitante:.0f}")
+            
+            with col6:
+                st.metric("Córners", f"{c_visitante:.1f}")
+            
+            with col7:
+                st.metric("Tarjetas", f"{ta_visitante:.1f}")
             
             # ========================
             # FORMA RECIENTE
