@@ -333,15 +333,40 @@ else:
     elif st.session_state.page == "Analizador":
         st.markdown('<h1 class="title">📊 Analizador</h1>', unsafe_allow_html=True)
         
-        # Formulario simple
-        st.markdown("### 🔍 Analizar Partido")
+        # Obtener lista de equipos disponibles
+        client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        try:
+            response_equipos = client.table('equipos_stats').select('equipo, liga').execute()
+            equipos_disponibles = [e['equipo'].title() for e in response_equipos.data] if response_equipos.data else []
+            equipos_disponibles = sorted(set(equipos_disponibles))
+        except:
+            equipos_disponibles = []
         
-        col1, col2 = st.columns(2)
-        with col1:
-            home_team = st.text_input("🏠 Equipo Local", placeholder="Ej: Barcelona")
+        # Mostrar equipos disponibles
+        if equipos_disponibles:
+            st.markdown("### 📋 Equipos Disponibles")
+            st.info(f"Tienes **{len(equipos_disponibles)}** equipos guardados: {', '.join(equipos_disponibles[:10])}{'...' if len(equipos_disponibles) > 10 else ''}")
+        else:
+            st.warning("⚠️ No hay equipos guardados. Ve a 'Estadísticas' para agregar equipos.")
         
-        with col2:
-            away_team = st.text_input("✈️ Equipo Visitante", placeholder="Ej: Real Madrid")
+        # Selector de equipos
+        st.markdown("### 🔍 Seleccionar Partido")
+        
+        # Opción para escribir manualmente o seleccionar
+        modo_entrada = st.radio("¿Cómo quieres elegir los equipos?", ["📋 Seleccionar de lista", "✏️ Escribir manualmente"], horizontal=True)
+        
+        if modo_entrada == "📋 Seleccionar de lista" and equipos_disponibles:
+            col1, col2 = st.columns(2)
+            with col1:
+                home_team = st.selectbox("🏠 Equipo Local", [""] + equipos_disponibles, key="home_select")
+            with col2:
+                away_team = st.selectbox("✈️ Equipo Visitante", [""] + equipos_disponibles, key="away_select")
+        else:
+            col1, col2 = st.columns(2)
+            with col1:
+                home_team = st.text_input("🏠 Equipo Local", placeholder="Escribe el nombre...")
+            with col2:
+                away_team = st.text_input("✈️ Equipo Visitante", placeholder="Escribe el nombre...")
         
         # Validar que ambos equipos tengan DATOS REALES en Supabase
         lambda_local = None
