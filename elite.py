@@ -587,17 +587,17 @@ else:
             top_scores = mc.get('top_scores', {})
             score_mas_probable = list(top_scores.keys())[0] if top_scores else "2-1"
             
-            col_ou, col_btts, col_corners, col_tarjetas, col_score = st.columns(5)
+            col_space, col_ou, col_btts, col_corners, col_tarjetas, col_score, col_space2 = st.columns([1, 1, 1, 1, 1, 1, 1])
             
             with col_ou:
                 pick_ou = r.get('pick_over_under', 'Over 2.5')
                 prob_ou = r.get('prob_over_under', 50)
                 ou_icon = "📈" if "Over" in pick_ou else "📉"
                 st.markdown(f"""
-                <div class="pred-box">
-                    <p style="color: #888; margin: 0; font-size: 10px;">Over/Under 2.5</p>
-                    <p style="color: #ff9f43; margin: 5px 0; font-size: 13px;">{ou_icon} {pick_ou}</p>
-                    <p style="color: #fff; margin: 0; font-size: 11px;">{prob_ou:.0f}%</p>
+                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
+                    <p style="color: #888; margin: 0; font-size: 11px;">Over/Under 2.5</p>
+                    <p style="color: #ff9f43; margin: 8px 0; font-size: 16px; font-weight: bold;">{ou_icon} {pick_ou}</p>
+                    <p style="color: #fff; margin: 0; font-size: 15px; font-weight: bold;">{prob_ou:.0f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -606,10 +606,10 @@ else:
                 btts_yes = r.get('btts_yes', 50)
                 btts_icon = "✅" if pick_btts == "Sí" else "❌"
                 st.markdown(f"""
-                <div class="pred-box">
-                    <p style="color: #888; margin: 0; font-size: 10px;">Ambos Marcan</p>
-                    <p style="color: #a55eea; margin: 5px 0; font-size: 13px;">{btts_icon} {pick_btts}</p>
-                    <p style="color: #fff; margin: 0; font-size: 11px;">{btts_yes:.0f}%</p>
+                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
+                    <p style="color: #888; margin: 0; font-size: 11px;">Ambos Marcan</p>
+                    <p style="color: #a55eea; margin: 8px 0; font-size: 16px; font-weight: bold;">{btts_icon} {pick_btts}</p>
+                    <p style="color: #fff; margin: 0; font-size: 15px; font-weight: bold;">{btts_yes:.0f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -617,28 +617,28 @@ else:
                 corners = r.get('corners', {})
                 total_c = corners.get('total_estimado', 10)
                 st.markdown(f"""
-                <div class="pred-box">
-                    <p style="color: #888; margin: 0; font-size: 10px;">Córners</p>
-                    <p style="color: #00d2d3; margin: 5px 0; font-size: 13px;">⚽ {total_c:.0f}</p>
-                    <p style="color: #fff; margin: 0; font-size: 11px;">Totales</p>
+                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
+                    <p style="color: #888; margin: 0; font-size: 11px;">Córners Totales</p>
+                    <p style="color: #00d2d3; margin: 8px 0; font-size: 16px; font-weight: bold;">⚽ {total_c:.0f}</p>
+                    <p style="color: #fff; margin: 0; font-size: 12px;">{r.get('pick_corners', 'Over')}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_tarjetas:
                 st.markdown(f"""
-                <div class="pred-box">
-                    <p style="color: #888; margin: 0; font-size: 10px;">Tarjetas</p>
-                    <p style="color: #ffd700; margin: 5px 0; font-size: 13px;">🟨 {tarjetas_total:.1f}</p>
-                    <p style="color: #fff; margin: 0; font-size: 11px;">Totales</p>
+                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
+                    <p style="color: #888; margin: 0; font-size: 11px;">🟨 Tarjetas</p>
+                    <p style="color: #ffd700; margin: 8px 0; font-size: 16px; font-weight: bold;">{tarjetas_total:.1f}</p>
+                    <p style="color: #fff; margin: 0; font-size: 12px;">Totales</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_score:
                 st.markdown(f"""
-                <div class="pred-box">
-                    <p style="color: #888; margin: 0; font-size: 10px;">Marcador</p>
-                    <p style="color: #ff6b6b; margin: 5px 0; font-size: 13px;">🎯 {score_mas_probable}</p>
-                    <p style="color: #fff; margin: 0; font-size: 11px;">Probable</p>
+                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
+                    <p style="color: #888; margin: 0; font-size: 11px;">🎯 Marcador</p>
+                    <p style="color: #ff6b6b; margin: 8px 0; font-size: 16px; font-weight: bold;">{score_mas_probable}</p>
+                    <p style="color: #fff; margin: 0; font-size: 12px;">Probable</p>
                 </div>
                 """, unsafe_allow_html=True)
             
