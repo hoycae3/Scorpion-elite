@@ -24,17 +24,17 @@ def pp(lmbda: float, k: int) -> float:
     """Función de masa de probabilidad de Poisson P(X=k)"""
     if lmbda <= 0 or k < 0:
         return 0.0
-    result = 1.0
-    for i in range(2, k + 1):
-        result *= lmbda / i
-    return result * (2.71828 ** (-lmbda))
+    # Usar factorial para mayor precisión
+    import math
+    return (lmbda ** k) * math.exp(-lmbda) / math.factorial(k)
 
 
 def poisson_1x2(xl: float, xv: float) -> tuple:
     """Modelo Poisson básico para 1X2"""
     p1 = px = p2 = 0.0
-    for i in range(9):
-        for j in range(9):
+    # Aumentar rango para cubrir más casos
+    for i in range(15):
+        for j in range(15):
             p = pp(xl, i) * pp(xv, j)
             if i > j:
                 p1 += p
@@ -50,8 +50,8 @@ def poisson_over_under(xl: float, xv: float) -> Dict:
     over_15 = over_25 = over_35 = 0.0
     under_15 = under_25 = under_35 = 0.0
     
-    for i in range(9):
-        for j in range(9):
+    for i in range(15):
+        for j in range(15):
             p = pp(xl, i) * pp(xv, j)
             total = i + j
             
