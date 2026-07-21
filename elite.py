@@ -351,12 +351,17 @@ else:
         equipos_faltantes = []
         error_conexion = False
         
+        # Datos completos de los equipos
+        stats_local = None
+        stats_visitante = None
+        
         if home_team:
             try:
                 client = create_client(SUPABASE_URL, SUPABASE_KEY)
-                resp = client.table('equipos_stats').select('lambda_local').ilike('equipo', f'%{home_team}%').execute()
+                resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{home_team}%').execute()
                 if resp.data and resp.data[0].get('lambda_local', 0) > 0:
-                    lambda_local = resp.data[0].get('lambda_local')
+                    stats_local = resp.data[0]
+                    lambda_local = stats_local.get('lambda_local', 0)
                     equipo_local_ok = True
                     st.success(f"✅ {home_team} - λ={lambda_local}")
                 else:
@@ -369,9 +374,10 @@ else:
         if away_team:
             try:
                 client = create_client(SUPABASE_URL, SUPABASE_KEY)
-                resp = client.table('equipos_stats').select('lambda_visitante').ilike('equipo', f'%{away_team}%').execute()
+                resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{away_team}%').execute()
                 if resp.data and resp.data[0].get('lambda_visitante', 0) > 0:
-                    lambda_visitante = resp.data[0].get('lambda_visitante')
+                    stats_visitante = resp.data[0]
+                    lambda_visitante = stats_visitante.get('lambda_visitante', 0)
                     equipo_visitante_ok = True
                     st.success(f"✅ {away_team} - λ={lambda_visitante}")
                 else:
@@ -391,12 +397,70 @@ else:
         
         if st.button("🎯 ANALIZAR", type="primary", use_container_width=True, disabled=analizar_disabled):
             try:
-                if home_team and away_team and lambda_local and lambda_visitante:
+                if home_team and away_team and lambda_local and lambda_visitante and stats_local and stats_visitante:
                     with st.spinner("Analizando..."):
-                        result = calcular(lambda_local, lambda_visitante)
+                        # Llamar al modelo con TODOS los datos
+                        result = calcular(
+                            lambda_local=lambda_local,
+                            lambda_visitante=lambda_visitante,
+                            corners_local=float(stats_local.get('promedio_corners_total', 10)),
+                            corners_visitante=float(stats_visitante.get('promedio_corners_total', 10)),
+                            tarjetas_local=float(stats_local.get('promedio_amarillas', 3)),
+                            tarjetas_visitante=float(stats_visitante.get('promedio_amarillas', 3)),
+                            tiros_local=float(stats_local.get('promedio_tiros', 12)),
+                            tiros_visitante=float(stats_visitante.get('promedio_tiros', 12)),
+                            tiros_arco_local=float(stats_local.get('promedio_tiros_arco', 4)),
+                            tiros_arco_visitante=float(stats_visitante.get('promedio_tiros_arco', 4)),
+                            ultimos_5_local=stats_local.get('ultimos_5_partidos', []),
+                            ultimos_5_visitante=stats_visitante.get('ultimos_5_partidos', []),
+                        )
+                        
                         st.session_state.analysis_result = result
                         st.session_state.home = home_team
                         st.session_state.away = away_team
+                        st.session_state.stats_local = stats_local
+                        st.session_state.stats_visitante = stats_visitante
+                        
+                        # GUARDAR AUTOMÁTICAMENTE EN HISTORIAL
+                        try:
+                            client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                            historial_data = {
+                                'fecha': str(date.today()),
+                                'liga': stats_local.get('liga', 'Desconocida'),
+                                'equipo_local': home_team,
+                                'equipo_visitante': away_team,
+                                # Predicción final
+                                'prediccion_final': result.get('pick_1x2', ''),
+                                'probabilidad_final': float(result.get('prob_1x2', 0)),
+                                'confianza': int(result.get('confianza', 0)),
+                                'rango': result.get('rango', 'D'),
+                                # Poisson
+                                'poisson_1': float(result.get('modelos', {}).get('poisson', {}).get('p1', 0)),
+                                'poisson_X': float(result.get('modelos', {}).get('poisson', {}).get('px', 0)),
+                                'poisson_2': float(result.get('modelos', {}).get('poisson', {}).get('p2', 0)),
+                                # Dixon-Coles
+                                'dc_1': float(result.get('modelos', {}).get('dixon_coles', {}).get('p1', 0)),
+                                'dc_X': float(result.get('modelos', {}).get('dixon_coles', {}).get('px', 0)),
+                                'dc_2': float(result.get('modelos', {}).get('dixon_coles', {}).get('p2', 0)),
+                                # Monte Carlo
+                                'mc_1': float(result.get('modelos', {}).get('monte_carlo', {}).get('p1', 0)),
+                                'mc_X': float(result.get('modelos', {}).get('monte_carlo', {}).get('px', 0)),
+                                'mc_2': float(result.get('modelos', {}).get('monte_carlo', {}).get('p2', 0)),
+                                # Forma Reciente
+                                'forma_local_pct': float(result.get('forma_local', {}).get('forma_puntos', 0)),
+                                'forma_visitante_pct': float(result.get('forma_visitante', {}).get('forma_puntos', 0)),
+                                # Pesos usados
+                                'peso_poisson': 0.30,
+                                'peso_dixon': 0.25,
+                                'peso_montecarlo': 0.20,
+                                'peso_forma': 0.15,
+                                'peso_estilo': 0.10,
+                            }
+                            client.table('historial_predicciones').insert(historial_data).execute()
+                            st.success("✅ Predicción guardada automáticamente en historial")
+                        except Exception as e:
+                            st.warning(f"⚠️ No se pudo guardar en historial: {str(e)[:50]}")
+                            
                 else:
                     st.error("⚠️ Ambos equipos deben tener estadísticas. Ejecuta el robot primero.")
             except Exception as e:
@@ -408,50 +472,95 @@ else:
             r = st.session_state.analysis_result
             home = st.session_state.home
             away = st.session_state.away
+            stats_local = st.session_state.get('stats_local', {})
+            stats_visitante = st.session_state.get('stats_visitante', {})
             
             st.markdown("---")
             st.markdown(f"## 📊 {home} vs {away}")
             
             # Pick y confianza
-            col_pick, col_conf = st.columns(2)
+            col_pick, col_conf, col_goles = st.columns(3)
             with col_pick:
-                rating_emoji = {"A+": "🟢", "B": "🔵", "C": "🟡", "D": "🔴"}
-                st.metric("Pick", f"{r['pick']} {rating_emoji.get(r['rango'], '')}")
+                rating_emoji = {"A+": "🟢", "A": "🟢", "B": "🔵", "C": "🟡", "D": "🔴"}
+                pick_emoji = {"1": "🏠", "X": "🤝", "2": "✈️"}
+                st.metric("Pick", f"{pick_emoji.get(r['pick_1x2'], '')} {r['pick_1x2']}")
             with col_conf:
                 st.metric("Confianza", f"{r['confianza']}% ({r['rango']})")
+            with col_goles:
+                st.metric("Goles Esperados", f"{r.get('goles_esperados', 0)}")
             
             # Probabilidades 1X2
             st.markdown("### 🎯 1X2")
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.markdown("**1 (Local)**")
-                st.markdown(f"# {r['p1']:.1f}%")
+                st.markdown(f"**🏠 {home}**")
+                st.markdown(f"## {r['p1']:.1f}%")
                 st.progress(r['p1']/100, color="green")
             with col2:
-                st.markdown("**X (Empate)**")
-                st.markdown(f"# {r['px']:.1f}%")
+                st.markdown("**🤝 Empate**")
+                st.markdown(f"## {r['px']:.1f}%")
                 st.progress(r['px']/100, color="gray")
             with col3:
-                st.markdown("**2 (Visitante)**")
-                st.markdown(f"# {r['p2']:.1f}%")
+                st.markdown(f"**✈️ {away}**")
+                st.markdown(f"## {r['p2']:.1f}%")
                 st.progress(r['p2']/100, color="blue")
+            
+            # Over/Under y BTTS
+            st.markdown("### 📈 Over/Under & Ambos Marcan")
+            col_ou, col_btts, col_corners = st.columns(3)
+            with col_ou:
+                ou = r.get('over_under', {})
+                pick_ou = r.get('pick_over_under', 'Over 2.5')
+                prob_ou = r.get('prob_over_under', 50)
+                st.markdown(f"**{pick_ou}**")
+                st.markdown(f"{prob_ou:.1f}%")
+                st.progress(prob_ou/100, color="orange")
+            with col_btts:
+                pick_btts = r.get('pick_btts', 'No')
+                btts_yes = r.get('btts_yes', 50)
+                st.markdown(f"**Ambos Marcan**")
+                st.markdown(f"{pick_btts} ({btts_yes:.1f}%)")
+                st.progress(btts_yes/100, color="purple")
+            with col_corners:
+                corners = r.get('corners', {})
+                pick_corners = r.get('pick_corners', 'Over 10')
+                total_c = corners.get('total_estimado', 10)
+                st.markdown(f"**Córners**")
+                st.markdown(f"~{total_c:.1f} (Total)")
+                st.progress(corners.get('over_95', 50)/100, color="cyan")
+            
+            # Forma Reciente
+            st.markdown("### 📅 Forma Reciente")
+            col_forma_local, col_forma_away = st.columns(2)
+            with col_forma_local:
+                forma_l = r.get('forma_local', {})
+                st.markdown(f"**🏠 {home}**")
+                st.markdown(f"Forma: `{forma_l.get('forma_letras', '-----')}` ({forma_l.get('forma_puntos', 0):.0f}%)")
+                st.markdown(f"Goles: {forma_l.get('goles_favor_5', 0)}f / {forma_l.get('goles_contra_5', 0)}c")
+            with col_forma_away:
+                forma_v = r.get('forma_visitante', {})
+                st.markdown(f"**✈️ {away}**")
+                st.markdown(f"Forma: `{forma_v.get('forma_letras', '-----')}` ({forma_v.get('forma_puntos', 0):.0f}%)")
+                st.markdown(f"Goles: {forma_v.get('goles_favor_5', 0)}f / {forma_v.get('goles_contra_5', 0)}c")
             
             # Detalle por modelo
             with st.expander("📋 Detalle por Modelo"):
-                modelos = [
-                    ("Poisson (35%)", r['poisson']),
-                    ("Dixon-Coles (30%)", r['dixon_coles']),
-                    ("Monte Carlo (20%)", r['monte_carlo']),
-                    ("Elo (15%)", r['elo'])
+                modelos = r.get('modelos', {})
+                modelos_data = [
+                    ("🎯 Poisson (30%)", modelos.get('poisson', {})),
+                    ("📊 Dixon-Coles (25%)", modelos.get('dixon_coles', {})),
+                    ("🎲 Monte Carlo (20%)", modelos.get('monte_carlo', {})),
+                    ("📈 Forma Reciente (15%)", {'p1': 50, 'px': 0, 'p2': 50}),
+                    ("⚽ Estilo (10%)", {'p1': 50, 'px': 0, 'p2': 50}),
                 ]
-                for nombre, m in modelos:
+                for nombre, m in modelos_data:
                     col_h, col_d, col_a = st.columns(3)
                     with col_h:
-                        st.metric(nombre, f"1: {m['p1']}%")
+                        st.metric(nombre, f"1: {m.get('p1', 0):.0f}%")
                     with col_d:
-                        st.metric("", f"X: {m['px']}%")
+                        st.metric("", f"X: {m.get('px', 0):.0f}%")
                     with col_a:
-                        st.metric("", f"2: {m['p2']}%")
+                        st.metric("", f"2: {m.get('p2', 0):.0f}%")
     
     # Página: Estadísticas
     elif st.session_state.page == "Estadisticas":
@@ -563,10 +672,20 @@ else:
                                         'liga': r.get('liga', 'Desconocida'),
                                         'temporada': '2024-25',
                                         'partidos_jugados': r.get('partidos_jugados', 0) or 0,
+                                        'victorias': r.get('victorias', 0) or 0,
+                                        'empates': r.get('empates', 0) or 0,
+                                        'derrotas': r.get('derrotas', 0) or 0,
                                         'goles_favor': r.get('goles_favor', 0) or 0,
                                         'goles_contra': r.get('goles_contra', 0) or 0,
                                         'lambda_local': float(r.get('lambda_local', 1.3)) or 1.3,
                                         'lambda_visitante': float(r.get('lambda_visitante', 1.1)) or 1.1,
+                                        # Nuevos stats
+                                        'promedio_tiros': float(r.get('tiros_promedio', 12)) or 12,
+                                        'promedio_tiros_arco': float(r.get('tiros_arco_promedio', 4)) or 4,
+                                        'promedio_corners_total': float(r.get('corners_promedio', 10)) or 10,
+                                        'promedio_amarillas': float(r.get('tarjetas_promedio', 3)) or 3,
+                                        # Guardar últimos 5 partidos como JSON
+                                        'ultimos_5_partidos': r.get('ultimos_5_partidos', []),
                                     }
                                     
                                     # Intentar upsert (actualizar si existe)
@@ -574,7 +693,12 @@ else:
                                         client.table('equipos_stats').upsert(data).execute()
                                     except:
                                         # Si falla upsert, intentar insert directo
-                                        client.table('equipos_stats').insert(data).execute()
+                                        try:
+                                            client.table('equipos_stats').insert(data).execute()
+                                        except Exception as insert_error:
+                                            # Crear sin los campos nuevos
+                                            data_basic = {k: v for k, v in data.items() if k != 'ultimos_5_partidos'}
+                                            client.table('equipos_stats').insert(data_basic).execute()
                                     
                                     guardados += 1
                                     st.info(f"✅ {equipo_nombre}")
