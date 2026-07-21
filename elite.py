@@ -487,29 +487,67 @@ else:
                 
                 with col_est1:
                     st.markdown(f"""
-                    <div style="background: #0d1b2a; padding: 15px; border-radius: 10px;">
-                        <h4 style="color: #00ff88; margin: 0 0 10px 0;">🏠 {home}</h4>
-                        <p style="color: #888; margin: 3px 0;">Partidos: <span style="color: #fff;">{stats_local.get('partidos_jugados', 0)}</span></p>
-                        <p style="color: #888; margin: 3px 0;">Goles a Favor: <span style="color: #fff;">{stats_local.get('goles_favor', 0)}</span></p>
-                        <p style="color: #888; margin: 3px 0;">Goles en Contra: <span style="color: #fff;">{stats_local.get('goles_contra', 0)}</span></p>
-                        <p style="color: #888; margin: 3px 0;">λ Local: <span style="color: #fff;">{stats_local.get('lambda_local', 0):.2f}</span></p>
-                        <p style="color: #888; margin: 3px 0;">Remates/partido: <span style="color: #fff;">{stats_local.get('promedio_tiros', 0):.1f}</span></p>
-                        <p style="color: #888; margin: 3px 0;">Córners/partido: <span style="color: #fff;">{stats_local.get('promedio_corners_total', 0):.1f}</span></p>
-                        <p style="color: #888; margin: 3px 0;">Tarjetas/partido: <span style="color: #fff;">{stats_local.get('promedio_amarillas', 0):.1f}</span></p>
+                    <div class="team-stats" style="border-left: 4px solid #00ff88 !important;">
+                        <h4 style="color: #00ff88; margin: 0 0 15px 0; font-size: 18px;">🏠 {home}</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div class="stat-card">
+                                <p style="color: #5a6a8a; margin: 0; font-size: 11px;">PARTIDOS</p>
+                                <p style="color: #fff; margin: 5px 0 0 0; font-size: 18px; font-weight: 600;">{stats_local.get('partidos_jugados', 0)}</p>
+                            </div>
+                            <div class="stat-card">
+                                <p style="color: #5a6a8a; margin: 0; font-size: 11px;">GF / GC</p>
+                                <p style="color: #fff; margin: 5px 0 0 0; font-size: 18px; font-weight: 600;">{stats_local.get('goles_favor', 0)} / {stats_local.get('goles_contra', 0)}</p>
+                            </div>
+                            <div class="stat-card">
+                                <p style="color: #5a6a8a; margin: 0; font-size: 11px;">λ LOCAL</p>
+                                <p style="color: #00d4ff; margin: 5px 0 0 0; font-size: 18px; font-weight: 600;">{stats_local.get('lambda_local', 0):.2f}</p>
+                            </div>
+                            <div class="stat-card">
+                                <p style="color: #5a6a8a; margin: 0; font-size: 11px;">REMATES</p>
+                                <p style="color: #fff; margin: 5px 0 0 0; font-size: 18px; font-weight: 600;">{stats_local.get('promedio_tiros', 0):.1f}</p>
+                            </div>
+                            <div class="stat-card">
+                                <p style="color: #5a6a8a; margin: 0; font-size: 11px;">CÓRNERS</p>
+                                <p style="color: #00d2d3; margin: 5px 0 0 0; font-size: 18px; font-weight: 600;">{stats_local.get('promedio_corners_total', 0):.1f}</p>
+                            </div>
+                            <div class="stat-card">
+                                <p style="color: #5a6a8a; margin: 0; font-size: 11px;">TARJETAS</p>
+                                <p style="color: #ffd700; margin: 5px 0 0 0; font-size: 18px; font-weight: 600;">{stats_local.get('promedio_amarillas', 0):.1f}</p>
+                            </div>
+                        </div>
                     </div>
                     """, unsafe_allow_html=True)
                 
                 with col_est2:
                     st.markdown(f"""
-                    <div style="background: #0d1b2a; padding: 15px; border-radius: 10px;">
-                        <h4 style="color: #ff6b6b; margin: 0 0 10px 0;">✈️ {away}</h4>
-                        <p style="color: #888; margin: 3px 0;">Partidos: <span style="color: #fff;">{stats_visitante.get('partidos_jugados', 0)}</span></p>
-                        <p style="color: #888; margin: 3px 0;">Goles a Favor: <span style="color: #fff;">{stats_visitante.get('goles_favor', 0)}</span></p>
-                        <p style="color: #888; margin: 3px 0;">Goles en Contra: <span style="color: #fff;">{stats_visitante.get('goles_contra', 0)}</span></p>
-                        <p style="color: #888; margin: 3px 0;">λ Visitante: <span style="color: #fff;">{stats_visitante.get('lambda_visitante', 0):.2f}</span></p>
-                        <p style="color: #888; margin: 3px 0;">Remates/partido: <span style="color: #fff;">{stats_visitante.get('promedio_tiros', 0):.1f}</span></p>
-                        <p style="color: #888; margin: 3px 0;">Córners/partido: <span style="color: #fff;">{stats_visitante.get('promedio_corners_total', 0):.1f}</span></p>
-                        <p style="color: #888; margin: 3px 0;">Tarjetas/partido: <span style="color: #fff;">{stats_visitante.get('promedio_amarillas', 0):.1f}</span></p>
+                    <div class="team-stats" style="border-right: 4px solid #ff6b6b !important; border-left: none !important;">
+                        <h4 style="color: #ff6b6b; margin: 0 0 15px 0; font-size: 18px;">✈️ {away}</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div class="stat-card">
+                                <p style="color: #5a6a8a; margin: 0; font-size: 11px;">PARTIDOS</p>
+                                <p style="color: #fff; margin: 5px 0 0 0; font-size: 18px; font-weight: 600;">{stats_visitante.get('partidos_jugados', 0)}</p>
+                            </div>
+                            <div class="stat-card">
+                                <p style="color: #5a6a8a; margin: 0; font-size: 11px;">GF / GC</p>
+                                <p style="color: #fff; margin: 5px 0 0 0; font-size: 18px; font-weight: 600;">{stats_visitante.get('goles_favor', 0)} / {stats_visitante.get('goles_contra', 0)}</p>
+                            </div>
+                            <div class="stat-card">
+                                <p style="color: #5a6a8a; margin: 0; font-size: 11px;">λ VISIT</p>
+                                <p style="color: #00d4ff; margin: 5px 0 0 0; font-size: 18px; font-weight: 600;">{stats_visitante.get('lambda_visitante', 0):.2f}</p>
+                            </div>
+                            <div class="stat-card">
+                                <p style="color: #5a6a8a; margin: 0; font-size: 11px;">REMATES</p>
+                                <p style="color: #fff; margin: 5px 0 0 0; font-size: 18px; font-weight: 600;">{stats_visitante.get('promedio_tiros', 0):.1f}</p>
+                            </div>
+                            <div class="stat-card">
+                                <p style="color: #5a6a8a; margin: 0; font-size: 11px;">CÓRNERS</p>
+                                <p style="color: #00d2d3; margin: 5px 0 0 0; font-size: 18px; font-weight: 600;">{stats_visitante.get('promedio_corners_total', 0):.1f}</p>
+                            </div>
+                            <div class="stat-card">
+                                <p style="color: #5a6a8a; margin: 0; font-size: 11px;">TARJETAS</p>
+                                <p style="color: #ffd700; margin: 5px 0 0 0; font-size: 18px; font-weight: 600;">{stats_visitante.get('promedio_amarillas', 0):.1f}</p>
+                            </div>
+                        </div>
                     </div>
                     """, unsafe_allow_html=True)
             
@@ -522,18 +560,23 @@ else:
             
             pick_icon = {"1": "🏠", "X": "🤝", "2": "✈️"}
             rango_color = {"A+": "🟢", "A": "🟢", "B": "🔵", "C": "🟡", "D": "🔴"}
+            rango_bg = {"A+": "background: linear-gradient(135deg, #00ff88, #00cc6a);", "A": "background: rgba(0, 255, 136, 0.2); border: 1px solid #00ff88;", "B": "background: rgba(0, 212, 255, 0.2); border: 1px solid #00d4ff;", "C": "background: rgba(255, 215, 0, 0.2); border: 1px solid #ffd700;", "D": "background: rgba(255, 71, 87, 0.2); border: 1px solid #ff4757;"}
             
-            # Pick principal
+            # Pick principal - HERO
             st.markdown(f"""
-            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
-                        padding: 20px; border-radius: 15px; text-align: center; margin: 10px 0;">
-                <h2 style="color: white; margin: 0;">⚽ {home} vs {away}</h2>
-                <h1 style="color: #00d4ff; margin: 15px 0 5px 0;">
-                    {pick_icon.get(pick, '🎯')} {pick}
-                </h1>
-                <p style="color: #aaa; margin: 0;">
-                    {rango_color.get(rango, '⚪')} Confianza: {confianza}% ({rango})
-                </p>
+            <div class="hero-pick" style="margin: 20px 0;">
+                <h2 style="color: #8892b0; margin: 0 0 5px 0; font-size: 14px; font-weight: 400;">ANÁLISIS DEL PARTIDO</h2>
+                <h1 style="color: white; margin: 0 0 15px 0; font-size: 28px;">⚽ {home} <span style="color: #5a6a8a;">vs</span> {away}</h1>
+                <div style="background: rgba(0, 212, 255, 0.1); border: 2px solid #00d4ff; border-radius: 12px; padding: 15px 30px; display: inline-block; margin: 10px 0;">
+                    <p style="color: #5a6a8a; margin: 0; font-size: 12px;">PREDICCIÓN</p>
+                    <h2 style="color: #00d4ff; margin: 5px 0 0 0; font-size: 36px;">
+                        {pick_icon.get(pick, '🎯')} <span style="color: white;">{pick}</span>
+                    </h2>
+                </div>
+                <br><br>
+                <span class="modern-badge" style="{rango_bg.get(rango, '')} padding: 6px 16px; border-radius: 20px; font-size: 14px;">
+                    {rango_color.get(rango, '⚪')} {confianza}% CONFIANZA
+                </span>
             </div>
             """, unsafe_allow_html=True)
             
@@ -548,27 +591,30 @@ else:
             
             col1, col2, col3 = st.columns([1.5, 1, 1.5])
             with col1:
+                border_color = '#00ff88' if p1 > px and p1 > p2 else 'rgba(255,255,255,0.1)'
+                glow = 'box-shadow: 0 0 25px rgba(0, 255, 136, 0.3);' if p1 > px and p1 > p2 else ''
                 st.markdown(f"""
-                <div style="background: #0d1b2a; padding: 15px; border-radius: 10px; text-align: center; 
-                            border: 2px solid {'#00ff88' if p1 > px and p1 > p2 else '#333'};">
-                    <h3 style="color: #00ff88; margin: 0;">🏠 {home}</h3>
-                    <h1 style="color: white; margin: 10px 0;">{p1:.1f}%</h1>
+                <div class="prob-card" style="border: 2px solid {border_color}; {glow}">
+                    <h3 style="color: #00ff88; margin: 0; font-size: 16px;">🏠 {home}</h3>
+                    <h1 style="color: white; margin: 15px 0 0 0; font-size: 42px;">{p1:.1f}%</h1>
                 </div>
                 """, unsafe_allow_html=True)
             with col2:
+                border_color = '#ffd700' if px > p1 and px > p2 else 'rgba(255,255,255,0.1)'
+                glow = 'box-shadow: 0 0 25px rgba(255, 215, 0, 0.3);' if px > p1 and px > p2 else ''
                 st.markdown(f"""
-                <div style="background: #0d1b2a; padding: 15px; border-radius: 10px; text-align: center;
-                            border: 2px solid {'#ffd700' if px > p1 and px > p2 else '#333'};">
-                    <h3 style="color: #ffd700; margin: 0;">🤝 Empate</h3>
-                    <h1 style="color: white; margin: 10px 0;">{px:.1f}%</h1>
+                <div class="prob-card" style="border: 2px solid {border_color}; {glow}">
+                    <h3 style="color: #ffd700; margin: 0; font-size: 16px;">🤝 Empate</h3>
+                    <h1 style="color: white; margin: 15px 0 0 0; font-size: 42px;">{px:.1f}%</h1>
                 </div>
                 """, unsafe_allow_html=True)
             with col3:
+                border_color = '#ff6b6b' if p2 > p1 and p2 > px else 'rgba(255,255,255,0.1)'
+                glow = 'box-shadow: 0 0 25px rgba(255, 71, 87, 0.3);' if p2 > p1 and p2 > px else ''
                 st.markdown(f"""
-                <div style="background: #0d1b2a; padding: 15px; border-radius: 10px; text-align: center;
-                            border: 2px solid {'#ff6b6b' if p2 > p1 and p2 > px else '#333'};">
-                    <h3 style="color: #ff6b6b; margin: 0;">✈️ {away}</h3>
-                    <h1 style="color: white; margin: 10px 0;">{p2:.1f}%</h1>
+                <div class="prob-card" style="border: 2px solid {border_color}; {glow}">
+                    <h3 style="color: #ff6b6b; margin: 0; font-size: 16px;">✈️ {away}</h3>
+                    <h1 style="color: white; margin: 15px 0 0 0; font-size: 42px;">{p2:.1f}%</h1>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -594,11 +640,12 @@ else:
                 pick_ou = r.get('pick_over_under', 'Over 2.5')
                 prob_ou = r.get('prob_over_under', 50)
                 ou_icon = "📈" if "Over" in pick_ou else "📉"
+                ou_color = "#ff9f43" if "Over" in pick_ou else "#a55eea"
                 st.markdown(f"""
-                <div style="background: #0d1b2a; padding: 10px; border-radius: 10px; text-align: center;">
-                    <p style="color: #888; margin: 0; font-size: 11px;">Over/Under 2.5</p>
-                    <h3 style="color: #ff9f43; margin: 5px 0;">{ou_icon} {pick_ou}</h3>
-                    <p style="color: #fff; margin: 0;">{prob_ou:.0f}%</p>
+                <div class="pred-card">
+                    <p class="pred-label">Over / Under 2.5</p>
+                    <p class="pred-value" style="color: {ou_color};">{ou_icon} {pick_ou}</p>
+                    <p class="pred-sub">{prob_ou:.0f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -606,11 +653,12 @@ else:
                 pick_btts = r.get('pick_btts', 'No')
                 btts_yes = r.get('btts_yes', 50)
                 btts_icon = "✅" if pick_btts == "Sí" else "❌"
+                btts_color = "#00ff88" if pick_btts == "Sí" else "#ff4757"
                 st.markdown(f"""
-                <div style="background: #0d1b2a; padding: 10px; border-radius: 10px; text-align: center;">
-                    <p style="color: #888; margin: 0; font-size: 11px;">Ambos Marcan</p>
-                    <h3 style="color: #a55eea; margin: 5px 0;">{btts_icon} {pick_btts}</h3>
-                    <p style="color: #fff; margin: 0;">{btts_yes:.0f}%</p>
+                <div class="pred-card">
+                    <p class="pred-label">Ambos Marcan</p>
+                    <p class="pred-value" style="color: {btts_color};">{btts_icon} {pick_btts}</p>
+                    <p class="pred-sub">{btts_yes:.0f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -619,28 +667,28 @@ else:
                 total_c = corners.get('total_estimado', 10)
                 pick_c = r.get('pick_corners', 'Over 10')
                 st.markdown(f"""
-                <div style="background: #0d1b2a; padding: 10px; border-radius: 10px; text-align: center;">
-                    <p style="color: #888; margin: 0; font-size: 11px;">Córners Totales</p>
-                    <h3 style="color: #00d2d3; margin: 5px 0;">⚽ {total_c:.0f}</h3>
-                    <p style="color: #fff; margin: 0;">{pick_c}</p>
+                <div class="pred-card">
+                    <p class="pred-label">Córners Totales</p>
+                    <p class="pred-value" style="color: #00d2d3;">⚽ {total_c:.0f}</p>
+                    <p class="pred-sub">{pick_c}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_tarjetas:
                 st.markdown(f"""
-                <div style="background: #0d1b2a; padding: 10px; border-radius: 10px; text-align: center;">
-                    <p style="color: #888; margin: 0; font-size: 11px;">🟨 Tarjetas</p>
-                    <h3 style="color: #ffd700; margin: 5px 0;">{tarjetas_total:.1f}</h3>
-                    <p style="color: #fff; margin: 0;">Totales</p>
+                <div class="pred-card">
+                    <p class="pred-label">Tarjetas</p>
+                    <p class="pred-value" style="color: #ffd700;">🟨 {tarjetas_total:.1f}</p>
+                    <p class="pred-sub">Totales</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_score:
                 st.markdown(f"""
-                <div style="background: #0d1b2a; padding: 10px; border-radius: 10px; text-align: center;">
-                    <p style="color: #888; margin: 0; font-size: 11px;">🎯 Marcador</p>
-                    <h3 style="color: #ff6b6b; margin: 5px 0;">{score_mas_probable}</h3>
-                    <p style="color: #fff; margin: 0;">Probable</p>
+                <div class="pred-card">
+                    <p class="pred-label">Marcador</p>
+                    <p class="pred-value" style="color: #ff6b6b;">🎯 {score_mas_probable}</p>
+                    <p class="pred-sub">Probable</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -661,14 +709,25 @@ else:
                 gc = forma_l.get('goles_contra_5', 0)
                 
                 # Colores para cada resultado: G=Ganó, E=Empate, P=Perdió
-                forma_html = "".join([f"<span style='color: {'#00ff88' if c=='G' else '#ffd700' if c=='E' else '#ff6b6b'}'>{c}</span>" for c in letras])
+                forma_html = "".join([
+                    f"<span class='forma-badge {'ganado' if c=='G' else 'empatado' if c=='E' else 'perdido'}'>{c}</span>" 
+                    for c in letras
+                ])
                 
                 st.markdown(f"""
-                <div style="background: #0d1b2a; padding: 15px; border-radius: 10px;">
-                    <h4 style="color: #00ff88; margin: 0 0 10px 0;">🏠 {home}</h4>
-                    <p style="color: #fff; font-size: 24px; margin: 0;">{forma_html}</p>
-                    <p style="color: #888; margin: 5px 0;">Puntos: <span style="color: #fff;">{puntos:.0f}%</span></p>
-                    <p style="color: #888; margin: 5px 0;">Goles: <span style="color: #fff;">{gf}f / {gc}c</span></p>
+                <div class="team-stats" style="border-left: 4px solid #00ff88 !important;">
+                    <h4 style="color: #00ff88; margin: 0 0 15px 0; font-size: 16px;">🏠 {home}</h4>
+                    <div style="margin-bottom: 15px;">{forma_html}</div>
+                    <div style="display: flex; gap: 20px;">
+                        <div>
+                            <p style="color: #5a6a8a; margin: 0; font-size: 11px;">PUNTOS</p>
+                            <p style="color: #fff; margin: 5px 0 0 0; font-size: 20px; font-weight: 600;">{puntos:.0f}%</p>
+                        </div>
+                        <div>
+                            <p style="color: #5a6a8a; margin: 0; font-size: 11px;">GOLES</p>
+                            <p style="color: #00d4ff; margin: 5px 0 0 0; font-size: 20px; font-weight: 600;">{gf}f / {gc}c</p>
+                        </div>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -678,14 +737,25 @@ else:
                 gf_v = forma_v.get('goles_favor_5', 0)
                 gc_v = forma_v.get('goles_contra_5', 0)
                 
-                forma_html_v = "".join([f"<span style='color: {'#00ff88' if c=='G' else '#ffd700' if c=='E' else '#ff6b6b'}'>{c}</span>" for c in letras_v])
+                forma_html_v = "".join([
+                    f"<span class='forma-badge {'ganado' if c=='G' else 'empatado' if c=='E' else 'perdido'}'>{c}</span>" 
+                    for c in letras_v
+                ])
                 
                 st.markdown(f"""
-                <div style="background: #0d1b2a; padding: 15px; border-radius: 10px;">
-                    <h4 style="color: #ff6b6b; margin: 0 0 10px 0;">✈️ {away}</h4>
-                    <p style="color: #fff; font-size: 24px; margin: 0;">{forma_html_v}</p>
-                    <p style="color: #888; margin: 5px 0;">Puntos: <span style="color: #fff;">{puntos_v:.0f}%</span></p>
-                    <p style="color: #888; margin: 5px 0;">Goles: <span style="color: #fff;">{gf_v}f / {gc_v}c</span></p>
+                <div class="team-stats" style="border-right: 4px solid #ff6b6b !important; border-left: none !important;">
+                    <h4 style="color: #ff6b6b; margin: 0 0 15px 0; font-size: 16px;">✈️ {away}</h4>
+                    <div style="margin-bottom: 15px;">{forma_html_v}</div>
+                    <div style="display: flex; gap: 20px;">
+                        <div>
+                            <p style="color: #5a6a8a; margin: 0; font-size: 11px;">PUNTOS</p>
+                            <p style="color: #fff; margin: 5px 0 0 0; font-size: 20px; font-weight: 600;">{puntos_v:.0f}%</p>
+                        </div>
+                        <div>
+                            <p style="color: #5a6a8a; margin: 0; font-size: 11px;">GOLES</p>
+                            <p style="color: #00d4ff; margin: 5px 0 0 0; font-size: 20px; font-weight: 600;">{gf_v}f / {gc_v}c</p>
+                        </div>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
     
