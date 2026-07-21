@@ -164,6 +164,103 @@ ALTER TABLE picks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "picks_all" ON picks FOR ALL USING (true) WITH CHECK (true);
 
 -- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLA HISTORIAL_PREDICCIONES
+-- Guarda TODAS las predicciones para calcular % de acierto por modelo
+-- ═══════════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS historial_predicciones (
+    id BIGSERIAL PRIMARY KEY,
+    fixture_id BIGINT,
+    fecha DATE NOT NULL,
+    liga VARCHAR(255),
+    equipo_local VARCHAR(255),
+    equipo_visitante VARCHAR(255),
+    -- Resultado real
+    goles_local INTEGER,
+    goles_visitante INTEGER,
+    resultado_real VARCHAR(10),  -- '1', 'X', '2'
+    total_goles INTEGER,  -- Para Over/Under
+    ambos_marcan VARCHAR(10),  -- 'SI', 'NO'
+    -- Predicciones Poisson
+    poisson_1 DECIMAL(5,2),
+    poisson_X DECIMAL(5,2),
+    poisson_2 DECIMAL(5,2),
+    poisson_acierto BOOLEAN,
+    -- Predicciones Dixon-Coles
+    dc_1 DECIMAL(5,2),
+    dc_X DECIMAL(5,2),
+    dc_2 DECIMAL(5,2),
+    dc_acierto BOOLEAN,
+    -- Predicciones Monte Carlo
+    mc_1 DECIMAL(5,2),
+    mc_X DECIMAL(5,2),
+    mc_2 DECIMAL(5,2),
+    mc_acierto BOOLEAN,
+    -- Predicciones Forma Reciente
+    forma_local_pct DECIMAL(5,2),
+    forma_visitante_pct DECIMAL(5,2),
+    forma_acierto BOOLEAN,
+    -- Predicciones Estilo
+    estilo_local VARCHAR(50),
+    estilo_visitante VARCHAR(50),
+    -- Predicción final COMBINADA (la que se usó)
+    prediccion_final VARCHAR(10),
+    probabilidad_final DECIMAL(5,2),
+    -- Pesos usados en ese momento
+    peso_poisson DECIMAL(5,2),
+    peso_dixon DECIMAL(5,2),
+    peso_montecarlo DECIMAL(5,2),
+    peso_forma DECIMAL(5,2),
+    peso_estilo DECIMAL(5,2),
+    -- Confianza y rango
+    confianza INTEGER,
+    rango VARCHAR(5),
+    -- Veredicto
+    acierto BOOLEAN,
+    -- Metadatos
+    creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_historial_fecha ON historial_predicciones(fecha);
+CREATE INDEX IF NOT EXISTS idx_historial_acierto ON historial_predicciones(acierto);
+CREATE INDEX IF NOT EXISTS idx_historial_fixture ON historial_predicciones(fixture_id);
+
+ALTER TABLE historial_predicciones ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "historial_all" ON historial_predicciones FOR ALL USING (true) WITH CHECK (true);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLA PESOS_MODELOS
+-- Almacena los pesos ÓPTIMOS aprendidos del historial
+-- Se actualizan automáticamente después de N predicciones
+-- ═══════════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS pesos_modelos (
+    id BIGSERIAL PRIMARY KEY,
+    modelo VARCHAR(50) NOT NULL,
+    peso DECIMAL(5,2) NOT NULL,
+    -- Métricas de este modelo
+    total_predicciones INTEGER DEFAULT 0,
+    aciertos INTEGER DEFAULT 0,
+    porcentaje_acierto DECIMAL(5,2) DEFAULT 0,
+    -- Configuración
+    es_activo BOOLEAN DEFAULT TRUE,
+    actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Pesos iniciales (los que usamos ahora)
+INSERT INTO pesos_modelos (modelo, peso, es_activo) VALUES
+    ('poisson', 0.30, TRUE),
+    ('dixon_coles', 0.25, TRUE),
+    ('monte_carlo', 0.20, TRUE),
+    ('forma_reciente', 0.15, TRUE),
+    ('estilo_juego', 0.10, TRUE)
+ON CONFLICT DO NOTHING;
+
+CREATE INDEX IF NOT EXISTS idx_pesos_modelo ON pesos_modelos(modelo);
+CREATE INDEX IF NOT EXISTS idx_pesos_activo ON pesos_modelos(es_activo);
+
+ALTER TABLE pesos_modelos ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "pesos_all" ON pesos_modelos FOR ALL USING (true) WITH CHECK (true);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
 -- FUNCIONES AUTO-UPDATE
 -- ═══════════════════════════════════════════════════════════════════════════════
 
