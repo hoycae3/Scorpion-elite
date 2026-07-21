@@ -1256,13 +1256,8 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
     Función de compatibilidad para stats_robot.run_robot_batch
     Procesa una lista de equipos y retorna estadísticas en formato compatible con elite.py.
     
-    Busca cada equipo en las 4 fuentes del SuperRobot:
-    1. football-data.co.uk (rápido, sin bloqueo)
-    2. Soccerway (resultados históricos, mundial)
-    3. WhoScored (corners, tarjetas, posesión)
-    4. FBref (stats detalladas)
-    
-    Si NO encuentra en ninguna fuente → marcado como NO encontrado (sin estimaciones).
+    Busca en orden: football-data → Soccerway → WhoScored → FBref
+    En cuanto UNA fuente encuentra datos → USA ESOS DATOS y PARA.
     """
     results = []
     logger.info(f"🔍 Procesando {len(team_names)} equipos con SuperRobot...")
@@ -1270,18 +1265,20 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
     # Crear instancia del SuperRobot
     robot = SuperRobot()
     
+    # Preparar football-data (cargar en cache)
+    logger.info("📥 Preparando football-data.co.uk...")
+    robot.fd_stats = get_football_data_stats()
+    logger.info(f"   ✅ {len(robot.fd_stats)} equipos cargados")
+    
     for i, team_name in enumerate(team_names):
         logger.info(f"[{i+1}/{len(team_names)}] 🔍 {team_name}...")
         
-        # Buscar en todas las fuentes
+        encontrado = False
+        
+        # 1. BUSCAR EN FOOTBALL-DATA
+        logger.info(f"   1️⃣ Probando football-data.co.uk...")
         try:
-            stats_result = robot.get_team_complete_stats(team_name)
-            fuentes_encontradas = stats_result.get('fuentes', [])
-            logger.info(f"   📡 Fuentes encontradas: {fuentes_encontradas if fuentes_encontradas else 'ninguna'}")
-            
-            # Extraer datos de football-data (fuente principal y más rápida)
-            fd_data = stats_result.get('stats', {}).get('football_data')
-            
+            fd_data = get_team_stats_from_football_data(team_name)
             if fd_data:
                 gf = fd_data.get('goles_favor', 0)
                 gc = fd_data.get('goles_contra', 0)
@@ -1304,62 +1301,139 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                     'victorias': fd_data.get('victorias', 0),
                     'empates': fd_data.get('empates', 0),
                     'derrotas': fd_data.get('derrotas', 0),
-                    'fuentes_probadas': fuentes_encontradas,
+                    'fuentes_probadas': ['football-data.co.uk'],
                 }
-                logger.info(f"   ✅ {team_name}: λL={result['lambda_local']}, λV={result['lambda_visitante']} [{', '.join(fuentes_encontradas)}]")
-            else:
-                # Intentar con Soccerway si football-data no tiene
-                sw_stats = stats_result.get('stats', {}).get('soccerway')
-                
-                if sw_stats:
-                    result = {
-                        'equipo': team_name,
-                        'encontrado': True,
-                        'exito': True,
-                        'sin_estadisticas': False,
-                        'equipo_real': sw_stats.get('equipo', team_name),
-                        'liga': sw_stats.get('liga', 'Desconocida'),
-                        'lambda_local': sw_stats.get('lambda_local', 0),
-                        'lambda_visitante': sw_stats.get('lambda_visitante', 0),
-                        'goles_favor': sw_stats.get('goles_favor', 0),
-                        'goles_contra': sw_stats.get('goles_contra', 0),
-                        'partidos_jugados': sw_stats.get('partidos', 0),
-                        'victorias': sw_stats.get('victorias', 0),
-                        'empates': sw_stats.get('empates', 0),
-                        'derrotas': sw_stats.get('derrotas', 0),
-                        'fuentes_probadas': ['soccerway'],
-                    }
-                    logger.info(f"   ✅ {team_name} (Soccerway): λL={result['lambda_local']}")
-                else:
-                    # NO encontró en ninguna fuente → marcar como NO encontrado
-                    result = {
-                        'equipo': team_name,
-                        'encontrado': False,
-                        'exito': True,
-                        'sin_estadisticas': True,
-                        'equipo_real': team_name,
-                        'liga': 'NO ENCONTRADO',
-                        'lambda_local': 0,
-                        'lambda_visitante': 0,
-                        'goles_favor': 0,
-                        'goles_contra': 0,
-                        'partidos_jugados': 0,
-                        'victorias': 0,
-                        'empates': 0,
-                        'derrotas': 0,
-                        'fuentes_probadas': fuentes_encontradas if fuentes_encontradas else ['NINGUNA'],
-                    }
-                    logger.info(f"   ❌ {team_name}: NO ENCONTRADO en ninguna fuente")
-        
+                logger.info(f"   ✅ ENCONTRADO en football-data: λL={result['lambda_local']}, λV={result['lambda_visitante']}")
+                results.append(result)
+                encontrado = True
         except Exception as e:
-            logger.error(f"   ❌ Error con {team_name}: {e}")
+            logger.warning(f"   ⚠️ football-data error: {e}")
+        
+        # 2. BUSCAR EN SOCCERWAY (si no encontró en football-data)
+        if not encontrado:
+            logger.info(f"   2️⃣ Probando Soccerway...")
+            try:
+                sw_url = robot.soccerway.search_team(team_name)
+                if sw_url:
+                    sw_results = robot.soccerway.get_team_results(sw_url)
+                    if sw_results and sw_results.get('partidos', 0) > 0:
+                        result = {
+                            'equipo': team_name,
+                            'encontrado': True,
+                            'exito': True,
+                            'sin_estadisticas': False,
+                            'equipo_real': sw_results.get('equipo', team_name),
+                            'liga': sw_results.get('liga', 'Desconocida'),
+                            'lambda_local': sw_results.get('lambda_local', 0),
+                            'lambda_visitante': sw_results.get('lambda_visitante', 0),
+                            'goles_favor': sw_results.get('goles_favor', 0),
+                            'goles_contra': sw_results.get('goles_contra', 0),
+                            'partidos_jugados': sw_results.get('partidos', 0),
+                            'victorias': sw_results.get('victorias', 0),
+                            'empates': sw_results.get('empates', 0),
+                            'derrotas': sw_results.get('derrotas', 0),
+                            'fuentes_probadas': ['Soccerway'],
+                        }
+                        logger.info(f"   ✅ ENCONTRADO en Soccerway: λL={result['lambda_local']}, λV={result['lambda_visitante']}")
+                        results.append(result)
+                        encontrado = True
+            except Exception as e:
+                logger.warning(f"   ⚠️ Soccerway error: {e}")
+        
+        # 3. BUSCAR EN WHOSCORED (si no encontró en Soccerway)
+        if not encontrado:
+            logger.info(f"   3️⃣ Probando WhoScored...")
+            try:
+                ws_url = robot.whoscored.search_team(team_name)
+                if ws_url:
+                    ws_stats = robot.whoscored.get_team_stats(ws_url)
+                    if ws_stats and ws_stats.get('partidos', 0) > 0:
+                        # WhoScored tiene stats diferentes, calcular lambdas si hay goles
+                        gf = ws_stats.get('goles_favor', 0) or ws_stats.get('goles', 0)
+                        gc = ws_stats.get('goles_contra', 0) or 0
+                        p = ws_stats.get('partidos', 0)
+                        
+                        if p > 0 and gf > 0:
+                            lambda_local = calculate_team_lambda(gf, gc, p, is_home=True)
+                            lambda_visitante = calculate_team_lambda(gf, gc, p, is_home=False)
+                        else:
+                            lambda_local = ws_stats.get('lambda_local', 0)
+                            lambda_visitante = ws_stats.get('lambda_visitante', 0)
+                        
+                        result = {
+                            'equipo': team_name,
+                            'encontrado': True,
+                            'exito': True,
+                            'sin_estadisticas': False,
+                            'equipo_real': ws_stats.get('equipo', team_name),
+                            'liga': ws_stats.get('liga', 'Desconocida'),
+                            'lambda_local': lambda_local,
+                            'lambda_visitante': lambda_visitante,
+                            'goles_favor': gf,
+                            'goles_contra': gc,
+                            'partidos_jugados': p,
+                            'victorias': ws_stats.get('victorias', 0),
+                            'empates': ws_stats.get('empates', 0),
+                            'derrotas': ws_stats.get('derrotas', 0),
+                            'fuentes_probadas': ['WhoScored'],
+                        }
+                        logger.info(f"   ✅ ENCONTRADO en WhoScored: λL={result['lambda_local']}, λV={result['lambda_visitante']}")
+                        results.append(result)
+                        encontrado = True
+            except Exception as e:
+                logger.warning(f"   ⚠️ WhoScored error: {e}")
+        
+        # 4. BUSCAR EN FBREF (si no encontró en WhoScored)
+        if not encontrado:
+            logger.info(f"   4️⃣ Probando FBref...")
+            try:
+                fbref_team = robot.fbref.find_team(team_name)
+                if fbref_team:
+                    fbref_stats = robot.fbref.get_team_stats(fbref_team.get('url', ''))
+                    if fbref_stats and fbref_stats.get('partidos', 0) > 0:
+                        gf = fbref_stats.get('goles_favor', 0)
+                        gc = fbref_stats.get('goles_contra', 0)
+                        p = fbref_stats.get('partidos', 0)
+                        
+                        if p > 0 and gf > 0:
+                            lambda_local = calculate_team_lambda(gf, gc, p, is_home=True)
+                            lambda_visitante = calculate_team_lambda(gf, gc, p, is_home=False)
+                        else:
+                            lambda_local = fbref_stats.get('lambda_local', 0)
+                            lambda_visitante = fbref_stats.get('lambda_visitante', 0)
+                        
+                        result = {
+                            'equipo': team_name,
+                            'encontrado': True,
+                            'exito': True,
+                            'sin_estadisticas': False,
+                            'equipo_real': fbref_stats.get('equipo', team_name),
+                            'liga': fbref_stats.get('liga', 'Desconocida'),
+                            'lambda_local': lambda_local,
+                            'lambda_visitante': lambda_visitante,
+                            'goles_favor': gf,
+                            'goles_contra': gc,
+                            'partidos_jugados': p,
+                            'victorias': fbref_stats.get('victorias', 0),
+                            'empates': fbref_stats.get('empates', 0),
+                            'derrotas': fbref_stats.get('derrotas', 0),
+                            'fuentes_probadas': ['FBref'],
+                        }
+                        logger.info(f"   ✅ ENCONTRADO en FBref: λL={result['lambda_local']}, λV={result['lambda_visitante']}")
+                        results.append(result)
+                        encontrado = True
+            except Exception as e:
+                logger.warning(f"   ⚠️ FBref error: {e}")
+        
+        # 5. NO ENCONTRADO EN NINGUNA FUENTE
+        if not encontrado:
             result = {
                 'equipo': team_name,
                 'encontrado': False,
-                'exito': False,
+                'exito': True,
                 'sin_estadisticas': True,
                 'equipo_real': team_name,
-                'liga': 'ERROR',
+                'liga': 'NO ENCONTRADO',
                 'lambda_local': 0,
                 'lambda_visitante': 0,
                 'goles_favor': 0,
@@ -1368,10 +1442,10 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                 'victorias': 0,
                 'empates': 0,
                 'derrotas': 0,
-                'fuentes_probadas': ['ERROR'],
+                'fuentes_probadas': ['NINGUNA'],
             }
-        
-        results.append(result)
+            logger.info(f"   ❌ NO ENCONTRADO en ninguna fuente")
+            results.append(result)
     
     logger.info(f"✅ SuperRobot completado: {len(results)} equipos procesados")
     return results
