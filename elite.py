@@ -577,6 +577,73 @@ else:
                 """, unsafe_allow_html=True)
             
             # ========================
+            # ESTADÍSTICAS DETALLADAS
+            # ========================
+            st.markdown("### 📊 Estadísticas Estimadas del Partido")
+            
+            # Calcular datos estimados
+            c_local = stats_local.get('promedio_corners_total', 10) if stats_local else 10
+            c_visitante = stats_visitante.get('promedio_corners_total', 10) if stats_visitante else 10
+            t_local = stats_local.get('promedio_tiros', 12) if stats_local else 12
+            t_visitante = stats_visitante.get('promedio_tiros', 12) if stats_visitante else 12
+            ta_local = stats_local.get('promedio_amarillas', 3) if stats_local else 3
+            ta_visitante = stats_visitante.get('promedio_amarillas', 3) if stats_visitante else 3
+            
+            # Estimación de córners por equipo
+            corners_match = r.get('corners', {})
+            total_corners = corners_match.get('total_estimado', (c_local + c_visitante))
+            # Desglose: local suele generar más córners como local
+            corners_local_est = total_corners * 0.55 if p1 > p2 else total_corners * 0.50
+            corners_visitante_est = total_corners - corners_local_est
+            
+            # Estimación de tarjetas
+            tarjetas_est = ta_local + ta_visitante
+            
+            # Score más probable de Monte Carlo
+            modelos = r.get('modelos', {})
+            mc = modelos.get('monte_carlo', {})
+            top_scores = mc.get('top_scores', {})
+            score_mas_probable = list(top_scores.keys())[0] if top_scores else "2-1"
+            
+            col_stats1, col_stats2, col_stats3, col_stats4 = st.columns(4)
+            
+            with col_stats1:
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 12px; border-radius: 10px; text-align: center;">
+                    <p style="color: #888; margin: 0; font-size: 12px;">⚽ Córners Local</p>
+                    <h3 style="color: #00ff88; margin: 5px 0;">~{corners_local_est:.0f}</h3>
+                    <p style="color: #666; margin: 0; font-size: 11px;">Promedio: {c_local:.1f}</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col_stats2:
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 12px; border-radius: 10px; text-align: center;">
+                    <p style="color: #888; margin: 0; font-size: 12px;">⚽ Córners Visitante</p>
+                    <h3 style="color: #ff6b6b; margin: 5px 0;">~{corners_visitante_est:.0f}</h3>
+                    <p style="color: #666; margin: 0; font-size: 11px;">Promedio: {c_visitante:.1f}</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col_stats3:
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 12px; border-radius: 10px; text-align: center;">
+                    <p style="color: #888; margin: 0; font-size: 12px;">🟨 Tarjetas</p>
+                    <h3 style="color: #ffd700; margin: 5px 0;">~{tarjetas_est:.0f}</h3>
+                    <p style="color: #666; margin: 0; font-size: 11px;">L:{ta_local:.1f} V:{ta_visitante:.1f}</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col_stats4:
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 12px; border-radius: 10px; text-align: center;">
+                    <p style="color: #888; margin: 0; font-size: 12px;">🎯 Marcador Probable</p>
+                    <h3 style="color: #00d2d3; margin: 5px 0;">{score_mas_probable}</h3>
+                    <p style="color: #666; margin: 0; font-size: 11px;">Monte Carlo</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # ========================
             # FORMA RECIENTE
             # ========================
             st.markdown("### 📅 Forma Reciente (Últimos 5)")
