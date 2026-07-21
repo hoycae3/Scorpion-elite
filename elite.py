@@ -197,35 +197,11 @@ if not st.session_state.logged:
 
 # Dashboard
 else:
-    # Sidebar con navegación
-    st.markdown("""
-    <style>
-    [data-testid="stSidebar"] { background: #1a1a1a; }
-    </style>
-    """, unsafe_allow_html=True)
-    
+    # Sidebar con información del usuario
     with st.sidebar:
-        st.markdown("## 🦂 Menú")
+        st.markdown("## 🦂 Scorpion Elite")
         st.markdown(f"**Usuario:** {st.session_state.user_data.get('nombre', 'Admin') if st.session_state.user_data else 'Admin'}")
         st.markdown(f"**Plan:** {st.session_state.user_data.get('plan', 'admin') if st.session_state.user_data else 'admin'}")
-        st.markdown("---")
-        
-        if st.button("📂 Carga", use_container_width=True, type="secondary" if st.session_state.page != "Carga" else "primary"):
-            st.session_state.page = "Carga"
-            st.rerun()
-        
-        if st.button("📊 Analizador", use_container_width=True, type="secondary" if st.session_state.page != "Analizador" else "primary"):
-            st.session_state.page = "Analizador"
-            st.rerun()
-        
-        if st.button("📈 Estadísticas", use_container_width=True, type="secondary" if st.session_state.page != "Estadisticas" else "primary"):
-            st.session_state.page = "Estadisticas"
-            st.rerun()
-        
-        if st.button("🔑 Claves", use_container_width=True, type="secondary" if st.session_state.page != "Claves" else "primary"):
-            st.session_state.page = "Claves"
-            st.rerun()
-        
         st.markdown("---")
         if st.button("🔓 Logout", use_container_width=True):
             st.session_state.logged = False
@@ -233,13 +209,35 @@ else:
             st.session_state.is_admin = False
             st.rerun()
     
+    # Menú horizontal arriba
+    st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
+    
+    col_menu1, col_menu2, col_menu3, col_menu4 = st.columns(4)
+    
+    with col_menu1:
+        if st.button("📂 Carga", use_container_width=True, type="primary" if st.session_state.page == "Carga" else "secondary"):
+            st.session_state.page = "Carga"
+            st.rerun()
+    
+    with col_menu2:
+        if st.button("📊 Analizador", use_container_width=True, type="primary" if st.session_state.page == "Analizador" else "secondary"):
+            st.session_state.page = "Analizador"
+            st.rerun()
+    
+    with col_menu3:
+        if st.button("📈 Estadísticas", use_container_width=True, type="primary" if st.session_state.page == "Estadisticas" else "secondary"):
+            st.session_state.page = "Estadisticas"
+            st.rerun()
+    
+    with col_menu4:
+        if st.button("🔑 Claves", use_container_width=True, type="primary" if st.session_state.page == "Claves" else "secondary"):
+            st.session_state.page = "Claves"
+            st.rerun()
+    
+    st.markdown("---")
+    
     # Página: Carga
     if st.session_state.page == "Carga":
-        col1, col2 = st.columns([4, 1])
-        with col1:
-            st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
-        
-        # Sección de carga
         st.markdown("### 📂 Cargar archivos")
         
         uploaded_file = st.file_uploader("", type=['xlsx', 'xls', 'csv'])
@@ -331,7 +329,7 @@ else:
     
     # Página: Analizador
     elif st.session_state.page == "Analizador":
-        st.markdown('<h1 class="title">📊 Analizador</h1>', unsafe_allow_html=True)
+        st.markdown("### 📊 Analizador")
         
         # Obtener lista de equipos disponibles
         client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -708,7 +706,7 @@ else:
     
     # Página: Estadísticas
     elif st.session_state.page == "Estadisticas":
-        st.markdown('<h1 class="title">📈 Estadísticas</h1>', unsafe_allow_html=True)
+        st.markdown("### 📈 Estadísticas")
         
         # Sección: Robot automático
         st.markdown("### 🤖 Buscar Todos los Equipos del Excel")
@@ -998,7 +996,7 @@ else:
 
     # Página: Gestión de Claves
     elif st.session_state.page == "Claves":
-        st.markdown('<h1 class="title">🔑 Gestión de Claves</h1>', unsafe_allow_html=True)
+        st.markdown("### 🔑 Gestión de Claves")
         
         # Crear nueva clave
         st.markdown("### ➕ Crear Nueva Clave de Acceso")
