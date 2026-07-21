@@ -606,6 +606,83 @@ else:
                 """, unsafe_allow_html=True)
             
             # ========================
+            # ESTADÍSTICAS DEL ROBOT
+            # ========================
+            # Obtener datos del local
+            gf_local = stats_local.get('goles_favor', 0) if stats_local else 0
+            gc_local = stats_local.get('goles_contra', 0) if stats_local else 0
+            pj_local = stats_local.get('partidos_jugados', 0) if stats_local else 0
+            c_local = stats_local.get('promedio_corners_total', 10) if stats_local else 10
+            t_local = stats_local.get('promedio_tiros', 12) if stats_local else 12
+            ta_local = stats_local.get('promedio_amarillas', 3) if stats_local else 3
+            lambda_local = stats_local.get('lambda_local', 0) if stats_local else 0
+            
+            # Obtener datos del visitante
+            gf_visitante = stats_visitante.get('goles_favor', 0) if stats_visitante else 0
+            gc_visitante = stats_visitante.get('goles_contra', 0) if stats_visitante else 0
+            pj_visitante = stats_visitante.get('partidos_jugados', 0) if stats_visitante else 0
+            c_visitante = stats_visitante.get('promedio_corners_total', 10) if stats_visitante else 10
+            t_visitante = stats_visitante.get('promedio_tiros', 12) if stats_visitante else 12
+            ta_visitante = stats_visitante.get('promedio_amarillas', 3) if stats_visitante else 3
+            lambda_visitante = stats_visitante.get('lambda_visitante', 0) if stats_visitante else 0
+            
+            # Local
+            col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
+            
+            with col1:
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 8px; border-radius: 8px; text-align: center;">
+                    <h4 style="color: #00ff88; margin: 0; font-size: 13px;">🏠 {home}</h4>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.metric("PJ", pj_local)
+            
+            with col3:
+                st.metric("GF/GC", f"{gf_local}/{gc_local}")
+            
+            with col4:
+                st.metric("λL", f"{lambda_local:.2f}")
+            
+            with col5:
+                st.metric("Tiros", f"{t_local:.0f}")
+            
+            with col6:
+                st.metric("Corn", f"{c_local:.1f}")
+            
+            with col7:
+                st.metric("Tarj", f"{ta_local:.1f}")
+            
+            # Visitante
+            col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
+            
+            with col1:
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 8px; border-radius: 8px; text-align: center;">
+                    <h4 style="color: #ff6b6b; margin: 0; font-size: 13px;">✈️ {away}</h4>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.metric("PJ", pj_visitante)
+            
+            with col3:
+                st.metric("GF/GC", f"{gf_visitante}/{gc_visitante}")
+            
+            with col4:
+                st.metric("λV", f"{lambda_visitante:.2f}")
+            
+            with col5:
+                st.metric("Tiros", f"{t_visitante:.0f}")
+            
+            with col6:
+                st.metric("Corn", f"{c_visitante:.1f}")
+            
+            with col7:
+                st.metric("Tarj", f"{ta_visitante:.1f}")
+            
+            # ========================
             # FORMA RECIENTE
             # ========================
             st.markdown("### 📅 Forma Reciente (Últimos 5)")
