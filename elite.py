@@ -473,7 +473,7 @@ else:
             st.markdown("---")
             
             # ========================
-            # ESTADÍSTICAS DEL ROBOT - COMPACTAS
+            # ESTADÍSTICAS DEL ROBOT - VERTICAL
             # ========================
             stats_local = st.session_state.get('stats_local', {})
             stats_visitante = st.session_state.get('stats_visitante', {})
@@ -485,37 +485,33 @@ else:
                 
                 with col_est1:
                     st.markdown(f"""
-                    <div class="simple-card simple-card-green">
-                        <h4 style="color: #00ff88; margin: 0 0 8px 0; font-size: 14px;">🏠 {home}</h4>
-                        <p style="color: #888; margin: 2px 0; font-size: 11px;">
-                            PJ: <span style="color: #fff;">{stats_local.get('partidos_jugados', 0)}</span> | 
-                            GF: <span style="color: #fff;">{stats_local.get('goles_favor', 0)}</span> | 
-                            GC: <span style="color: #fff;">{stats_local.get('goles_contra', 0)}</span>
-                        </p>
-                        <p style="color: #888; margin: 2px 0; font-size: 11px;">
-                            λL: <span style="color: #00d4ff;">{stats_local.get('lambda_local', 0):.2f}</span> | 
-                            Rem: <span style="color: #fff;">{stats_local.get('promedio_tiros', 0):.1f}</span> | 
-                            Cór: <span style="color: #00d2d3;">{stats_local.get('promedio_corners_total', 0):.1f}</span> | 
-                            Tarj: <span style="color: #ffd700;">{stats_local.get('promedio_amarillas', 0):.1f}</span>
-                        </p>
+                    <div class="simple-card simple-card-green" style="padding: 15px;">
+                        <h4 style="color: #00ff88; margin: 0 0 12px 0; font-size: 16px;">🏠 {home}</h4>
+                        <div style="font-size: 13px; line-height: 1.8;">
+                            <p style="margin: 3px 0;">PJ: <span style="color: #fff;">{stats_local.get('partidos_jugados', 0)}</span></p>
+                            <p style="margin: 3px 0;">GF: <span style="color: #fff;">{stats_local.get('goles_favor', 0)}</span></p>
+                            <p style="margin: 3px 0;">GC: <span style="color: #fff;">{stats_local.get('goles_contra', 0)}</span></p>
+                            <p style="margin: 3px 0;">λL: <span style="color: #00d4ff;">{stats_local.get('lambda_local', 0):.2f}</span></p>
+                            <p style="margin: 3px 0;">Remates: <span style="color: #fff;">{stats_local.get('promedio_tiros', 0):.1f}</span></p>
+                            <p style="margin: 3px 0;">Córners: <span style="color: #00d2d3;">{stats_local.get('promedio_corners_total', 0):.1f}</span></p>
+                            <p style="margin: 3px 0;">Tarjetas: <span style="color: #ffd700;">{stats_local.get('promedio_amarillas', 0):.1f}</span></p>
+                        </div>
                     </div>
                     """, unsafe_allow_html=True)
                 
                 with col_est2:
                     st.markdown(f"""
-                    <div class="simple-card simple-card-red">
-                        <h4 style="color: #ff6b6b; margin: 0 0 8px 0; font-size: 14px;">✈️ {away}</h4>
-                        <p style="color: #888; margin: 2px 0; font-size: 11px;">
-                            PJ: <span style="color: #fff;">{stats_visitante.get('partidos_jugados', 0)}</span> | 
-                            GF: <span style="color: #fff;">{stats_visitante.get('goles_favor', 0)}</span> | 
-                            GC: <span style="color: #fff;">{stats_visitante.get('goles_contra', 0)}</span>
-                        </p>
-                        <p style="color: #888; margin: 2px 0; font-size: 11px;">
-                            λV: <span style="color: #00d4ff;">{stats_visitante.get('lambda_visitante', 0):.2f}</span> | 
-                            Rem: <span style="color: #fff;">{stats_visitante.get('promedio_tiros', 0):.1f}</span> | 
-                            Cór: <span style="color: #00d2d3;">{stats_visitante.get('promedio_corners_total', 0):.1f}</span> | 
-                            Tarj: <span style="color: #ffd700;">{stats_visitante.get('promedio_amarillas', 0):.1f}</span>
-                        </p>
+                    <div class="simple-card simple-card-red" style="padding: 15px;">
+                        <h4 style="color: #ff6b6b; margin: 0 0 12px 0; font-size: 16px;">✈️ {away}</h4>
+                        <div style="font-size: 13px; line-height: 1.8;">
+                            <p style="margin: 3px 0;">PJ: <span style="color: #fff;">{stats_visitante.get('partidos_jugados', 0)}</span></p>
+                            <p style="margin: 3px 0;">GF: <span style="color: #fff;">{stats_visitante.get('goles_favor', 0)}</span></p>
+                            <p style="margin: 3px 0;">GC: <span style="color: #fff;">{stats_visitante.get('goles_contra', 0)}</span></p>
+                            <p style="margin: 3px 0;">λV: <span style="color: #00d4ff;">{stats_visitante.get('lambda_visitante', 0):.2f}</span></p>
+                            <p style="margin: 3px 0;">Remates: <span style="color: #fff;">{stats_visitante.get('promedio_tiros', 0):.1f}</span></p>
+                            <p style="margin: 3px 0;">Córners: <span style="color: #00d2d3;">{stats_visitante.get('promedio_corners_total', 0):.1f}</span></p>
+                            <p style="margin: 3px 0;">Tarjetas: <span style="color: #ffd700;">{stats_visitante.get('promedio_amarillas', 0):.1f}</span></p>
+                        </div>
                     </div>
                     """, unsafe_allow_html=True)
             
