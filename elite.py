@@ -362,8 +362,13 @@ else:
                 if resp.data and resp.data[0].get('lambda_local', 0) > 0:
                     stats_local = resp.data[0]
                     lambda_local = stats_local.get('lambda_local', 0)
+                    lambda_visit = stats_local.get('lambda_visitante', 0)
+                    partidos = stats_local.get('partidos_jugados', 0)
+                    victorias = stats_local.get('victorias', 0)
+                    empates = stats_local.get('empates', 0)
+                    derrotas = stats_local.get('derrotas', 0)
                     equipo_local_ok = True
-                    st.success(f"✅ {home_team} - λ={lambda_local}")
+                    st.success(f"✅ **{home_team}** - Partidos: {partidos} | V:{victorias} E:{empates} D:{derrotas} | λL:{lambda_local:.2f} λV:{lambda_visit:.2f}")
                 else:
                     equipos_faltantes.append(home_team)
             except Exception as e:
@@ -378,8 +383,13 @@ else:
                 if resp.data and resp.data[0].get('lambda_visitante', 0) > 0:
                     stats_visitante = resp.data[0]
                     lambda_visitante = stats_visitante.get('lambda_visitante', 0)
+                    lambda_local_v = stats_visitante.get('lambda_local', 0)
+                    partidos = stats_visitante.get('partidos_jugados', 0)
+                    victorias = stats_visitante.get('victorias', 0)
+                    empates = stats_visitante.get('empates', 0)
+                    derrotas = stats_visitante.get('derrotas', 0)
                     equipo_visitante_ok = True
-                    st.success(f"✅ {away_team} - λ={lambda_visitante}")
+                    st.success(f"✅ **{away_team}** - Partidos: {partidos} | V:{victorias} E:{empates} D:{derrotas} | λL:{lambda_local_v:.2f} λV:{lambda_visitante:.2f}")
                 else:
                     equipos_faltantes.append(away_team)
             except Exception as e:
