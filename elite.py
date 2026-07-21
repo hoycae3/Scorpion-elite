@@ -453,95 +453,189 @@ else:
             r = st.session_state.analysis_result
             home = st.session_state.home
             away = st.session_state.away
-            stats_local = st.session_state.get('stats_local', {})
-            stats_visitante = st.session_state.get('stats_visitante', {})
             
             st.markdown("---")
-            st.markdown(f"## 📊 {home} vs {away}")
             
-            # Pick y confianza
-            col_pick, col_conf, col_goles = st.columns(3)
-            with col_pick:
-                rating_emoji = {"A+": "🟢", "A": "🟢", "B": "🔵", "C": "🟡", "D": "🔴"}
-                pick_emoji = {"1": "🏠", "X": "🤝", "2": "✈️"}
-                st.metric("Pick", f"{pick_emoji.get(r['pick_1x2'], '')} {r['pick_1x2']}")
-            with col_conf:
-                st.metric("Confianza", f"{r['confianza']}% ({r['rango']})")
-            with col_goles:
-                st.metric("Goles Esperados", f"{r.get('goles_esperados', 0)}")
+            # ========================
+            # RECUADRO PRINCIPAL
+            # ========================
+            pick = r.get('pick_1x2', 'X')
+            confianza = r.get('confianza', 0)
+            rango = r.get('rango', 'D')
             
-            # Probabilidades 1X2
-            st.markdown("### 🎯 1X2")
-            col1, col2, col3 = st.columns(3)
+            pick_icon = {"1": "🏠", "X": "🤝", "2": "✈️"}
+            rango_color = {"A+": "🟢", "A": "🟢", "B": "🔵", "C": "🟡", "D": "🔴"}
+            
+            # Pick principal
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
+                        padding: 20px; border-radius: 15px; text-align: center; margin: 10px 0;">
+                <h2 style="color: white; margin: 0;">⚽ {home} vs {away}</h2>
+                <h1 style="color: #00d4ff; margin: 15px 0 5px 0;">
+                    {pick_icon.get(pick, '🎯')} {pick}
+                </h1>
+                <p style="color: #aaa; margin: 0;">
+                    {rango_color.get(rango, '⚪')} Confianza: {confianza}% ({rango})
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # ========================
+            # PROBABILIDADES 1X2
+            # ========================
+            st.markdown("### 🎯 Probabilidades (1X2)")
+            
+            p1 = r.get('p1', 0)
+            px = r.get('px', 0)
+            p2 = r.get('p2', 0)
+            
+            col1, col2, col3 = st.columns([1.5, 1, 1.5])
             with col1:
-                st.markdown(f"**🏠 {home}**")
-                st.markdown(f"## {r['p1']:.1f}%")
-                st.progress(r['p1']/100)
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 15px; border-radius: 10px; text-align: center; 
+                            border: 2px solid {'#00ff88' if p1 > px and p1 > p2 else '#333'};">
+                    <h3 style="color: #00ff88; margin: 0;">🏠 {home}</h3>
+                    <h1 style="color: white; margin: 10px 0;">{p1:.1f}%</h1>
+                </div>
+                """, unsafe_allow_html=True)
             with col2:
-                st.markdown("**🤝 Empate**")
-                st.markdown(f"## {r['px']:.1f}%")
-                st.progress(r['px']/100)
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 15px; border-radius: 10px; text-align: center;
+                            border: 2px solid {'#ffd700' if px > p1 and px > p2 else '#333'};">
+                    <h3 style="color: #ffd700; margin: 0;">🤝 Empate</h3>
+                    <h1 style="color: white; margin: 10px 0;">{px:.1f}%</h1>
+                </div>
+                """, unsafe_allow_html=True)
             with col3:
-                st.markdown(f"**✈️ {away}**")
-                st.markdown(f"## {r['p2']:.1f}%")
-                st.progress(r['p2']/100)
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 15px; border-radius: 10px; text-align: center;
+                            border: 2px solid {'#ff6b6b' if p2 > p1 and p2 > px else '#333'};">
+                    <h3 style="color: #ff6b6b; margin: 0;">✈️ {away}</h3>
+                    <h1 style="color: white; margin: 10px 0;">{p2:.1f}%</h1>
+                </div>
+                """, unsafe_allow_html=True)
             
-            # Over/Under y BTTS
-            st.markdown("### 📈 Over/Under & Ambos Marcan")
+            # ========================
+            # PREDICCIONES ADICIONALES
+            # ========================
+            st.markdown("### 📊 Predicciones Adicionales")
+            
             col_ou, col_btts, col_corners = st.columns(3)
+            
             with col_ou:
-                ou = r.get('over_under', {})
                 pick_ou = r.get('pick_over_under', 'Over 2.5')
                 prob_ou = r.get('prob_over_under', 50)
-                st.markdown(f"**{pick_ou}**")
-                st.markdown(f"{prob_ou:.1f}%")
-                st.progress(prob_ou/100)
+                ou_icon = "📈" if "Over" in pick_ou else "📉"
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 12px; border-radius: 10px; text-align: center;">
+                    <p style="color: #888; margin: 0;">Over/Under 2.5</p>
+                    <h2 style="color: #ff9f43; margin: 5px 0;">{ou_icon} {pick_ou}</h2>
+                    <p style="color: #fff; margin: 0;">{prob_ou:.0f}%</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
             with col_btts:
                 pick_btts = r.get('pick_btts', 'No')
                 btts_yes = r.get('btts_yes', 50)
-                st.markdown(f"**Ambos Marcan**")
-                st.markdown(f"{pick_btts} ({btts_yes:.1f}%)")
-                st.progress(btts_yes/100)
+                btts_icon = "✅" if pick_btts == "Sí" else "❌"
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 12px; border-radius: 10px; text-align: center;">
+                    <p style="color: #888; margin: 0;">Ambos Marcan</p>
+                    <h2 style="color: #a55eea; margin: 5px 0;">{btts_icon} {pick_btts}</h2>
+                    <p style="color: #fff; margin: 0;">{btts_yes:.0f}%</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
             with col_corners:
                 corners = r.get('corners', {})
-                pick_corners = r.get('pick_corners', 'Over 10')
                 total_c = corners.get('total_estimado', 10)
-                st.markdown(f"**Córners**")
-                st.markdown(f"~{total_c:.1f} (Total)")
-                st.progress(corners.get('over_95', 50)/100)
+                pick_c = r.get('pick_corners', 'Over 10')
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 12px; border-radius: 10px; text-align: center;">
+                    <p style="color: #888; margin: 0;">Córners Totales</p>
+                    <h2 style="color: #00d2d3; margin: 5px 0;">⚽ ~{total_c:.0f}</h2>
+                    <p style="color: #fff; margin: 0;">{pick_c}</p>
+                </div>
+                """, unsafe_allow_html=True)
             
-            # Forma Reciente
-            st.markdown("### 📅 Forma Reciente")
+            # ========================
+            # FORMA RECIENTE
+            # ========================
+            st.markdown("### 📅 Forma Reciente (Últimos 5)")
+            
+            forma_l = r.get('forma_local', {})
+            forma_v = r.get('forma_visitante', {})
+            
             col_forma_local, col_forma_away = st.columns(2)
-            with col_forma_local:
-                forma_l = r.get('forma_local', {})
-                st.markdown(f"**🏠 {home}**")
-                st.markdown(f"Forma: `{forma_l.get('forma_letras', '-----')}` ({forma_l.get('forma_puntos', 0):.0f}%)")
-                st.markdown(f"Goles: {forma_l.get('goles_favor_5', 0)}f / {forma_l.get('goles_contra_5', 0)}c")
-            with col_forma_away:
-                forma_v = r.get('forma_visitante', {})
-                st.markdown(f"**✈️ {away}**")
-                st.markdown(f"Forma: `{forma_v.get('forma_letras', '-----')}` ({forma_v.get('forma_puntos', 0):.0f}%)")
-                st.markdown(f"Goles: {forma_v.get('goles_favor_5', 0)}f / {forma_v.get('goles_contra_5', 0)}c")
             
-            # Detalle por modelo
-            with st.expander("📋 Detalle por Modelo"):
-                modelos = r.get('modelos', {})
-                modelos_data = [
-                    ("🎯 Poisson (30%)", modelos.get('poisson', {})),
-                    ("📊 Dixon-Coles (25%)", modelos.get('dixon_coles', {})),
-                    ("🎲 Monte Carlo (20%)", modelos.get('monte_carlo', {})),
-                    ("📈 Forma Reciente (15%)", {'p1': 50, 'px': 0, 'p2': 50}),
-                    ("⚽ Estilo (10%)", {'p1': 50, 'px': 0, 'p2': 50}),
-                ]
-                for nombre, m in modelos_data:
-                    col_h, col_d, col_a = st.columns(3)
-                    with col_h:
-                        st.metric(nombre, f"1: {m.get('p1', 0):.0f}%")
-                    with col_d:
-                        st.metric("", f"X: {m.get('px', 0):.0f}%")
-                    with col_a:
-                        st.metric("", f"2: {m.get('p2', 0):.0f}%")
+            with col_forma_local:
+                letras = forma_l.get('forma_letras', '-----')
+                puntos = forma_l.get('forma_puntos', 0)
+                gf = forma_l.get('goles_favor_5', 0)
+                gc = forma_l.get('goles_contra_5', 0)
+                
+                # Colores para cada resultado
+                emoji_forma = {"L": "🟢", "E": "🟡", "V": "🔴"}
+                forma_html = "".join([f"<span style='color: {'#00ff88' if c=='L' else '#ffd700' if c=='E' else '#ff6b6b'}'>{c}</span>" for c in letras])
+                
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 15px; border-radius: 10px;">
+                    <h4 style="color: #00ff88; margin: 0 0 10px 0;">🏠 {home}</h4>
+                    <p style="color: #fff; font-size: 24px; margin: 0;">{forma_html}</p>
+                    <p style="color: #888; margin: 5px 0;">Puntos: <span style="color: #fff;">{puntos:.0f}%</span></p>
+                    <p style="color: #888; margin: 5px 0;">Goles: <span style="color: #fff;">{gf}f / {gc}c</span></p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col_forma_away:
+                letras_v = forma_v.get('forma_letras', '-----')
+                puntos_v = forma_v.get('forma_puntos', 0)
+                gf_v = forma_v.get('goles_favor_5', 0)
+                gc_v = forma_v.get('goles_contra_5', 0)
+                
+                forma_html_v = "".join([f"<span style='color: {'#00ff88' if c=='L' else '#ffd700' if c=='E' else '#ff6b6b'}'>{c}</span>" for c in letras_v])
+                
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 15px; border-radius: 10px;">
+                    <h4 style="color: #ff6b6b; margin: 0 0 10px 0;">✈️ {away}</h4>
+                    <p style="color: #fff; font-size: 24px; margin: 0;">{forma_html_v}</p>
+                    <p style="color: #888; margin: 5px 0;">Puntos: <span style="color: #fff;">{puntos_v:.0f}%</span></p>
+                    <p style="color: #888; margin: 5px 0;">Goles: <span style="color: #fff;">{gf_v}f / {gc_v}c</span></p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # ========================
+            # ESTADÍSTICAS DE EQUIPOS
+            # ========================
+            stats_local = st.session_state.get('stats_local', {})
+            stats_visitante = st.session_state.get('stats_visitante', {})
+            
+            if stats_local and stats_visitante:
+                st.markdown("### 📈 Estadísticas del Robot")
+                
+                col_est1, col_est2 = st.columns(2)
+                
+                with col_est1:
+                    st.markdown(f"""
+                    <div style="background: #0d1b2a; padding: 15px; border-radius: 10px;">
+                        <h4 style="color: #00ff88; margin: 0 0 10px 0;">🏠 {home}</h4>
+                        <p style="color: #888; margin: 3px 0;">λ Local: <span style="color: #fff;">{stats_local.get('lambda_local', 0):.2f}</span></p>
+                        <p style="color: #888; margin: 3px 0;">Partidos: <span style="color: #fff;">{stats_local.get('partidos_jugados', 0)}</span></p>
+                        <p style="color: #888; margin: 3px 0;">Córners: <span style="color: #fff;">{stats_local.get('promedio_corners_total', 0):.1f}/part</span></p>
+                        <p style="color: #888; margin: 3px 0;">Tarjetas: <span style="color: #fff;">{stats_local.get('promedio_amarillas', 0):.1f}/part</span></p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col_est2:
+                    st.markdown(f"""
+                    <div style="background: #0d1b2a; padding: 15px; border-radius: 10px;">
+                        <h4 style="color: #ff6b6b; margin: 0 0 10px 0;">✈️ {away}</h4>
+                        <p style="color: #888; margin: 3px 0;">λ Visitante: <span style="color: #fff;">{stats_visitante.get('lambda_visitante', 0):.2f}</span></p>
+                        <p style="color: #888; margin: 3px 0;">Partidos: <span style="color: #fff;">{stats_visitante.get('partidos_jugados', 0)}</span></p>
+                        <p style="color: #888; margin: 3px 0;">Córners: <span style="color: #fff;">{stats_visitante.get('promedio_corners_total', 0):.1f}/part</span></p>
+                        <p style="color: #888; margin: 3px 0;">Tarjetas: <span style="color: #fff;">{stats_visitante.get('promedio_amarillas', 0):.1f}/part</span></p>
+                    </div>
+                    """, unsafe_allow_html=True)
     
     # Página: Estadísticas
     elif st.session_state.page == "Estadisticas":
