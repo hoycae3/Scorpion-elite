@@ -362,17 +362,10 @@ else:
                 if resp.data and resp.data[0].get('lambda_local', 0) > 0:
                     stats_local = resp.data[0]
                     lambda_local = stats_local.get('lambda_local', 0)
-                    lambda_visit = stats_local.get('lambda_visitante', 0)
-                    partidos = stats_local.get('partidos_jugados', 0)
-                    victorias = stats_local.get('victorias', 0)
-                    empates = stats_local.get('empates', 0)
-                    derrotas = stats_local.get('derrotas', 0)
                     equipo_local_ok = True
-                    st.success(f"✅ **{home_team}** - Partidos: {partidos} | V:{victorias} E:{empates} D:{derrotas} | λL:{lambda_local:.2f} λV:{lambda_visit:.2f}")
                 else:
                     equipos_faltantes.append(home_team)
             except Exception as e:
-                st.warning(f"⚠️ Error conectando a base de datos: {str(e)[:50]}")
                 error_conexion = True
                 equipos_faltantes.append(home_team)
         
@@ -383,17 +376,10 @@ else:
                 if resp.data and resp.data[0].get('lambda_visitante', 0) > 0:
                     stats_visitante = resp.data[0]
                     lambda_visitante = stats_visitante.get('lambda_visitante', 0)
-                    lambda_local_v = stats_visitante.get('lambda_local', 0)
-                    partidos = stats_visitante.get('partidos_jugados', 0)
-                    victorias = stats_visitante.get('victorias', 0)
-                    empates = stats_visitante.get('empates', 0)
-                    derrotas = stats_visitante.get('derrotas', 0)
                     equipo_visitante_ok = True
-                    st.success(f"✅ **{away_team}** - Partidos: {partidos} | V:{victorias} E:{empates} D:{derrotas} | λL:{lambda_local_v:.2f} λV:{lambda_visitante:.2f}")
                 else:
                     equipos_faltantes.append(away_team)
             except Exception as e:
-                st.warning(f"⚠️ Error conectando a base de datos: {str(e)[:50]}")
                 error_conexion = True
                 equipos_faltantes.append(away_team)
         
@@ -872,64 +858,69 @@ else:
                     st.error(f"Error al guardar: {str(e)[:100]}")
         
         st.markdown("---")
-        st.markdown("### 📋 Equipos con Estadísticas")
+        st.markdown("### 📋 Equipos Guardados")
         
         # Mostrar tabla directamente
         client = create_client(SUPABASE_URL, SUPABASE_KEY)
         try:
-            response = client.table('equipos_stats').select('equipo,liga,partidos_jugados,lambda_local,lambda_visitante,goles_favor,goles_contra').execute()
+            response = client.table('equipos_stats').select('*').execute()
             
             if response.data and len(response.data) > 0:
-                st.success(f"✅ {len(response.data)} equipos con estadísticas guardadas")
+                st.info(f"💡 {len(response.data)} equipos guardados. Para MODIFICAR, busca el equipo abajo.")
                 
-                # Crear DataFrame
-                df = pd.DataFrame(response.data)
-                st.dataframe(df, use_container_width=True)
+                # Lista simple
+                for eq in response.data:
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        st.markdown(f"⚽ **{eq.get('equipo', 'N/A')}** ({eq.get('liga', 'N/A')})")
+                    with col2:
+                        if st.button(f"✏️ Editar", key=f"edit_{eq.get('equipo', '')}"):
+                            # Aquí iría la lógica de editar
+                            st.info(f"✏️ Editando {eq.get('equipo')}...")
             else:
-                st.info("📭 No hay equipos guardados. Sube un Excel y busca equipos primero.")
+                st.info("📭 No hay equipos guardados. Agrega uno con el formulario de arriba.")
         except Exception as e:
             st.error(f"❌ Error al conectar: {str(e)}")
         
         st.markdown("---")
-        st.markdown("### 🔍 Buscar Equipo Específico")
+        st.markdown("### 🔍 Buscar y Modificar Equipo")
         
-        # Buscar equipo
-        equipo_buscar = st.text_input("Buscar equipo...", placeholder="Escribe el nombre del equipo")
+        # Buscar equipo para modificar
+        equipo_buscar = st.text_input("Buscar equipo para modificar...", placeholder="Escribe el nombre del equipo")
         
         if equipo_buscar:
-            client = create_client(SUPABASE_URL, SUPABASE_KEY)
-            
             try:
-                # Buscar por nombre
                 response = client.table('equipos_stats').select('*').ilike('equipo', f'%{equipo_buscar}%').execute()
                 
                 if response.data:
-                    st.markdown(f"**{len(response.data)} resultado(s) encontrado(s)**")
+                    st.success(f"✅ {len(response.data)} encontrado(s)")
                     
                     for eq in response.data:
-                        with st.expander(f"⚽ {eq['equipo']} - {eq.get('liga', 'N/A')}"):
+                        with st.expander(f"⚽ {eq.get('equipo')} - {eq.get('liga', 'N/A')} [{eq.get('partidos_jugados', 0)} partidos]"):
+                            # Mostrar datos actuales
+                            st.markdown("**Datos actuales:**")
                             col1, col2 = st.columns(2)
                             with col1:
-                                st.markdown(f"**Temporada:** {eq.get('temporada', 'N/A')}")
-                                st.markdown(f"**Partidos:** {eq.get('partidos_jugados', 0)}")
-                                st.markdown(f"**Victorias:** {eq.get('victorias', 0)}")
-                                st.markdown(f"**Empates:** {eq.get('empates', 0)}")
-                                st.markdown(f"**Derrotas:** {eq.get('derrotas', 0)}")
+                                st.write(f"- Partidos: {eq.get('partidos_jugados', 0)}")
+                                st.write(f"- Victorias: {eq.get('victorias', 0)}")
+                                st.write(f"- Empates: {eq.get('empates', 0)}")
+                                st.write(f"- Derrotas: {eq.get('derrotas', 0)}")
                             with col2:
-                                st.markdown(f"**Goles a Favor:** {eq.get('goles_favor', 0)}")
-                                st.markdown(f"**Goles en Contra:** {eq.get('goles_contra', 0)}")
-                                lambda_l = eq.get('lambda_local', 0) or 0
-                                lambda_v = eq.get('lambda_visitante', 0) or 0
-                                st.markdown(f"**Lambda Local:** {lambda_l:.2f}")
-                                st.markdown(f"**Lambda Visitante:** {lambda_v:.2f}")
+                                st.write(f"- Goles Favor: {eq.get('goles_favor', 0)}")
+                                st.write(f"- Goles Contra: {eq.get('goles_contra', 0)}")
+                                st.write(f"- λL: {eq.get('lambda_local', 0):.2f}")
+                                st.write(f"- λV: {eq.get('lambda_visitante', 0):.2f}")
                             
-                            # Botón eliminar
-                            if st.button(f"🗑️ Eliminar {eq['equipo']}", key=f"del_{eq['id']}"):
-                                client.table('equipos_stats').delete().eq('id', eq['id']).execute()
+                            # Opción de eliminar
+                            st.markdown("---")
+                            col_del = st.columns([1, 1])[0]
+                            if st.button(f"🗑️ Eliminar {eq.get('equipo')}", key=f"del_{eq.get('id', '')}"):
+                                client.table('equipos_stats').delete().eq('id', eq.get('id')).execute()
                                 st.success("✅ Eliminado")
                                 st.rerun()
+                            st.info("💡 Para MODIFICAR, elimina este equipo y vuelve a agregarlo con los datos correctos.")
                 else:
-                    st.info("No se encontraron equipos")
+                    st.warning(f"❌ No se encontró '{equipo_buscar}'")
             except Exception as e:
                 st.error(f"Error: {str(e)[:50]}")
 
