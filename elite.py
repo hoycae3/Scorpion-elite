@@ -475,30 +475,6 @@ else:
             st.markdown("---")
             
             # ========================
-            # RECUADRO PRINCIPAL
-            # ========================
-            pick = r.get('pick_1x2', 'X')
-            confianza = r.get('confianza', 0)
-            rango = r.get('rango', 'D')
-            
-            pick_icon = {"1": "🏠", "X": "🤝", "2": "✈️"}
-            rango_color = {"A+": "🟢", "A": "🟢", "B": "🔵", "C": "🟡", "D": "🔴"}
-            
-            # Pick principal
-            st.markdown(f"""
-            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
-                        padding: 20px; border-radius: 15px; text-align: center; margin: 10px 0;">
-                <h2 style="color: white; margin: 0;">⚽ {home} vs {away}</h2>
-                <h1 style="color: #00d4ff; margin: 15px 0 5px 0;">
-                    {pick_icon.get(pick, '🎯')} {pick}
-                </h1>
-                <p style="color: #aaa; margin: 0;">
-                    {rango_color.get(rango, '⚪')} Confianza: {confianza}% ({rango})
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # ========================
             # ESTADÍSTICAS DEL ROBOT
             # ========================
             stats_local = st.session_state.get('stats_local', {})
@@ -536,6 +512,30 @@ else:
                         <p style="color: #888; margin: 3px 0;">Tarjetas/partido: <span style="color: #fff;">{stats_visitante.get('promedio_amarillas', 0):.1f}</span></p>
                     </div>
                     """, unsafe_allow_html=True)
+            
+            # ========================
+            # RECUADRO PRINCIPAL
+            # ========================
+            pick = r.get('pick_1x2', 'X')
+            confianza = r.get('confianza', 0)
+            rango = r.get('rango', 'D')
+            
+            pick_icon = {"1": "🏠", "X": "🤝", "2": "✈️"}
+            rango_color = {"A+": "🟢", "A": "🟢", "B": "🔵", "C": "🟡", "D": "🔴"}
+            
+            # Pick principal
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
+                        padding: 20px; border-radius: 15px; text-align: center; margin: 10px 0;">
+                <h2 style="color: white; margin: 0;">⚽ {home} vs {away}</h2>
+                <h1 style="color: #00d4ff; margin: 15px 0 5px 0;">
+                    {pick_icon.get(pick, '🎯')} {pick}
+                </h1>
+                <p style="color: #aaa; margin: 0;">
+                    {rango_color.get(rango, '⚪')} Confianza: {confianza}% ({rango})
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
             
             # ========================
             # PROBABILIDADES 1X2
