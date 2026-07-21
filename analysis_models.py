@@ -1,15 +1,23 @@
 """
 Scorpion Elite - Modelos de Análisis Matemático
 ==============================================
-4 modelos combinados para predecir resultados de fútbol:
-- Poisson (35%): Distribución de probabilidad para goles
-- Dixon-Coles (30%): Corrige dependencia entre goles marcados/recibidos
+5 modelos combinados para predecir resultados de fútbol:
+- Poisson (30%): Distribución de probabilidad para goles
+- Dixon-Coles (25%): Corrige dependencia entre goles marcados/recibidos
 - Monte Carlo (20%): Simulación de 3000 partidos
-- Elo (15%): Rating histórico de equipos
+- Forma Reciente (15%): Análisis de últimos 5 partidos
+- Estilo de Juego (10%): Corners, tarjetas, tiros
+
+DATOS ADICIONALES:
+- corners_promedio: Promedio de córners por partido
+- tarjetas_promedio: Promedio de tarjetas por partido
+- tiros_promedio: Promedio de tiros por partido
+- tiros_arco_promedio: Promedio de tiros al arco por partido
+- ultimos_5_partidos: Lista de últimos 5 partidos con resultados
 """
 
 import random
-from typing import Dict
+from typing import Dict, List, Optional
 
 
 def pp(lmbda: float, k: int) -> float:
@@ -23,7 +31,7 @@ def pp(lmbda: float, k: int) -> float:
 
 
 def poisson_1x2(xl: float, xv: float) -> tuple:
-    """Modelo Poisson básico"""
+    """Modelo Poisson básico para 1X2"""
     p1 = px = p2 = 0.0
     for i in range(9):
         for j in range(9):
@@ -35,6 +43,41 @@ def poisson_1x2(xl: float, xv: float) -> tuple:
             else:
                 p2 += p
     return round(p1 * 100, 1), round(px * 100, 1), round(p2 * 100, 1)
+
+
+def poisson_over_under(xl: float, xv: float) -> Dict:
+    """Modelo Poisson para Over/Under"""
+    over_15 = over_25 = over_35 = 0.0
+    under_15 = under_25 = under_35 = 0.0
+    
+    for i in range(9):
+        for j in range(9):
+            p = pp(xl, i) * pp(xv, j)
+            total = i + j
+            
+            if total > 1.5:
+                over_15 += p
+            else:
+                under_15 += p
+                
+            if total > 2.5:
+                over_25 += p
+            else:
+                under_25 += p
+                
+            if total > 3.5:
+                over_35 += p
+            else:
+                under_35 += p
+    
+    return {
+        "over_15": round(over_15 * 100, 1),
+        "under_15": round(under_15 * 100, 1),
+        "over_25": round(over_25 * 100, 1),
+        "under_25": round(under_25 * 100, 1),
+        "over_35": round(over_35 * 100, 1),
+        "under_35": round(under_35 * 100, 1),
+    }
 
 
 def dc_1x2(xl: float, xv: float, rho: float = -0.1) -> tuple:
@@ -99,86 +142,342 @@ def monte_carlo(xl: float, xv: float, n: int = 3000) -> Dict:
         "p2": round(v2 / n * 100, 1),
         "avg_goals": round(sum(goals_total) / n, 2),
         "over_25": round(sum(1 for g in goals_total if g > 2) / n * 100, 1),
+        "under_25": round(sum(1 for g in goals_total if g <= 2) / n * 100, 1),
         "top_scores": top_scores
     }
 
 
-def elo_1x2(elo_l: float, elo_v: float, home_adv: float = 50) -> tuple:
-    """Modelo Elo"""
-    expected = 1 / (1 + 10 ** ((elo_v - (elo_l + home_adv)) / 400))
-    p1 = round(expected * 100, 1)
-    p2 = round((1 - expected) * 100, 1)
-    px = max(0, round(100 - p1 - p2, 1))
-    return p1, px, p2
+def analizar_forma_reciente(ultimos_5: List[Dict]) -> Dict:
+    """
+    Analiza la forma reciente del equipo basándose en los últimos 5 partidos.
+    """
+    if not ultimos_5:
+        return {
+            "forma_puntos": 0,
+            "forma_letras": "-----",
+            "victorias": 0,
+            "empates": 0,
+            "derrotas": 0,
+            "goles_favor_5": 0,
+            "goles_contra_5": 0,
+            "corners_promedio_5": 0,
+        }
+    
+    puntos = 0
+    victorias = 0
+    empates = 0
+    derrotas = 0
+    gf = 0
+    gc = 0
+    corners_total = 0
+    forma_letras = []
+    
+    for match in ultimos_5[:5]:  # Solo últimos 5
+        resultado = match.get('resultado', 'V')
+        forma_letras.append(resultado)
+        
+        gf += match.get('goles_favor', 0)
+        gc += match.get('goles_contra', 0)
+        corners_total += match.get('corners', 0)
+        
+        if resultado == 'L':
+            puntos += 3
+            victorias += 1
+        elif resultado == 'E':
+            puntos += 1
+            empates += 1
+        else:
+            derrotas += 1
+    
+    # Forma como porcentaje (máximo 15 puntos en 5 partidos)
+    forma_puntos = round(puntos / 15 * 100, 1) if ultimos_5 else 0
+    
+    return {
+        "forma_puntos": forma_puntos,
+        "forma_letras": ''.join(forma_letras[:5]) if forma_letras else "-----",
+        "victorias": victorias,
+        "empates": empates,
+        "derrotas": derrotas,
+        "goles_favor_5": gf,
+        "goles_contra_5": gc,
+        "corners_promedio_5": round(corners_total / len(ultimos_5[:5]), 1) if ultimos_5 else 0,
+    }
+
+
+def analizar_estilo_juego(
+    corners: float,
+    tarjetas: float,
+    tiros: float,
+    tiros_arco: float
+) -> Dict:
+    """
+    Analiza el estilo de juego del equipo.
+    """
+    # Clasificar según promedios típicos
+    # Promedios típicos: corners=10, tarjetas=3.5, tiros=12, tiros_arco=4
+    
+    estilo_ofensivo = 50  # Base neutra
+    estilo_defensivo = 50
+    estilo_physical = 50
+    
+    # Corner tendency (>10 = ofensivo, <10 = defensivo)
+    if corners > 12:
+        estilo_ofensivo += 15
+        estilo_defensivo -= 10
+    elif corners < 8:
+        estilo_ofensivo -= 10
+        estilo_defensivo += 15
+    
+    # Tarjetas (>4 = physical, <2 = limpio)
+    if tarjetas > 4:
+        estilo_physical += 20
+    elif tarjetas < 2:
+        estilo_physical -= 15
+    
+    # Tiros al arco (>5 = dominante, <3 = dependent)
+    if tiros_arco > 5:
+        estilo_ofensivo += 10
+    elif tiros_arco < 3:
+        estilo_ofensivo -= 10
+    
+    return {
+        "estilo_ofensivo": max(0, min(100, estilo_ofensivo)),
+        "estilo_defensivo": max(0, min(100, estilo_defensivo)),
+        "estilo_physical": max(0, min(100, estilo_physical)),
+        "tipo": "Ofensivo" if estilo_ofensivo > 65 else ("Defensivo" if estilo_defensivo > 65 else "Equilibrado")
+    }
+
+
+def predecir_corners(
+    corners_local: float,
+    corners_visitante: float,
+    estilo_local: Dict,
+    estilo_visitante: Dict
+) -> Dict:
+    """
+    Predice el total de córners en el partido.
+    """
+    # Base: promedio de ambos equipos
+    base = (corners_local + corners_visitante) / 2
+    
+    # Ajuste por estilo de juego
+    # Equipos ofensivos generan más corners
+    ajuste = (estilo_local.get('estilo_ofensivo', 50) + estilo_visitante.get('estilo_ofensivo', 50)) / 100 - 1
+    
+    total_estimado = base * (1 + ajuste * 0.3)
+    
+    # Over/Under 9.5 corners
+    over_95 = 50 + (total_estimado - 9.5) * 10
+    over_95 = max(10, min(90, over_95))
+    
+    return {
+        "total_estimado": round(total_estimado, 1),
+        "over_95": round(over_95, 1),
+        "under_95": round(100 - over_95, 1),
+        "over_105": round(min(90, 50 + (total_estimado - 10.5) * 10), 1),
+        "under_105": round(max(10, 50 - (total_estimado - 10.5) * 10), 1),
+    }
 
 
 def calcular(
     lambda_local: float,
-    lambda_visitante: float
+    lambda_visitante: float,
+    # Nuevos datos
+    corners_local: float = 10.0,
+    corners_visitante: float = 10.0,
+    tarjetas_local: float = 3.5,
+    tarjetas_visitante: float = 3.5,
+    tiros_local: float = 12.0,
+    tiros_visitante: float = 12.0,
+    tiros_arco_local: float = 4.0,
+    tiros_arco_visitante: float = 4.0,
+    ultimos_5_local: List[Dict] = None,
+    ultimos_5_visitante: List[Dict] = None,
 ) -> Dict:
-    """Calcula probabilidades usando los 4 modelos combinados"""
+    """
+    Calcula probabilidades usando los 5 modelos combinados.
+    
+    Incluye:
+    - 1X2 (Victoria Local / Empate / Victoria Visitante)
+    - Over/Under 1.5, 2.5, 3.5
+    - Ambos marcan (BTTS)
+    - Córners Over/Under
+    - Análisis de forma reciente
+    - Estilo de juego
+    """
     xl = max(0.15, lambda_local)
     xv = max(0.10, lambda_visitante)
     
+    # Datos por defecto
+    ultimos_5_local = ultimos_5_local or []
+    ultimos_5_visitante = ultimos_5_visitante or []
+    
+    # MODELOS DE GOLES
     p1_po, px_po, p2_po = poisson_1x2(xl, xv)
     p1_dc, px_dc, p2_dc = dc_1x2(xl, xv)
     
     mc = monte_carlo(xl, xv)
     p1_mc, px_mc, p2_mc = mc["p1"], mc["px"], mc["p2"]
     
-    # Elo usa 1500 por defecto (neutro)
-    p1_el, px_el, p2_el = elo_1x2(1500, 1500)
-    
-    # Combinar
-    p1 = round(p1_po * 0.35 + p1_dc * 0.30 + p1_mc * 0.20 + p1_el * 0.15, 1)
-    px = round(px_po * 0.35 + px_dc * 0.30 + px_mc * 0.20 + px_el * 0.15, 1)
+    # Combinar modelos de goles
+    p1 = round(p1_po * 0.30 + p1_dc * 0.25 + p1_mc * 0.20, 1)
+    px = round(px_po * 0.30 + px_dc * 0.25 + px_mc * 0.20, 1)
     p2 = round(max(0, 100 - p1 - px), 1)
     
-    # Confianza
+    # OVER/UNDER
+    ou = poisson_over_under(xl, xv)
+    
+    # AMBOS MARCAN (BTTS)
+    # Probabilidad de que ambos marquen ≈ P(gl>0) * P(gv>0)
+    p_btts_yes = round((1 - pp(xl, 0)) * (1 - pp(xv, 0)) * 100, 1)
+    p_btts_no = round(100 - p_btts_yes, 1)
+    
+    # ANÁLISIS DE FORMA RECIENTE
+    forma_local = analizar_forma_reciente(ultimos_5_local)
+    forma_visitante = analizar_forma_reciente(ultimos_5_visitante)
+    
+    # Ajustar probabilidades basándose en forma reciente
+    ajuste_forma = (forma_local['forma_puntos'] - forma_visitante['forma_puntos']) / 100 * 5
+    p1_ajustado = max(0, min(100, p1 + ajuste_forma))
+    p2_ajustado = max(0, min(100, p2 - ajuste_forma))
+    px_ajustado = max(0, min(100, 100 - p1_ajustado - p2_ajustado))
+    
+    # ESTILO DE JUEGO
+    estilo_local = analizar_estilo_juego(corners_local, tarjetas_local, tiros_local, tiros_arco_local)
+    estilo_visitante = analizar_estilo_juego(corners_visitante, tarjetas_visitante, tiros_visitante, tiros_arco_visitante)
+    
+    # PREDICCIÓN DE CORNERS
+    prediccion_corners = predecir_corners(
+        corners_local, corners_visitante,
+        estilo_local, estilo_visitante
+    )
+    
+    # CONFIANZA - basada en acuerdo entre modelos
     conf = round(max(0, min(100, 100 - (
-        abs(p1_po - p1_dc) * 0.4 +
+        abs(p1_po - p1_dc) * 0.5 +
         abs(p1_po - p1_mc) * 0.3 +
-        abs(p1_po - p1_el) * 0.3
+        abs(p1_ajustado - p1) * 0.2
     ))))
     
-    # Rating
-    if conf >= 75:
+    # RANGO
+    if conf >= 80:
         rango = "A+"
-    elif conf >= 55:
+    elif conf >= 65:
+        rango = "A"
+    elif conf >= 50:
         rango = "B"
-    elif conf >= 40:
+    elif conf >= 35:
         rango = "C"
     else:
         rango = "D"
     
-    # Pick
-    if p1 > px and p1 > p2:
-        pick = "1"
-        prob_pick = p1
-    elif p2 > px and p2 > p1:
-        pick = "2"
+    # PICK 1X2
+    if p1_ajustado > px and p1_ajustado > p2:
+        pick_1x2 = "1"
+        prob_pick = p1_ajustado
+    elif p2 > px and p2 > p1_ajustado:
+        pick_1x2 = "2"
         prob_pick = p2
     else:
-        pick = "X"
-        prob_pick = px
+        pick_1x2 = "X"
+        prob_pick = px_ajustado
+    
+    # PICK OVER/UNDER
+    pick_ou = "Over 2.5" if ou["over_25"] > 50 else "Under 2.5"
+    prob_ou = max(ou["over_25"], ou["under_25"])
+    
+    # Pick Corners
+    pick_corners = f"Over {prediccion_corners['total_estimado']:.0f}" if prediccion_corners['over_95'] > 50 else f"Under {prediccion_corners['total_estimado']:.0f}"
     
     return {
+        # Datos de entrada
         "lambda_local": xl,
         "lambda_visitante": xv,
-        "poisson": {"p1": p1_po, "px": px_po, "p2": p2_po},
-        "dixon_coles": {"p1": p1_dc, "px": px_dc, "p2": p2_dc},
-        "monte_carlo": {"p1": p1_mc, "px": px_mc, "p2": p2_mc},
-        "elo": {"p1": p1_el, "px": px_el, "p2": p2_el},
-        "p1": p1,
-        "px": px,
-        "p2": p2,
-        "pick": pick,
-        "prob_pick": prob_pick,
+        "goles_esperados": round((xl + xv) / 2 * 2, 1),
+        
+        # 1X2
+        "p1": p1_ajustado,
+        "px": px_ajustado,
+        "p2": p2_ajustado,
+        "pick_1x2": pick_1x2,
+        "prob_1x2": prob_pick,
+        
+        # Over/Under
+        "over_under": {
+            "over_15": ou["over_15"],
+            "under_15": ou["under_15"],
+            "over_25": ou["over_25"],
+            "under_25": ou["under_25"],
+            "over_35": ou["over_35"],
+            "under_35": ou["under_35"],
+        },
+        "pick_over_under": pick_ou,
+        "prob_over_under": prob_ou,
+        
+        # Ambos Marcan
+        "btts_yes": p_btts_yes,
+        "btts_no": p_btts_no,
+        "pick_btts": "Sí" if p_btts_yes > 50 else "No",
+        
+        # Córners
+        "corners": prediccion_corners,
+        "pick_corners": pick_corners,
+        
+        # Forma Reciente
+        "forma_local": forma_local,
+        "forma_visitante": forma_visitante,
+        
+        # Estilo de Juego
+        "estilo_local": estilo_local,
+        "estilo_visitante": estilo_visitante,
+        
+        # Confianza y Rango
         "confianza": conf,
         "rango": rango,
+        
+        # Detalle de modelos
+        "modelos": {
+            "poisson": {"p1": p1_po, "px": px_po, "p2": p2_po},
+            "dixon_coles": {"p1": p1_dc, "px": px_dc, "p2": p2_dc},
+            "monte_carlo": {"p1": p1_mc, "px": px_mc, "p2": p2_mc},
+        },
+        
+        # Top marcadores predichos
+        "top_scores": mc["top_scores"],
     }
 
 
-def analyze(home: str, away: str, lambda_h: float, lambda_v: float) -> Dict:
-    """Función simple para analizar un partido"""
-    return calcular(lambda_h, lambda_v)
+def analyze(
+    home: str,
+    away: str,
+    lambda_h: float,
+    lambda_v: float,
+    # Nuevos parámetros opcionales
+    corners_home: float = 10.0,
+    corners_away: float = 10.0,
+    tarjetas_home: float = 3.5,
+    tarjetas_away: float = 3.5,
+    tiros_home: float = 12.0,
+    tiros_away: float = 12.0,
+    tiros_arco_home: float = 4.0,
+    tiros_arco_away: float = 4.0,
+    ultimos_5_home: List[Dict] = None,
+    ultimos_5_away: List[Dict] = None,
+) -> Dict:
+    """
+    Función para analizar un partido con todos los datos disponibles.
+    """
+    return calcular(
+        lambda_h,
+        lambda_v,
+        corners_home,
+        corners_away,
+        tarjetas_home,
+        tarjetas_away,
+        tiros_home,
+        tiros_away,
+        tiros_arco_home,
+        tiros_arco_away,
+        ultimos_5_home,
+        ultimos_5_away,
+    )
