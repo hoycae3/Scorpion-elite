@@ -385,8 +385,8 @@ else:
         
         # Mostrar error si faltan equipos
         if equipos_faltantes and not error_conexion:
-            st.error(f"⚠️ Equipos sin estadísticas: {', '.join(set(equipos_faltantes))}")
-            st.info("📝 Ve a la pestaña 'Estadísticas' y ejecuta 'Buscar Equipos del Excel' para agregarlos.")
+            st.error(f"⚠️ Equipos no encontrados en la base de datos: {', '.join(set(equipos_faltantes))}")
+            st.info("📝 Ve a la pestaña 'Estadísticas' → 'Agregar Equipo Manual' para agregar los datos.")
         
         # Botón analizar - solo si ambos equipos existen
         analizar_disabled = not (equipo_local_ok and equipo_visitante_ok)
@@ -860,69 +860,68 @@ else:
         st.markdown("---")
         st.markdown("### 📋 Equipos Guardados")
         
-        # Mostrar tabla directamente
         client = create_client(SUPABASE_URL, SUPABASE_KEY)
         try:
             response = client.table('equipos_stats').select('*').execute()
             
             if response.data and len(response.data) > 0:
-                st.info(f"💡 {len(response.data)} equipos guardados. Para MODIFICAR, busca el equipo abajo.")
+                st.info(f"💡 {len(response.data)} equipos guardados")
                 
-                # Lista simple
                 for eq in response.data:
-                    col1, col2 = st.columns([3, 1])
-                    with col1:
-                        st.markdown(f"⚽ **{eq.get('equipo', 'N/A')}** ({eq.get('liga', 'N/A')})")
-                    with col2:
-                        if st.button(f"✏️ Editar", key=f"edit_{eq.get('equipo', '')}"):
-                            # Aquí iría la lógica de editar
-                            st.info(f"✏️ Editando {eq.get('equipo')}...")
+                    with st.expander(f"⚽ {eq.get('equipo')} - {eq.get('liga', 'N/A')}"):
+                        # FORMULARIO PARA MODIFICAR
+                        with st.form(f"edit_form_{eq.get('equipo')}", clear_on_submit=True):
+                            st.markdown("**✏️ Modificar datos:**")
+                            
+                            col1, col2, col3 = st.columns(3)
+                            with col1:
+                                eq_partidos = st.number_input("Partidos", value=int(eq.get('partidos_jugados', 0)), min_value=0, key=f"part_{eq.get('equipo')}")
+                            with col2:
+                                eq_victorias = st.number_input("Victorias", value=int(eq.get('victorias', 0)), min_value=0, key=f"vic_{eq.get('equipo')}")
+                            with col3:
+                                eq_empates = st.number_input("Empates", value=int(eq.get('empates', 0)), min_value=0, key=f"emp_{eq.get('equipo')}")
+                            
+                            col4, col5, col6 = st.columns(3)
+                            with col4:
+                                eq_derrotas = st.number_input("Derrotas", value=int(eq.get('derrotas', 0)), min_value=0, key=f"der_{eq.get('equipo')}")
+                            with col5:
+                                eq_gf = st.number_input("Goles Favor", value=int(eq.get('goles_favor', 0)), min_value=0, key=f"gf_{eq.get('equipo')}")
+                            with col6:
+                                eq_gc = st.number_input("Goles Contra", value=int(eq.get('goles_contra', 0)), min_value=0, key=f"gc_{eq.get('equipo')}")
+                            
+                            col_btn1, col_btn2 = st.columns(2)
+                            with col_btn1:
+                                submitted = st.form_submit_button("💾 Guardar Cambios", use_container_width=True)
+                            with col_btn2:
+                                deleted = st.form_submit_button("🗑️ Eliminar Equipo", use_container_width=True)
+                            
+                            if submitted:
+                                # Recalcular lambdas
+                                eq_lambda_l = calculate_team_lambda(eq_gf, eq_gc, eq_partidos, is_home=True)
+                                eq_lambda_v = calculate_team_lambda(eq_gf, eq_gc, eq_partidos, is_home=False)
+                                
+                                update_data = {
+                                    'partidos_jugados': eq_partidos,
+                                    'victorias': eq_victorias,
+                                    'empates': eq_empates,
+                                    'derrotas': eq_derrotas,
+                                    'goles_favor': eq_gf,
+                                    'goles_contra': eq_gc,
+                                    'lambda_local': eq_lambda_l,
+                                    'lambda_visitante': eq_lambda_v,
+                                }
+                                client.table('equipos_stats').update(update_data).eq('id', eq.get('id')).execute()
+                                st.success("✅ Datos actualizados")
+                                st.rerun()
+                            
+                            if deleted:
+                                client.table('equipos_stats').delete().eq('id', eq.get('id')).execute()
+                                st.success("✅ Equipo eliminado")
+                                st.rerun()
             else:
                 st.info("📭 No hay equipos guardados. Agrega uno con el formulario de arriba.")
         except Exception as e:
-            st.error(f"❌ Error al conectar: {str(e)}")
-        
-        st.markdown("---")
-        st.markdown("### 🔍 Buscar y Modificar Equipo")
-        
-        # Buscar equipo para modificar
-        equipo_buscar = st.text_input("Buscar equipo para modificar...", placeholder="Escribe el nombre del equipo")
-        
-        if equipo_buscar:
-            try:
-                response = client.table('equipos_stats').select('*').ilike('equipo', f'%{equipo_buscar}%').execute()
-                
-                if response.data:
-                    st.success(f"✅ {len(response.data)} encontrado(s)")
-                    
-                    for eq in response.data:
-                        with st.expander(f"⚽ {eq.get('equipo')} - {eq.get('liga', 'N/A')} [{eq.get('partidos_jugados', 0)} partidos]"):
-                            # Mostrar datos actuales
-                            st.markdown("**Datos actuales:**")
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                st.write(f"- Partidos: {eq.get('partidos_jugados', 0)}")
-                                st.write(f"- Victorias: {eq.get('victorias', 0)}")
-                                st.write(f"- Empates: {eq.get('empates', 0)}")
-                                st.write(f"- Derrotas: {eq.get('derrotas', 0)}")
-                            with col2:
-                                st.write(f"- Goles Favor: {eq.get('goles_favor', 0)}")
-                                st.write(f"- Goles Contra: {eq.get('goles_contra', 0)}")
-                                st.write(f"- λL: {eq.get('lambda_local', 0):.2f}")
-                                st.write(f"- λV: {eq.get('lambda_visitante', 0):.2f}")
-                            
-                            # Opción de eliminar
-                            st.markdown("---")
-                            col_del = st.columns([1, 1])[0]
-                            if st.button(f"🗑️ Eliminar {eq.get('equipo')}", key=f"del_{eq.get('id', '')}"):
-                                client.table('equipos_stats').delete().eq('id', eq.get('id')).execute()
-                                st.success("✅ Eliminado")
-                                st.rerun()
-                            st.info("💡 Para MODIFICAR, elimina este equipo y vuelve a agregarlo con los datos correctos.")
-                else:
-                    st.warning(f"❌ No se encontró '{equipo_buscar}'")
-            except Exception as e:
-                st.error(f"Error: {str(e)[:50]}")
+            st.error(f"❌ Error: {str(e)[:100]}")
 
     # Página: Gestión de Claves
     elif st.session_state.page == "Claves":
