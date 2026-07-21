@@ -1425,30 +1425,24 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
     Procesa una lista de equipos y retorna estadísticas en formato compatible con elite.py.
     
     FLUJO:
-    1. football-data.co.uk → Busca TODOS los equipos del Excel
-    2. API-Football → Busca SOLO los equipos que NO tienen datos
-    3. Máximo 88 equipos
+    1. football-data.co.uk → Busca TODOS los equipos (sin límite)
+    2. API-Football → Busca SOLO equipos sin datos (máximo 88)
     
     En cuanto una fuente encuentra datos → USA ESOS y PARA.
     """
-    MAX_EQUIPOS = 88
+    MAX_API_FOOTBALL = 88  # Límite de API-Football
     
     results = []
-    logger.info(f"🔍 Procesando {len(team_names)} equipos (máximo {MAX_EQUIPOS})...")
-    
-    # LIMITE de equipos
-    if len(team_names) > MAX_EQUIPOS:
-        logger.warning(f"⚠️ Limitando a {MAX_EQUIPOS} equipos")
-        team_names = team_names[:MAX_EQUIPOS]
+    logger.info(f"🔍 Procesando {len(team_names)} equipos...")
     
     # Preparar football-data (cargar en cache)
     logger.info("📥 Preparando football-data.co.uk...")
     fd_stats = get_football_data_stats()
     logger.info(f"   ✅ {len(fd_stats)} equipos en cache")
     
-    # PASO 1: Buscar TODOS los equipos en football-data
+    # PASO 1: Buscar TODOS los equipos en football-data (sin límite)
     logger.info("="*50)
-    logger.info("📊 PASO 1: Buscando en football-data.co.uk")
+    logger.info("📊 PASO 1: Buscando en football-data.co.uk (TODOS los equipos)")
     logger.info("="*50)
     
     for i, team_name in enumerate(team_names):
@@ -1526,8 +1520,13 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
     pendientes = [r for r in results if r.get('encontrado') == False]
     
     if pendientes:
+        # Limitar a 88 equipos máximo para API-Football
+        if len(pendientes) > MAX_API_FOOTBALL:
+            logger.warning(f"⚠️ Limitando a {MAX_API_FOOTBALL} equipos para API-Football (hay {len(pendientes)} pendientes)")
+            pendientes = pendientes[:MAX_API_FOOTBALL]
+        
         logger.info("="*50)
-        logger.info(f"📊 PASO 2: Buscando {len(pendientes)} equipos en API-Football")
+        logger.info(f"📊 PASO 2: Buscando {len(pendientes)} equipos en API-Football (máx. {MAX_API_FOOTBALL})")
         logger.info("⚠️ Rate limit: 10 solicitudes/minuto - Delay de 7s entre equipos")
         logger.info("="*50)
         
