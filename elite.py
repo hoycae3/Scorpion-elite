@@ -589,82 +589,45 @@ else:
                                 equipos.add(p['equipo_visitante'])
                         
                         equipos = sorted(list(equipos))
-                        st.info(f"📊 {len(equipos)} equipos encontrados. Buscando...")
+                        st.info(f"📊 {len(equipos)} equipos encontrados: {', '.join(equipos)}")
                         
-                        # Buscar todos
-                        results = run_robot_batch(equipos)
+                        # Buscar todos con el robot
+                        with st.spinner("🤖 Buscando en football-data y API-Football..."):
+                            results = run_robot_batch(equipos)
                         
-                        # Intentar fallback para equipos no encontrados
-                        no_encontrados = [r for r in results if not r['encontrado']]
-                        fallback_results = []
-                        
-                        if no_encontrados:
-                            st.info(f"🔄 Buscando {len(no_encontrados)} equipos en base de datos local...")
-                            for r in no_encontrados:
-                                fb_result = scrape_team_fallback(r['equipo'])
-                                if fb_result['encontrado']:
-                                    # Convertir formato
-                                    new_result = {
-                                        'equipo': r['equipo'],
-                                        'encontrado': True,
-                                        'exito': True,
-                                        'sin_estadisticas': False,
-                                        'equipo_real': fb_result['equipo'],
-                                        'liga': fb_result['liga'],
-                                        'lambda_local': fb_result['stats'].get('lambda_local', 1.3),
-                                        'lambda_visitante': fb_result['stats'].get('lambda_visitante', 1.1),
-                                        'goles_favor': fb_result['stats'].get('goles_favor', 0),
-                                        'goles_contra': fb_result['stats'].get('goles_contra', 0),
-                                        'partidos_jugados': fb_result['stats'].get('partidos', 0),
-                                        'fuentes_probadas': ['LOCAL_DB'],
-                                    }
-                                    # Actualizar resultado original
-                                    idx = results.index(r)
-                                    results[idx] = new_result
-                                    fallback_results.append(fb_result['equipo'])
+                        # Clasificar resultados
+                        con_stats = [r for r in results if r.get('encontrado') and not r.get('sin_estadisticas')]
+                        sin_stats = [r for r in results if r.get('encontrado') and r.get('sin_estadisticas')]
+                        no_encontrados = [r for r in results if not r.get('encontrado')]
                         
                         # Resumen
-                        exitos = [r for r in results if r['exito']]
-                        sin_stats = [r for r in exitos if r.get('sin_estadisticas')]
-                        con_stats = [r for r in exitos if not r.get('sin_estadisticas')]
-                        no_encontrados_final = [r for r in results if not r['encontrado']]
+                        st.success(f"✅ **Resumen:** {len(con_stats)} con stats | {len(sin_stats)} sin stats | {len(no_encontrados)} no encontrados")
                         
-                        # Estadisticas reales vs estimados
-                        st.success(f"✅ **{len(exitos)} equipos encontrados** de {len(equipos)}")
-                        
-                        if fallback_results:
-                            st.success(f"🔗 **{len(fallback_results)} encontrados en base de datos local**")
+                        # Mostrar equipos ENCONTRADOS con estadísticas
                         if con_stats:
-                            st.markdown(f"📊 **{len(con_stats)} con estadísticas reales**")
-                        if sin_stats:
-                            st.markdown(f"📋 **{len(sin_stats)} con datos estimados** (sin estadísticas disponibles)")
-                        if no_encontrados_final:
-                            st.warning(f"❌ **{len(no_encontrados_final)} NO encontrados**")
-                            with st.expander("Ver equipos no encontrados"):
-                                for r in no_encontrados_final:
-                                    st.markdown(f"- {r['equipo']}")
+                            st.markdown("### 📊 Equipos con estadísticas reales")
+                            for r in con_stats:
+                                fuente = r.get('fuentes_probadas', ['?'])[-1]
+                                fuente_nombre = {
+                                    'football-data.co.uk': '🌐 football-data',
+                                    'api-football.com': '🔷 API-Football'
+                                }.get(fuente, fuente)
+                                st.markdown(f"- **{r.get('equipo_real', r['equipo'])}** ({r.get('liga', 'N/A')})")
+                                st.markdown(f"  `λL={r['lambda_local']} | λV={r['lambda_visitante']} | Partidos={r['partidos_jugados']} | Fuente: {fuente_nombre}`")
                         
-                        # Mostrar equipos con stats
-                        if con_stats:
-                            with st.expander(f"📊 Ver {len(con_stats)} equipos con estadísticas"):
-                                for r in con_stats:
-                                    src = r.get('fuentes_probadas', ['?'])[-1]
-                                    src_emoji = {"FD": "📊", "SW": "🌐", "LOCAL_DB": "💾"}.get(src, "❓")
-                                    st.markdown(f"{src_emoji} **{r.get('equipo_real', r['equipo'])}** ({r.get('liga', 'N/A')}) - λL:{r['lambda_local']} λV:{r['lambda_visitante']}")
-                        
-                        # Mostrar equipos sin stats (estimados)
-                        if sin_stats:
-                            with st.expander(f"📋 Ver {len(sin_stats)} equipos con datos estimados"):
-                                for r in sin_stats:
-                                    st.markdown(f"⚠️ **{r.get('equipo_real', r['equipo'])}** ({r.get('liga', 'N/A')}) - λL:{r['lambda_local']} λV:{r['lambda_visitante']} *(estimado)*")
+                        # Mostrar equipos SIN estadísticas (NO encontrados)
+                        if no_encontrados:
+                            st.warning(f"❌ **{len(no_encontrados)} equipos NO encontrados en ninguna fuente:**")
+                            for r in no_encontrados:
+                                st.markdown(f"- {r['equipo']}")
+                            st.info("💡 Estos equipos no están en football-data ni en API-Football")
                         
                         # Guardar estadísticas en Supabase
-                        equipos_con_stats = con_stats + sin_stats
-                        if equipos_con_stats:
+                        if equipos_a_guardar:
                             st.info("💾 Guardando estadísticas en Supabase...")
                             guardados = 0
                             errores = 0
-                            for r in equipos_con_stats:
+                            for r in equipos_a_guardar:
                                 try:
                                     equipo_nombre = r.get('equipo_real', r['equipo'])
                                     data = {
