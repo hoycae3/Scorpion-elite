@@ -1,289 +1,89 @@
-/* Scorpion Elite - Diseño Profesional */
+/* Scorpion Elite - Diseño Simple */
 
 /* Variables CSS */
 :root {
-    --bg-dark: #0f0f1a;
+    --bg-dark: #0a0a14;
     --bg-card: #1a1a2e;
-    --bg-card-hover: #252542;
     --accent-primary: #00d4ff;
-    --accent-secondary: #ff6b35;
     --accent-success: #00ff88;
     --accent-warning: #ffd700;
-    --accent-danger: #ff4757;
+    --accent-danger: #ff6b6b;
     --text-primary: #ffffff;
-    --text-secondary: #8892b0;
-    --text-muted: #5a6a8a;
-    --border-subtle: rgba(255, 255, 255, 0.1);
-    --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.3);
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
+    --text-secondary: #aaaaaa;
+    --border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* CONFIGURACIÓN DE LA PÁGINA */
 .stApp {
-    background: linear-gradient(135deg, var(--bg-dark) 0%, #0a0a14 100%) !important;
+    background-color: var(--bg-dark) !important;
     color: var(--text-primary) !important;
-    font-family: 'Inter', 'Segoe UI', -apple-system, sans-serif !important;
 }
 
 body, .stApp > div, main {
-    background: transparent !important;
+    background-color: var(--bg-dark) !important;
 }
 
-/* Sidebar moderno */
+/* Sidebar */
 .css-1d391kg {
     background: var(--bg-card) !important;
 }
 
-/* TÍTULOS Y HEADINGS */
+/* TÍTULOS */
 h1, h2, h3, h4 {
     color: var(--text-primary) !important;
-    font-weight: 600 !important;
 }
 
-/* SECCIONES */
-section {
-    margin-bottom: 1.5rem;
-}
-
-/* TARJETAS PROFESIONALES */
-.pro-card {
+/* TARJETAS SIMPLES */
+.simple-card {
     background: var(--bg-card) !important;
-    border: 1px solid var(--border-subtle) !important;
-    border-radius: var(--radius-md) !important;
-    padding: 1.25rem !important;
-    box-shadow: var(--shadow-card) !important;
-    transition: all 0.3s ease !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    padding: 12px !important;
 }
 
-.pro-card:hover {
-    background: var(--bg-card-hover) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4) !important;
+.simple-card-green {
+    border-left: 3px solid var(--accent-success) !important;
 }
 
-/* CARD DE STATS */
-.stat-card {
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border-subtle) !important;
-    border-radius: var(--radius-sm) !important;
-    padding: 0.75rem !important;
+.simple-card-red {
+    border-right: 3px solid var(--accent-danger) !important;
+}
+
+/* PICK PRINCIPAL */
+.main-pick {
+    background: linear-gradient(135deg, #1a2a3a, #0d1a26) !important;
+    border: 1px solid var(--accent-primary) !important;
+    border-radius: 10px !important;
+    padding: 15px !important;
     text-align: center !important;
-    transition: all 0.2s ease !important;
 }
 
-.stat-card:hover {
-    border-color: var(--accent-primary) !important;
-    background: var(--bg-card-hover) !important;
-}
-
-/* PICK PRINCIPAL - HERO */
-.hero-pick {
-    background: linear-gradient(135deg, #1e3a5f 0%, #0d1f3c 100%) !important;
-    border: 2px solid var(--accent-primary) !important;
-    border-radius: var(--radius-lg) !important;
-    padding: 2rem !important;
-    text-align: center !important;
-    box-shadow: 0 0 40px rgba(0, 212, 255, 0.2) !important;
-}
-
-/* PROBABILIDADES */
-.prob-card {
-    background: linear-gradient(135deg, var(--bg-card) 0%, #12121f 100%) !important;
-    border: 1px solid var(--border-subtle) !important;
-    border-radius: var(--radius-md) !important;
-    padding: 1.25rem !important;
-    text-align: center !important;
-    transition: all 0.3s ease !important;
-}
-
-.prob-card:hover {
-    transform: scale(1.02);
-}
-
-.prob-card.winner {
-    border-color: var(--accent-success) !important;
-    box-shadow: 0 0 20px rgba(0, 255, 136, 0.2) !important;
-}
-
-/* ESTADÍSTICAS EQUIPOS */
-.team-stats {
-    background: var(--bg-card) !important;
-    border-radius: var(--radius-md) !important;
-    padding: 1.5rem !important;
-    border-left: 4px solid var(--accent-primary) !important;
-}
-
-.team-stats.away {
-    border-left-color: var(--accent-danger) !important;
-    border-right: 4px solid var(--accent-danger) !important;
-    border-left: none !important;
-}
-
-/* FORMA RECIENTE */
-.forma-badge {
-    display: inline-block;
-    width: 32px;
-    height: 32px;
-    line-height: 32px;
-    text-align: center;
-    border-radius: 6px;
-    font-weight: bold;
-    margin: 0 2px;
-}
-
-.forma-badge.ganado {
-    background: rgba(0, 255, 136, 0.2);
-    color: var(--accent-success);
-}
-
-.forma-badge.empatado {
-    background: rgba(255, 215, 0, 0.2);
-    color: var(--accent-warning);
-}
-
-.forma-badge.perdido {
-    background: rgba(255, 71, 87, 0.2);
-    color: var(--accent-danger);
-}
-
-/* BADGES MODERNOS */
-.modern-badge {
-    display: inline-block;
+/* BADGES */
+.confianza-badge {
+    background: rgba(0, 212, 255, 0.1);
+    border: 1px solid var(--accent-primary);
     padding: 4px 12px;
-    border-radius: 20px;
+    border-radius: 15px;
     font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.5px;
 }
 
-.modern-badge.A-plus {
-    background: linear-gradient(135deg, #00ff88, #00cc6a);
-    color: #000;
-}
-
-.modern-badge.A {
-    background: rgba(0, 255, 136, 0.2);
-    color: #00ff88;
-    border: 1px solid #00ff88;
-}
-
-.modern-badge.B {
-    background: rgba(0, 212, 255, 0.2);
-    color: #00d4ff;
-    border: 1px solid #00d4ff;
-}
-
-.modern-badge.C {
-    background: rgba(255, 215, 0, 0.2);
-    color: #ffd700;
-    border: 1px solid #ffd700;
-}
-
-/* INPUTS MODERNOS */
-.stTextInput > div > div > input,
-.stNumberInput > div > div > input,
-.stSelectbox > div > div {
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border-subtle) !important;
-    border-radius: var(--radius-sm) !important;
-    color: var(--text-primary) !important;
-}
-
-.stTextInput > div > div > input:focus,
-.stNumberInput > div > div > input:focus {
-    border-color: var(--accent-primary) !important;
-    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1) !important;
-}
-
-/* BOTONES */
-.stButton > button {
-    background: linear-gradient(135deg, var(--accent-secondary), #ff8c35) !important;
-    color: #fff !important;
-    border: none !important;
-    border-radius: var(--radius-sm) !important;
-    font-weight: 600 !important;
-    transition: all 0.3s ease !important;
-    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3) !important;
-}
-
-.stButton > button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4) !important;
-}
+/* FORMA BADGES */
+.forma-g {color: #00ff88; font-weight: bold;}
+.forma-e {color: #ffd700; font-weight: bold;}
+.forma-p {color: #ff6b6b; font-weight: bold;}
 
 /* METRICS */
-.stMetric {
-    background: transparent !important;
-}
-
-.stMetric > div {
-    background: transparent !important;
-}
-
 .stMetric label {
     color: var(--text-secondary) !important;
-    font-size: 12px !important;
+    font-size: 11px !important;
 }
 
-.stMetric .metric-value {
-    color: var(--accent-primary) !important;
-    font-weight: 700 !important;
-}
-
-/* DIVIDERS */
-hr {
-    border: none;
-    height: 1px;
-    background: var(--border-subtle);
-    margin: 1.5rem 0;
-}
-
-/* PREDICCIONES ADICIONALES */
-.pred-card {
+/* PREDICCIONES */
+.pred-box {
     background: var(--bg-card) !important;
-    border: 1px solid var(--border-subtle) !important;
-    border-radius: var(--radius-sm) !important;
-    padding: 0.75rem !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 6px !important;
+    padding: 8px !important;
     text-align: center !important;
-}
-
-.pred-card .pred-label {
-    color: var(--text-secondary) !important;
-    font-size: 10px !important;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.pred-card .pred-value {
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    margin: 4px 0 !important;
-}
-
-.pred-card .pred-sub {
-    color: var(--text-muted) !important;
-    font-size: 10px !important;
-}
-
-/* ANIMACIONES */
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-}
-
-.pulse {
-    animation: pulse 2s ease-in-out infinite;
-}
-
-/* RESPONSIVE */
-@media (max-width: 768px) {
-    .pro-card, .hero-pick {
-        padding: 1rem !important;
-    }
-    
-    .stat-card {
-        padding: 0.5rem !important;
-    }
 }
