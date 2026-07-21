@@ -3,7 +3,12 @@ import pandas as pd
 import os
 import sqlite3
 import hashlib
+import logging
 from datetime import date, timedelta
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 from supabase import create_client
 from data_loader import parse_flashscore_excel, validate_matches
 from analysis_models import calcular
