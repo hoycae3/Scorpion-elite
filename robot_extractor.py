@@ -1255,86 +1255,38 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
     """
     Función de compatibilidad para stats_robot.run_robot_batch
     Procesa una lista de equipos y retorna estadísticas en formato compatible con elite.py.
-    VERSIÓN CORRECTA: Descarga solo las 5 ligas principales (5-10 segundos).
+    
+    Usa SOLO football-data.co.uk (rápido, sin bloqueo) para obtener datos reales.
+    Las otras fuentes (Soccerway, WhoScored, FBref) se pueden usar después manualmente.
+    
+    Tiempo estimado: 10-20 segundos para cualquier cantidad de equipos.
     """
     results = []
     logger.info(f"🔍 Procesando {len(team_names)} equipos...")
     
-    # Solo las 5 ligas más importantes
-    TOP_LEAGUES = {
-        'Premier League': 'https://www.football-data.co.uk/england.csv',
-        'La Liga': 'https://www.football-data.co.uk/spain.csv',
-        'Serie A': 'https://www.football-data.co.uk/italy.csv',
-        'Bundesliga': 'https://www.football-data.co.uk/germany.csv',
-        'Ligue 1': 'https://www.football-data.co.uk/france.csv',
-    }
+    # Cargar football-data UNA SOLA VEZ
+    logger.info("📥 Cargando football-data.co.uk (esto toma ~15 segundos la primera vez)...")
+    all_teams = get_football_data_stats()
+    logger.info(f"   ✅ {len(all_teams)} equipos cargados")
     
-    # Descargar solo las 5 ligas principales
-    all_stats = {}
-    
-    for league, url in TOP_LEAGUES.items():
-        try:
-            time.sleep(0.5)  # 0.5 segundos entre ligas
-            session = requests.Session()
-            r = session.get(url, timeout=15, headers=CHROME_HEADERS)
-            
-            if r.status_code != 200:
-                continue
-            
-            import csv
-            from io import StringIO
-            reader = csv.DictReader(StringIO(r.content.decode('utf-8', errors='ignore')))
-            
-            for row in reader:
-                home = row.get('HomeTeam', '').strip()
-                away = row.get('AwayTeam', '').strip()
-                fthg, ftag = row.get('FTHG'), row.get('FTAG')
-                
-                if not home or not fthg or not ftag:
-                    continue
-                
-                try:
-                    gh, ga = int(fthg), int(ftag)
-                except:
-                    continue
-                
-                # Procesar equipo local
-                if home not in all_stats:
-                    all_stats[home] = {'partidos': 0, 'gf': 0, 'gc': 0, 'liga': league}
-                all_stats[home]['partidos'] += 1
-                all_stats[home]['gf'] += gh
-                all_stats[home]['gc'] += ga
-                
-                # Procesar equipo visitante
-                if away not in all_stats:
-                    all_stats[away] = {'partidos': 0, 'gf': 0, 'gc': 0, 'liga': league}
-                all_stats[away]['partidos'] += 1
-                all_stats[away]['gf'] += ga
-                all_stats[away]['gc'] += gh
-                    
-        except Exception as e:
-            logger.warning(f"Error descargando {league}: {e}")
-            continue
-    
-    logger.info(f"📊 {len(all_stats)} equipos cargados de football-data")
-    
-    # Buscar cada equipo
-    for team_name in team_names:
-        team_lower = team_name.lower().replace('á','a').replace('é','e').replace('í','i').replace('ó','o').replace('ú','u')
+    for i, team_name in enumerate(team_names):
+        logger.info(f"[{i+1}/{len(team_names)}] 🔍 {team_name}...")
         
-        # Buscar coincidencia
+        # Buscar en football-data
+        team_lower = team_name.lower().replace('á','a').replace('é','e').replace('í','i').replace('ó','o').replace('ú','u').replace('ü','u')
+        
         encontrado = None
-        for eq, data in all_stats.items():
-            eq_lower = eq.lower().replace('á','a').replace('é','e').replace('í','i').replace('ó','o').replace('ú','u')
+        for eq, data in all_teams.items():
+            eq_lower = eq.lower().replace('á','a').replace('é','e').replace('í','i').replace('ó','o').replace('ú','u').replace('ü','u')
             if team_lower in eq_lower or eq_lower in team_lower:
                 encontrado = (eq, data)
                 break
         
         if encontrado:
             eq, data = encontrado
-            p = data['partidos']
-            gf = data['gf']
-            gc = data['gc']
+            p = data.get('partidos', 0)
+            gf = data.get('goles_favor', 0)
+            gc = data.get('goles_contra', 0)
             lambda_local = calculate_team_lambda(gf, gc, p, is_home=True)
             lambda_visitante = calculate_team_lambda(gf, gc, p, is_home=False)
             
@@ -1344,18 +1296,18 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                 'exito': True,
                 'sin_estadisticas': False,
                 'equipo_real': eq,
-                'liga': data['liga'],
+                'liga': data.get('liga', 'Desconocida'),
                 'lambda_local': round(lambda_local, 2),
                 'lambda_visitante': round(lambda_visitante, 2),
                 'goles_favor': gf,
                 'goles_contra': gc,
                 'partidos_jugados': p,
-                'victorias': 0,
-                'empates': 0,
-                'derrotas': 0,
+                'victorias': data.get('victorias', 0),
+                'empates': data.get('empates', 0),
+                'derrotas': data.get('derrotas', 0),
                 'fuentes_probadas': ['football-data.co.uk'],
             }
-            logger.info(f"  ✅ {team_name} → {eq}: λL={result['lambda_local']}, λV={result['lambda_visitante']}")
+            logger.info(f"   ✅ {team_name} → {eq}: λL={result['lambda_local']}, λV={result['lambda_visitante']}")
         else:
             result = {
                 'equipo': team_name,
@@ -1369,12 +1321,16 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                 'goles_favor': 15,
                 'goles_contra': 12,
                 'partidos_jugados': 10,
+                'victorias': 3,
+                'empates': 3,
+                'derrotas': 4,
                 'fuentes_probadas': ['ESTIMADO'],
             }
-            logger.info(f"  ⚠️ {team_name}: No encontrado, usando estimado")
+            logger.info(f"   ⚠️ {team_name}: No encontrado en football-data, usando estimado")
         
         results.append(result)
     
+    logger.info(f"✅ Completado: {len(results)} equipos procesados")
     return results
 
 
