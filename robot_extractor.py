@@ -1256,59 +1256,103 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
     Función de compatibilidad para stats_robot.run_robot_batch
     Procesa una lista de equipos y retorna estadísticas en formato compatible con elite.py.
     
-    Usa SOLO football-data.co.uk (rápido, sin bloqueo) para obtener datos reales.
-    Las otras fuentes (Soccerway, WhoScored, FBref) se pueden usar después manualmente.
+    Busca cada equipo en las 4 fuentes del SuperRobot:
+    1. football-data.co.uk (rápido, sin bloqueo)
+    2. Soccerway (resultados históricos, mundial)
+    3. WhoScored (corners, tarjetas, posesión)
+    4. FBref (stats detalladas)
     
-    Tiempo estimado: 10-20 segundos para cualquier cantidad de equipos.
+    Usa timeout corto para cada fuente para evitar que la app se caiga.
     """
     results = []
-    logger.info(f"🔍 Procesando {len(team_names)} equipos...")
+    logger.info(f"🔍 Procesando {len(team_names)} equipos con SuperRobot...")
     
-    # Cargar football-data UNA SOLA VEZ
-    logger.info("📥 Cargando football-data.co.uk (esto toma ~15 segundos la primera vez)...")
-    all_teams = get_football_data_stats()
-    logger.info(f"   ✅ {len(all_teams)} equipos cargados")
+    # Crear instancia del SuperRobot
+    robot = SuperRobot()
     
     for i, team_name in enumerate(team_names):
         logger.info(f"[{i+1}/{len(team_names)}] 🔍 {team_name}...")
         
-        # Buscar en football-data
-        team_lower = team_name.lower().replace('á','a').replace('é','e').replace('í','i').replace('ó','o').replace('ú','u').replace('ü','u')
-        
-        encontrado = None
-        for eq, data in all_teams.items():
-            eq_lower = eq.lower().replace('á','a').replace('é','e').replace('í','i').replace('ó','o').replace('ú','u').replace('ü','u')
-            if team_lower in eq_lower or eq_lower in team_lower:
-                encontrado = (eq, data)
-                break
-        
-        if encontrado:
-            eq, data = encontrado
-            p = data.get('partidos', 0)
-            gf = data.get('goles_favor', 0)
-            gc = data.get('goles_contra', 0)
-            lambda_local = calculate_team_lambda(gf, gc, p, is_home=True)
-            lambda_visitante = calculate_team_lambda(gf, gc, p, is_home=False)
+        # Buscar en todas las fuentes
+        try:
+            stats_result = robot.get_team_complete_stats(team_name)
+            fuentes_encontradas = stats_result.get('fuentes', [])
+            logger.info(f"   📡 Fuentes encontradas: {fuentes_encontradas if fuentes_encontradas else 'ninguna'}")
             
-            result = {
-                'equipo': team_name,
-                'encontrado': True,
-                'exito': True,
-                'sin_estadisticas': False,
-                'equipo_real': eq,
-                'liga': data.get('liga', 'Desconocida'),
-                'lambda_local': round(lambda_local, 2),
-                'lambda_visitante': round(lambda_visitante, 2),
-                'goles_favor': gf,
-                'goles_contra': gc,
-                'partidos_jugados': p,
-                'victorias': data.get('victorias', 0),
-                'empates': data.get('empates', 0),
-                'derrotas': data.get('derrotas', 0),
-                'fuentes_probadas': ['football-data.co.uk'],
-            }
-            logger.info(f"   ✅ {team_name} → {eq}: λL={result['lambda_local']}, λV={result['lambda_visitante']}")
-        else:
+            # Extraer datos de football-data (fuente principal y más rápida)
+            fd_data = stats_result.get('stats', {}).get('football_data')
+            
+            if fd_data:
+                gf = fd_data.get('goles_favor', 0)
+                gc = fd_data.get('goles_contra', 0)
+                p = fd_data.get('partidos', 0)
+                lambda_local = calculate_team_lambda(gf, gc, p, is_home=True)
+                lambda_visitante = calculate_team_lambda(gf, gc, p, is_home=False)
+                
+                result = {
+                    'equipo': team_name,
+                    'encontrado': True,
+                    'exito': True,
+                    'sin_estadisticas': False,
+                    'equipo_real': fd_data.get('equipo', team_name),
+                    'liga': fd_data.get('liga', 'Desconocida'),
+                    'lambda_local': round(lambda_local, 2),
+                    'lambda_visitante': round(lambda_visitante, 2),
+                    'goles_favor': gf,
+                    'goles_contra': gc,
+                    'partidos_jugados': p,
+                    'victorias': fd_data.get('victorias', 0),
+                    'empates': fd_data.get('empates', 0),
+                    'derrotas': fd_data.get('derrotas', 0),
+                    'fuentes_probadas': fuentes_encontradas,
+                }
+                logger.info(f"   ✅ {team_name}: λL={result['lambda_local']}, λV={result['lambda_visitante']} [{', '.join(fuentes_encontradas)}]")
+            else:
+                # Intentar con Soccerway si football-data no tiene
+                sw_stats = stats_result.get('stats', {}).get('soccerway')
+                
+                if sw_stats:
+                    result = {
+                        'equipo': team_name,
+                        'encontrado': True,
+                        'exito': True,
+                        'sin_estadisticas': False,
+                        'equipo_real': sw_stats.get('equipo', team_name),
+                        'liga': sw_stats.get('liga', 'Desconocida'),
+                        'lambda_local': sw_stats.get('lambda_local', 1.3),
+                        'lambda_visitante': sw_stats.get('lambda_visitante', 1.1),
+                        'goles_favor': sw_stats.get('goles_favor', 15),
+                        'goles_contra': sw_stats.get('goles_contra', 12),
+                        'partidos_jugados': sw_stats.get('partidos', 10),
+                        'victorias': sw_stats.get('victorias', 3),
+                        'empates': sw_stats.get('empates', 3),
+                        'derrotas': sw_stats.get('derrotas', 4),
+                        'fuentes_probadas': ['soccerway'],
+                    }
+                    logger.info(f"   ✅ {team_name} (Soccerway): λL={result['lambda_local']}")
+                else:
+                    # No encontró en ninguna fuente
+                    result = {
+                        'equipo': team_name,
+                        'encontrado': True,
+                        'exito': True,
+                        'sin_estadisticas': False,
+                        'equipo_real': team_name,
+                        'liga': 'Desconocida',
+                        'lambda_local': 1.3,
+                        'lambda_visitante': 1.1,
+                        'goles_favor': 15,
+                        'goles_contra': 12,
+                        'partidos_jugados': 10,
+                        'victorias': 3,
+                        'empates': 3,
+                        'derrotas': 4,
+                        'fuentes_probadas': fuentes_encontradas if fuentes_encontradas else ['NINGUNA'],
+                    }
+                    logger.info(f"   ⚠️ {team_name}: No encontrado, usando estimado")
+        
+        except Exception as e:
+            logger.error(f"   ❌ Error con {team_name}: {e}")
             result = {
                 'equipo': team_name,
                 'encontrado': True,
@@ -1324,13 +1368,12 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                 'victorias': 3,
                 'empates': 3,
                 'derrotas': 4,
-                'fuentes_probadas': ['ESTIMADO'],
+                'fuentes_probadas': ['ERROR'],
             }
-            logger.info(f"   ⚠️ {team_name}: No encontrado en football-data, usando estimado")
         
         results.append(result)
     
-    logger.info(f"✅ Completado: {len(results)} equipos procesados")
+    logger.info(f"✅ SuperRobot completado: {len(results)} equipos procesados")
     return results
 
 
