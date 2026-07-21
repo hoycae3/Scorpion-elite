@@ -628,13 +628,10 @@ else:
             # ========================
             st.markdown("### 🎯 Estimación del Partido")
             
-            # Córners estimados
-            corners_match = r.get('corners', {})
-            total_corners = corners_match.get('total_estimado', (c_local + c_visitante))
-            corners_local_est = corners_match.get('corners_local_estimado', total_corners * 0.52)
-            corners_visitante_est = corners_match.get('corners_visitante_estimado', total_corners * 0.48)
+            # Córners: suma de ambos promedios
+            total_corners = c_local + c_visitante
             
-            # Tarjetas estimadas
+            # Tarjetas: suma de ambos promedios
             tarjetas_est = ta_local + ta_visitante
             
             # Marcador probable
@@ -643,13 +640,13 @@ else:
             top_scores = mc.get('top_scores', {})
             score_mas_probable = list(top_scores.keys())[0] if top_scores else "2-1"
             
-            col_e1, col_e2, col_e3, col_e4 = st.columns(4)
+            col_e1, col_e2, col_e3 = st.columns(3)
             with col_e1:
                 st.markdown(f"""
                 <div style="background: #0d1b2a; padding: 12px; border-radius: 10px; text-align: center;">
                     <p style="color: #888; margin: 0; font-size: 12px;">⚽ Córners Totales</p>
-                    <h3 style="color: #00d2d3; margin: 5px 0;">~{total_corners:.0f}</h3>
-                    <p style="color: #666; margin: 0; font-size: 11px;">L:{corners_local_est:.0f} V:{corners_visitante_est:.0f}</p>
+                    <h3 style="color: #00d2d3; margin: 5px 0;">{total_corners:.1f}</h3>
+                    <p style="color: #666; margin: 0; font-size: 11px;">L:{c_local:.1f} + V:{c_visitante:.1f}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -657,21 +654,12 @@ else:
                 st.markdown(f"""
                 <div style="background: #0d1b2a; padding: 12px; border-radius: 10px; text-align: center;">
                     <p style="color: #888; margin: 0; font-size: 12px;">🟨 Tarjetas Totales</p>
-                    <h3 style="color: #ffd700; margin: 5px 0;">~{tarjetas_est:.0f}</h3>
-                    <p style="color: #666; margin: 0; font-size: 11px;">L:{ta_local:.1f} V:{ta_visitante:.1f}</p>
+                    <h3 style="color: #ffd700; margin: 5px 0;">{tarjetas_est:.1f}</h3>
+                    <p style="color: #666; margin: 0; font-size: 11px;">L:{ta_local:.1f} + V:{ta_visitante:.1f}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_e3:
-                st.markdown(f"""
-                <div style="background: #0d1b2a; padding: 12px; border-radius: 10px; text-align: center;">
-                    <p style="color: #888; margin: 0; font-size: 12px;">🥅 Goles Totales Est.</p>
-                    <h3 style="color: #00ff88; margin: 5px 0;">~{r.get('goles_esperados', 0):.1f}</h3>
-                    <p style="color: #666; margin: 0; font-size: 11px;">Promedio</p>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with col_e4:
                 st.markdown(f"""
                 <div style="background: #0d1b2a; padding: 12px; border-radius: 10px; text-align: center;">
                     <p style="color: #888; margin: 0; font-size: 12px;">🎯 Marcador Probable</p>
