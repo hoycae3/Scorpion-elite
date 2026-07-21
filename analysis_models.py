@@ -173,20 +173,20 @@ def analizar_forma_reciente(ultimos_5: List[Dict]) -> Dict:
     forma_letras = []
     
     for match in ultimos_5[:5]:  # Solo últimos 5
-        resultado = match.get('resultado', 'V')
+        resultado = match.get('resultado', 'P')
         forma_letras.append(resultado)
         
         gf += match.get('goles_favor', 0)
         gc += match.get('goles_contra', 0)
         corners_total += match.get('corners', 0)
         
-        if resultado == 'L':
+        if resultado == 'G':  # Ganó
             puntos += 3
             victorias += 1
-        elif resultado == 'E':
+        elif resultado == 'E':  # Empate
             puntos += 1
             empates += 1
-        else:
+        else:  # P (Perdió)
             derrotas += 1
     
     # Forma como porcentaje (máximo 15 puntos en 5 partidos)

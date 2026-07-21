@@ -592,9 +592,8 @@ else:
                 gf = forma_l.get('goles_favor_5', 0)
                 gc = forma_l.get('goles_contra_5', 0)
                 
-                # Colores para cada resultado
-                emoji_forma = {"L": "🟢", "E": "🟡", "V": "🔴"}
-                forma_html = "".join([f"<span style='color: {'#00ff88' if c=='L' else '#ffd700' if c=='E' else '#ff6b6b'}'>{c}</span>" for c in letras])
+                # Colores para cada resultado: G=Ganó, E=Empate, P=Perdió
+                forma_html = "".join([f"<span style='color: {'#00ff88' if c=='G' else '#ffd700' if c=='E' else '#ff6b6b'}'>{c}</span>" for c in letras])
                 
                 st.markdown(f"""
                 <div style="background: #0d1b2a; padding: 15px; border-radius: 10px;">
@@ -611,7 +610,7 @@ else:
                 gf_v = forma_v.get('goles_favor_5', 0)
                 gc_v = forma_v.get('goles_contra_5', 0)
                 
-                forma_html_v = "".join([f"<span style='color: {'#00ff88' if c=='L' else '#ffd700' if c=='E' else '#ff6b6b'}'>{c}</span>" for c in letras_v])
+                forma_html_v = "".join([f"<span style='color: {'#00ff88' if c=='G' else '#ffd700' if c=='E' else '#ff6b6b'}'>{c}</span>" for c in letras_v])
                 
                 st.markdown(f"""
                 <div style="background: #0d1b2a; padding: 15px; border-radius: 10px;">
@@ -813,16 +812,16 @@ else:
             with col_tiros_arco:
                 promedio_tiros_arco = st.number_input("Promedio Tiros al Arco/partido", min_value=0.0, value=4.0, step=0.5, format="%.1f")
             
-            st.markdown("**📅 Últimos 5 Partidos (Opcional - Formato: L/E/V)**")
+            st.markdown("**📅 Últimos 5 Partidos (Opcional - G=Ganó, E=Empate, P=Perdió)**")
             col_u1, col_u2, col_u3 = st.columns(3)
             with col_u1:
-                u1 = st.selectbox("Partido 1", ["", "L", "E", "V"], index=0, key="u1")
-                u2 = st.selectbox("Partido 2", ["", "L", "E", "V"], index=0, key="u2")
+                u1 = st.selectbox("Partido 1", ["", "G", "E", "P"], index=0, key="u1")
+                u2 = st.selectbox("Partido 2", ["", "G", "E", "P"], index=0, key="u2")
             with col_u2:
-                u3 = st.selectbox("Partido 3", ["", "L", "E", "V"], index=0, key="u3")
-                u4 = st.selectbox("Partido 4", ["", "L", "E", "V"], index=0, key="u4")
+                u3 = st.selectbox("Partido 3", ["", "G", "E", "P"], index=0, key="u3")
+                u4 = st.selectbox("Partido 4", ["", "G", "E", "P"], index=0, key="u4")
             with col_u3:
-                u5 = st.selectbox("Partido 5", ["", "L", "E", "V"], index=0, key="u5")
+                u5 = st.selectbox("Partido 5", ["", "G", "E", "P"], index=0, key="u5")
             
             submitted = st.form_submit_button("💾 Guardar Equipo", use_container_width=True)
             
