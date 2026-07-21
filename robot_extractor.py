@@ -1262,7 +1262,7 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
     3. WhoScored (corners, tarjetas, posesión)
     4. FBref (stats detalladas)
     
-    Usa timeout corto para cada fuente para evitar que la app se caiga.
+    Si NO encuentra en ninguna fuente → marcado como NO encontrado (sin estimaciones).
     """
     results = []
     logger.info(f"🔍 Procesando {len(team_names)} equipos con SuperRobot...")
@@ -1319,55 +1319,55 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                         'sin_estadisticas': False,
                         'equipo_real': sw_stats.get('equipo', team_name),
                         'liga': sw_stats.get('liga', 'Desconocida'),
-                        'lambda_local': sw_stats.get('lambda_local', 1.3),
-                        'lambda_visitante': sw_stats.get('lambda_visitante', 1.1),
-                        'goles_favor': sw_stats.get('goles_favor', 15),
-                        'goles_contra': sw_stats.get('goles_contra', 12),
-                        'partidos_jugados': sw_stats.get('partidos', 10),
-                        'victorias': sw_stats.get('victorias', 3),
-                        'empates': sw_stats.get('empates', 3),
-                        'derrotas': sw_stats.get('derrotas', 4),
+                        'lambda_local': sw_stats.get('lambda_local', 0),
+                        'lambda_visitante': sw_stats.get('lambda_visitante', 0),
+                        'goles_favor': sw_stats.get('goles_favor', 0),
+                        'goles_contra': sw_stats.get('goles_contra', 0),
+                        'partidos_jugados': sw_stats.get('partidos', 0),
+                        'victorias': sw_stats.get('victorias', 0),
+                        'empates': sw_stats.get('empates', 0),
+                        'derrotas': sw_stats.get('derrotas', 0),
                         'fuentes_probadas': ['soccerway'],
                     }
                     logger.info(f"   ✅ {team_name} (Soccerway): λL={result['lambda_local']}")
                 else:
-                    # No encontró en ninguna fuente
+                    # NO encontró en ninguna fuente → marcar como NO encontrado
                     result = {
                         'equipo': team_name,
-                        'encontrado': True,
+                        'encontrado': False,
                         'exito': True,
-                        'sin_estadisticas': False,
+                        'sin_estadisticas': True,
                         'equipo_real': team_name,
-                        'liga': 'Desconocida',
-                        'lambda_local': 1.3,
-                        'lambda_visitante': 1.1,
-                        'goles_favor': 15,
-                        'goles_contra': 12,
-                        'partidos_jugados': 10,
-                        'victorias': 3,
-                        'empates': 3,
-                        'derrotas': 4,
+                        'liga': 'NO ENCONTRADO',
+                        'lambda_local': 0,
+                        'lambda_visitante': 0,
+                        'goles_favor': 0,
+                        'goles_contra': 0,
+                        'partidos_jugados': 0,
+                        'victorias': 0,
+                        'empates': 0,
+                        'derrotas': 0,
                         'fuentes_probadas': fuentes_encontradas if fuentes_encontradas else ['NINGUNA'],
                     }
-                    logger.info(f"   ⚠️ {team_name}: No encontrado, usando estimado")
+                    logger.info(f"   ❌ {team_name}: NO ENCONTRADO en ninguna fuente")
         
         except Exception as e:
             logger.error(f"   ❌ Error con {team_name}: {e}")
             result = {
                 'equipo': team_name,
-                'encontrado': True,
-                'exito': True,
-                'sin_estadisticas': False,
+                'encontrado': False,
+                'exito': False,
+                'sin_estadisticas': True,
                 'equipo_real': team_name,
-                'liga': 'Desconocida',
-                'lambda_local': 1.3,
-                'lambda_visitante': 1.1,
-                'goles_favor': 15,
-                'goles_contra': 12,
-                'partidos_jugados': 10,
-                'victorias': 3,
-                'empates': 3,
-                'derrotas': 4,
+                'liga': 'ERROR',
+                'lambda_local': 0,
+                'lambda_visitante': 0,
+                'goles_favor': 0,
+                'goles_contra': 0,
+                'partidos_jugados': 0,
+                'victorias': 0,
+                'empates': 0,
+                'derrotas': 0,
                 'fuentes_probadas': ['ERROR'],
             }
         
