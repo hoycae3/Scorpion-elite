@@ -344,6 +344,7 @@ else:
         equipo_local_ok = False
         equipo_visitante_ok = False
         equipos_faltantes = []
+        error_conexion = False
         
         if home_team:
             try:
@@ -355,7 +356,9 @@ else:
                     st.success(f"✅ {home_team} - λ={lambda_local}")
                 else:
                     equipos_faltantes.append(home_team)
-            except:
+            except Exception as e:
+                st.warning(f"⚠️ Error conectando a base de datos: {str(e)[:50]}")
+                error_conexion = True
                 equipos_faltantes.append(home_team)
         
         if away_team:
@@ -368,26 +371,32 @@ else:
                     st.success(f"✅ {away_team} - λ={lambda_visitante}")
                 else:
                     equipos_faltantes.append(away_team)
-            except:
+            except Exception as e:
+                st.warning(f"⚠️ Error conectando a base de datos: {str(e)[:50]}")
+                error_conexion = True
                 equipos_faltantes.append(away_team)
         
         # Mostrar error si faltan equipos
-        if equipos_faltantes:
+        if equipos_faltantes and not error_conexion:
             st.error(f"⚠️ Equipos sin estadísticas: {', '.join(set(equipos_faltantes))}")
-            st.info("📝 Ve a la pestaña 'Estadísticas' y ejecuta 'Actualizar Estadísticas de la Semana' para agregarlos.")
+            st.info("📝 Ve a la pestaña 'Estadísticas' y ejecuta 'Buscar Equipos del Excel' para agregarlos.")
         
         # Botón analizar - solo si ambos equipos existen
         analizar_disabled = not (equipo_local_ok and equipo_visitante_ok)
         
         if st.button("🎯 ANALIZAR", type="primary", use_container_width=True, disabled=analizar_disabled):
-            if home_team and away_team and lambda_local and lambda_visitante:
-                with st.spinner("Analizando..."):
-                    result = calcular(lambda_local, lambda_visitante)
-                    st.session_state.analysis_result = result
-                    st.session_state.home = home_team
-                    st.session_state.away = away_team
-            else:
-                st.error("⚠️ Ambos equipos deben tener estadísticas. Ejecuta el robot primero.")
+            try:
+                if home_team and away_team and lambda_local and lambda_visitante:
+                    with st.spinner("Analizando..."):
+                        result = calcular(lambda_local, lambda_visitante)
+                        st.session_state.analysis_result = result
+                        st.session_state.home = home_team
+                        st.session_state.away = away_team
+                else:
+                    st.error("⚠️ Ambos equipos deben tener estadísticas. Ejecuta el robot primero.")
+            except Exception as e:
+                st.error(f"❌ Error en análisis: {str(e)[:100]}")
+                st.info("💡 Intenta de nuevo o verifica que los equipos existan.")
         
         # Mostrar resultados
         if 'analysis_result' in st.session_state:
