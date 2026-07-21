@@ -707,12 +707,48 @@ else:
             with col_gc:
                 goles_contra = st.number_input("Goles en Contra", min_value=0, value=0)
             
+            st.markdown("**📊 Estadísticas Avanzadas (Opcional)**")
+            col_corners, col_tarjetas = st.columns(2)
+            with col_corners:
+                promedio_corners = st.number_input("Promedio Córners/partido", min_value=0.0, value=10.0, step=0.5, format="%.1f")
+            with col_tarjetas:
+                promedio_tarjetas = st.number_input("Promedio Tarjetas/partido", min_value=0.0, value=3.0, step=0.5, format="%.1f")
+            
+            col_tiros, col_tiros_arco = st.columns(2)
+            with col_tiros:
+                promedio_tiros = st.number_input("Promedio Tiros/partido", min_value=0.0, value=12.0, step=0.5, format="%.1f")
+            with col_tiros_arco:
+                promedio_tiros_arco = st.number_input("Promedio Tiros al Arco/partido", min_value=0.0, value=4.0, step=0.5, format="%.1f")
+            
+            st.markdown("**📅 Últimos 5 Partidos (Opcional - Formato: L/E/V)**")
+            col_u1, col_u2, col_u3 = st.columns(3)
+            with col_u1:
+                u1 = st.selectbox("Partido 1", ["", "L", "E", "V"], index=0, key="u1")
+                u2 = st.selectbox("Partido 2", ["", "L", "E", "V"], index=0, key="u2")
+            with col_u2:
+                u3 = st.selectbox("Partido 3", ["", "L", "E", "V"], index=0, key="u3")
+                u4 = st.selectbox("Partido 4", ["", "L", "E", "V"], index=0, key="u4")
+            with col_u3:
+                u5 = st.selectbox("Partido 5", ["", "L", "E", "V"], index=0, key="u5")
+            
             submitted = st.form_submit_button("💾 Guardar Equipo", use_container_width=True)
             
             if submitted and equipo:
                 # Calcular lambdas
                 lambda_local = calculate_team_lambda(goles_favor, goles_contra, partidos, is_home=True)
                 lambda_visitante = calculate_team_lambda(goles_favor, goles_contra, partidos, is_home=False)
+                
+                # Construir últimos 5 partidos
+                ultimos_5 = []
+                for resultado in [u1, u2, u3, u4, u5]:
+                    if resultado:
+                        ultimos_5.append({
+                            'resultado': resultado,
+                            'goles_favor': 0,
+                            'goles_contra': 0,
+                            'corners': promedio_corners,
+                            'tarjetas': promedio_tarjetas
+                        })
                 
                 # Guardar en Supabase
                 client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -727,7 +763,12 @@ else:
                     'goles_favor': goles_favor,
                     'goles_contra': goles_contra,
                     'lambda_local': lambda_local,
-                    'lambda_visitante': lambda_visitante
+                    'lambda_visitante': lambda_visitante,
+                    'promedio_tiros': promedio_tiros,
+                    'promedio_tiros_arco': promedio_tiros_arco,
+                    'promedio_corners_total': promedio_corners,
+                    'promedio_amarillas': promedio_tarjetas,
+                    'ultimos_5_partidos': ultimos_5
                 }
                 
                 try:
@@ -735,12 +776,12 @@ else:
                     try:
                         client.table('equipos_stats').upsert(data).execute()
                     except:
-                        # Si falla upsert, intentar insert directo
+                        # Si falla upsert, intentar insert directo (sin ultimos_5)
+                        data_basic = {k: v for k, v in data.items() if k != 'ultimos_5_partidos'}
                         try:
-                            client.table('equipos_stats').insert(data).execute()
+                            client.table('equipos_stats').insert(data_basic).execute()
                         except:
-                            # Actualizar si ya existe
-                            client.table('equipos_stats').update(data).eq('equipo', equipo).execute()
+                            client.table('equipos_stats').update(data_basic).eq('equipo', equipo).execute()
                     st.success(f"✅ {equipo} guardado exitosamente")
                 except Exception as e:
                     st.error(f"Error al guardar: {str(e)[:100]}")
