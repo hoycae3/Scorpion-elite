@@ -343,10 +343,7 @@ else:
             equipos_disponibles = []
         
         # Mostrar equipos disponibles
-        if equipos_disponibles:
-            st.markdown("### 📋 Equipos Disponibles")
-            st.info(f"Tienes **{len(equipos_disponibles)}** equipos guardados: {', '.join(equipos_disponibles[:10])}{'...' if len(equipos_disponibles) > 10 else ''}")
-        else:
+        if not equipos_disponibles:
             st.warning("⚠️ No hay equipos guardados. Ve a 'Estadísticas' para agregar equipos.")
         
         # Selector de equipos
