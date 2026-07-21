@@ -22,68 +22,235 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# CONFIGURACIÓN DE HEADERS (Chrome de escritorio real)
+# CONFIGURACIÓN DE HEADERS
 # ═══════════════════════════════════════════════════════════════════════════════
 
 CHROME_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-    'Accept-Language': 'en-US,en;q=0.9,es;q=0.8',
-    'Accept-Encoding': 'gzip, deflate, br',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate',
     'DNT': '1',
     'Connection': 'keep-alive',
-    'Upgrade-Insecure-Requests': '1',
-    'Sec-Fetch-Dest': 'document',
-    'Sec-Fetch-Mode': 'navigate',
-    'Sec-Fetch-Site': 'none',
-    'Sec-Fetch-User': '?1',
-    'Cache-Control': 'max-age=0',
+    'Referer': 'https://www.football-data.co.uk/',
 }
+
+# Headers específicos para football-data.co.uk
+FD_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+    'Accept': 'text/csv,text/plain,*/*',
+    'Accept-Language': 'en-GB,en;q=0.9',
+    'Referer': 'https://www.football-data.co.uk/',
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# API-FOOTBALL.COM
+# ═══════════════════════════════════════════════════════════════════════════════
+
+API_FOOTBALL_KEY = "e3926f829cd848f4b2b54d722ca29701"
+API_FOOTBALL_URL = "https://v3.football.api-sports.io"
+
+def search_team_api_football(team_name: str) -> Optional[Dict]:
+    """
+    Busca un equipo en api-football.com usando la API.
+    Retorna estadísticas del equipo o None si no lo encuentra.
+    """
+    try:
+        headers = {
+            'x-apisports-key': API_FOOTBALL_KEY
+        }
+        
+        # Buscar equipo
+        response = requests.get(
+            f"{API_FOOTBALL_URL}/teams",
+            headers=headers,
+            params={'search': team_name},
+            timeout=15
+        )
+        
+        if response.status_code != 200:
+            logger.warning(f"   ⚠️ API-Football error: status {response.status_code}")
+            return None
+        
+        data = response.json()
+        
+        if data.get('results', 0) == 0:
+            return None
+        
+        # Obtener el primer equipo encontrado
+        teams = data.get('response', [])
+        if not teams:
+            return None
+        
+        team_info = teams[0].get('team', {})
+        team_id = team_info.get('id')
+        team_league = teams[0].get('league', {}).get('name', 'Desconocida')
+        
+        if not team_id:
+            return None
+        
+        logger.info(f"   📡 Encontrado: {team_info.get('name')} (ID: {team_id})")
+        
+        # Obtener fixtures del equipo para calcular estadísticas
+        fixtures_response = requests.get(
+            f"{API_FOOTBALL_URL}/fixtures",
+            headers=headers,
+            params={
+                'team': team_id,
+                'season': 2024,
+                'status': 'FT'  # Solo partidos completados
+            },
+            timeout=15
+        )
+        
+        fixtures_data = fixtures_response.json() if fixtures_response.status_code == 200 else {}
+        fixtures = fixtures_data.get('response', [])
+        
+        # Calcular estadísticas de los fixtures
+        partidos = 0
+        victorias = 0
+        empates = 0
+        derrotas = 0
+        goles_favor = 0
+        goles_contra = 0
+        corners_total = 0
+        tarjetas_amarillas = 0
+        tarjetas_rojas = 0
+        tiros_total = 0
+        tiros_arco = 0
+        partidos_local = 0
+        partidos_visitante = 0
+        goles_local = 0
+        goles_visitante = 0
+        
+        for fixture in fixtures[:38]:  # Máximo 38 partidos
+            fix = fixture.get('fixture', {})
+            teams = fixture.get('teams', {})
+            goals = fixture.get('goals', {})
+            score = fixture.get('score', {})
+            
+            # Solo partidos completados
+            if fix.get('status', {}).get('short') != 'FT':
+                continue
+            
+            home_team = teams.get('home', {})
+            away_team = teams.get('away', {})
+            
+            is_home = home_team.get('id') == team_id
+            
+            partidos += 1
+            
+            # Resultado
+            home_goals = goals.get('home') or 0
+            away_goals = goals.get('away') or 0
+            
+            if is_home:
+                partidos_local += 1
+                goles_local += home_goals
+                goles_favor += home_goals
+                goles_contra += away_goals
+                
+                if home_goals > away_goals:
+                    victorias += 1
+                elif home_goals == away_goals:
+                    empates += 1
+                else:
+                    derrotas += 1
+            else:
+                partidos_visitante += 1
+                goles_visitante += away_goals
+                goles_favor += away_goals
+                goles_contra += home_goals
+                
+                if away_goals > home_goals:
+                    victorias += 1
+                elif away_goals == home_goals:
+                    empates += 1
+                else:
+                    derrotas += 1
+        
+        # Calcular lambdas
+        lambda_local = 0
+        lambda_visitante = 0
+        
+        if partidos_local > 0:
+            lambda_local = round(goles_local / partidos_local, 2)
+        
+        if partidos_visitante > 0:
+            lambda_visitante = round(goles_visitante / partidos_visitante, 2)
+        
+        result = {
+            'equipo': team_info.get('name', team_name),
+            'liga': team_league,
+            'pais': team_info.get('country', ''),
+            'partidos': partidos,
+            'partidos_local': partidos_local,
+            'partidos_visitante': partidos_visitante,
+            'victorias': victorias,
+            'empates': empates,
+            'derrotas': derrotas,
+            'goles_favor': goles_favor,
+            'goles_contra': goles_contra,
+            'lambda_local': lambda_local,
+            'lambda_visitante': lambda_visitante,
+            'goles_local': goles_local,
+            'goles_visitante': goles_visitante,
+            'source': 'api-football.com'
+        }
+        
+        logger.info(f"   ✅ API-Football: {result['equipo']} - {partidos} partidos, λL={lambda_local}, λV={lambda_visitante}")
+        return result
+        
+    except Exception as e:
+        logger.warning(f"   ⚠️ API-Football error: {e}")
+        return None
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # football-data.co.uk (SIN CLOUDFLARE - Acceso directo)
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# Formato: https://www.football-data.co.uk/mmz4281/2324/E0.csv
+# mmz4281 = directorio, 2324 = temporada 23/24, E0 = código de liga
+
 FD_LEAGUE_URLS = {
     # Inglaterra
-    'Premier League': 'https://www.football-data.co.uk/england.csv',
-    'Championship': 'https://www.football-data.co.uk/england.csv',
-    'League One': 'https://www.football-data.co.uk/england.csv',
+    'Premier League': 'https://www.football-data.co.uk/mmz4281/2324/E0.csv',
+    'Championship': 'https://www.football-data.co.uk/mmz4281/2324/E1.csv',
+    'League One': 'https://www.football-data.co.uk/mmz4281/2324/E2.csv',
+    'League Two': 'https://www.football-data.co.uk/mmz4281/2324/E3.csv',
     # España
-    'La Liga': 'https://www.football-data.co.uk/spain.csv',
-    'Segunda Division': 'https://www.football-data.co.uk/spain.csv',
+    'La Liga': 'https://www.football-data.co.uk/mmz4281/2324/SP1.csv',
+    'Segunda Division': 'https://www.football-data.co.uk/mmz4281/2324/SP2.csv',
     # Italia
-    'Serie A': 'https://www.football-data.co.uk/italy.csv',
-    'Serie B': 'https://www.football-data.co.uk/italy.csv',
+    'Serie A': 'https://www.football-data.co.uk/mmz4281/2324/I1.csv',
+    'Serie B': 'https://www.football-data.co.uk/mmz4281/2324/I2.csv',
     # Alemania
-    'Bundesliga': 'https://www.football-data.co.uk/germany.csv',
-    '2 Bundesliga': 'https://www.football-data.co.uk/germany.csv',
+    'Bundesliga': 'https://www.football-data.co.uk/mmz4281/2324/D1.csv',
+    '2 Bundesliga': 'https://www.football-data.co.uk/mmz4281/2324/D2.csv',
     # Francia
-    'Ligue 1': 'https://www.football-data.co.uk/france.csv',
-    'Ligue 2': 'https://www.football-data.co.uk/france.csv',
+    'Ligue 1': 'https://www.football-data.co.uk/mmz4281/2324/F1.csv',
+    'Ligue 2': 'https://www.football-data.co.uk/mmz4281/2324/F2.csv',
     # Portugal
-    'Primeira Liga': 'https://www.football-data.co.uk/portugal.csv',
+    'Primeira Liga': 'https://www.football-data.co.uk/mmz4281/2324/P1.csv',
     # Holanda
-    'Eredivisie': 'https://www.football-data.co.uk/netherlands.csv',
+    'Eredivisie': 'https://www.football-data.co.uk/mmz4281/2324/N1.csv',
     # Belgica
-    'Jupiler Pro League': 'https://www.football-data.co.uk/belgium.csv',
+    'Jupiler Pro League': 'https://www.football-data.co.uk/mmz4281/2324/B1.csv',
     # Grecia
-    'Super League Greece': 'https://www.football-data.co.uk/greece.csv',
+    'Super League Greece': 'https://www.football-data.co.uk/mmz4281/2324/G1.csv',
     # Escoci
-    'Scottish Premier League': 'https://www.football-data.co.uk/scotland.csv',
-    'Scottish League One': 'https://www.football-data.co.uk/scotland.csv',
+    'Scottish Premier League': 'https://www.football-data.co.uk/mmz4281/2324/SC0.csv',
+    'Scottish League One': 'https://www.football-data.co.uk/mmz4281/2324/SC1.csv',
     # Turqua
-    'Super Lig': 'https://www.football-data.co.uk/turkey.csv',
+    'Super Lig': 'https://www.football-data.co.uk/mmz4281/2324/T1.csv',
     # Rusia
-    'Premier League Russia': 'https://www.football-data.co.uk/russia.csv',
-    # Ukrania
-    'Premier League Ukraine': 'https://www.football-data.co.uk/ukraine.csv',
+    'Premier League Russia': 'https://www.football-data.co.uk/mmz4281/2324/R1.csv',
     # Polonia
-    'Ekstraklasa': 'https://www.football-data.co.uk/poland.csv',
+    'Ekstraklasa': 'https://www.football-data.co.uk/mmz4281/2324/PO1.csv',
     # Austria
-    'Bundesliga Austria': 'https://www.football-data.co.uk/austria.csv',
+    'Bundesliga Austria': 'https://www.football-data.co.uk/mmz4281/2324/A1.csv',
     # Suiza
-    'Super League Switzerland': 'https://www.football-data.co.uk/switzerland.csv',
+    'Super League Switzerland': 'https://www.football-data.co.uk/mmz4281/2324/S1.csv',
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -572,7 +739,8 @@ def get_football_data_stats() -> Dict:
             time.sleep(delay)
             
             session = requests.Session()
-            r = session.get(url, timeout=10, headers=CHROME_HEADERS, allow_redirects=True)
+            # Usar headers específicos para football-data
+            r = session.get(url, timeout=15, headers=FD_HEADERS)
             
             if r.status_code != 200 or not r.content:
                 logger.warning(f"   ⚠️ {league}: Sin datos (status {r.status_code})")
@@ -1256,27 +1424,36 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
     Función de compatibilidad para stats_robot.run_robot_batch
     Procesa una lista de equipos y retorna estadísticas en formato compatible con elite.py.
     
-    Busca en orden: football-data → Soccerway → WhoScored → FBref
-    En cuanto UNA fuente encuentra datos → USA ESOS DATOS y PARA.
-    """
-    results = []
-    logger.info(f"🔍 Procesando {len(team_names)} equipos con SuperRobot...")
+    FLUJO:
+    1. football-data.co.uk → Busca TODOS los equipos del Excel
+    2. API-Football → Busca SOLO los equipos que NO tienen datos
+    3. Máximo 88 equipos
     
-    # Crear instancia del SuperRobot
-    robot = SuperRobot()
+    En cuanto una fuente encuentra datos → USA ESOS y PARA.
+    """
+    MAX_EQUIPOS = 88
+    
+    results = []
+    logger.info(f"🔍 Procesando {len(team_names)} equipos (máximo {MAX_EQUIPOS})...")
+    
+    # LIMITE de equipos
+    if len(team_names) > MAX_EQUIPOS:
+        logger.warning(f"⚠️ Limitando a {MAX_EQUIPOS} equipos")
+        team_names = team_names[:MAX_EQUIPOS]
     
     # Preparar football-data (cargar en cache)
     logger.info("📥 Preparando football-data.co.uk...")
-    robot.fd_stats = get_football_data_stats()
-    logger.info(f"   ✅ {len(robot.fd_stats)} equipos cargados")
+    fd_stats = get_football_data_stats()
+    logger.info(f"   ✅ {len(fd_stats)} equipos en cache")
+    
+    # PASO 1: Buscar TODOS los equipos en football-data
+    logger.info("="*50)
+    logger.info("📊 PASO 1: Buscando en football-data.co.uk")
+    logger.info("="*50)
     
     for i, team_name in enumerate(team_names):
         logger.info(f"[{i+1}/{len(team_names)}] 🔍 {team_name}...")
         
-        encontrado = False
-        
-        # 1. BUSCAR EN FOOTBALL-DATA
-        logger.info(f"   1️⃣ Probando football-data.co.uk...")
         try:
             fd_data = get_team_stats_from_football_data(team_name)
             if fd_data:
@@ -1303,137 +1480,37 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                     'derrotas': fd_data.get('derrotas', 0),
                     'fuentes_probadas': ['football-data.co.uk'],
                 }
-                logger.info(f"   ✅ ENCONTRADO en football-data: λL={result['lambda_local']}, λV={result['lambda_visitante']}")
+                logger.info(f"   ✅ ENCONTRADO: λL={result['lambda_local']}, λV={result['lambda_visitante']}")
                 results.append(result)
-                encontrado = True
+            else:
+                # NO encontrado en football-data → marcar para buscar en API
+                results.append({
+                    'equipo': team_name,
+                    'encontrado': False,
+                    'exito': True,
+                    'sin_estadisticas': True,
+                    'equipo_real': team_name,
+                    'liga': 'PENDIENTE',
+                    'lambda_local': 0,
+                    'lambda_visitante': 0,
+                    'goles_favor': 0,
+                    'goles_contra': 0,
+                    'partidos_jugados': 0,
+                    'victorias': 0,
+                    'empates': 0,
+                    'derrotas': 0,
+                    'fuentes_probadas': ['NINGUNA'],
+                })
+                logger.info(f"   ❌ NO encontrado → Pendiente para API")
         except Exception as e:
-            logger.warning(f"   ⚠️ football-data error: {e}")
-        
-        # 2. BUSCAR EN SOCCERWAY (si no encontró en football-data)
-        if not encontrado:
-            logger.info(f"   2️⃣ Probando Soccerway...")
-            try:
-                sw_url = robot.soccerway.search_team(team_name)
-                if sw_url:
-                    sw_results = robot.soccerway.get_team_results(sw_url)
-                    if sw_results and sw_results.get('partidos', 0) > 0:
-                        result = {
-                            'equipo': team_name,
-                            'encontrado': True,
-                            'exito': True,
-                            'sin_estadisticas': False,
-                            'equipo_real': sw_results.get('equipo', team_name),
-                            'liga': sw_results.get('liga', 'Desconocida'),
-                            'lambda_local': sw_results.get('lambda_local', 0),
-                            'lambda_visitante': sw_results.get('lambda_visitante', 0),
-                            'goles_favor': sw_results.get('goles_favor', 0),
-                            'goles_contra': sw_results.get('goles_contra', 0),
-                            'partidos_jugados': sw_results.get('partidos', 0),
-                            'victorias': sw_results.get('victorias', 0),
-                            'empates': sw_results.get('empates', 0),
-                            'derrotas': sw_results.get('derrotas', 0),
-                            'fuentes_probadas': ['Soccerway'],
-                        }
-                        logger.info(f"   ✅ ENCONTRADO en Soccerway: λL={result['lambda_local']}, λV={result['lambda_visitante']}")
-                        results.append(result)
-                        encontrado = True
-            except Exception as e:
-                logger.warning(f"   ⚠️ Soccerway error: {e}")
-        
-        # 3. BUSCAR EN WHOSCORED (si no encontró en Soccerway)
-        if not encontrado:
-            logger.info(f"   3️⃣ Probando WhoScored...")
-            try:
-                ws_url = robot.whoscored.search_team(team_name)
-                if ws_url:
-                    ws_stats = robot.whoscored.get_team_stats(ws_url)
-                    if ws_stats and ws_stats.get('partidos', 0) > 0:
-                        # WhoScored tiene stats diferentes, calcular lambdas si hay goles
-                        gf = ws_stats.get('goles_favor', 0) or ws_stats.get('goles', 0)
-                        gc = ws_stats.get('goles_contra', 0) or 0
-                        p = ws_stats.get('partidos', 0)
-                        
-                        if p > 0 and gf > 0:
-                            lambda_local = calculate_team_lambda(gf, gc, p, is_home=True)
-                            lambda_visitante = calculate_team_lambda(gf, gc, p, is_home=False)
-                        else:
-                            lambda_local = ws_stats.get('lambda_local', 0)
-                            lambda_visitante = ws_stats.get('lambda_visitante', 0)
-                        
-                        result = {
-                            'equipo': team_name,
-                            'encontrado': True,
-                            'exito': True,
-                            'sin_estadisticas': False,
-                            'equipo_real': ws_stats.get('equipo', team_name),
-                            'liga': ws_stats.get('liga', 'Desconocida'),
-                            'lambda_local': lambda_local,
-                            'lambda_visitante': lambda_visitante,
-                            'goles_favor': gf,
-                            'goles_contra': gc,
-                            'partidos_jugados': p,
-                            'victorias': ws_stats.get('victorias', 0),
-                            'empates': ws_stats.get('empates', 0),
-                            'derrotas': ws_stats.get('derrotas', 0),
-                            'fuentes_probadas': ['WhoScored'],
-                        }
-                        logger.info(f"   ✅ ENCONTRADO en WhoScored: λL={result['lambda_local']}, λV={result['lambda_visitante']}")
-                        results.append(result)
-                        encontrado = True
-            except Exception as e:
-                logger.warning(f"   ⚠️ WhoScored error: {e}")
-        
-        # 4. BUSCAR EN FBREF (si no encontró en WhoScored)
-        if not encontrado:
-            logger.info(f"   4️⃣ Probando FBref...")
-            try:
-                fbref_team = robot.fbref.find_team(team_name)
-                if fbref_team:
-                    fbref_stats = robot.fbref.get_team_stats(fbref_team.get('url', ''))
-                    if fbref_stats and fbref_stats.get('partidos', 0) > 0:
-                        gf = fbref_stats.get('goles_favor', 0)
-                        gc = fbref_stats.get('goles_contra', 0)
-                        p = fbref_stats.get('partidos', 0)
-                        
-                        if p > 0 and gf > 0:
-                            lambda_local = calculate_team_lambda(gf, gc, p, is_home=True)
-                            lambda_visitante = calculate_team_lambda(gf, gc, p, is_home=False)
-                        else:
-                            lambda_local = fbref_stats.get('lambda_local', 0)
-                            lambda_visitante = fbref_stats.get('lambda_visitante', 0)
-                        
-                        result = {
-                            'equipo': team_name,
-                            'encontrado': True,
-                            'exito': True,
-                            'sin_estadisticas': False,
-                            'equipo_real': fbref_stats.get('equipo', team_name),
-                            'liga': fbref_stats.get('liga', 'Desconocida'),
-                            'lambda_local': lambda_local,
-                            'lambda_visitante': lambda_visitante,
-                            'goles_favor': gf,
-                            'goles_contra': gc,
-                            'partidos_jugados': p,
-                            'victorias': fbref_stats.get('victorias', 0),
-                            'empates': fbref_stats.get('empates', 0),
-                            'derrotas': fbref_stats.get('derrotas', 0),
-                            'fuentes_probadas': ['FBref'],
-                        }
-                        logger.info(f"   ✅ ENCONTRADO en FBref: λL={result['lambda_local']}, λV={result['lambda_visitante']}")
-                        results.append(result)
-                        encontrado = True
-            except Exception as e:
-                logger.warning(f"   ⚠️ FBref error: {e}")
-        
-        # 5. NO ENCONTRADO EN NINGUNA FUENTE
-        if not encontrado:
-            result = {
+            logger.warning(f"   ⚠️ Error: {e}")
+            results.append({
                 'equipo': team_name,
                 'encontrado': False,
                 'exito': True,
                 'sin_estadisticas': True,
                 'equipo_real': team_name,
-                'liga': 'NO ENCONTRADO',
+                'liga': 'ERROR',
                 'lambda_local': 0,
                 'lambda_visitante': 0,
                 'goles_favor': 0,
@@ -1442,12 +1519,67 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                 'victorias': 0,
                 'empates': 0,
                 'derrotas': 0,
-                'fuentes_probadas': ['NINGUNA'],
-            }
-            logger.info(f"   ❌ NO ENCONTRADO en ninguna fuente")
-            results.append(result)
+                'fuentes_probadas': ['ERROR'],
+            })
     
-    logger.info(f"✅ SuperRobot completado: {len(results)} equipos procesados")
+    # PASO 2: Buscar equipos NO encontrados en API-Football
+    pendientes = [r for r in results if r.get('encontrado') == False]
+    
+    if pendientes:
+        logger.info("="*50)
+        logger.info(f"📊 PASO 2: Buscando {len(pendientes)} equipos en API-Football")
+        logger.info("⚠️ Rate limit: 10 solicitudes/minuto - Delay de 7s entre equipos")
+        logger.info("="*50)
+        
+        for i, result in enumerate(results):
+            if result.get('encontrado') == True:
+                continue
+            
+            team_name = result['equipo']
+            logger.info(f"[{i+1}/{len(results)}] 🔍 {team_name}...")
+            
+            try:
+                api_data = search_team_api_football(team_name)
+                
+                if api_data:
+                    result['encontrado'] = True
+                    result['exito'] = True
+                    result['sin_estadisticas'] = False
+                    result['equipo_real'] = api_data.get('equipo', team_name)
+                    result['liga'] = api_data.get('liga', 'Desconocida')
+                    result['lambda_local'] = api_data.get('lambda_local', 0)
+                    result['lambda_visitante'] = api_data.get('lambda_visitante', 0)
+                    result['goles_favor'] = api_data.get('goles_favor', 0)
+                    result['goles_contra'] = api_data.get('goles_contra', 0)
+                    result['partidos_jugados'] = api_data.get('partidos', 0)
+                    result['victorias'] = api_data.get('victorias', 0)
+                    result['empates'] = api_data.get('empates', 0)
+                    result['derrotas'] = api_data.get('derrotas', 0)
+                    result['fuentes_probadas'] = ['api-football.com']
+                    
+                    logger.info(f"   ✅ ENCONTRADO: λL={result['lambda_local']}, λV={result['lambda_visitante']}")
+                else:
+                    result['liga'] = 'NO ENCONTRADO'
+                    logger.info(f"   ❌ NO encontrado")
+            except Exception as e:
+                logger.warning(f"   ⚠️ API Error: {e}")
+                result['liga'] = 'ERROR'
+            
+            # Delay para evitar rate limit (7 segundos entre equipos)
+            if i < len(results) - 1:
+                logger.info("   ⏳ Esperando 7s para evitar rate limit...")
+                time.sleep(7)
+    
+    # Resumen
+    encontrados = sum(1 for r in results if r.get('encontrado') == True)
+    no_encontrados = sum(1 for r in results if r.get('encontrado') == False)
+    
+    logger.info("="*50)
+    logger.info(f"✅ SUPERROBOT COMPLETADO")
+    logger.info(f"   Encontrados: {encontrados}")
+    logger.info(f"   No encontrados: {no_encontrados}")
+    logger.info("="*50)
+    
     return results
 
 
