@@ -499,41 +499,6 @@ else:
             """, unsafe_allow_html=True)
             
             # ========================
-            # PROBABILIDADES 1X2
-            # ========================
-            st.markdown("### 🎯 Probabilidades (1X2)")
-            
-            p1 = r.get('p1', 0)
-            px = r.get('px', 0)
-            p2 = r.get('p2', 0)
-            
-            col1, col2, col3 = st.columns([1.5, 1, 1.5])
-            with col1:
-                st.markdown(f"""
-                <div style="background: #0d1b2a; padding: 15px; border-radius: 10px; text-align: center; 
-                            border: 2px solid {'#00ff88' if p1 > px and p1 > p2 else '#333'};">
-                    <h3 style="color: #00ff88; margin: 0;">🏠 {home}</h3>
-                    <h1 style="color: white; margin: 10px 0;">{p1:.1f}%</h1>
-                </div>
-                """, unsafe_allow_html=True)
-            with col2:
-                st.markdown(f"""
-                <div style="background: #0d1b2a; padding: 15px; border-radius: 10px; text-align: center;
-                            border: 2px solid {'#ffd700' if px > p1 and px > p2 else '#333'};">
-                    <h3 style="color: #ffd700; margin: 0;">🤝 Empate</h3>
-                    <h1 style="color: white; margin: 10px 0;">{px:.1f}%</h1>
-                </div>
-                """, unsafe_allow_html=True)
-            with col3:
-                st.markdown(f"""
-                <div style="background: #0d1b2a; padding: 15px; border-radius: 10px; text-align: center;
-                            border: 2px solid {'#ff6b6b' if p2 > p1 and p2 > px else '#333'};">
-                    <h3 style="color: #ff6b6b; margin: 0;">✈️ {away}</h3>
-                    <h1 style="color: white; margin: 10px 0;">{p2:.1f}%</h1>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            # ========================
             # ESTADÍSTICAS DEL ROBOT
             # ========================
             stats_local = st.session_state.get('stats_local', {})
@@ -571,6 +536,41 @@ else:
                         <p style="color: #888; margin: 3px 0;">Tarjetas/partido: <span style="color: #fff;">{stats_visitante.get('promedio_amarillas', 0):.1f}</span></p>
                     </div>
                     """, unsafe_allow_html=True)
+            
+            # ========================
+            # PROBABILIDADES 1X2
+            # ========================
+            st.markdown("### 🎯 Probabilidades (1X2)")
+            
+            p1 = r.get('p1', 0)
+            px = r.get('px', 0)
+            p2 = r.get('p2', 0)
+            
+            col1, col2, col3 = st.columns([1.5, 1, 1.5])
+            with col1:
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 15px; border-radius: 10px; text-align: center; 
+                            border: 2px solid {'#00ff88' if p1 > px and p1 > p2 else '#333'};">
+                    <h3 style="color: #00ff88; margin: 0;">🏠 {home}</h3>
+                    <h1 style="color: white; margin: 10px 0;">{p1:.1f}%</h1>
+                </div>
+                """, unsafe_allow_html=True)
+            with col2:
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 15px; border-radius: 10px; text-align: center;
+                            border: 2px solid {'#ffd700' if px > p1 and px > p2 else '#333'};">
+                    <h3 style="color: #ffd700; margin: 0;">🤝 Empate</h3>
+                    <h1 style="color: white; margin: 10px 0;">{px:.1f}%</h1>
+                </div>
+                """, unsafe_allow_html=True)
+            with col3:
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 15px; border-radius: 10px; text-align: center;
+                            border: 2px solid {'#ff6b6b' if p2 > p1 and p2 > px else '#333'};">
+                    <h3 style="color: #ff6b6b; margin: 0;">✈️ {away}</h3>
+                    <h1 style="color: white; margin: 10px 0;">{p2:.1f}%</h1>
+                </div>
+                """, unsafe_allow_html=True)
             
             # ========================
             # PREDICCIONES ADICIONALES
