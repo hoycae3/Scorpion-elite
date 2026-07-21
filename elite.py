@@ -479,7 +479,7 @@ else:
             stats_visitante = st.session_state.get('stats_visitante', {})
             
             if stats_local and stats_visitante:
-                st.markdown("### 📊 Estadísticas del Robot")
+                st.markdown("##### 📊 Estadísticas del Robot")
                 
                 col_est1, col_est2 = st.columns(2)
                 
@@ -526,14 +526,18 @@ else:
             rango_color = {"A+": "🟢", "A": "🟢", "B": "🔵", "C": "🟡", "D": "🔴"}
             
             st.markdown(f"""
-            <div class="main-pick" style="margin: 15px 0;">
-                <p style="color: #888; margin: 0; font-size: 12px;">ANÁLISIS DEL PARTIDO</p>
-                <h2 style="color: white; margin: 5px 0; font-size: 20px;">⚽ {home} vs {away}</h2>
-                <p style="color: #00d4ff; margin: 10px 0; font-size: 32px;">
-                    {pick_icon.get(pick, '🎯')} <strong>{pick}</strong>
-                </p>
-                <span class="confianza-badge">
-                    {rango_color.get(rango, '⚪')} {confianza}% ({rango})
+            <div style="background: linear-gradient(135deg, #1a2a3a, #0d1a26); border: 2px solid #00d4ff; border-radius: 12px; padding: 20px; text-align: center; margin: 15px 0;">
+                <p style="color: #00d4ff; margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 2px;">⚡ ANÁLISIS DEL PARTIDO</p>
+                <h1 style="color: white; margin: 10px 0 15px 0; font-size: 28px;">⚽ {home} <span style="color: #666;">vs</span> {away}</h1>
+                <div style="background: rgba(0, 212, 255, 0.15); border: 2px solid #00d4ff; border-radius: 10px; padding: 15px; display: inline-block; min-width: 150px;">
+                    <p style="color: #888; margin: 0; font-size: 10px;">PREDICCIÓN</p>
+                    <p style="color: #00d4ff; margin: 5px 0 0 0; font-size: 42px; font-weight: bold;">
+                        {pick_icon.get(pick, '🎯')} {pick}
+                    </p>
+                </div>
+                <br><br>
+                <span style="background: rgba(0, 212, 255, 0.1); border: 1px solid #00d4ff; padding: 6px 16px; border-radius: 15px; font-size: 13px; font-weight: 600;">
+                    {rango_color.get(rango, '⚪')} {confianza}% CONFIANZA ({rango})
                 </span>
             </div>
             """, unsafe_allow_html=True)
@@ -541,7 +545,7 @@ else:
             # ========================
             # PROBABILIDADES 1X2
             # ========================
-            st.markdown("### 🎯 Probabilidades (1X2)")
+            st.markdown("##### 🎯 Probabilidades (1X2)")
             
             p1 = r.get('p1', 0)
             px = r.get('px', 0)
@@ -576,7 +580,7 @@ else:
             # ========================
             # PREDICCIONES ADICIONALES
             # ========================
-            st.markdown("### 📊 Predicciones Adicionales")
+            st.markdown("##### 📊 Predicciones Adicionales")
             
             ta_local = stats_local.get('promedio_amarillas', 3) if stats_local else 3
             ta_visitante = stats_visitante.get('promedio_amarillas', 3) if stats_visitante else 3
@@ -645,7 +649,7 @@ else:
             # ========================
             # FORMA RECIENTE
             # ========================
-            st.markdown("### 📅 Forma Reciente (Últimos 5)")
+            st.markdown("##### 📅 Forma Reciente (Últimos 5)")
             
             forma_l = r.get('forma_local', {})
             forma_v = r.get('forma_visitante', {})
