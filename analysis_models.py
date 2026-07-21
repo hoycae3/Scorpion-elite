@@ -256,26 +256,46 @@ def predecir_corners(
 ) -> Dict:
     """
     Predice el total de córners en el partido.
+    
+    corners_local: córners que genera el equipo local POR PARTIDO
+    corners_visitante: córners que genera el equipo visitante POR PARTIDO
     """
-    # Base: promedio de ambos equipos
-    base = (corners_local + corners_visitante) / 2
+    # Los córners totales son la SUMA de ambos
+    # Si Local genera 5/partido y Visitante genera 6/partido
+    # El partido tendrá ~11 córners totales
+    total_estimado = corners_local + corners_visitante
     
-    # Ajuste por estilo de juego
-    # Equipos ofensivos generan más corners
-    ajuste = (estilo_local.get('estilo_ofensivo', 50) + estilo_visitante.get('estilo_ofensivo', 50)) / 100 - 1
+    # Desglose: Local genera más como local (ventaja de campo)
+    # Visitante genera un poco menos fuera de casa
+    factor_local = 1.05  # 5% más córners como local
+    factor_visitante = 0.95  # 5% menos córners como visitante
     
-    total_estimado = base * (1 + ajuste * 0.3)
+    corners_local_estimado = total_estimado * factor_local / (factor_local + factor_visitante)
+    corners_visitante_estimado = total_estimado - corners_local_estimado
     
-    # Over/Under 9.5 corners
-    over_95 = 50 + (total_estimado - 9.5) * 10
-    over_95 = max(10, min(90, over_95))
+    # Over/Under - ajustar umbrales
+    # Umbral de 10.5 es típico para córners totales
+    if total_estimado > 11:
+        over_105 = 70
+        under_105 = 30
+    elif total_estimado > 10.5:
+        over_105 = 55
+        under_105 = 45
+    elif total_estimado > 9.5:
+        over_105 = 40
+        under_105 = 60
+    else:
+        over_105 = 25
+        under_105 = 75
     
     return {
         "total_estimado": round(total_estimado, 1),
-        "over_95": round(over_95, 1),
-        "under_95": round(100 - over_95, 1),
-        "over_105": round(min(90, 50 + (total_estimado - 10.5) * 10), 1),
-        "under_105": round(max(10, 50 - (total_estimado - 10.5) * 10), 1),
+        "corners_local_estimado": round(corners_local_estimado, 1),
+        "corners_visitante_estimado": round(corners_visitante_estimado, 1),
+        "over_105": over_105,
+        "under_105": under_105,
+        "over_95": min(90, max(10, 50 + (total_estimado - 9.5) * 15)),
+        "under_95": min(90, max(10, 50 - (total_estimado - 9.5) * 15)),
     }
 
 

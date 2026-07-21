@@ -567,12 +567,14 @@ else:
             with col_corners:
                 corners = r.get('corners', {})
                 total_c = corners.get('total_estimado', 10)
-                pick_c = r.get('pick_corners', 'Over 10')
+                over_105 = corners.get('over_105', 50)
+                over_95 = corners.get('over_95', 50)
+                pick_c = "Over 10.5" if over_105 > 50 else "Under 10.5"
                 st.markdown(f"""
                 <div style="background: #0d1b2a; padding: 12px; border-radius: 10px; text-align: center;">
                     <p style="color: #888; margin: 0;">Córners Totales</p>
                     <h2 style="color: #00d2d3; margin: 5px 0;">⚽ ~{total_c:.0f}</h2>
-                    <p style="color: #fff; margin: 0;">{pick_c}</p>
+                    <p style="color: #fff; margin: 0;">{pick_c} ({over_105}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -592,9 +594,8 @@ else:
             # Estimación de córners por equipo
             corners_match = r.get('corners', {})
             total_corners = corners_match.get('total_estimado', (c_local + c_visitante))
-            # Desglose: local suele generar más córners como local
-            corners_local_est = total_corners * 0.55 if p1 > p2 else total_corners * 0.50
-            corners_visitante_est = total_corners - corners_local_est
+            corners_local_est = corners_match.get('corners_local_estimado', total_corners * 0.52)
+            corners_visitante_est = corners_match.get('corners_visitante_estimado', total_corners * 0.48)
             
             # Estimación de tarjetas
             tarjetas_est = ta_local + ta_visitante
