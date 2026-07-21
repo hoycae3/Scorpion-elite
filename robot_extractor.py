@@ -53,7 +53,7 @@ API_FOOTBALL_URL = "https://v3.football.api-sports.io"
 def search_team_api_football(team_name: str) -> Optional[Dict]:
     """
     Busca un equipo en api-football.com usando la API.
-    Retorna estadísticas del equipo o None si no lo encuentra.
+    Retorna estadísticas completas del equipo o None si no lo encuentra.
     """
     try:
         headers = {
@@ -113,28 +113,30 @@ def search_team_api_football(team_name: str) -> Optional[Dict]:
         derrotas = 0
         goles_favor = 0
         goles_contra = 0
-        corners_total = 0
+        corners_favor = 0
+        corners_contra = 0
         tarjetas_amarillas = 0
         tarjetas_rojas = 0
-        tiros_total = 0
-        tiros_arco = 0
+        tiros = 0
+        tiros_al_arco = 0
         partidos_local = 0
         partidos_visitante = 0
         goles_local = 0
         goles_visitante = 0
+        ultimos_5_partidos = []
         
         for fixture in fixtures[:38]:  # Máximo 38 partidos
             fix = fixture.get('fixture', {})
-            teams = fixture.get('teams', {})
+            fix_teams = fixture.get('teams', {})
             goals = fixture.get('goals', {})
-            score = fixture.get('score', {})
+            statistics = fixture.get('statistics', [])
             
             # Solo partidos completados
             if fix.get('status', {}).get('short') != 'FT':
                 continue
             
-            home_team = teams.get('home', {})
-            away_team = teams.get('away', {})
+            home_team = fix_teams.get('home', {})
+            away_team = fix_teams.get('away', {})
             
             is_home = home_team.get('id') == team_id
             
@@ -144,30 +146,92 @@ def search_team_api_football(team_name: str) -> Optional[Dict]:
             home_goals = goals.get('home') or 0
             away_goals = goals.get('away') or 0
             
+            # Extraer statistics de corners, tarjetas, etc.
+            corners = 0
+            tarjetas = 0
+            shots = 0
+            shots_on_target = 0
+            
+            for stat in statistics:
+                type_ = stat.get('type', '').lower()
+                value = stat.get('value') or 0
+                
+                if 'corner' in type_:
+                    if is_home:
+                        corners = value if isinstance(value, int) else 0
+                    else:
+                        # El rival obtiene los corners del equipo como visitante
+                        pass
+                elif 'yellow card' in type_ or 'card' in type_:
+                    if isinstance(value, int):
+                        tarjetas += value
+                elif 'shot' in type_ and 'on target' not in type_ and 'off target' not in type_:
+                    if isinstance(value, int):
+                        shots += value
+                elif 'on target' in type_:
+                    if isinstance(value, int):
+                        shots_on_target += value
+            
             if is_home:
                 partidos_local += 1
                 goles_local += home_goals
                 goles_favor += home_goals
                 goles_contra += away_goals
+                corners_favor += corners
+                tiros += shots
+                tiros_al_arco += shots_on_target
                 
                 if home_goals > away_goals:
                     victorias += 1
+                    resultado = 'L'
                 elif home_goals == away_goals:
                     empates += 1
+                    resultado = 'E'
                 else:
                     derrotas += 1
+                    resultado = 'V'
+                
+                # Guardar para últimos 5
+                ultimos_5_partidos.append({
+                    'fecha': fix.get('date', ''),
+                    'equipo': home_team.get('name', ''),
+                    'rival': away_team.get('name', ''),
+                    'goles_favor': home_goals,
+                    'goles_contra': away_goals,
+                    'corners': corners,
+                    'tarjetas': tarjetas,
+                    'resultado': resultado
+                })
             else:
                 partidos_visitante += 1
                 goles_visitante += away_goals
                 goles_favor += away_goals
                 goles_contra += home_goals
+                corners_contra += corners  # Los corners del local son contra para el visitante
+                tiros += shots
+                tiros_al_arco += shots_on_target
                 
                 if away_goals > home_goals:
                     victorias += 1
+                    resultado = 'L'
                 elif away_goals == home_goals:
                     empates += 1
+                    resultado = 'E'
                 else:
                     derrotas += 1
+                    resultado = 'V'
+                
+                # Guardar para últimos 5
+                ultimos_5_partidos.append({
+                    'fecha': fix.get('date', ''),
+                    'equipo': away_team.get('name', ''),
+                    'rival': home_team.get('name', ''),
+                    'goles_favor': away_goals,
+                    'goles_contra': home_goals,
+                    'corners': corners,
+                    'tarjetas': tarjetas,
+                    'resultado': resultado
+                })
         
         # Calcular lambdas
         lambda_local = 0
@@ -178,6 +242,15 @@ def search_team_api_football(team_name: str) -> Optional[Dict]:
         
         if partidos_visitante > 0:
             lambda_visitante = round(goles_visitante / partidos_visitante, 2)
+        
+        # Calcular promedios
+        avg_corners = round((corners_favor + corners_contra) / partidos / 2, 1) if partidos > 0 else 0
+        avg_tarjetas = round(tarjetas_amarillas / partidos, 1) if partidos > 0 else 0
+        avg_tiros = round(tiros / partidos, 1) if partidos > 0 else 0
+        avg_tiros_arco = round(tiros_al_arco / partidos, 1) if partidos > 0 else 0
+        
+        # Ordenar últimos 5 partidos por fecha
+        ultimos_5_partidos = sorted(ultimos_5_partidos, key=lambda x: x.get('fecha', ''), reverse=True)[:5]
         
         result = {
             'equipo': team_info.get('name', team_name),
@@ -195,6 +268,13 @@ def search_team_api_football(team_name: str) -> Optional[Dict]:
             'lambda_visitante': lambda_visitante,
             'goles_local': goles_local,
             'goles_visitante': goles_visitante,
+            'corners_favor': corners_favor,
+            'corners_contra': corners_contra,
+            'corners_promedio': avg_corners,
+            'tarjetas_promedio': avg_tarjetas,
+            'tiros_promedio': avg_tiros,
+            'tiros_arco_promedio': avg_tiros_arco,
+            'ultimos_5_partidos': ultimos_5_partidos,
             'source': 'api-football.com'
         }
         
@@ -719,7 +799,10 @@ def run_robot_fbref(teams: List[str], use_proxy: bool = False, proxy_api_key: st
 _fd_cache = {}
 
 def get_football_data_stats() -> Dict:
-    """Descarga estadísticas de football-data.co.uk (acceso directo, sin Cloudflare)."""
+    """
+    Descarga estadísticas de football-data.co.uk (acceso directo, sin Cloudflare).
+    Incluye: goles, corners, tarjetas, tiros, faltas.
+    """
     global _fd_cache
     if _fd_cache:
         return _fd_cache
@@ -729,6 +812,7 @@ def get_football_data_stats() -> Dict:
     import requests
     
     all_stats = {}
+    all_matches = {}  # Almacenar últimos partidos por equipo
     
     logger.info(f"📥 Descargando datos de football-data.co.uk ({len(FD_LEAGUE_URLS)} ligas)...")
     
@@ -739,14 +823,12 @@ def get_football_data_stats() -> Dict:
             time.sleep(delay)
             
             session = requests.Session()
-            # Usar headers específicos para football-data
             r = session.get(url, timeout=15, headers=FD_HEADERS)
             
             if r.status_code != 200 or not r.content:
                 logger.warning(f"   ⚠️ {league}: Sin datos (status {r.status_code})")
                 continue
             
-            # Detectar si es CSV o HTML (si hay redirect a página HTML)
             content = r.content
             if b'<html' in content.lower() or b'<!doctype' in content.lower():
                 logger.warning(f"   ⚠️ {league}: Redirigió a HTML, no CSV")
@@ -759,6 +841,7 @@ def get_football_data_stats() -> Dict:
                 home = row.get('HomeTeam', '').strip()
                 away = row.get('AwayTeam', '').strip()
                 fthg, ftag = row.get('FTHG'), row.get('FTAG')
+                date = row.get('Date', '')
                 
                 if not home or not fthg or not ftag:
                     continue
@@ -767,6 +850,20 @@ def get_football_data_stats() -> Dict:
                     gh, ga = int(fthg), int(ftag)
                 except:
                     continue
+                
+                # Extraer datos adicionales (si existen)
+                hs = int(row.get('HS') or 0)  # Home Shots
+                as_ = int(row.get('AS') or 0)  # Away Shots
+                hst = int(row.get('HST') or 0)  # Home Shots on Target
+                ast = int(row.get('AST') or 0)  # Away Shots on Target
+                hc = int(row.get('HC') or 0)  # Home Corners
+                ac = int(row.get('AC') or 0)  # Away Corners
+                hy = int(row.get('HY') or 0)  # Home Yellow Cards
+                ay = int(row.get('AY') or 0)  # Away Yellow Cards
+                hr = int(row.get('HR') or 0)  # Home Red Cards
+                ar = int(row.get('AR') or 0)  # Away Red Cards
+                hf = int(row.get('HF') or 0)  # Home Fouls
+                af = int(row.get('AF') or 0)  # Away Fouls
                 
                 # Guardar stats del equipo local
                 if home not in all_stats:
@@ -779,17 +876,46 @@ def get_football_data_stats() -> Dict:
                         'victorias': 0,
                         'empates': 0,
                         'derrotas': 0,
+                        # Nuevos stats
+                        'corners_favor': 0,
+                        'corners_contra': 0,
+                        'tarjetas_amarillas': 0,
+                        'tarjetas_rojas': 0,
+                        'tiros': 0,
+                        'tiros_al_arco': 0,
+                        'faltas': 0,
                         'source': 'football-data.co.uk'
                     }
                 all_stats[home]['partidos'] += 1
                 all_stats[home]['goles_favor'] += gh
                 all_stats[home]['goles_contra'] += ga
+                all_stats[home]['corners_favor'] += hc
+                all_stats[home]['corners_contra'] += ac
+                all_stats[home]['tarjetas_amarillas'] += hy
+                all_stats[home]['tarjetas_rojas'] += hr
+                all_stats[home]['tiros'] += hs
+                all_stats[home]['tiros_al_arco'] += hst
+                all_stats[home]['faltas'] += hf
                 if gh > ga:
                     all_stats[home]['victorias'] += 1
                 elif gh == ga:
                     all_stats[home]['empates'] += 1
                 else:
                     all_stats[home]['derrotas'] += 1
+                
+                # Guardar último partido del equipo local
+                if home not in all_matches:
+                    all_matches[home] = []
+                all_matches[home].append({
+                    'fecha': date,
+                    'equipo': home,
+                    'rival': away,
+                    'goles_favor': gh,
+                    'goles_contra': ga,
+                    'corners': hc,
+                    'tarjetas': hy + hr,
+                    'resultado': 'L' if gh > ga else ('E' if gh == ga else 'V')
+                })
                 
                 # Guardar stats del equipo visitante
                 if away not in all_stats:
@@ -802,17 +928,46 @@ def get_football_data_stats() -> Dict:
                         'victorias': 0,
                         'empates': 0,
                         'derrotas': 0,
+                        # Nuevos stats
+                        'corners_favor': 0,
+                        'corners_contra': 0,
+                        'tarjetas_amarillas': 0,
+                        'tarjetas_rojas': 0,
+                        'tiros': 0,
+                        'tiros_al_arco': 0,
+                        'faltas': 0,
                         'source': 'football-data.co.uk'
                     }
                 all_stats[away]['partidos'] += 1
                 all_stats[away]['goles_favor'] += ga
                 all_stats[away]['goles_contra'] += gh
+                all_stats[away]['corners_favor'] += ac
+                all_stats[away]['corners_contra'] += hc
+                all_stats[away]['tarjetas_amarillas'] += ay
+                all_stats[away]['tarjetas_rojas'] += ar
+                all_stats[away]['tiros'] += as_
+                all_stats[away]['tiros_al_arco'] += ast
+                all_stats[away]['faltas'] += af
                 if ga > gh:
                     all_stats[away]['victorias'] += 1
                 elif ga == gh:
                     all_stats[away]['empates'] += 1
                 else:
                     all_stats[away]['derrotas'] += 1
+                
+                # Guardar último partido del equipo visitante
+                if away not in all_matches:
+                    all_matches[away] = []
+                all_matches[away].append({
+                    'fecha': date,
+                    'equipo': away,
+                    'rival': home,
+                    'goles_favor': ga,
+                    'goles_contra': gh,
+                    'corners': ac,
+                    'tarjetas': ay + ar,
+                    'resultado': 'L' if ga > gh else ('E' if ga == gh else 'V')
+                })
                     
                 row_count += 1
             
@@ -821,6 +976,12 @@ def get_football_data_stats() -> Dict:
             
         except Exception as e:
             logger.error(f"   ❌ Error en {league}: {e}")
+    
+    # Agregar últimos 5 partidos a cada equipo
+    for equipo, matches in all_matches.items():
+        # Ordenar por fecha (más reciente primero)
+        matches_sorted = sorted(matches, key=lambda x: x.get('fecha', ''), reverse=True)
+        all_stats[equipo]['ultimos_5_partidos'] = matches_sorted[:5]
     
     _fd_cache = all_stats
     logger.info(f"📊 Total equipos cargados: {len(all_stats)}")
@@ -1457,6 +1618,18 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                 lambda_local = calculate_team_lambda(gf, gc, p, is_home=True)
                 lambda_visitante = calculate_team_lambda(gf, gc, p, is_home=False)
                 
+                # Calcular promedios de los nuevos stats
+                corners_favor = fd_data.get('corners_favor', 0)
+                corners_contra = fd_data.get('corners_contra', 0)
+                tarjetas = fd_data.get('tarjetas_amarillas', 0) + fd_data.get('tarjetas_rojas', 0)
+                tiros = fd_data.get('tiros', 0)
+                tiros_arco = fd_data.get('tiros_al_arco', 0)
+                
+                avg_corners = round((corners_favor + corners_contra) / p / 2, 1) if p > 0 else 0
+                avg_tarjetas = round(tarjetas / p, 1) if p > 0 else 0
+                avg_tiros = round(tiros / p, 1) if p > 0 else 0
+                avg_tiros_arco = round(tiros_arco / p, 1) if p > 0 else 0
+                
                 result = {
                     'equipo': team_name,
                     'encontrado': True,
@@ -1472,9 +1645,15 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                     'victorias': fd_data.get('victorias', 0),
                     'empates': fd_data.get('empates', 0),
                     'derrotas': fd_data.get('derrotas', 0),
+                    # Nuevos stats
+                    'corners_promedio': avg_corners,
+                    'tarjetas_promedio': avg_tarjetas,
+                    'tiros_promedio': avg_tiros,
+                    'tiros_arco_promedio': avg_tiros_arco,
+                    'ultimos_5_partidos': fd_data.get('ultimos_5_partidos', []),
                     'fuentes_probadas': ['football-data.co.uk'],
                 }
-                logger.info(f"   ✅ ENCONTRADO: λL={result['lambda_local']}, λV={result['lambda_visitante']}")
+                logger.info(f"   ✅ ENCONTRADO: λL={result['lambda_local']}, λV={result['lambda_visitante']}, Corners={avg_corners}/part")
                 results.append(result)
             else:
                 # NO encontrado en football-data → marcar para buscar en API
@@ -1493,6 +1672,12 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                     'victorias': 0,
                     'empates': 0,
                     'derrotas': 0,
+                    # Nuevos stats
+                    'corners_promedio': 0,
+                    'tarjetas_promedio': 0,
+                    'tiros_promedio': 0,
+                    'tiros_arco_promedio': 0,
+                    'ultimos_5_partidos': [],
                     'fuentes_probadas': ['NINGUNA'],
                 })
                 logger.info(f"   ❌ NO encontrado → Pendiente para API")
@@ -1513,6 +1698,11 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                 'victorias': 0,
                 'empates': 0,
                 'derrotas': 0,
+                'corners_promedio': 0,
+                'tarjetas_promedio': 0,
+                'tiros_promedio': 0,
+                'tiros_arco_promedio': 0,
+                'ultimos_5_partidos': [],
                 'fuentes_probadas': ['ERROR'],
             })
     
@@ -1554,9 +1744,15 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                     result['victorias'] = api_data.get('victorias', 0)
                     result['empates'] = api_data.get('empates', 0)
                     result['derrotas'] = api_data.get('derrotas', 0)
+                    # Nuevos stats
+                    result['corners_promedio'] = api_data.get('corners_promedio', 0)
+                    result['tarjetas_promedio'] = api_data.get('tarjetas_promedio', 0)
+                    result['tiros_promedio'] = api_data.get('tiros_promedio', 0)
+                    result['tiros_arco_promedio'] = api_data.get('tiros_arco_promedio', 0)
+                    result['ultimos_5_partidos'] = api_data.get('ultimos_5_partidos', [])
                     result['fuentes_probadas'] = ['api-football.com']
                     
-                    logger.info(f"   ✅ ENCONTRADO: λL={result['lambda_local']}, λV={result['lambda_visitante']}")
+                    logger.info(f"   ✅ ENCONTRADO: λL={result['lambda_local']}, λV={result['lambda_visitante']}, Corners={result['corners_promedio']}/part")
                 else:
                     result['liga'] = 'NO ENCONTRADO'
                     logger.info(f"   ❌ NO encontrado")
