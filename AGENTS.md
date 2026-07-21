@@ -97,10 +97,26 @@ CREATE TABLE IF NOT EXISTS picks (...)
 
 ## ⚠️ Pendiente por Hacer
 
+### 🔴 CRÍTICO - Funcionalidad
+
 1. **Integrar SuperRobot con Supabase** - Guardar datos scrapeados en `equipos_stats`
-2. **Integrar SuperRobot con elite.py** - Mostrar estadísticas en la app
-3. **Probar scrapers de WhoScored/Soccerway** - Verificar que extraen datos reales
-4. **Agregar fuentes para América Latina** - football-data NO tiene Brasil, México, Argentina, MLS
+2. **Integrar SuperRobot con elite.py** - Mostrar estadísticas en la app (ya están los espacios pero vacíos)
+3. **Probar scrapers WhoScored/Soccerway** - Testear en producción
+4. **Fuentes para América Latina** - football-data NO tiene Brasil, México, Argentina, MLS
+
+### 🟡 IMPORTANTE - Mejoras
+
+5. **Dashboard de resultados** - Historial picks vs resultados reales
+6. **Métricas rendimiento** - % aciertos, ROI, streaks
+7. **Exportar picks** - Descargar análisis en PDF/Excel
+8. **Notificaciones** - Alertas para alta confianza
+
+### 🟢 OPCIONAL - Extras
+
+9. **Modo claro/oscuro** - Toggle de tema
+10. **Comparar equipos** - Stats lado a lado sin analizar
+11. **Filtros avanzados** - Por liga, confianza, fecha
+12. **API partidos** - No depender solo del Excel
 
 ---
 
@@ -120,19 +136,28 @@ curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploy
 
 ---
 
-## 📅 Historial de Cambios (Sesión Actual)
+## 📅 Historial de Cambios
 
-| Fecha | Cambio |
-|-------|--------|
-| 2026-07-20 | Creado SuperRobot con 4 fuentes |
-| 2026-07-20 | Eliminados 4 archivos duplicados |
-| 2026-07-20 | Corregido nombre de tabla `estadisticas_equipos` → `equipos_stats` |
-| 2026-07-20 | Agregado cloudscraper a WhoScored y Soccerway |
-| 2026-07-20 | Completada extracción de datos reales en scrapers |
-| 2026-07-20 | Creados archivos de compatibilidad para elite.py (NO ELIMINAR) |
-| 2026-07-20 | Actualizado AGENTS.md con estado actual |
-| 2026-07-20 | Corregido formato de datos en run_robot_batch y scrape_team_fallback |
-| 2026-07-20 | Corregido import requests faltante en robot_extractor.py |
+### 2026-07-21 - Sesión Diseño UI
+
+| Cambio | Descripción |
+|--------|-------------|
+| Menú horizontal arriba | Navegación movida a la parte superior |
+| Sidebar simplificado | Solo muestra usuario, plan y logout |
+| Estadísticas Robot | Verticales, una debajo de otra, centradas |
+| Subtítulos reducidos | Usando ##### en lugar de ### |
+| Análisis Partido | Compacto y centrado con borde cyan |
+| Predicciones | Cards más grandes y centradas |
+| Forma Reciente | Centrada con badges de colores |
+
+### 2026-07-20 - Sesión Anterior
+
+| Cambio | Descripción |
+|--------|-------------|
+| SuperRobot creado | 4 fuentes: football-data, Soccerway, WhoScored, FBref |
+| Archivos compatibilidad | stats_extractor.py, stats_robot.py, scrapers_fallback.py |
+| Schema corregido | `estadisticas_equipos` → `equipos_stats` |
+| cloudscraper agregado | Para WhoScored y Soccerway |
 
 ## 🔴 Errores Corregidos (para referencia)
 
