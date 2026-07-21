@@ -421,45 +421,26 @@ else:
                         st.session_state.stats_local = stats_local
                         st.session_state.stats_visitante = stats_visitante
                         
-                        # GUARDAR AUTOMÁTICAMENTE EN HISTORIAL
+                        # GUARDAR AUTOMÁTICAMENTE EN HISTORIAL (opcional)
                         try:
                             client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                            modelos = result.get('modelos', {})
+                            
                             historial_data = {
                                 'fecha': str(date.today()),
                                 'liga': stats_local.get('liga', 'Desconocida'),
                                 'equipo_local': home_team,
                                 'equipo_visitante': away_team,
-                                # Predicción final
                                 'prediccion_final': result.get('pick_1x2', ''),
                                 'probabilidad_final': float(result.get('prob_1x2', 0)),
                                 'confianza': int(result.get('confianza', 0)),
                                 'rango': result.get('rango', 'D'),
-                                # Poisson
-                                'poisson_1': float(result.get('modelos', {}).get('poisson', {}).get('p1', 0)),
-                                'poisson_X': float(result.get('modelos', {}).get('poisson', {}).get('px', 0)),
-                                'poisson_2': float(result.get('modelos', {}).get('poisson', {}).get('p2', 0)),
-                                # Dixon-Coles
-                                'dc_1': float(result.get('modelos', {}).get('dixon_coles', {}).get('p1', 0)),
-                                'dc_X': float(result.get('modelos', {}).get('dixon_coles', {}).get('px', 0)),
-                                'dc_2': float(result.get('modelos', {}).get('dixon_coles', {}).get('p2', 0)),
-                                # Monte Carlo
-                                'mc_1': float(result.get('modelos', {}).get('monte_carlo', {}).get('p1', 0)),
-                                'mc_X': float(result.get('modelos', {}).get('monte_carlo', {}).get('px', 0)),
-                                'mc_2': float(result.get('modelos', {}).get('monte_carlo', {}).get('p2', 0)),
-                                # Forma Reciente
                                 'forma_local_pct': float(result.get('forma_local', {}).get('forma_puntos', 0)),
                                 'forma_visitante_pct': float(result.get('forma_visitante', {}).get('forma_puntos', 0)),
-                                # Pesos usados
-                                'peso_poisson': 0.30,
-                                'peso_dixon': 0.25,
-                                'peso_montecarlo': 0.20,
-                                'peso_forma': 0.15,
-                                'peso_estilo': 0.10,
                             }
                             client.table('historial_predicciones').insert(historial_data).execute()
-                            st.success("✅ Predicción guardada automáticamente en historial")
                         except Exception as e:
-                            st.warning(f"⚠️ No se pudo guardar en historial: {str(e)[:50]}")
+                            pass  # No mostrar error, el análisis principal funciona
                             
                 else:
                     st.error("⚠️ Ambos equipos deben tener estadísticas. Ejecuta el robot primero.")
@@ -495,15 +476,15 @@ else:
             with col1:
                 st.markdown(f"**🏠 {home}**")
                 st.markdown(f"## {r['p1']:.1f}%")
-                st.progress(r['p1']/100, color="green")
+                st.progress(r['p1']/100)
             with col2:
                 st.markdown("**🤝 Empate**")
                 st.markdown(f"## {r['px']:.1f}%")
-                st.progress(r['px']/100, color="gray")
+                st.progress(r['px']/100)
             with col3:
                 st.markdown(f"**✈️ {away}**")
                 st.markdown(f"## {r['p2']:.1f}%")
-                st.progress(r['p2']/100, color="blue")
+                st.progress(r['p2']/100)
             
             # Over/Under y BTTS
             st.markdown("### 📈 Over/Under & Ambos Marcan")
@@ -514,20 +495,20 @@ else:
                 prob_ou = r.get('prob_over_under', 50)
                 st.markdown(f"**{pick_ou}**")
                 st.markdown(f"{prob_ou:.1f}%")
-                st.progress(prob_ou/100, color="orange")
+                st.progress(prob_ou/100)
             with col_btts:
                 pick_btts = r.get('pick_btts', 'No')
                 btts_yes = r.get('btts_yes', 50)
                 st.markdown(f"**Ambos Marcan**")
                 st.markdown(f"{pick_btts} ({btts_yes:.1f}%)")
-                st.progress(btts_yes/100, color="purple")
+                st.progress(btts_yes/100)
             with col_corners:
                 corners = r.get('corners', {})
                 pick_corners = r.get('pick_corners', 'Over 10')
                 total_c = corners.get('total_estimado', 10)
                 st.markdown(f"**Córners**")
                 st.markdown(f"~{total_c:.1f} (Total)")
-                st.progress(corners.get('over_95', 50)/100, color="cyan")
+                st.progress(corners.get('over_95', 50)/100)
             
             # Forma Reciente
             st.markdown("### 📅 Forma Reciente")
