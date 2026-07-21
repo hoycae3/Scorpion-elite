@@ -731,10 +731,19 @@ else:
                 }
                 
                 try:
-                    client.table('equipos_stats').upsert(data, on_conflict='equipo,temporada').execute()
+                    # Intentar insert o update
+                    try:
+                        client.table('equipos_stats').upsert(data).execute()
+                    except:
+                        # Si falla upsert, intentar insert directo
+                        try:
+                            client.table('equipos_stats').insert(data).execute()
+                        except:
+                            # Actualizar si ya existe
+                            client.table('equipos_stats').update(data).eq('equipo', equipo).execute()
                     st.success(f"✅ {equipo} guardado exitosamente")
                 except Exception as e:
-                    st.error(f"Error: {str(e)[:50]}")
+                    st.error(f"Error al guardar: {str(e)[:100]}")
         
         st.markdown("---")
         st.markdown("### 📋 Equipos con Estadísticas")
@@ -783,8 +792,10 @@ else:
                             with col2:
                                 st.markdown(f"**Goles a Favor:** {eq.get('goles_favor', 0)}")
                                 st.markdown(f"**Goles en Contra:** {eq.get('goles_contra', 0)}")
-                                st.markdown(f"**Lambda Local:** {eq.get('lambda_local', 0):.2f}")
-                                st.markdown(f"**Lambda Visitante:** {eq.get('lambda_visitante', 0):.2f}")
+                                lambda_l = eq.get('lambda_local', 0) or 0
+                                lambda_v = eq.get('lambda_visitante', 0) or 0
+                                st.markdown(f"**Lambda Local:** {lambda_l:.2f}")
+                                st.markdown(f"**Lambda Visitante:** {lambda_v:.2f}")
                             
                             # Botón eliminar
                             if st.button(f"🗑️ Eliminar {eq['equipo']}", key=f"del_{eq['id']}"):
