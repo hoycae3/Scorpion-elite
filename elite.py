@@ -579,67 +579,103 @@ else:
                 """, unsafe_allow_html=True)
             
             # ========================
-            # ESTADÍSTICAS DETALLADAS
+            # ESTADÍSTICAS DEL LOCAL
             # ========================
-            st.markdown("### 📊 Estadísticas Estimadas del Partido")
+            st.markdown(f"### 📊 Estadísticas: 🏠 {home}")
             
-            # Calcular datos estimados
+            # Obtener datos del local
+            gf_local = stats_local.get('goles_favor', 0) if stats_local else 0
+            gc_local = stats_local.get('goles_contra', 0) if stats_local else 0
+            pj_local = stats_local.get('partidos_jugados', 0) if stats_local else 0
             c_local = stats_local.get('promedio_corners_total', 10) if stats_local else 10
-            c_visitante = stats_visitante.get('promedio_corners_total', 10) if stats_visitante else 10
             t_local = stats_local.get('promedio_tiros', 12) if stats_local else 12
-            t_visitante = stats_visitante.get('promedio_tiros', 12) if stats_visitante else 12
             ta_local = stats_local.get('promedio_amarillas', 3) if stats_local else 3
+            
+            col_l1, col_l2, col_l3, col_l4 = st.columns(4)
+            with col_l1:
+                st.metric("Goles a Favor", gf_local)
+            with col_l2:
+                st.metric("Goles en Contra", gc_local)
+            with col_l3:
+                st.metric("Remates/Partido", f"{t_local:.1f}")
+            with col_l4:
+                st.metric("Córners/Partido", f"{c_local:.1f}")
+            
+            # ========================
+            # ESTADÍSTICAS DEL VISITANTE
+            # ========================
+            st.markdown(f"### 📊 Estadísticas: ✈️ {away}")
+            
+            gf_visitante = stats_visitante.get('goles_favor', 0) if stats_visitante else 0
+            gc_visitante = stats_visitante.get('goles_contra', 0) if stats_visitante else 0
+            pj_visitante = stats_visitante.get('partidos_jugados', 0) if stats_visitante else 0
+            c_visitante = stats_visitante.get('promedio_corners_total', 10) if stats_visitante else 10
+            t_visitante = stats_visitante.get('promedio_tiros', 12) if stats_visitante else 12
             ta_visitante = stats_visitante.get('promedio_amarillas', 3) if stats_visitante else 3
             
-            # Estimación de córners por equipo
+            col_v1, col_v2, col_v3, col_v4 = st.columns(4)
+            with col_v1:
+                st.metric("Goles a Favor", gf_visitante)
+            with col_v2:
+                st.metric("Goles en Contra", gc_visitante)
+            with col_v3:
+                st.metric("Remates/Partido", f"{t_visitante:.1f}")
+            with col_v4:
+                st.metric("Córners/Partido", f"{c_visitante:.1f}")
+            
+            # ========================
+            # ESTIMACIÓN DEL PARTIDO
+            # ========================
+            st.markdown("### 🎯 Estimación del Partido")
+            
+            # Córners estimados
             corners_match = r.get('corners', {})
             total_corners = corners_match.get('total_estimado', (c_local + c_visitante))
             corners_local_est = corners_match.get('corners_local_estimado', total_corners * 0.52)
             corners_visitante_est = corners_match.get('corners_visitante_estimado', total_corners * 0.48)
             
-            # Estimación de tarjetas
+            # Tarjetas estimadas
             tarjetas_est = ta_local + ta_visitante
             
-            # Score más probable de Monte Carlo
+            # Marcador probable
             modelos = r.get('modelos', {})
             mc = modelos.get('monte_carlo', {})
             top_scores = mc.get('top_scores', {})
             score_mas_probable = list(top_scores.keys())[0] if top_scores else "2-1"
             
-            col_stats1, col_stats2, col_stats3, col_stats4 = st.columns(4)
-            
-            with col_stats1:
+            col_e1, col_e2, col_e3, col_e4 = st.columns(4)
+            with col_e1:
                 st.markdown(f"""
                 <div style="background: #0d1b2a; padding: 12px; border-radius: 10px; text-align: center;">
-                    <p style="color: #888; margin: 0; font-size: 12px;">⚽ Córners Local</p>
-                    <h3 style="color: #00ff88; margin: 5px 0;">~{corners_local_est:.0f}</h3>
-                    <p style="color: #666; margin: 0; font-size: 11px;">Promedio: {c_local:.1f}</p>
+                    <p style="color: #888; margin: 0; font-size: 12px;">⚽ Córners Totales</p>
+                    <h3 style="color: #00d2d3; margin: 5px 0;">~{total_corners:.0f}</h3>
+                    <p style="color: #666; margin: 0; font-size: 11px;">L:{corners_local_est:.0f} V:{corners_visitante_est:.0f}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
-            with col_stats2:
+            with col_e2:
                 st.markdown(f"""
                 <div style="background: #0d1b2a; padding: 12px; border-radius: 10px; text-align: center;">
-                    <p style="color: #888; margin: 0; font-size: 12px;">⚽ Córners Visitante</p>
-                    <h3 style="color: #ff6b6b; margin: 5px 0;">~{corners_visitante_est:.0f}</h3>
-                    <p style="color: #666; margin: 0; font-size: 11px;">Promedio: {c_visitante:.1f}</p>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with col_stats3:
-                st.markdown(f"""
-                <div style="background: #0d1b2a; padding: 12px; border-radius: 10px; text-align: center;">
-                    <p style="color: #888; margin: 0; font-size: 12px;">🟨 Tarjetas</p>
+                    <p style="color: #888; margin: 0; font-size: 12px;">🟨 Tarjetas Totales</p>
                     <h3 style="color: #ffd700; margin: 5px 0;">~{tarjetas_est:.0f}</h3>
                     <p style="color: #666; margin: 0; font-size: 11px;">L:{ta_local:.1f} V:{ta_visitante:.1f}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
-            with col_stats4:
+            with col_e3:
+                st.markdown(f"""
+                <div style="background: #0d1b2a; padding: 12px; border-radius: 10px; text-align: center;">
+                    <p style="color: #888; margin: 0; font-size: 12px;">🥅 Goles Totales Est.</p>
+                    <h3 style="color: #00ff88; margin: 5px 0;">~{r.get('goles_esperados', 0):.1f}</h3>
+                    <p style="color: #666; margin: 0; font-size: 11px;">Promedio</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col_e4:
                 st.markdown(f"""
                 <div style="background: #0d1b2a; padding: 12px; border-radius: 10px; text-align: center;">
                     <p style="color: #888; margin: 0; font-size: 12px;">🎯 Marcador Probable</p>
-                    <h3 style="color: #00d2d3; margin: 5px 0;">{score_mas_probable}</h3>
+                    <h3 style="color: #ff6b6b; margin: 5px 0;">{score_mas_probable}</h3>
                     <p style="color: #666; margin: 0; font-size: 11px;">Monte Carlo</p>
                 </div>
                 """, unsafe_allow_html=True)
