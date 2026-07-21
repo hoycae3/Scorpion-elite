@@ -481,7 +481,7 @@ else:
             if stats_local and stats_visitante:
                 st.markdown("##### 📊 Estadísticas del Robot")
                 
-                col_est1, col_est2 = st.columns(2)
+                col_space1, col_est1, col_est2, col_space2 = st.columns([1, 2, 2, 1])
                 
                 with col_est1:
                     st.markdown(f"""
@@ -526,18 +526,14 @@ else:
             rango_color = {"A+": "🟢", "A": "🟢", "B": "🔵", "C": "🟡", "D": "🔴"}
             
             st.markdown(f"""
-            <div style="background: linear-gradient(135deg, #1a2a3a, #0d1a26); border: 2px solid #00d4ff; border-radius: 12px; padding: 20px; text-align: center; margin: 15px 0;">
-                <p style="color: #00d4ff; margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 2px;">⚡ ANÁLISIS DEL PARTIDO</p>
-                <h1 style="color: white; margin: 10px 0 15px 0; font-size: 28px;">⚽ {home} <span style="color: #666;">vs</span> {away}</h1>
-                <div style="background: rgba(0, 212, 255, 0.15); border: 2px solid #00d4ff; border-radius: 10px; padding: 15px; display: inline-block; min-width: 150px;">
-                    <p style="color: #888; margin: 0; font-size: 10px;">PREDICCIÓN</p>
-                    <p style="color: #00d4ff; margin: 5px 0 0 0; font-size: 42px; font-weight: bold;">
-                        {pick_icon.get(pick, '🎯')} {pick}
-                    </p>
-                </div>
-                <br><br>
-                <span style="background: rgba(0, 212, 255, 0.1); border: 1px solid #00d4ff; padding: 6px 16px; border-radius: 15px; font-size: 13px; font-weight: 600;">
-                    {rango_color.get(rango, '⚪')} {confianza}% CONFIANZA ({rango})
+            <div style="background: #1a1a2e; border: 1px solid #00d4ff; border-radius: 8px; padding: 12px 20px; text-align: center; margin: 10px auto; max-width: 500px;">
+                <p style="color: #00d4ff; margin: 0; font-size: 10px; font-weight: 600; letter-spacing: 1px;">⚡ ANÁLISIS</p>
+                <p style="color: white; margin: 5px 0; font-size: 18px;">⚽ {home} vs {away}</p>
+                <p style="color: #00d4ff; margin: 8px 0; font-size: 28px; font-weight: bold;">
+                    {pick_icon.get(pick, '🎯')} {pick}
+                </p>
+                <span style="background: rgba(0, 212, 255, 0.1); border: 1px solid #00d4ff; padding: 3px 10px; border-radius: 10px; font-size: 11px;">
+                    {rango_color.get(rango, '⚪')} {confianza}% ({rango})
                 </span>
             </div>
             """, unsafe_allow_html=True)
@@ -654,7 +650,7 @@ else:
             forma_l = r.get('forma_local', {})
             forma_v = r.get('forma_visitante', {})
             
-            col_forma_local, col_forma_away = st.columns(2)
+            col_space1, col_forma_local, col_forma_away, col_space2 = st.columns([1, 2, 2, 1])
             
             with col_forma_local:
                 letras = forma_l.get('forma_letras', '-----')
