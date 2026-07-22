@@ -1301,250 +1301,113 @@ else:
                         else:
                             st.info("No hay duplicados")
             
-            # Lista de picks
-            st.markdown("##### 📋 Picks Recientes")
+            # Lista de picks con actualización inline
+            st.markdown("##### 📋 Picks Recientes (▸ clic para ver/actualizar)")
             
             if picks:
-                data = []
-                ids_map = {}
-                for p in picks[:50]:
+                for p in picks[:30]:
                     res_1x2 = p.get('acertado_1x2')
                     res_ou = p.get('acertado_ou')
                     res_btts = p.get('acertado_btts')
                     res_corners = p.get('acertado_corners')
                     res_tarjetas = p.get('acertado_tarjetas')
                     res_remates = p.get('acertado_remates')
+                    marcador = p.get('marcador', '')
                     
                     def icon(v):
-                        if v == True: return "🟢✅"
-                        if v == False: return "🔴❌"
-                        return "⚪-"
+                        if v == True: return "🟢"
+                        if v == False: return "🔴"
+                        return "⚪"
                     
                     pick_id = p.get('id')
-                    ids_map[pick_id] = len(data)
+                    partido = f"{p.get('equipo_local', '')} vs {p.get('equipo_visitante', '')}"
                     
-                    data.append({
-                        'ID': pick_id,
-                        'Fecha': p.get('fecha', ''),
-                        'Partido': f"{p.get('equipo_local', '')} vs {p.get('equipo_visitante', '')}",
-                        '1': f"{p.get('p1', 0):.0f}%",
-                        'X': f"{p.get('px', 0):.0f}%",
-                        '2': f"{p.get('p2', 0):.0f}%",
-                        'Prob': f"{p.get('prob_1x2', 0):.0f}%",
-                        'Marcador': p.get('marcador', '-'),
-                        '1X2': icon(res_1x2),
-                        'OU': icon(res_ou),
-                        'BTTS': icon(res_btts),
-                        'Corners': icon(res_corners),
-                        'TAR': icon(res_tarjetas),
-                        'REM': icon(res_remates),
-                    })
-                
-                import pandas as pd
-                df = pd.DataFrame(data)
-                st.dataframe(df, use_container_width=True, hide_index=True)
-                
-                # Eliminar pick específico
-                st.markdown("##### 🗑️ Eliminar Pick Específico")
-                col_id, col_btn = st.columns([1, 4])
-                with col_id:
-                    pick_id_del = st.text_input("ID del Pick")
-                with col_btn:
-                    if st.button("❌ Eliminar"):
-                        if pick_id_del:
-                            try:
-                                client.table('picks').delete().eq('id', int(pick_id_del)).execute()
-                                st.success("✅ Pick eliminado")
-                                st.rerun()
-                            except:
-                                st.error("❌ ID inválido")
-                
-                # Actualizar resultado COMPLETO
-                st.markdown("##### 📝 Ingresar Resultado Completo")
-                
-                with st.expander("🔓 Actualizar Resultado", expanded=True):
-                    col_upd_id, col_upd_btn = st.columns([1, 4])
-                    with col_upd_id:
-                        pick_id_upd = st.text_input("ID Pick", key="upd_id", placeholder="1")
-                    with col_upd_btn:
-                        st.write("")  # spacer
-                        if st.button("📥 Cargar Pick", key="load_pick"):
-                            if pick_id_upd:
-                                resp = client.table('picks').select('*').eq('id', int(pick_id_upd)).execute()
-                                if resp.data:
-                                    p = resp.data[0]
-                                    st.session_state['load_gf_l'] = ""
-                                    st.session_state['load_gf_v'] = ""
-                                    st.session_state['load_corner_l'] = ""
-                                    st.session_state['load_corner_v'] = ""
-                                    st.session_state['load_tar_l'] = ""
-                                    st.session_state['load_tar_v'] = ""
-                                    st.session_state['load_shot_l'] = ""
-                                    st.session_state['load_shot_v'] = ""
-                                    st.info(f"**{p.get('equipo_local')} vs {p.get('equipo_visitante')}** | Pick: {p.get('prediccion_1x2')} | O/U: {p.get('prediccion_ou')} | BTTS: {p.get('prediccion_btts')} | Corners: {p.get('prediccion_corners')}")
+                    # Header del expander
+                    header = f"**ID {pick_id}** | {p.get('fecha','')} | {partido} | Marc: {marcador if marcador else '?'} | 1X2:{icon(res_1x2)} OU:{icon(res_ou)} BTTS:{icon(res_btts)} C:{icon(res_corners)} T:{icon(res_tarjetas)} R:{icon(res_remates)}"
                     
-                    # Goles
-                    st.markdown("⚽ **Marcador Final**")
-                    col_gf1, col_gf2, col_gf3 = st.columns([2, 1, 2])
-                    with col_gf1:
-                        st.text_input("GF Local", key="gf_local", placeholder="2")
-                    with col_gf2:
-                        st.write("### -")
-                    with col_gf3:
-                        st.text_input("GF Visitante", key="gf_visit", placeholder="1")
-                    
-                    # Corners
-                    st.markdown("📐 **Corners Totales**")
-                    col_cor1, col_cor2, col_cor3 = st.columns([2, 1, 2])
-                    with col_cor1:
-                        st.text_input("Corners Local", key="corner_l", placeholder="6")
-                    with col_cor2:
-                        st.write("### Total:")
-                    with col_cor3:
-                        st.text_input("Corners Visitante", key="corner_v", placeholder="4")
-                    
-                    # Tarjetas
-                    st.markdown("🟨 **Tarjetas Totales**")
-                    col_tar1, col_tar2, col_tar3 = st.columns([2, 1, 2])
-                    with col_tar1:
-                        st.text_input("Tarjetas Local", key="tar_l", placeholder="3")
-                    with col_tar2:
-                        st.write("### Total:")
-                    with col_tar3:
-                        st.text_input("Tarjetas Visitante", key="tar_v", placeholder="2")
-                    
-                    # Tiros al arco
-                    st.markdown("🎯 **Tiros al Arco Totales**")
-                    col_sh1, col_sh2, col_sh3 = st.columns([2, 1, 2])
-                    with col_sh1:
-                        st.text_input("Remates Local", key="shot_l", placeholder="8")
-                    with col_sh2:
-                        st.write("### Total:")
-                    with col_sh3:
-                        st.text_input("Remates Visitante", key="shot_v", placeholder="5")
-                    
-                    # Botón actualizar
-                    st.markdown("---")
-                    if st.button("✅ GUARDAR RESULTADO", type="primary", use_container_width=True):
-                        try:
-                            gl = int(st.session_state.get('gf_local', 0) or 0)
-                            gv = int(st.session_state.get('gf_visit', 0) or 0)
-                            cor_l = int(st.session_state.get('corner_l', 0) or 0)
-                            cor_v = int(st.session_state.get('corner_v', 0) or 0)
-                            tar_l = int(st.session_state.get('tar_l', 0) or 0)
-                            tar_v = int(st.session_state.get('tar_v', 0) or 0)
-                            sh_l = int(st.session_state.get('shot_l', 0) or 0)
-                            sh_v = int(st.session_state.get('shot_v', 0) or 0)
+                    with st.expander(header):
+                        # Mostrar predicciones guardadas
+                        col_pred, col_del = st.columns([4, 1])
+                        with col_pred:
+                            st.markdown(f"""
+                            **📊 Predicciones:** {p.get('p1',0):.0f}% - {p.get('px',0):.0f}% - {p.get('p2',0):.0f}% (Conf: {p.get('confianza',0)}%)
                             
-                            if gl == 0 and gv == 0:
-                                st.warning("⚠️ Ingresa al menos los goles")
-                            else:
-                                resp = client.table('picks').select('*').eq('id', int(pick_id_upd)).execute()
-                                if resp.data:
-                                    p = resp.data[0]
+                            **🎯 Picks:** 1X2: **{p.get('prediccion_1x2','')}** | O/U: **{p.get('prediccion_ou','')}** | BTTS: **{p.get('prediccion_btts','')}** | C: **{p.get('prediccion_corners','')}** | T: **{p.get('prediccion_tarjetas','')}** | R: **{p.get('prediccion_remates','')}**
+                            """)
+                        with col_del:
+                            if st.button("🗑️", key=f"del_{pick_id}"):
+                                client.table('picks').delete().eq('id', pick_id).execute()
+                                st.success("✅ Eliminado")
+                                st.rerun()
+                        
+                        st.markdown("---")
+                        st.markdown("### 📝 Actualizar Resultado Real")
+                        
+                        col1, col2, col3, col4, col5, col6 = st.columns([1,1,1,1,1,1])
+                        with col1:
+                            gf_l = st.number_input("GF Local", min_value=0, max_value=20, value=0, key=f"gf_l_{pick_id}")
+                        with col2:
+                            gf_v = st.number_input("GF Visit", min_value=0, max_value=20, value=0, key=f"gf_v_{pick_id}")
+                        with col3:
+                            cor_tot = st.number_input("Corners", min_value=0, max_value=50, value=0, key=f"cor_{pick_id}")
+                        with col4:
+                            tar_tot = st.number_input("Tarjetas", min_value=0, max_value=30, value=0, key=f"tar_{pick_id}")
+                        with col5:
+                            rem_tot = st.number_input("Remates", min_value=0, max_value=60, value=0, key=f"rem_{pick_id}")
+                        with col6:
+                            st.write("")  # spacer
+                            if st.button("✅ Guardar", key=f"save_{pick_id}"):
+                                try:
+                                    gl, gv = gf_l, gf_v
+                                    total_g = gl + gv
                                     
-                                    # Calcular 1X2
-                                    if gl > gv:
-                                        resultado_1x2 = '1'
-                                    elif gl < gv:
-                                        resultado_1x2 = '2'
-                                    else:
-                                        resultado_1x2 = 'X'
+                                    # Calcular resultados
+                                    if gl > gv: resultado_1x2 = '1'
+                                    elif gl < gv: resultado_1x2 = '2'
+                                    else: resultado_1x2 = 'X'
                                     
-                                    # Calcular O/U (línea 2.5)
-                                    total_gl = gl + gv
-                                    resultado_ou = 'Over' if total_gl > 2.5 else 'Under'
-                                    
-                                    # Calcular BTTS
+                                    resultado_ou = 'Over' if total_g > 2.5 else 'Under'
                                     resultado_btts = 'Sí' if gl > 0 and gv > 0 else 'No'
                                     
-                                    # Calcular corners
-                                    total_corners = cor_l + cor_v
-                                    
-                                    # Calcular tarjetas
-                                    total_tarjetas = tar_l + tar_v
-                                    
-                                    # Calcular remates
-                                    total_remates = sh_l + sh_v
-                                    
                                     # Verificar aciertos
-                                    pick_1x2 = p.get('prediccion_1x2', '')
-                                    pick_ou = p.get('prediccion_ou', '')
-                                    pick_btts = p.get('prediccion_btts', '')
-                                    pick_corners = p.get('prediccion_corners', '')
-                                    pick_tarjetas = p.get('prediccion_tarjetas', '')
-                                    pick_remates = p.get('prediccion_remates', '')
-                                    
-                                    # 1X2
-                                    acertado_1x2 = (pick_1x2 == resultado_1x2)
-                                    
-                                    # O/U
-                                    acertado_ou = (pick_ou == resultado_ou)
-                                    
-                                    # BTTS
-                                    acertado_btts = (pick_btts == resultado_btts)
-                                    
-                                    # CORNERS - Parsear "Over 11" o "Under 9.5"
-                                    def verificar_over_under(prediccion, valor_real):
-                                        if not prediccion:
-                                            return None
+                                    def verificar(pred, valor):
+                                        if not pred: return None
                                         try:
-                                            if 'Over' in prediccion or 'over' in prediccion:
-                                                valor = float(prediccion.lower().replace('over','').replace('_',' ').strip())
-                                                return valor_real > valor
-                                            elif 'Under' in prediccion or 'under' in prediccion:
-                                                valor = float(prediccion.lower().replace('under','').replace('_',' ').strip())
-                                                return valor_real < valor
-                                        except:
-                                            return None
+                                            num = float(pred.lower().replace('over','').replace('under','').replace('_',' ').strip())
+                                            if 'over' in pred.lower(): return valor > num
+                                            elif 'under' in pred.lower(): return valor < num
+                                        except: pass
                                         return None
                                     
-                                    acertado_corners = verificar_over_under(pick_corners, total_corners)
-                                    acertado_tarjetas = verificar_over_under(pick_tarjetas, total_tarjetas)
-                                    acertado_remates = verificar_over_under(pick_remates, total_remates)
+                                    acertado_1x2 = p.get('prediccion_1x2','') == resultado_1x2
+                                    acertado_ou = p.get('prediccion_ou','') == resultado_ou
+                                    acertado_btts = p.get('prediccion_btts','') == resultado_btts
+                                    acertado_corners = verificar(p.get('prediccion_corners',''), cor_tot)
+                                    acertado_tarjetas = verificar(p.get('prediccion_tarjetas',''), tar_tot)
+                                    acertado_remates = verificar(p.get('prediccion_remates',''), rem_tot)
                                     
-                                    # Actualizar
+                                    # Guardar
                                     client.table('picks').update({
                                         'marcador': f"{gl}-{gv}",
                                         'resultado': resultado_1x2,
                                         'resultado_1x2': resultado_1x2,
                                         'resultado_ou': resultado_ou,
                                         'resultado_btts': resultado_btts,
-                                        'resultado_corners': str(total_corners),
-                                        'resultado_tarjetas': str(total_tarjetas),
-                                        'resultado_remates': str(total_remates),
+                                        'resultado_corners': str(cor_tot),
+                                        'resultado_tarjetas': str(tar_tot),
+                                        'resultado_remates': str(rem_tot),
                                         'acertado_1x2': acertado_1x2,
                                         'acertado_ou': acertado_ou,
                                         'acertado_btts': acertado_btts,
                                         'acertado_corners': acertado_corners,
                                         'acertado_tarjetas': acertado_tarjetas,
                                         'acertado_remates': acertado_remates,
-                                    }).eq('id', int(pick_id_upd)).execute()
+                                    }).eq('id', pick_id).execute()
                                     
-                                    # Mostrar resumen con colores
-                                    st.success("### 📊 RESULTADOS")
-                                    
-                                    def resultado_icon(acertado):
-                                        if acertado == True: return "🟢✅"
-                                        if acertado == False: return "🔴❌"
-                                        return "⚪-"
-                                    
-                                    col_r1, col_r2, col_r3, col_r4, col_r5, col_r6 = st.columns(6)
-                                    with col_r1:
-                                        st.metric("1X2", resultado_icon(acertado_1x2), delta=f"{gl}-{gv}")
-                                    with col_r2:
-                                        st.metric("O/U", resultado_icon(acertado_ou), delta=f"Goles: {total_gl}")
-                                    with col_r3:
-                                        st.metric("BTTS", resultado_icon(acertado_btts), delta=f"{resultado_btts}")
-                                    with col_r4:
-                                        st.metric("Corners", resultado_icon(acertado_corners), delta=f"{total_corners}")
-                                    with col_r5:
-                                        st.metric("Tarjetas", resultado_icon(acertado_tarjetas), delta=f"{total_tarjetas}")
-                                    with col_r6:
-                                        st.metric("Remates", resultado_icon(acertado_remates), delta=f"{total_remates}")
+                                    st.success("✅ Guardado!")
                                     st.rerun()
-                        except Exception as e:
-                            st.error(f"❌ Error: {str(e)[:100]}")
+                                except Exception as e:
+                                    st.error(f"❌ {str(e)[:50]}")
             else:
                 st.info("📭 No hay picks guardados aún")
         else:
