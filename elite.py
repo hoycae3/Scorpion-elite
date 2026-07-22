@@ -361,7 +361,7 @@ else:
         st.markdown("""
 <style>
 .stSelectbox label {
-    font-size: 80px !important;
+    font-size: 120px !important;
     font-weight: bold !important;
 }
 </style>
