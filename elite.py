@@ -1275,11 +1275,36 @@ else:
                     st.success("Calibración reseteada")
                     st.rerun()
             
+            # Botones de acción
+            col_del, col_result = st.columns([1, 2])
+            
+            with col_del:
+                if st.button("🗑️ Limpiar Duplicados"):
+                    # Eliminar picks duplicados (mismo equipo_local + equipo_visitante + fecha), dejar el más reciente
+                    if picks:
+                        seen = set()
+                        to_delete = []
+                        for p in reversed(picks):
+                            key = f"{p.get('equipo_local')}_{p.get('equipo_visitante')}_{p.get('fecha')}"
+                            if key in seen:
+                                to_delete.append(p['id'])
+                            else:
+                                seen.add(key)
+                        
+                        if to_delete:
+                            for pick_id in to_delete:
+                                client.table('picks').delete().eq('id', pick_id).execute()
+                            st.success(f"✅ Eliminados {len(to_delete)} duplicados")
+                            st.rerun()
+                        else:
+                            st.info("No hay duplicados")
+            
             # Lista de picks
             st.markdown("##### 📋 Picks Recientes")
             
             if picks:
                 data = []
+                ids_map = {}
                 for p in picks[:50]:
                     res_1x2 = p.get('acertado_1x2')
                     res_ou = p.get('acertado_ou')
@@ -1290,20 +1315,81 @@ else:
                         if v == False: return "❌"
                         return "⏳"
                     
+                    pick_id = p.get('id')
+                    ids_map[pick_id] = len(data)
+                    
                     data.append({
+                        'ID': pick_id,
                         'Fecha': p.get('fecha', ''),
                         'Partido': f"{p.get('equipo_local', '')} vs {p.get('equipo_visitante', '')}",
                         'Pick': p.get('prediccion_1x2', ''),
+                        'Conf': f"{p.get('confianza', 0)}%",
                         '1X2': icon(res_1x2),
                         'O/U': icon(res_ou),
                         'BTTS': icon(res_btts),
-                        'Conf': f"{p.get('confianza', 0)}%",
-                        'Marcador': p.get('marcador', '-'),
                     })
                 
                 import pandas as pd
                 df = pd.DataFrame(data)
                 st.dataframe(df, use_container_width=True, hide_index=True)
+                
+                # Eliminar pick específico
+                st.markdown("##### 🗑️ Eliminar Pick Específico")
+                col_id, col_btn = st.columns([1, 4])
+                with col_id:
+                    pick_id_del = st.text_input("ID del Pick")
+                with col_btn:
+                    if st.button("❌ Eliminar"):
+                        if pick_id_del:
+                            try:
+                                client.table('picks').delete().eq('id', int(pick_id_del)).execute()
+                                st.success("✅ Pick eliminado")
+                                st.rerun()
+                            except:
+                                st.error("❌ ID inválido")
+                
+                # Actualizar resultado
+                st.markdown("##### 📝 Ingresar Resultado")
+                col_upd_id, col_goles_l, col_goles_v, col_upd_btn = st.columns([1, 1, 1, 2])
+                with col_upd_id:
+                    pick_id_upd = st.text_input("ID Pick", key="upd_id")
+                with col_goles_l:
+                    goles_local = st.text_input("GF Local", key="gf_local")
+                with col_goles_v:
+                    goles_visitante = st.text_input("GF Visitante", key="gf_visit")
+                with col_upd_btn:
+                    if st.button("✅ Actualizar Resultado"):
+                        if pick_id_upd and goles_local and goles_visitante:
+                            try:
+                                gl = int(goles_local)
+                                gv = int(goles_visitante)
+                                
+                                # Buscar el pick
+                                resp = client.table('picks').select('*').eq('id', int(pick_id_upd)).execute()
+                                if resp.data:
+                                    pick = resp.data[0]
+                                    pick_pred = pick.get('prediccion_1x2', '')
+                                    
+                                    # Calcular resultado 1X2
+                                    if gl > gv:
+                                        resultado_real = '1'
+                                    elif gl < gv:
+                                        resultado_real = '2'
+                                    else:
+                                        resultado_real = 'X'
+                                    
+                                    acertado = (pick_pred == resultado_real)
+                                    
+                                    client.table('picks').update({
+                                        'resultado': resultado_real,
+                                        'marcador': f"{gl}-{gv}",
+                                        'acertado_1x2': acertado
+                                    }).eq('id', int(pick_id_upd)).execute()
+                                    
+                                    st.success(f"✅ Resultado: {gl}-{gv} → Pick: {pick_pred} → {'✅ ACERTADO' if acertado else '❌ FALLADO'}")
+                                    st.rerun()
+                            except Exception as e:
+                                st.error(f"❌ Error: {str(e)[:50]}")
             else:
                 st.info("📭 No hay picks guardados aún")
         else:
