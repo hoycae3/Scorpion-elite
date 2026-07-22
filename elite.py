@@ -351,15 +351,15 @@ else:
         except:
             equipos_disponibles = []
         
-        # Selector de equipos (compactos y centrados)
-        col_space, col1, col2, col_space2 = st.columns([1, 2, 2, 1])
-        
+        # Selector de equipos - todo en una línea
+        col1, col2, col3 = st.columns([3, 3, 1])
         with col1:
-            st.markdown("**🏠 Local**")
-            home_team = st.selectbox("", [""] + equipos_disponibles, key="home_select", label_visibility="collapsed")
+            home_team = st.selectbox("🏠", [""] + equipos_disponibles, key="home_select", label_visibility="visible")
         with col2:
-            st.markdown("**✈️ Visitante**")
-            away_team = st.selectbox("", [""] + equipos_disponibles, key="away_select", label_visibility="collapsed")
+            away_team = st.selectbox("✈️", [""] + equipos_disponibles, key="away_select", label_visibility="visible")
+        with col3:
+            st.write("")  # espacio
+            analizar_click = st.button("🔍", use_container_width=True)
         
         # Validar que ambos equipos tengan DATOS REALES en Supabase
         lambda_local = None
@@ -409,7 +409,7 @@ else:
         # Botón analizar - solo si ambos equipos existen
         analizar_disabled = not (equipo_local_ok and equipo_visitante_ok)
         
-        if st.button("🎯 ANALIZAR", type="primary", disabled=analizar_disabled):
+        if analizar_click:
             try:
                 if home_team and away_team and lambda_local and lambda_visitante and stats_local and stats_visitante:
                     with st.spinner("Analizando..."):
