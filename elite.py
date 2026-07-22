@@ -355,26 +355,9 @@ else:
         if not equipos_disponibles:
             st.warning("⚠️ No hay equipos guardados. Ve a 'Estadísticas' para agregar equipos.")
         
-        # Selector de equipos - CSS para hacerlo muy compacto
-        st.markdown("""
-        <style>
-        /* Selectbox MUY pequeños */
-        [data-testid="stElement"] [data-baseweb="select"] {
-            min-height: 30px !important;
-        }
-        [data-testid="stElement"] [data-baseweb="select"] > div {
-            min-height: 30px !important;
-        }
-        section[data-testid="stMainBlockContainer"] .stSelectbox > div > div {
-            min-height: 30px !important;
-            font-size: 12px !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-        
         st.markdown("### 🔍 Seleccionar Partido")
         
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns([1, 1])
         with col1:
             home_team = st.selectbox("🏠 Local", [""] + equipos_disponibles, key="home_select")
         with col2:
