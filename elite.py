@@ -340,7 +340,7 @@ else:
     
     # Página: Analizador
     elif st.session_state.page == "Analizador":
-        st.markdown("### 📊 Analizador")
+        pass  # Sin título
         
         # Obtener lista de equipos disponibles
         client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -358,7 +358,7 @@ else:
         st.markdown("### 🔍 Seleccionar Partido")
         
         col1, col2 = st.columns([1, 1])
-        st.markdown("<style>.stColumn > div {width: 10% !important; min-width: 120px;}</style>", unsafe_allow_html=True)
+        st.markdown("<style>.stColumn > div {width: 20% !important; min-width: 120px;}</style>", unsafe_allow_html=True)
         with col1:
             home_team = st.selectbox("🏠 Local", [""] + equipos_disponibles, key="home_select")
         with col2:
