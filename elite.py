@@ -448,94 +448,29 @@ else:
                         st.session_state.stats_local = stats_local
                         st.session_state.stats_visitante = stats_visitante
                         
-                        # =============================================
-                        # GUARDADO AUTOMATICO - TODAS LAS PREDICCIONES
-                        # =============================================
-                        try:
-                            client = create_client(SUPABASE_URL, SUPABASE_KEY)
-                            
-                            # Obtener todas las predicciones
-                            predicciones = {
-                                '1x2': {
-                                    'pick': result.get('pick_1x2', ''),
-                                    'prob': float(result.get('prob_1x2', 0))
-                                },
-                                'over_under': {
-                                    'pick': result.get('pick_over_under', ''),
-                                    'prob': float(result.get('prob_over_under', 0)),
-                                    'over_25': float(result.get('over_under', {}).get('over_25', 0)),
-                                    'under_25': float(result.get('over_under', {}).get('under_25', 0))
-                                },
-                                'btts': {
-                                    'pick': result.get('pick_btts', ''),
-                                    'prob': float(result.get('btts_yes', 0)),
-                                    'yes': float(result.get('btts_yes', 0)),
-                                    'no': float(result.get('btts_no', 0))
-                                },
-                                'corners': {
-                                    'pick': result.get('pick_corners', ''),
-                                    'total': float(result.get('corners', {}).get('total_estimado', 0))
-                                }
+                        # Guardar TODAS las predicciones en session_state (NO en Supabase aun)
+                        st.session_state.predicciones_actuales = {
+                            '1x2': {
+                                'pick': result.get('pick_1x2', ''),
+                                'prob': float(result.get('prob_1x2', 0))
+                            },
+                            'over_under': {
+                                'pick': result.get('pick_over_under', ''),
+                                'prob': float(result.get('prob_over_under', 0)),
+                                'over_25': float(result.get('over_under', {}).get('over_25', 0)),
+                                'under_25': float(result.get('over_under', {}).get('under_25', 0))
+                            },
+                            'btts': {
+                                'pick': result.get('pick_btts', ''),
+                                'prob': float(result.get('btts_yes', 0)),
+                                'yes': float(result.get('btts_yes', 0)),
+                                'no': float(result.get('btts_no', 0))
+                            },
+                            'corners': {
+                                'pick': result.get('pick_corners', ''),
+                                'total': float(result.get('corners', {}).get('total_estimado', 0))
                             }
-                            
-                            pick_data = {
-                                'fecha': str(date.today()),
-                                'liga': stats_local.get('liga', 'Desconocida'),
-                                'equipo_local': home_team,
-                                'equipo_visitante': away_team,
-                                
-                                # 1X2
-                                'prediccion_1x2': predicciones['1x2']['pick'],
-                                'prob_1x2': predicciones['1x2']['prob'],
-                                'p1': float(result.get('p1', 0)),
-                                'px': float(result.get('px', 0)),
-                                'p2': float(result.get('p2', 0)),
-                                
-                                # Over/Under
-                                'prediccion_ou': predicciones['over_under']['pick'],
-                                'prob_ou': predicciones['over_under']['prob'],
-                                'over_25': predicciones['over_under']['over_25'],
-                                'under_25': predicciones['over_under']['under_25'],
-                                
-                                # BTTS
-                                'prediccion_btts': predicciones['btts']['pick'],
-                                'prob_btts': predicciones['btts']['prob'],
-                                'btts_yes': predicciones['btts']['yes'],
-                                'btts_no': predicciones['btts']['no'],
-                                
-                                # Corners
-                                'prediccion_corners': predicciones['corners']['pick'],
-                                'corners_total_estimado': predicciones['corners']['total'],
-                                
-                                # Confianza
-                                'confianza': int(result.get('confianza', 0)),
-                                'rango': result.get('rango', 'D'),
-                                'confianza_1x2': int(result.get('confianza', 0)),
-                                'confianza_ou': int(result.get('confianza', 0)),
-                                'confianza_btts': int(result.get('confianza', 0)),
-                                
-                                # Metadatos (se llenan cuando hay resultado)
-                                'marcador': None,
-                                'resultado_real_1x2': None,
-                                'resultado_real_ou': None,
-                                'resultado_real_btts': None,
-                                'acertado_1x2': None,
-                                'acertado_ou': None,
-                                'acertado_btts': None,
-                                'lambda_local_original': float(lambda_local),
-                                'lambda_visitante_original': float(lambda_visitante),
-                            }
-                            
-                            # Guardar y obtener el ID
-                            insert_resp = client.table('picks').insert(pick_data).execute()
-                            if insert_resp.data:
-                                st.session_state.last_pick_id = insert_resp.data[0].get('id')
-                                st.session_state.last_predicciones = predicciones
-                            
-                        except Exception as e:
-                            pass  # No mostrar error, el analisis funciona
-                        
-                        # NO guardar automáticamente - el usuario decide cuándo guardar
+                        }
                             
                 else:
                     st.error("⚠️ Ambos equipos deben tener estadísticas. Ejecuta el robot primero.")
@@ -647,18 +582,17 @@ else:
             
             with col_guardar3:
                 st.markdown("<br>", unsafe_allow_html=True)
-                if st.button("💾 Guardar Resultado", type="primary", use_container_width=True):
-                    try:
-                        client = create_client(SUPABASE_URL, SUPABASE_KEY)
-                        
-                        # Obtener el ID del ultimo pick guardado
-                        pick_id = st.session_state.get('last_pick_id')
-                        predicciones = st.session_state.get('last_predicciones', {})
-                        
-                        if not pick_id:
-                            st.warning("No hay pick reciente para actualizar")
-                        else:
-                            # Parsear marcador
+                predicciones_act = st.session_state.get('predicciones_actuales', {})
+                
+                if not predicciones_act:
+                    st.info("💡 Analiza un partido primero")
+                else:
+                    if st.button("💾 Guardar Partido", type="primary", use_container_width=True):
+                        try:
+                            client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                            r = st.session_state.analysis_result
+                            
+                            # Parsear marcador si existe
                             total_goles_local = 0
                             total_goles_visitante = 0
                             if marcador:
@@ -677,27 +611,60 @@ else:
                                 resultado_ou_real = "Over 2.5" if total_goles > 2.5 else "Under 2.5"
                                 resultado_btts_real = "Si" if (total_goles_local > 0 and total_goles_visitante > 0) else "No"
                             
-                            # Calcular aciertos
-                            pick_1x2 = predicciones.get('1x2', {}).get('pick', pick)
+                            # Calcular aciertos para cada tipo
+                            pick_1x2 = predicciones_act.get('1x2', {}).get('pick', pick)
                             acertado_1x2 = None
                             if resultado_1x2_real and pick_1x2:
                                 acertado_1x2 = (resultado_1x2_real == pick_1x2)
                             
-                            pick_ou = predicciones.get('over_under', {}).get('pick', r.get('pick_over_under', ''))
+                            pick_ou = predicciones_act.get('over_under', {}).get('pick', '')
                             acertado_ou = None
                             if resultado_ou_real:
                                 acertado_ou = (("Over" in pick_ou and total_goles > 2.5) or 
                                               ("Under" in pick_ou and total_goles <= 2.5))
                             
-                            pick_btts = predicciones.get('btts', {}).get('pick', r.get('pick_btts', ''))
+                            pick_btts = predicciones_act.get('btts', {}).get('pick', '')
                             acertado_btts = None
                             if resultado_btts_real:
                                 ambos_marcan = (total_goles_local > 0 and total_goles_visitante > 0)
                                 acertado_btts = (("Si" in pick_btts and ambos_marcan) or 
                                                 ("No" in pick_btts and not ambos_marcan))
                             
-                            # Actualizar pick en Supabase
-                            update_data = {
+                            # Guardar TODAS las predicciones
+                            pick_data = {
+                                'fecha': str(date.today()),
+                                'liga': stats_local.get('liga', 'Desconocida'),
+                                'equipo_local': home,
+                                'equipo_visitante': away,
+                                
+                                # 1X2
+                                'prediccion_1x2': pick_1x2,
+                                'prob_1x2': predicciones_act.get('1x2', {}).get('prob', 0),
+                                'p1': float(r.get('p1', 0)),
+                                'px': float(r.get('px', 0)),
+                                'p2': float(r.get('p2', 0)),
+                                
+                                # Over/Under
+                                'prediccion_ou': pick_ou,
+                                'prob_ou': predicciones_act.get('over_under', {}).get('prob', 0),
+                                'over_25': predicciones_act.get('over_under', {}).get('over_25', 0),
+                                'under_25': predicciones_act.get('over_under', {}).get('under_25', 0),
+                                
+                                # BTTS
+                                'prediccion_btts': pick_btts,
+                                'prob_btts': predicciones_act.get('btts', {}).get('prob', 0),
+                                'btts_yes': predicciones_act.get('btts', {}).get('yes', 0),
+                                'btts_no': predicciones_act.get('btts', {}).get('no', 0),
+                                
+                                # Corners
+                                'prediccion_corners': predicciones_act.get('corners', {}).get('pick', ''),
+                                'corners_total_estimado': predicciones_act.get('corners', {}).get('total', 0),
+                                
+                                # Confianza
+                                'confianza': int(confianza),
+                                'rango': rango,
+                                
+                                # Resultados (si existen)
                                 'marcador': marcador if marcador else None,
                                 'resultado_real_1x2': resultado_1x2_real,
                                 'resultado_real_ou': resultado_ou_real,
@@ -705,11 +672,13 @@ else:
                                 'acertado_1x2': acertado_1x2,
                                 'acertado_ou': acertado_ou,
                                 'acertado_btts': acertado_btts,
+                                'lambda_local_original': float(r.get('lambda_local', 0)),
+                                'lambda_visitante_original': float(r.get('lambda_visitante', 0)),
                             }
                             
-                            client.table('picks').update(update_data).eq('id', pick_id).execute()
+                            client.table('picks').insert(pick_data).execute()
                             
-                            # Registrar en calibración
+                            # Registrar en calibración si hay marcador
                             if marcador and total_goles_local > 0:
                                 try:
                                     registrar_resultado(
@@ -719,7 +688,7 @@ else:
                                         lambda_visitante_predicha=float(r.get('lambda_visitante', 0)),
                                         goles_local_real=total_goles_local,
                                         goles_visitante_real=total_goles_visitante,
-                                        predicciones=predicciones,
+                                        predicciones=predicciones_act,
                                         resultado_real=resultado_1x2_real,
                                         marcador=marcador,
                                         confianza=int(confianza),
@@ -729,11 +698,11 @@ else:
                                 except Exception as cal_err:
                                     pass
                             
-                            st.success("✅ Resultado guardado!")
+                            st.success("✅ Partido guardado con todas las predicciones!")
                             st.balloons()
                             
-                    except Exception as e:
-                        st.error(f"❌ Error: {str(e)[:100]}")
+                        except Exception as e:
+                            st.error(f"❌ Error: {str(e)[:100]}")
             
             # ========================
             # PROBABILIDADES 1X2
