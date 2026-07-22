@@ -603,7 +603,7 @@ else:
                             client = create_client(SUPABASE_URL, SUPABASE_KEY)
                             r = st.session_state.analysis_result
                             
-                            # Guardar predicciones básicas
+                            # Guardar TODAS las predicciones
                             pick_1x2 = predicciones_act.get('1x2', {}).get('pick', '')
                             pick_data = {
                                 'fecha': str(date.today()),
@@ -619,6 +619,8 @@ else:
                                 'prediccion_ou': predicciones_act.get('over_under', {}).get('pick', ''),
                                 'prediccion_btts': predicciones_act.get('btts', {}).get('pick', ''),
                                 'prediccion_corners': predicciones_act.get('corners', {}).get('pick', ''),
+                                'prediccion_remates': predicciones_act.get('remates', {}).get('pick', ''),
+                                'prediccion_tarjetas': predicciones_act.get('tarjetas', {}).get('pick', ''),
                                 'confianza': int(confianza),
                             }
                             
