@@ -138,6 +138,14 @@ curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploy
 
 ## 📅 Historial de Cambios
 
+### 2026-07-22 - Sesión Dashboard
+
+| Cambio | Descripción |
+|--------|-------------|
+| Nueva página Dashboard | Métricas de rendimiento, distribución por confianza/rango |
+| Menú con 5 páginas | Carga, Analizador, Estadísticas, Dashboard, Claves |
+| Historial de picks | Muestra últimas 20 predicciones |
+
 ### 2026-07-22 - Sesión Arreglos
 
 | Cambio | Descripción |
