@@ -447,7 +447,93 @@ else:
                         st.session_state.away = away_team
                         st.session_state.stats_local = stats_local
                         st.session_state.stats_visitante = stats_visitante
-                        st.session_state.analysis_result = result
+                        
+                        # =============================================
+                        # GUARDADO AUTOMATICO - TODAS LAS PREDICCIONES
+                        # =============================================
+                        try:
+                            client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                            
+                            # Obtener todas las predicciones
+                            predicciones = {
+                                '1x2': {
+                                    'pick': result.get('pick_1x2', ''),
+                                    'prob': float(result.get('prob_1x2', 0))
+                                },
+                                'over_under': {
+                                    'pick': result.get('pick_over_under', ''),
+                                    'prob': float(result.get('prob_over_under', 0)),
+                                    'over_25': float(result.get('over_under', {}).get('over_25', 0)),
+                                    'under_25': float(result.get('over_under', {}).get('under_25', 0))
+                                },
+                                'btts': {
+                                    'pick': result.get('pick_btts', ''),
+                                    'prob': float(result.get('btts_yes', 0)),
+                                    'yes': float(result.get('btts_yes', 0)),
+                                    'no': float(result.get('btts_no', 0))
+                                },
+                                'corners': {
+                                    'pick': result.get('pick_corners', ''),
+                                    'total': float(result.get('corners', {}).get('total_estimado', 0))
+                                }
+                            }
+                            
+                            pick_data = {
+                                'fecha': str(date.today()),
+                                'liga': stats_local.get('liga', 'Desconocida'),
+                                'equipo_local': home_team,
+                                'equipo_visitante': away_team,
+                                
+                                # 1X2
+                                'prediccion_1x2': predicciones['1x2']['pick'],
+                                'prob_1x2': predicciones['1x2']['prob'],
+                                'p1': float(result.get('p1', 0)),
+                                'px': float(result.get('px', 0)),
+                                'p2': float(result.get('p2', 0)),
+                                
+                                # Over/Under
+                                'prediccion_ou': predicciones['over_under']['pick'],
+                                'prob_ou': predicciones['over_under']['prob'],
+                                'over_25': predicciones['over_under']['over_25'],
+                                'under_25': predicciones['over_under']['under_25'],
+                                
+                                # BTTS
+                                'prediccion_btts': predicciones['btts']['pick'],
+                                'prob_btts': predicciones['btts']['prob'],
+                                'btts_yes': predicciones['btts']['yes'],
+                                'btts_no': predicciones['btts']['no'],
+                                
+                                # Corners
+                                'prediccion_corners': predicciones['corners']['pick'],
+                                'corners_total_estimado': predicciones['corners']['total'],
+                                
+                                # Confianza
+                                'confianza': int(result.get('confianza', 0)),
+                                'rango': result.get('rango', 'D'),
+                                'confianza_1x2': int(result.get('confianza', 0)),
+                                'confianza_ou': int(result.get('confianza', 0)),
+                                'confianza_btts': int(result.get('confianza', 0)),
+                                
+                                # Metadatos (se llenan cuando hay resultado)
+                                'marcador': None,
+                                'resultado_real_1x2': None,
+                                'resultado_real_ou': None,
+                                'resultado_real_btts': None,
+                                'acertado_1x2': None,
+                                'acertado_ou': None,
+                                'acertado_btts': None,
+                                'lambda_local_original': float(lambda_local),
+                                'lambda_visitante_original': float(lambda_visitante),
+                            }
+                            
+                            # Guardar y obtener el ID
+                            insert_resp = client.table('picks').insert(pick_data).execute()
+                            if insert_resp.data:
+                                st.session_state.last_pick_id = insert_resp.data[0].get('id')
+                                st.session_state.last_predicciones = predicciones
+                            
+                        except Exception as e:
+                            pass  # No mostrar error, el analisis funciona
                         
                         # NO guardar automáticamente - el usuario decide cuándo guardar
                             
@@ -561,66 +647,93 @@ else:
             
             with col_guardar3:
                 st.markdown("<br>", unsafe_allow_html=True)
-                if st.button("💾 Guardar Pick", type="primary", use_container_width=True):
+                if st.button("💾 Guardar Resultado", type="primary", use_container_width=True):
                     try:
                         client = create_client(SUPABASE_URL, SUPABASE_KEY)
                         
-                        # Determinar si acertó
-                        acertado = None
-                        if resultado_real and pick:
-                            if resultado_real == pick:
-                                acertado = True
-                            else:
-                                acertado = False
+                        # Obtener el ID del ultimo pick guardado
+                        pick_id = st.session_state.get('last_pick_id')
+                        predicciones = st.session_state.get('last_predicciones', {})
                         
-                        pick_data = {
-                            'fecha': str(date.today()),
-                            'liga': stats_local.get('liga', 'Desconocida'),
-                            'equipo_local': home,
-                            'equipo_visitante': away,
-                            'prediccion_final': pick,
-                            'probabilidad_final': float(r.get('prob_1x2', 0)),
-                            'confianza': int(confianza),
-                            'rango': rango,
-                            'marcador': marcador if marcador else None,
-                            'resultado_real': resultado_real if resultado_real else None,
-                            'acertado': acertado,
-                            'forma_local_pct': float(r.get('forma_local', {}).get('forma_puntos', 0)),
-                            'forma_visitante_pct': float(r.get('forma_visitante', {}).get('forma_puntos', 0)),
-                        }
-                        
-                        client.table('picks').insert(pick_data).execute()
-                        
-                        # Registrar en calibración si hay resultado
-                        if resultado_real and marcador:
-                            try:
-                                # Parsear marcador
+                        if not pick_id:
+                            st.warning("No hay pick reciente para actualizar")
+                        else:
+                            # Parsear marcador
+                            total_goles_local = 0
+                            total_goles_visitante = 0
+                            if marcador:
                                 partes = marcador.split('-')
                                 if len(partes) == 2:
-                                    goles_local = int(partes[0].strip())
-                                    goles_visitante = int(partes[1].strip())
-                                    
-                                    # Registrar para calibración
+                                    total_goles_local = int(partes[0].strip())
+                                    total_goles_visitante = int(partes[1].strip())
+                            
+                            # Determinar resultados reales
+                            resultado_1x2_real = resultado_real if resultado_real else None
+                            resultado_ou_real = None
+                            resultado_btts_real = None
+                            
+                            if total_goles_local > 0 or total_goles_visitante > 0:
+                                total_goles = total_goles_local + total_goles_visitante
+                                resultado_ou_real = "Over 2.5" if total_goles > 2.5 else "Under 2.5"
+                                resultado_btts_real = "Si" if (total_goles_local > 0 and total_goles_visitante > 0) else "No"
+                            
+                            # Calcular aciertos
+                            pick_1x2 = predicciones.get('1x2', {}).get('pick', pick)
+                            acertado_1x2 = None
+                            if resultado_1x2_real and pick_1x2:
+                                acertado_1x2 = (resultado_1x2_real == pick_1x2)
+                            
+                            pick_ou = predicciones.get('over_under', {}).get('pick', r.get('pick_over_under', ''))
+                            acertado_ou = None
+                            if resultado_ou_real:
+                                acertado_ou = (("Over" in pick_ou and total_goles > 2.5) or 
+                                              ("Under" in pick_ou and total_goles <= 2.5))
+                            
+                            pick_btts = predicciones.get('btts', {}).get('pick', r.get('pick_btts', ''))
+                            acertado_btts = None
+                            if resultado_btts_real:
+                                ambos_marcan = (total_goles_local > 0 and total_goles_visitante > 0)
+                                acertado_btts = (("Si" in pick_btts and ambos_marcan) or 
+                                                ("No" in pick_btts and not ambos_marcan))
+                            
+                            # Actualizar pick en Supabase
+                            update_data = {
+                                'marcador': marcador if marcador else None,
+                                'resultado_real_1x2': resultado_1x2_real,
+                                'resultado_real_ou': resultado_ou_real,
+                                'resultado_real_btts': resultado_btts_real,
+                                'acertado_1x2': acertado_1x2,
+                                'acertado_ou': acertado_ou,
+                                'acertado_btts': acertado_btts,
+                            }
+                            
+                            client.table('picks').update(update_data).eq('id', pick_id).execute()
+                            
+                            # Registrar en calibración
+                            if marcador and total_goles_local > 0:
+                                try:
                                     registrar_resultado(
                                         equipo_local=home,
                                         equipo_visitante=away,
                                         lambda_local_predicha=float(r.get('lambda_local', 0)),
                                         lambda_visitante_predicha=float(r.get('lambda_visitante', 0)),
-                                        goles_local_real=goles_local,
-                                        goles_visitante_real=goles_visitante,
-                                        prediccion=pick,
-                                        resultado_real=resultado_real,
+                                        goles_local_real=total_goles_local,
+                                        goles_visitante_real=total_goles_visitante,
+                                        predicciones=predicciones,
+                                        resultado_real=resultado_1x2_real,
+                                        marcador=marcador,
                                         confianza=int(confianza),
                                         rango=rango
                                     )
                                     st.info("🔧 Calibración actualizada")
-                            except Exception as cal_err:
-                                pass  # No mostrar error de calibración
-                        
-                        st.success("✅ Pick guardado exitosamente!")
-                        st.balloons()
+                                except Exception as cal_err:
+                                    pass
+                            
+                            st.success("✅ Resultado guardado!")
+                            st.balloons()
+                            
                     except Exception as e:
-                        st.error(f"❌ Error al guardar: {str(e)[:50]}")
+                        st.error(f"❌ Error: {str(e)[:100]}")
             
             # ========================
             # PROBABILIDADES 1X2
@@ -1158,21 +1271,33 @@ else:
         # Obtener picks de Supabase
         try:
             client = create_client(SUPABASE_URL, SUPABASE_KEY)
-            response = client.table('picks').select('*').order('fecha', desc=True).limit(100).execute()
+            response = client.table('picks').select('*').order('fecha', desc=True).limit(200).execute()
             picks = response.data if response.data else []
         except Exception as e:
             picks = []
             st.warning(f"No se pudo conectar a Supabase: {str(e)[:50]}")
         
+        # Obtener estadísticas de calibración
+        stats_cal = obtener_estadisticas_calibracion()
+        
         # Métricas generales
         total_picks = len(picks)
         
         if total_picks > 0:
-            # Calcular métricas de aciertos
-            picks_resueltos = [p for p in picks if p.get('acertado') is not None]
-            acertados = len([p for p in picks_resueltos if p.get('acertado') == True])
-            fallados = len([p for p in picks_resueltos if p.get('acertado') == False])
-            pct_acierto = (acertados / len(picks_resueltos) * 100) if picks_resueltos else 0
+            # 1X2
+            picks_1x2_resueltos = [p for p in picks if p.get('acertado_1x2') is not None]
+            acertados_1x2 = len([p for p in picks_1x2_resueltos if p.get('acertado_1x2') == True])
+            pct_1x2 = (acertados_1x2 / len(picks_1x2_resueltos) * 100) if picks_1x2_resueltos else 0
+            
+            # Over/Under
+            picks_ou_resueltos = [p for p in picks if p.get('acertado_ou') is not None]
+            acertados_ou = len([p for p in picks_ou_resueltos if p.get('acertado_ou') == True])
+            pct_ou = (acertados_ou / len(picks_ou_resueltos) * 100) if picks_ou_resueltos else 0
+            
+            # BTTS
+            picks_btts_resueltos = [p for p in picks if p.get('acertado_btts') is not None]
+            acertados_btts = len([p for p in picks_btts_resueltos if p.get('acertado_btts') == True])
+            pct_btts = (acertados_btts / len(picks_btts_resueltos) * 100) if picks_btts_resueltos else 0
             
             # Distribución por rango
             rango_a = len([p for p in picks if p.get('rango', '') in ['A+', 'A']])
@@ -1181,23 +1306,23 @@ else:
             rango_d = len([p for p in picks if p.get('rango', '') == 'D'])
             
             # Alta confianza
-            alta_confianza = [p for p in picks if p.get('confianza', 0) >= 70]
-            alta_conf_acertados = len([p for p in alta_confianza if p.get('acertado') == True])
-            pct_alta_conf = (alta_conf_acertados / len(alta_confianza) * 100) if alta_confianza else 0
+            alta_conf = [p for p in picks if p.get('confianza', 0) >= 70]
+            alta_conf_acertados = len([p for p in alta_conf if p.get('acertado_1x2') == True])
+            pct_alta_conf = (alta_conf_acertados / len(alta_conf) * 100) if alta_conf else 0
             
             # Mostrar métricas
-            st.markdown("##### 📊 Resumen de Rendimiento")
+            st.markdown("##### 📊 Resumen de Rendimiento por Tipo")
             col1, col2, col3, col4 = st.columns(4)
             with col1:
                 st.metric("Total Picks", total_picks)
             with col2:
-                st.metric("✅ Acertados", acertados, delta=f"{pct_acierto:.1f}%")
+                st.metric("1X2", acertados_1x2, delta=f"{pct_1x2:.1f}%")
             with col3:
-                st.metric("❌ Fallados", fallados)
+                st.metric("Over/Under", acertados_ou, delta=f"{pct_ou:.1f}%")
             with col4:
-                st.metric("⏳ Pendientes", total_picks - len(picks_resueltos))
+                st.metric("BTTS", acertados_btts, delta=f"{pct_btts:.1f}%")
             
-            st.markdown("##### 📈 Rendimiento por Rango")
+            st.markdown("##### 📈 Distribución por Rango")
             col1, col2, col3, col4 = st.columns(4)
             with col1:
                 st.metric("🟢 Rango A", rango_a)
@@ -1211,33 +1336,46 @@ else:
             st.markdown("##### 💡 Alta Confianza (≥70%)")
             col1, col2 = st.columns(2)
             with col1:
-                st.metric("Picks Alta Confianza", len(alta_confianza))
+                st.metric("Picks", len(alta_conf))
             with col2:
-                st.metric("Aciertos Alta Confianza", alta_conf_acertados, delta=f"{pct_alta_conf:.1f}%")
+                st.metric("Aciertos 1X2", alta_conf_acertados, delta=f"{pct_alta_conf:.1f}%")
+            
+            st.markdown("##### 🔧 Calibración")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Equipos Calibrados", stats_cal.get('equipos_calibrados', 0))
+            with col2:
+                st.metric("Registros Cal.", stats_cal.get('total_picks', 0))
+            with col3:
+                if st.button("🔄 Resetear Calibración"):
+                    resetear_calibracion()
+                    st.success("Calibración reseteada")
+                    st.rerun()
             
             # Lista de picks
-            st.markdown("##### 📋 Picks Guardados")
+            st.markdown("##### 📋 Picks Recientes")
             
             if picks:
-                # Mostrar tabla con resultado
                 data = []
-                for p in picks[:30]:
-                    acertado = p.get('acertado')
-                    if acertado == True:
-                        resultado_icon = "✅"
-                    elif acertado == False:
-                        resultado_icon = "❌"
-                    else:
-                        resultado_icon = "⏳"
+                for p in picks[:50]:
+                    res_1x2 = p.get('acertado_1x2')
+                    res_ou = p.get('acertado_ou')
+                    res_btts = p.get('acertado_btts')
+                    
+                    def icon(v):
+                        if v == True: return "✅"
+                        if v == False: return "❌"
+                        return "⏳"
                     
                     data.append({
                         'Fecha': p.get('fecha', ''),
                         'Partido': f"{p.get('equipo_local', '')} vs {p.get('equipo_visitante', '')}",
-                        'Pick': p.get('prediccion_final', ''),
+                        'Pick': p.get('prediccion_1x2', ''),
+                        '1X2': icon(res_1x2),
+                        'O/U': icon(res_ou),
+                        'BTTS': icon(res_btts),
                         'Conf': f"{p.get('confianza', 0)}%",
-                        'Rango': p.get('rango', ''),
                         'Marcador': p.get('marcador', '-'),
-                        'Resultado': resultado_icon
                     })
                 
                 import pandas as pd
@@ -1248,13 +1386,14 @@ else:
         else:
             st.info("🎯 No hay picks guardados aún.")
             st.markdown("""
-            ### 📖 Cómo guardar un pick:
+            ### 📖 Cómo funciona:
             
             1. **Ve a 📊 Analizador**
             2. **Selecciona dos equipos**
             3. **Haz clic en 🎯 ANALIZAR**
-            4. **Completa Marcador y Resultado**
-            5. **Clic en 💾 Guardar Pick**
+            4. **El análisis se guarda automáticamente**
+            5. **Ingresa el marcador y guarda el resultado**
+            6. **El sistema recalibra las predicciones**
             
             Vuelve aquí para ver tu rendimiento.
             """)
