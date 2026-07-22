@@ -636,8 +636,8 @@ else:
                                 # REMATES - Predicción y probabilidades
                                 'prediccion_remates': predicciones_act.get('remates', {}).get('pick', ''),
                                 'remates_total_estimado': predicciones_act.get('remates', {}).get('total', 0),
-                                'remates_local_estimado': predicciones_act.get('remates', {}).get('local', 0),
-                                'remates_visitante_estimado': predicciones_act.get('remates', {}).get('visitante', 0),
+                                'remates_local': predicciones_act.get('remates', {}).get('local', 0),
+                                'remates_visitante': predicciones_act.get('remates', {}).get('visitante', 0),
                                 'over_remates': predicciones_act.get('remates', {}).get('over_prob', 0),
                                 'under_remates': predicciones_act.get('remates', {}).get('under_prob', 0),
                                 
