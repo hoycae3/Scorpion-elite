@@ -777,21 +777,25 @@ else:
             
             with col_remates:
                 remates_icon = "📈" if pick_remates == "Over" else "📉"
+                remates_color = "#00ff88" if pick_remates == "Over" else "#ff6b6b"
                 st.markdown(f"""
                 <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; height: 100%;">
                     <p style="color: #888; margin: 0; font-size: 10px;">Remates</p>
-                    <p style="color: #00ff88; margin: 5px 0; font-size: 14px; font-weight: bold;">{remates_icon} {pick_remates}</p>
-                    <p style="color: #fff; margin: 0; font-size: 13px; font-weight: bold;">{remates_over_prob:.0f}%</p>
+                    <p style="color: #00ff88; margin: 5px 0; font-size: 16px; font-weight: bold;">{remates_total:.0f}</p>
+                    <p style="color: {remates_color}; margin: 5px 0; font-size: 12px; font-weight: bold;">{remates_icon} {pick_remates}</p>
+                    <p style="color: #fff; margin: 0; font-size: 12px;">{remates_over_prob:.0f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_tarjetas:
                 tarjetas_icon = "📈" if pick_tarjetas == "Over" else "📉"
+                tarjetas_color = "#00ff88" if pick_tarjetas == "Over" else "#ff6b6b"
                 st.markdown(f"""
                 <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; height: 100%;">
                     <p style="color: #888; margin: 0; font-size: 10px;">🟨 Tarjetas</p>
-                    <p style="color: #ffd700; margin: 5px 0; font-size: 14px; font-weight: bold;">{tarjetas_icon} {pick_tarjetas}</p>
-                    <p style="color: #fff; margin: 0; font-size: 13px; font-weight: bold;">{tarjetas_over_prob:.0f}%</p>
+                    <p style="color: #ffd700; margin: 5px 0; font-size: 16px; font-weight: bold;">{tarjetas_total:.1f}</p>
+                    <p style="color: {tarjetas_color}; margin: 5px 0; font-size: 12px; font-weight: bold;">{tarjetas_icon} {pick_tarjetas}</p>
+                    <p style="color: #fff; margin: 0; font-size: 12px;">{tarjetas_over_prob:.0f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
