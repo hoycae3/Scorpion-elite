@@ -141,27 +141,190 @@ CREATE TABLE IF NOT EXISTS picks (
     liga VARCHAR(255),
     equipo_local VARCHAR(255),
     equipo_visitante VARCHAR(255),
-    -- Pick info
-    pick VARCHAR(10) NOT NULL,
-    cuota DECIMAL(5,2),
-    stake DECIMAL(10,2) DEFAULT 0,
-    -- Resultado
-    resultado VARCHAR(20) DEFAULT 'pending',
-    ganancia DECIMAL(10,2) DEFAULT 0,
-    -- Análisis
+    
+    -- 1X2
+    prediccion_1x2 VARCHAR(10),
+    prob_1x2 DECIMAL(5,2),
+    p1 DECIMAL(5,2),
+    px DECIMAL(5,2),
+    p2 DECIMAL(5,2),
+    
+    -- Over/Under
+    prediccion_ou VARCHAR(20),
+    prob_ou DECIMAL(5,2),
+    over_25 DECIMAL(5,2),
+    under_25 DECIMAL(5,2),
+    
+    -- BTTS
+    prediccion_btts VARCHAR(10),
+    prob_btts DECIMAL(5,2),
+    btts_yes DECIMAL(5,2),
+    btts_no DECIMAL(5,2),
+    
+    -- Corners
+    prediccion_corners VARCHAR(20),
+    corners_total_estimado DECIMAL(5,2),
+    
+    -- Remates
+    prediccion_remates VARCHAR(20),
+    remates_total_estimado DECIMAL(5,2),
+    remates_local DECIMAL(5,2),
+    remates_visitante DECIMAL(5,2),
+    over_remates DECIMAL(5,2),
+    under_remates DECIMAL(5,2),
+    
+    -- Tarjetas
+    prediccion_tarjetas VARCHAR(20),
+    tarjetas_total_estimado DECIMAL(5,2),
+    tarjetas_over_prob DECIMAL(5,2),
+    tarjetas_under_prob DECIMAL(5,2),
+    
+    -- Confianza
     confianza INTEGER,
-    modelos_used VARCHAR(100),
-    probabilidad_modelo DECIMAL(5,2),
+    rango VARCHAR(5),
+    
+    -- Resultados (para evaluar después)
+    resultado_1x2 VARCHAR(10),
+    resultado_ou VARCHAR(20),
+    resultado_btts VARCHAR(10),
+    resultado_remates VARCHAR(20),
+    resultado_tarjetas VARCHAR(20),
+    acertado_1x2 BOOLEAN,
+    acertado_ou BOOLEAN,
+    acertado_btts BOOLEAN,
+    acertado_remates BOOLEAN,
+    acertado_tarjetas BOOLEAN,
+    
     -- Metadatos
-    notes TEXT,
+    lambda_local DECIMAL(5,2),
+    lambda_visitante DECIMAL(5,2),
     creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_picks_fecha ON picks(fecha);
-CREATE INDEX IF NOT EXISTS idx_picks_resultado ON picks(resultado);
+CREATE INDEX IF NOT EXISTS idx_picks_resultado ON picks(resultado_1x2);
 
 ALTER TABLE picks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "picks_all" ON picks FOR ALL USING (true) WITH CHECK (true);
+
+-- ALTER para agregar columnas si la tabla ya existe
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'prediccion_1x2') THEN
+        ALTER TABLE picks ADD COLUMN prediccion_1x2 VARCHAR(10);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'prob_1x2') THEN
+        ALTER TABLE picks ADD COLUMN prob_1x2 DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'p1') THEN
+        ALTER TABLE picks ADD COLUMN p1 DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'px') THEN
+        ALTER TABLE picks ADD COLUMN px DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'p2') THEN
+        ALTER TABLE picks ADD COLUMN p2 DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'prediccion_ou') THEN
+        ALTER TABLE picks ADD COLUMN prediccion_ou VARCHAR(20);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'prob_ou') THEN
+        ALTER TABLE picks ADD COLUMN prob_ou DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'over_25') THEN
+        ALTER TABLE picks ADD COLUMN over_25 DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'under_25') THEN
+        ALTER TABLE picks ADD COLUMN under_25 DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'prediccion_btts') THEN
+        ALTER TABLE picks ADD COLUMN prediccion_btts VARCHAR(10);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'prob_btts') THEN
+        ALTER TABLE picks ADD COLUMN prob_btts DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'btts_yes') THEN
+        ALTER TABLE picks ADD COLUMN btts_yes DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'btts_no') THEN
+        ALTER TABLE picks ADD COLUMN btts_no DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'prediccion_corners') THEN
+        ALTER TABLE picks ADD COLUMN prediccion_corners VARCHAR(20);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'corners_total_estimado') THEN
+        ALTER TABLE picks ADD COLUMN corners_total_estimado DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'prediccion_remates') THEN
+        ALTER TABLE picks ADD COLUMN prediccion_remates VARCHAR(20);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'remates_total_estimado') THEN
+        ALTER TABLE picks ADD COLUMN remates_total_estimado DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'remates_local') THEN
+        ALTER TABLE picks ADD COLUMN remates_local DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'remates_visitante') THEN
+        ALTER TABLE picks ADD COLUMN remates_visitante DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'over_remates') THEN
+        ALTER TABLE picks ADD COLUMN over_remates DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'under_remates') THEN
+        ALTER TABLE picks ADD COLUMN under_remates DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'prediccion_tarjetas') THEN
+        ALTER TABLE picks ADD COLUMN prediccion_tarjetas VARCHAR(20);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'tarjetas_total_estimado') THEN
+        ALTER TABLE picks ADD COLUMN tarjetas_total_estimado DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'tarjetas_over_prob') THEN
+        ALTER TABLE picks ADD COLUMN tarjetas_over_prob DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'tarjetas_under_prob') THEN
+        ALTER TABLE picks ADD COLUMN tarjetas_under_prob DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'rango') THEN
+        ALTER TABLE picks ADD COLUMN rango VARCHAR(5);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'resultado_1x2') THEN
+        ALTER TABLE picks ADD COLUMN resultado_1x2 VARCHAR(10);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'resultado_ou') THEN
+        ALTER TABLE picks ADD COLUMN resultado_ou VARCHAR(20);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'resultado_btts') THEN
+        ALTER TABLE picks ADD COLUMN resultado_btts VARCHAR(10);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'resultado_remates') THEN
+        ALTER TABLE picks ADD COLUMN resultado_remates VARCHAR(20);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'resultado_tarjetas') THEN
+        ALTER TABLE picks ADD COLUMN resultado_tarjetas VARCHAR(20);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'acertado_1x2') THEN
+        ALTER TABLE picks ADD COLUMN acertado_1x2 BOOLEAN;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'acertado_ou') THEN
+        ALTER TABLE picks ADD COLUMN acertado_ou BOOLEAN;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'acertado_btts') THEN
+        ALTER TABLE picks ADD COLUMN acertado_btts BOOLEAN;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'acertado_remates') THEN
+        ALTER TABLE picks ADD COLUMN acertado_remates BOOLEAN;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'acertado_tarjetas') THEN
+        ALTER TABLE picks ADD COLUMN acertado_tarjetas BOOLEAN;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'lambda_local') THEN
+        ALTER TABLE picks ADD COLUMN lambda_local DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'lambda_visitante') THEN
+        ALTER TABLE picks ADD COLUMN lambda_visitante DECIMAL(5,2);
+    END IF;
+END $$;
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- TABLA HISTORIAL_PREDICCIONES
