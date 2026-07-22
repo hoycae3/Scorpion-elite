@@ -351,15 +351,9 @@ else:
         except:
             equipos_disponibles = []
         
-        # Selector de equipos (compactos)
-        st.markdown("""
-        <style>
-        .stSelectbox > div > div {min-height: 36px !important;}
-        div[data-baseweb="select"] > div {min-height: 36px !important;}
-        </style>
-        """, unsafe_allow_html=True)
+        # Selector de equipos (compactos y centrados)
+        col_space, col1, col2, col_space2 = st.columns([1, 2, 2, 1])
         
-        col1, col2 = st.columns(2)
         with col1:
             st.markdown("**🏠 Local**")
             home_team = st.selectbox("", [""] + equipos_disponibles, key="home_select", label_visibility="collapsed")
