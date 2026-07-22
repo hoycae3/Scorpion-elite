@@ -339,28 +339,27 @@ def calcular(
     mc = monte_carlo(xl, xv)
     p1_mc, px_mc, p2_mc = mc["p1"], mc["px"], mc["p2"]
     
-    # Combinar modelos de goles
-    p1 = round(p1_po * 0.30 + p1_dc * 0.25 + p1_mc * 0.20, 1)
-    px = round(px_po * 0.30 + px_dc * 0.25 + px_mc * 0.20, 1)
+    # Usar Poisson como modelo principal (más simple y directo)
+    p1 = round(p1_po, 1)
+    px = round(px_po, 1)
     p2 = round(max(0, 100 - p1 - px), 1)
+    
+    # ANÁLISIS DE FORMA RECIENTE (para ajustar confianza, no predicción)
+    forma_local = analizar_forma_reciente(ultimos_5_local) if ultimos_5_local else {'forma_puntos': 50}
+    forma_visitante = analizar_forma_reciente(ultimos_5_visitante) if ultimos_5_visitante else {'forma_puntos': 50}
+    
+    # Ajuste MÍNIMO por forma (solo 2% máximo)
+    ajuste_forma = (forma_local['forma_puntos'] - forma_visitante['forma_puntos']) / 100 * 2
+    p1_ajustado = max(0, min(100, p1 + ajuste_forma))
+    p2_ajustado = max(0, min(100, p2 - ajuste_forma))
+    px_ajustado = max(0, min(100, 100 - p1_ajustado - p2_ajustado))
     
     # OVER/UNDER
     ou = poisson_over_under(xl, xv)
     
     # AMBOS MARCAN (BTTS)
-    # Probabilidad de que ambos marquen ≈ P(gl>0) * P(gv>0)
     p_btts_yes = round((1 - pp(xl, 0)) * (1 - pp(xv, 0)) * 100, 1)
     p_btts_no = round(100 - p_btts_yes, 1)
-    
-    # ANÁLISIS DE FORMA RECIENTE
-    forma_local = analizar_forma_reciente(ultimos_5_local)
-    forma_visitante = analizar_forma_reciente(ultimos_5_visitante)
-    
-    # Ajustar probabilidades basándose en forma reciente
-    ajuste_forma = (forma_local['forma_puntos'] - forma_visitante['forma_puntos']) / 100 * 5
-    p1_ajustado = max(0, min(100, p1 + ajuste_forma))
-    p2_ajustado = max(0, min(100, p2 - ajuste_forma))
-    px_ajustado = max(0, min(100, 100 - p1_ajustado - p2_ajustado))
     
     # ESTILO DE JUEGO
     estilo_local = analizar_estilo_juego(corners_local, tarjetas_local, tiros_local, tiros_arco_local)
@@ -372,12 +371,9 @@ def calcular(
         estilo_local, estilo_visitante
     )
     
-    # CONFIANZA - basada en acuerdo entre modelos
-    conf = round(max(0, min(100, 100 - (
-        abs(p1_po - p1_dc) * 0.5 +
-        abs(p1_po - p1_mc) * 0.3 +
-        abs(p1_ajustado - p1) * 0.2
-    ))))
+    # CONFIANZA - basada en la diferencia entre probabilidades y el sesgo del favorito
+    diff = abs(p1_ajustado - p2_ajustado)
+    conf = round(max(0, min(100, diff * 1.5)))
     
     # RANGO
     if conf >= 80:
@@ -409,11 +405,16 @@ def calcular(
     # Pick Corners
     pick_corners = f"Over {prediccion_corners['total_estimado']:.0f}" if prediccion_corners['over_95'] > 50 else f"Under {prediccion_corners['total_estimado']:.0f}"
     
+    # Marcador predicho (basado en lambdas de Poisson)
+    marcador_predicho = f"{xl:.1f}-{xv:.1f}"
+    
     return {
         # Datos de entrada
         "lambda_local": xl,
         "lambda_visitante": xv,
-        "goles_esperados": round((xl + xv) / 2 * 2, 1),
+        "goles_local": round(xl, 1),
+        "goles_visitante": round(xv, 1),
+        "marcador_predicho": marcador_predicho,
         
         # 1X2
         "p1": p1_ajustado,

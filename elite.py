@@ -569,6 +569,7 @@ else:
             pick = r.get('pick_1x2', 'X')
             confianza = r.get('confianza', 0)
             rango = r.get('rango', 'D')
+            marcador = r.get('marcador_predicho', f"{r.get('lambda_local', 0):.1f}-{r.get('lambda_visitante', 0):.1f}")
             
             pick_icon = {"1": "🏠", "X": "🤝", "2": "✈️"}
             rango_color = {"A+": "🟢", "A": "🟢", "B": "🔵", "C": "🟡", "D": "🔴"}
@@ -577,6 +578,7 @@ else:
             <div style="background: #1a1a2e; border: 1px solid #00d4ff; border-radius: 8px; padding: 12px 20px; text-align: center; margin: 10px auto; max-width: 500px;">
                 <p style="color: #00d4ff; margin: 0; font-size: 10px; font-weight: 600; letter-spacing: 1px;">⚡ ANÁLISIS</p>
                 <p style="color: white; margin: 5px 0; font-size: 18px;">⚽ {home} vs {away}</p>
+                <p style="color: #00d4ff; margin: 3px 0; font-size: 14px;">Expected Score: {marcador}</p>
                 <p style="color: #00d4ff; margin: 8px 0; font-size: 28px; font-weight: bold;">
                     {pick_icon.get(pick, '🎯')} {pick}
                 </p>
