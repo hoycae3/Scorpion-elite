@@ -441,27 +441,9 @@ else:
                         st.session_state.away = away_team
                         st.session_state.stats_local = stats_local
                         st.session_state.stats_visitante = stats_visitante
+                        st.session_state.analysis_result = result
                         
-                        # GUARDAR AUTOMÁTICAMENTE EN HISTORIAL (opcional)
-                        try:
-                            client = create_client(SUPABASE_URL, SUPABASE_KEY)
-                            modelos = result.get('modelos', {})
-                            
-                            historial_data = {
-                                'fecha': str(date.today()),
-                                'liga': stats_local.get('liga', 'Desconocida'),
-                                'equipo_local': home_team,
-                                'equipo_visitante': away_team,
-                                'prediccion_final': result.get('pick_1x2', ''),
-                                'probabilidad_final': float(result.get('prob_1x2', 0)),
-                                'confianza': int(result.get('confianza', 0)),
-                                'rango': result.get('rango', 'D'),
-                                'forma_local_pct': float(result.get('forma_local', {}).get('forma_puntos', 0)),
-                                'forma_visitante_pct': float(result.get('forma_visitante', {}).get('forma_puntos', 0)),
-                            }
-                            client.table('historial_predicciones').insert(historial_data).execute()
-                        except Exception as e:
-                            pass  # No mostrar error, el análisis principal funciona
+                        # NO guardar automáticamente - el usuario decide cuándo guardar
                             
                 else:
                     st.error("⚠️ Ambos equipos deben tener estadísticas. Ejecuta el robot primero.")
@@ -542,6 +524,58 @@ else:
                 </span>
             </div>
             """, unsafe_allow_html=True)
+            
+            # ========================
+            # GUARDAR PICK MANUALMENTE
+            # ========================
+            st.markdown("---")
+            st.markdown("##### 💾 Guardar Pick")
+            
+            col_guardar1, col_guardar2, col_guardar3 = st.columns([1, 1, 1])
+            
+            with col_guardar1:
+                #输入 marcador
+                marcador = st.text_input("📊 Marcador (ej: 2-1)", key="marcador_input", placeholder="2-1")
+            
+            with col_guardar2:
+                # Resultado real
+                resultado_real = st.selectbox("✅ Resultado", ["", "1", "X", "2"], key="resultado_select")
+            
+            with col_guardar3:
+                st.markdown("<br>", unsafe_allow_html=True)
+                if st.button("💾 Guardar Pick", type="primary", use_container_width=True):
+                    try:
+                        client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                        
+                        # Determinar si acertó
+                        acertado = None
+                        if resultado_real and pick:
+                            if resultado_real == pick:
+                                acertado = True
+                            else:
+                                acertado = False
+                        
+                        pick_data = {
+                            'fecha': str(date.today()),
+                            'liga': stats_local.get('liga', 'Desconocida'),
+                            'equipo_local': home,
+                            'equipo_visitante': away,
+                            'prediccion_final': pick,
+                            'probabilidad_final': float(r.get('prob_1x2', 0)),
+                            'confianza': int(confianza),
+                            'rango': rango,
+                            'marcador': marcador if marcador else None,
+                            'resultado_real': resultado_real if resultado_real else None,
+                            'acertado': acertado,
+                            'forma_local_pct': float(r.get('forma_local', {}).get('forma_puntos', 0)),
+                            'forma_visitante_pct': float(r.get('forma_visitante', {}).get('forma_puntos', 0)),
+                        }
+                        
+                        client.table('picks').insert(pick_data).execute()
+                        st.success("✅ Pick guardado exitosamente!")
+                        st.balloons()
+                    except Exception as e:
+                        st.error(f"❌ Error al guardar: {str(e)[:50]}")
             
             # ========================
             # PROBABILIDADES 1X2
@@ -1074,87 +1108,108 @@ else:
 
     # ==================== PÁGINA: DASHBOARD ====================
     elif st.session_state.page == "Dashboard":
-        st.markdown("### 📉 Dashboard de Rendimiento")
+        st.markdown("### 📉 Dashboard de Picks")
         
-        # Obtener historial de Supabase
+        # Obtener picks de Supabase
         try:
             client = create_client(SUPABASE_URL, SUPABASE_KEY)
-            response = client.table('historial_predicciones').select('*').order('fecha', desc=True).limit(100).execute()
-            predicciones = response.data if response.data else []
+            response = client.table('picks').select('*').order('fecha', desc=True).limit(100).execute()
+            picks = response.data if response.data else []
         except Exception as e:
-            predicciones = []
+            picks = []
             st.warning(f"No se pudo conectar a Supabase: {str(e)[:50]}")
         
         # Métricas generales
-        total_picks = len(predicciones)
+        total_picks = len(picks)
         
         if total_picks > 0:
-            # Calcular métricas
-            confianza_alta = len([p for p in predicciones if p.get('confianza', 0) >= 70])
-            confianza_media = len([p for p in predicciones if 50 <= p.get('confianza', 0) < 70])
-            confianza_baja = len([p for p in predicciones if p.get('confianza', 0) < 50])
+            # Calcular métricas de aciertos
+            picks_resueltos = [p for p in picks if p.get('acertado') is not None]
+            acertados = len([p for p in picks_resueltos if p.get('acertado') == True])
+            fallados = len([p for p in picks_resueltos if p.get('acertado') == False])
+            pct_acierto = (acertados / len(picks_resueltos) * 100) if picks_resueltos else 0
             
             # Distribución por rango
-            rango_a = len([p for p in predicciones if p.get('rango', '') in ['A+', 'A']])
-            rango_b = len([p for p in predicciones if p.get('rango', '') == 'B'])
-            rango_c = len([p for p in predicciones if p.get('rango', '') == 'C'])
-            rango_d = len([p for p in predicciones if p.get('rango', '') == 'D'])
+            rango_a = len([p for p in picks if p.get('rango', '') in ['A+', 'A']])
+            rango_b = len([p for p in picks if p.get('rango', '') == 'B'])
+            rango_c = len([p for p in picks if p.get('rango', '') == 'C'])
+            rango_d = len([p for p in picks if p.get('rango', '') == 'D'])
+            
+            # Alta confianza
+            alta_confianza = [p for p in picks if p.get('confianza', 0) >= 70]
+            alta_conf_acertados = len([p for p in alta_confianza if p.get('acertado') == True])
+            pct_alta_conf = (alta_conf_acertados / len(alta_confianza) * 100) if alta_confianza else 0
             
             # Mostrar métricas
-            st.markdown("##### 📊 Estadísticas Generales")
+            st.markdown("##### 📊 Resumen de Rendimiento")
             col1, col2, col3, col4 = st.columns(4)
             with col1:
                 st.metric("Total Picks", total_picks)
             with col2:
-                st.metric("Alta Confianza", confianza_alta, delta=f"{confianza_alta/total_picks*100:.1f}%")
+                st.metric("✅ Acertados", acertados, delta=f"{pct_acierto:.1f}%")
             with col3:
-                st.metric("Confianza Media", confianza_media)
+                st.metric("❌ Fallados", fallados)
             with col4:
-                st.metric("Baja Confianza", confianza_baja)
+                st.metric("⏳ Pendientes", total_picks - len(picks_resueltos))
             
-            st.markdown("##### 📈 Distribución por Rango")
+            st.markdown("##### 📈 Rendimiento por Rango")
             col1, col2, col3, col4 = st.columns(4)
             with col1:
-                st.metric("Rango A (Excelente)", rango_a)
+                st.metric("🟢 Rango A", rango_a)
             with col2:
-                st.metric("Rango B (Bueno)", rango_b)
+                st.metric("🔵 Rango B", rango_b)
             with col3:
-                st.metric("Rango C (Regular)", rango_c)
+                st.metric("🟡 Rango C", rango_c)
             with col4:
-                st.metric("Rango D (Bajo)", rango_d)
+                st.metric("🔴 Rango D", rango_d)
             
-            # Últimas predicciones
-            st.markdown("##### 📋 Últimas Predicciones")
+            st.markdown("##### 💡 Alta Confianza (≥70%)")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Picks Alta Confianza", len(alta_confianza))
+            with col2:
+                st.metric("Aciertos Alta Confianza", alta_conf_acertados, delta=f"{pct_alta_conf:.1f}%")
             
-            if predicciones:
-                # Mostrar tabla
+            # Lista de picks
+            st.markdown("##### 📋 Picks Guardados")
+            
+            if picks:
+                # Mostrar tabla con resultado
                 data = []
-                for p in predicciones[:20]:
+                for p in picks[:30]:
+                    acertado = p.get('acertado')
+                    if acertado == True:
+                        resultado_icon = "✅"
+                    elif acertado == False:
+                        resultado_icon = "❌"
+                    else:
+                        resultado_icon = "⏳"
+                    
                     data.append({
                         'Fecha': p.get('fecha', ''),
-                        'Liga': p.get('liga', ''),
-                        'Local': p.get('equipo_local', ''),
-                        'Visitante': p.get('equipo_visitante', ''),
+                        'Partido': f"{p.get('equipo_local', '')} vs {p.get('equipo_visitante', '')}",
                         'Pick': p.get('prediccion_final', ''),
-                        'Prob': f"{p.get('probabilidad_final', 0):.1f}%",
                         'Conf': f"{p.get('confianza', 0)}%",
-                        'Rango': p.get('rango', '')
+                        'Rango': p.get('rango', ''),
+                        'Marcador': p.get('marcador', '-'),
+                        'Resultado': resultado_icon
                     })
                 
                 import pandas as pd
                 df = pd.DataFrame(data)
                 st.dataframe(df, use_container_width=True, hide_index=True)
             else:
-                st.info("📭 No hay predicciones guardadas aún")
+                st.info("📭 No hay picks guardados aún")
         else:
-            st.info("🎯 No hay datos de rendimiento aún. Las predicciones se guardarán automáticamente cuando analices partidos.")
+            st.info("🎯 No hay picks guardados aún.")
             st.markdown("""
-            ### 📖 Cómo funciona:
+            ### 📖 Cómo guardar un pick:
             
-            1. **Ve a la pestaña 📊 Analizador**
+            1. **Ve a 📊 Analizador**
             2. **Selecciona dos equipos**
             3. **Haz clic en 🎯 ANALIZAR**
-            4. **Los resultados se guardarán automáticamente**
+            4. **Completa Marcador y Resultado**
+            5. **Clic en 💾 Guardar Pick**
             
-            Vuelve aquí para ver tus estadísticas de rendimiento.
+            Vuelve aquí para ver tu rendimiento.
             """)
