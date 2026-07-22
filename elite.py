@@ -366,9 +366,6 @@ else:
 }
 </style>
 """, unsafe_allow_html=True)
-        
-        # Título grande
-        st.markdown("<h1 style='font-size: 80px; text-align: center;'>🔍 Seleccionar Partido</h1>", unsafe_allow_html=True)
         with col1:
             home_team = st.selectbox("🏠 Local", [""] + equipos_disponibles, key="home_select")
         with col2:
