@@ -351,13 +351,21 @@ else:
         except:
             equipos_disponibles = []
         
-        # Selector de equipos
-        col1, col2 = st.columns(2)
+        # Selector de equipos (compactos)
+        st.markdown("""
+        <style>
+        .stSelectbox > div > div {min-height: 36px !important;}
+        div[data-baseweb="select"] > div {min-height: 36px !important;}
+        </style>
+        """, unsafe_allow_html=True)
         
+        col1, col2 = st.columns(2)
         with col1:
-            home_team = st.selectbox("🏠 Local", [""] + equipos_disponibles, key="home_select")
+            st.markdown("**🏠 Local**")
+            home_team = st.selectbox("", [""] + equipos_disponibles, key="home_select", label_visibility="collapsed")
         with col2:
-            away_team = st.selectbox("✈️ Visitante", [""] + equipos_disponibles, key="away_select")
+            st.markdown("**✈️ Visitante**")
+            away_team = st.selectbox("", [""] + equipos_disponibles, key="away_select", label_visibility="collapsed")
         
         # Validar que ambos equipos tengan DATOS REALES en Supabase
         lambda_local = None
