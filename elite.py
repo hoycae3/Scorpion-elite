@@ -476,7 +476,7 @@ else:
                                 'total': float(result.get('corners', {}).get('total_estimado', 0))
                             },
                             'remates': {
-                                'pick': f"Over {remates_total:.0f}" if remates_over_prob > 50 else f"Under {remates_total:.0f}",
+                                'pick': f"+ {remates_total:.0f}" if remates_over_prob > 50 else f"- {remates_total:.0f}",
                                 'total': remates_total,
                                 'local': float(stats_local.get('promedio_tiros', 12)),
                                 'visitante': float(stats_visitante.get('promedio_tiros', 12)),
@@ -760,18 +760,18 @@ else:
             
             # Probabilidades para remates
             remates_over_prob = min(90, max(10, 50 + (remates_total - 24) * 2))
-            pick_remates = "Over" if remates_over_prob > 50 else "Under"
+            pick_remates = "+" if remates_over_prob > 50 else "-"
             
             # Probabilidades para tarjetas
             tarjetas_over_prob = min(90, max(10, 50 + (tarjetas_total - 6) * 5))
-            pick_tarjetas = "Over" if tarjetas_over_prob > 50 else "Under"
+            pick_tarjetas = "+" if tarjetas_over_prob > 50 else "-"
             
             # Tiros al arco
             arco_local = stats_local.get('promedio_tiros_arco', 4) if stats_local else 4
             arco_visitante = stats_visitante.get('promedio_tiros_arco', 4) if stats_visitante else 4
             arco_total = arco_local + arco_visitante
             arco_over_prob = min(90, max(10, 50 + (arco_total - 8) * 3))
-            pick_arco = "Over" if arco_over_prob > 50 else "Under"
+            pick_arco = "+" if arco_over_prob > 50 else "-"
             
             modelos = r.get('modelos', {})
             mc = modelos.get('monte_carlo', {})
@@ -817,8 +817,8 @@ else:
                 """, unsafe_allow_html=True)
             
             with col_remates:
-                remates_icon = "📈" if pick_remates == "Over" else "📉"
-                remates_color = "#00ff88" if pick_remates == "Over" else "#ff6b6b"
+                remates_icon = "📈" if pick_remates == "+" else "📉"
+                remates_color = "#00ff88" if pick_remates == "+" else "#ff6b6b"
                 st.markdown(f"""
                 <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; height: 100%;">
                     <p style="color: #888; margin: 0; font-size: 10px;">Remates</p>
@@ -829,8 +829,8 @@ else:
                 """, unsafe_allow_html=True)
             
             with col_arco:
-                arco_icon = "📈" if pick_arco == "Over" else "📉"
-                arco_color = "#00ff88" if pick_arco == "Over" else "#ff6b6b"
+                arco_icon = "📈" if pick_arco == "+" else "📉"
+                arco_color = "#00ff88" if pick_arco == "+" else "#ff6b6b"
                 st.markdown(f"""
                 <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; height: 100%;">
                     <p style="color: #888; margin: 0; font-size: 10px;">🎯 Arco</p>
@@ -841,8 +841,8 @@ else:
                 """, unsafe_allow_html=True)
             
             with col_tarjetas:
-                tarjetas_icon = "📈" if pick_tarjetas == "Over" else "📉"
-                tarjetas_color = "#00ff88" if pick_tarjetas == "Over" else "#ff6b6b"
+                tarjetas_icon = "📈" if pick_tarjetas == "+" else "📉"
+                tarjetas_color = "#00ff88" if pick_tarjetas == "+" else "#ff6b6b"
                 st.markdown(f"""
                 <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; height: 100%;">
                     <p style="color: #888; margin: 0; font-size: 10px;">🟨 Tarjetas</p>
