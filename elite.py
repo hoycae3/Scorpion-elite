@@ -652,8 +652,8 @@ else:
                                 'rango': rango,
                                 
                                 # Metadatos para calibración
-                                'lambda_local_original': float(r.get('lambda_local', 0)),
-                                'lambda_visitante_original': float(r.get('lambda_visitante', 0)),
+                                'lambda_local': float(r.get('lambda_local', 0)),
+                                'lambda_visitante': float(r.get('lambda_visitante', 0)),
                                 
                                 # Campos de resultado (se llenan después)
                                 'resultado_1x2': None,
