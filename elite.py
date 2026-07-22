@@ -604,12 +604,14 @@ else:
                             r = st.session_state.analysis_result
                             
                             # Guardar predicciones básicas
+                            pick_1x2 = predicciones_act.get('1x2', {}).get('pick', '')
                             pick_data = {
                                 'fecha': str(date.today()),
                                 'liga': stats_local.get('liga', 'Desconocida'),
                                 'equipo_local': home,
                                 'equipo_visitante': away,
-                                'prediccion_1x2': predicciones_act.get('1x2', {}).get('pick', ''),
+                                'pick': pick_1x2,
+                                'prediccion_1x2': pick_1x2,
                                 'prob_1x2': predicciones_act.get('1x2', {}).get('prob', 0),
                                 'p1': float(r.get('p1', 0)),
                                 'px': float(r.get('px', 0)),
