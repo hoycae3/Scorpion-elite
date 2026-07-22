@@ -358,7 +358,7 @@ else:
         st.markdown("### 🔍 Seleccionar Partido")
         
         col_space, col1, col2, col_space2 = st.columns([2, 1, 1, 2])
-        st.markdown("<style>.stColumn > div {width: 20% !important; min-width: 120px;} .stSelectbox label {font-size: 18px !important; font-weight: bold !important;}</style>", unsafe_allow_html=True)
+        st.markdown("<style>.stColumn > div {width: 20% !important; min-width: 120px;} .stSelectbox label {font-size: 24px !important; font-weight: bold !important;}</style>", unsafe_allow_html=True)
         with col1:
             home_team = st.selectbox("🏠 **Local", [""] + equipos_disponibles, key="home_select")
         with col2:
@@ -643,7 +643,7 @@ else:
             st.markdown(f"""
             <div style="background: #1a1a2e; border: 1px solid #00d4ff; border-radius: 8px; padding: 12px 20px; text-align: center; margin: 10px auto; max-width: 500px;">
                 <p style="color: #00d4ff; margin: 0; font-size: 10px; font-weight: 600; letter-spacing: 1px;">⚡ ANÁLISIS</p>
-                <p style="color: white; margin: 5px 0; font-size: 18px;">⚽ {home} vs {away}</p>
+                <p style="color: white; margin: 5px 0; font-size: 24px;">⚽ {home} vs {away}</p>
                 <p style="color: #00d4ff; margin: 3px 0; font-size: 14px;">Expected Score: {marcador}</p>
                 <p style="color: #00d4ff; margin: 8px 0; font-size: 28px; font-weight: bold;">
                     {pick_icon.get(pick, '🎯')} {pick}
