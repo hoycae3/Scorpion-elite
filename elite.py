@@ -449,6 +449,14 @@ else:
                         st.session_state.stats_visitante = stats_visitante
                         
                         # Guardar TODAS las predicciones en session_state (NO en Supabase aun)
+                        # Calcular predicciones de remates
+                        remates_total = float(stats_local.get('promedio_tiros', 12)) + float(stats_visitante.get('promedio_tiros', 12))
+                        remates_over_prob = min(90, max(10, 50 + (remates_total - 24) * 2))  # 24 es el promedio típico
+                        
+                        # Calcular predicciones de tarjetas
+                        tarjetas_total = float(stats_local.get('promedio_amarillas', 3)) + float(stats_visitante.get('promedio_amarillas', 3))
+                        tarjetas_over_prob = min(90, max(10, 50 + (tarjetas_total - 6) * 5))  # 6 es el promedio típico
+                        
                         st.session_state.predicciones_actuales = {
                             '1x2': {
                                 'pick': result.get('pick_1x2', ''),
@@ -469,6 +477,20 @@ else:
                             'corners': {
                                 'pick': result.get('pick_corners', ''),
                                 'total': float(result.get('corners', {}).get('total_estimado', 0))
+                            },
+                            'remates': {
+                                'pick': f"Over {remates_total:.0f}" if remates_over_prob > 50 else f"Under {remates_total:.0f}",
+                                'total': remates_total,
+                                'local': float(stats_local.get('promedio_tiros', 12)),
+                                'visitante': float(stats_visitante.get('promedio_tiros', 12)),
+                                'over_prob': remates_over_prob,
+                                'under_prob': 100 - remates_over_prob
+                            },
+                            'tarjetas': {
+                                'pick': f"Over {tarjetas_total:.1f}" if tarjetas_over_prob > 50 else f"Under {tarjetas_total:.1f}",
+                                'total': tarjetas_total,
+                                'over_prob': tarjetas_over_prob,
+                                'under_prob': 100 - tarjetas_over_prob
                             }
                         }
                             
@@ -565,72 +587,23 @@ else:
             """, unsafe_allow_html=True)
             
             # ========================
-            # GUARDAR PICK MANUALMENTE
+            # GUARDAR PARTIDO (TODAS LAS PREDICCIONES)
             # ========================
             st.markdown("---")
-            st.markdown("##### 💾 Guardar Pick")
             
-            col_guardar1, col_guardar2, col_guardar3 = st.columns([1, 1, 1])
+            predicciones_act = st.session_state.get('predicciones_actuales', {})
             
-            with col_guardar1:
-                #输入 marcador
-                marcador = st.text_input("📊 Marcador (ej: 2-1)", key="marcador_input", placeholder="2-1")
-            
-            with col_guardar2:
-                # Resultado real
-                resultado_real = st.selectbox("✅ Resultado", ["", "1", "X", "2"], key="resultado_select")
-            
-            with col_guardar3:
-                st.markdown("<br>", unsafe_allow_html=True)
-                predicciones_act = st.session_state.get('predicciones_actuales', {})
-                
-                if not predicciones_act:
-                    st.info("💡 Analiza un partido primero")
-                else:
-                    if st.button("💾 Guardar Partido", type="primary", use_container_width=True):
+            if not predicciones_act:
+                st.info("💡 Analiza un partido primero")
+            else:
+                col_btn, col_info = st.columns([1, 3])
+                with col_btn:
+                    if st.button("💾 GUARDAR PARTIDO", type="primary", use_container_width=True):
                         try:
                             client = create_client(SUPABASE_URL, SUPABASE_KEY)
                             r = st.session_state.analysis_result
                             
-                            # Parsear marcador si existe
-                            total_goles_local = 0
-                            total_goles_visitante = 0
-                            if marcador:
-                                partes = marcador.split('-')
-                                if len(partes) == 2:
-                                    total_goles_local = int(partes[0].strip())
-                                    total_goles_visitante = int(partes[1].strip())
-                            
-                            # Determinar resultados reales
-                            resultado_1x2_real = resultado_real if resultado_real else None
-                            resultado_ou_real = None
-                            resultado_btts_real = None
-                            
-                            if total_goles_local > 0 or total_goles_visitante > 0:
-                                total_goles = total_goles_local + total_goles_visitante
-                                resultado_ou_real = "Over 2.5" if total_goles > 2.5 else "Under 2.5"
-                                resultado_btts_real = "Si" if (total_goles_local > 0 and total_goles_visitante > 0) else "No"
-                            
-                            # Calcular aciertos para cada tipo
-                            pick_1x2 = predicciones_act.get('1x2', {}).get('pick', pick)
-                            acertado_1x2 = None
-                            if resultado_1x2_real and pick_1x2:
-                                acertado_1x2 = (resultado_1x2_real == pick_1x2)
-                            
-                            pick_ou = predicciones_act.get('over_under', {}).get('pick', '')
-                            acertado_ou = None
-                            if resultado_ou_real:
-                                acertado_ou = (("Over" in pick_ou and total_goles > 2.5) or 
-                                              ("Under" in pick_ou and total_goles <= 2.5))
-                            
-                            pick_btts = predicciones_act.get('btts', {}).get('pick', '')
-                            acertado_btts = None
-                            if resultado_btts_real:
-                                ambos_marcan = (total_goles_local > 0 and total_goles_visitante > 0)
-                                acertado_btts = (("Si" in pick_btts and ambos_marcan) or 
-                                                ("No" in pick_btts and not ambos_marcan))
-                            
-                            # Guardar TODAS las predicciones
+                            # Guardar TODAS las predicciones + remates + tarjetas
                             pick_data = {
                                 'fecha': str(date.today()),
                                 'liga': stats_local.get('liga', 'Desconocida'),
@@ -638,20 +611,20 @@ else:
                                 'equipo_visitante': away,
                                 
                                 # 1X2
-                                'prediccion_1x2': pick_1x2,
+                                'prediccion_1x2': predicciones_act.get('1x2', {}).get('pick', ''),
                                 'prob_1x2': predicciones_act.get('1x2', {}).get('prob', 0),
                                 'p1': float(r.get('p1', 0)),
                                 'px': float(r.get('px', 0)),
                                 'p2': float(r.get('p2', 0)),
                                 
                                 # Over/Under
-                                'prediccion_ou': pick_ou,
+                                'prediccion_ou': predicciones_act.get('over_under', {}).get('pick', ''),
                                 'prob_ou': predicciones_act.get('over_under', {}).get('prob', 0),
                                 'over_25': predicciones_act.get('over_under', {}).get('over_25', 0),
                                 'under_25': predicciones_act.get('over_under', {}).get('under_25', 0),
                                 
                                 # BTTS
-                                'prediccion_btts': pick_btts,
+                                'prediccion_btts': predicciones_act.get('btts', {}).get('pick', ''),
                                 'prob_btts': predicciones_act.get('btts', {}).get('prob', 0),
                                 'btts_yes': predicciones_act.get('btts', {}).get('yes', 0),
                                 'btts_no': predicciones_act.get('btts', {}).get('no', 0),
@@ -660,44 +633,42 @@ else:
                                 'prediccion_corners': predicciones_act.get('corners', {}).get('pick', ''),
                                 'corners_total_estimado': predicciones_act.get('corners', {}).get('total', 0),
                                 
+                                # REMATES - Predicción y probabilidades
+                                'prediccion_remates': predicciones_act.get('remates', {}).get('pick', ''),
+                                'remates_total_estimado': predicciones_act.get('remates', {}).get('total', 0),
+                                'remates_local_estimado': predicciones_act.get('remates', {}).get('local', 0),
+                                'remates_visitante_estimado': predicciones_act.get('remates', {}).get('visitante', 0),
+                                'over_remates': predicciones_act.get('remates', {}).get('over_prob', 0),
+                                'under_remates': predicciones_act.get('remates', {}).get('under_prob', 0),
+                                
+                                # TARJETAS
+                                'prediccion_tarjetas': predicciones_act.get('tarjetas', {}).get('pick', ''),
+                                'tarjetas_total_estimado': predicciones_act.get('tarjetas', {}).get('total', 0),
+                                'tarjetas_over_prob': predicciones_act.get('tarjetas', {}).get('over_prob', 0),
+                                'tarjetas_under_prob': predicciones_act.get('tarjetas', {}).get('under_prob', 0),
+                                
                                 # Confianza
                                 'confianza': int(confianza),
                                 'rango': rango,
                                 
-                                # Resultados (si existen)
-                                'marcador': marcador if marcador else None,
-                                'resultado_real_1x2': resultado_1x2_real,
-                                'resultado_real_ou': resultado_ou_real,
-                                'resultado_real_btts': resultado_btts_real,
-                                'acertado_1x2': acertado_1x2,
-                                'acertado_ou': acertado_ou,
-                                'acertado_btts': acertado_btts,
+                                # Metadatos para calibración
                                 'lambda_local_original': float(r.get('lambda_local', 0)),
                                 'lambda_visitante_original': float(r.get('lambda_visitante', 0)),
+                                
+                                # Campos de resultado (se llenan después)
+                                'resultado_1x2': None,
+                                'resultado_ou': None,
+                                'resultado_btts': None,
+                                'resultado_remates': None,
+                                'resultado_tarjetas': None,
+                                'acertado_1x2': None,
+                                'acertado_ou': None,
+                                'acertado_btts': None,
+                                'acertado_remates': None,
+                                'acertado_tarjetas': None,
                             }
                             
                             client.table('picks').insert(pick_data).execute()
-                            
-                            # Registrar en calibración si hay marcador
-                            if marcador and total_goles_local > 0:
-                                try:
-                                    registrar_resultado(
-                                        equipo_local=home,
-                                        equipo_visitante=away,
-                                        lambda_local_predicha=float(r.get('lambda_local', 0)),
-                                        lambda_visitante_predicha=float(r.get('lambda_visitante', 0)),
-                                        goles_local_real=total_goles_local,
-                                        goles_visitante_real=total_goles_visitante,
-                                        predicciones=predicciones_act,
-                                        resultado_real=resultado_1x2_real,
-                                        marcador=marcador,
-                                        confianza=int(confianza),
-                                        rango=rango
-                                    )
-                                    st.info("🔧 Calibración actualizada")
-                                except Exception as cal_err:
-                                    pass
-                            
                             st.success("✅ Partido guardado con todas las predicciones!")
                             st.balloons()
                             
@@ -744,26 +715,39 @@ else:
             # ========================
             st.markdown("##### 📊 Predicciones Adicionales")
             
+            # Calcular datos
             ta_local = stats_local.get('promedio_amarillas', 3) if stats_local else 3
             ta_visitante = stats_visitante.get('promedio_amarillas', 3) if stats_visitante else 3
             tarjetas_total = ta_local + ta_visitante
+            
+            ti_local = stats_local.get('promedio_tiros', 12) if stats_local else 12
+            ti_visitante = stats_visitante.get('promedio_tiros', 12) if stats_visitante else 12
+            remates_total = ti_local + ti_visitante
+            
+            # Probabilidades para remates
+            remates_over_prob = min(90, max(10, 50 + (remates_total - 24) * 2))
+            pick_remates = "Over" if remates_over_prob > 50 else "Under"
+            
+            # Probabilidades para tarjetas
+            tarjetas_over_prob = min(90, max(10, 50 + (tarjetas_total - 6) * 5))
+            pick_tarjetas = "Over" if tarjetas_over_prob > 50 else "Under"
             
             modelos = r.get('modelos', {})
             mc = modelos.get('monte_carlo', {})
             top_scores = mc.get('top_scores', {})
             score_mas_probable = list(top_scores.keys())[0] if top_scores else "2-1"
             
-            col_space, col_ou, col_btts, col_corners, col_tarjetas, col_score, col_space2 = st.columns([1, 1, 1, 1, 1, 1, 1])
+            col_space, col_ou, col_btts, col_corners, col_remates, col_tarjetas, col_score, col_space2 = st.columns([0.5, 1, 1, 1, 1, 1, 1, 0.5])
             
             with col_ou:
                 pick_ou = r.get('pick_over_under', 'Over 2.5')
                 prob_ou = r.get('prob_over_under', 50)
                 ou_icon = "📈" if "Over" in pick_ou else "📉"
                 st.markdown(f"""
-                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
-                    <p style="color: #888; margin: 0; font-size: 11px;">Over/Under 2.5</p>
-                    <p style="color: #ff9f43; margin: 8px 0; font-size: 16px; font-weight: bold;">{ou_icon} {pick_ou}</p>
-                    <p style="color: #fff; margin: 0; font-size: 15px; font-weight: bold;">{prob_ou:.0f}%</p>
+                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; height: 100%;">
+                    <p style="color: #888; margin: 0; font-size: 10px;">O/U 2.5</p>
+                    <p style="color: #ff9f43; margin: 5px 0; font-size: 14px; font-weight: bold;">{ou_icon} {pick_ou}</p>
+                    <p style="color: #fff; margin: 0; font-size: 13px; font-weight: bold;">{prob_ou:.0f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -772,30 +756,42 @@ else:
                 btts_yes = r.get('btts_yes', 50)
                 btts_icon = "✅" if pick_btts == "Sí" else "❌"
                 st.markdown(f"""
-                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
-                    <p style="color: #888; margin: 0; font-size: 11px;">Ambos Marcan</p>
-                    <p style="color: #a55eea; margin: 8px 0; font-size: 16px; font-weight: bold;">{btts_icon} {pick_btts}</p>
-                    <p style="color: #fff; margin: 0; font-size: 15px; font-weight: bold;">{btts_yes:.0f}%</p>
+                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; height: 100%;">
+                    <p style="color: #888; margin: 0; font-size: 10px;">Ambos Marcan</p>
+                    <p style="color: #a55eea; margin: 5px 0; font-size: 14px; font-weight: bold;">{btts_icon} {pick_btts}</p>
+                    <p style="color: #fff; margin: 0; font-size: 13px; font-weight: bold;">{btts_yes:.0f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_corners:
                 corners = r.get('corners', {})
                 total_c = corners.get('total_estimado', 10)
+                pick_corners = r.get('pick_corners', 'Over')
                 st.markdown(f"""
-                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
-                    <p style="color: #888; margin: 0; font-size: 11px;">Córners Totales</p>
-                    <p style="color: #00d2d3; margin: 8px 0; font-size: 16px; font-weight: bold;">⚽ {total_c:.0f}</p>
-                    <p style="color: #fff; margin: 0; font-size: 12px;">{r.get('pick_corners', 'Over')}</p>
+                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; height: 100%;">
+                    <p style="color: #888; margin: 0; font-size: 10px;">Córners</p>
+                    <p style="color: #00d2d3; margin: 5px 0; font-size: 14px; font-weight: bold;">{total_c:.0f}</p>
+                    <p style="color: #fff; margin: 0; font-size: 12px;">{pick_corners}</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col_remates:
+                remates_icon = "📈" if pick_remates == "Over" else "📉"
+                st.markdown(f"""
+                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; height: 100%;">
+                    <p style="color: #888; margin: 0; font-size: 10px;">Remates</p>
+                    <p style="color: #00ff88; margin: 5px 0; font-size: 14px; font-weight: bold;">{remates_icon} {pick_remates}</p>
+                    <p style="color: #fff; margin: 0; font-size: 13px; font-weight: bold;">{remates_over_prob:.0f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_tarjetas:
+                tarjetas_icon = "📈" if pick_tarjetas == "Over" else "📉"
                 st.markdown(f"""
-                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
-                    <p style="color: #888; margin: 0; font-size: 11px;">🟨 Tarjetas</p>
-                    <p style="color: #ffd700; margin: 8px 0; font-size: 16px; font-weight: bold;">{tarjetas_total:.1f}</p>
-                    <p style="color: #fff; margin: 0; font-size: 12px;">Totales</p>
+                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; height: 100%;">
+                    <p style="color: #888; margin: 0; font-size: 10px;">🟨 Tarjetas</p>
+                    <p style="color: #ffd700; margin: 5px 0; font-size: 14px; font-weight: bold;">{tarjetas_icon} {pick_tarjetas}</p>
+                    <p style="color: #fff; margin: 0; font-size: 13px; font-weight: bold;">{tarjetas_over_prob:.0f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
