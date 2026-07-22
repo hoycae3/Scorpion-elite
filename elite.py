@@ -766,12 +766,19 @@ else:
             tarjetas_over_prob = min(90, max(10, 50 + (tarjetas_total - 6) * 5))
             pick_tarjetas = "Over" if tarjetas_over_prob > 50 else "Under"
             
+            # Tiros al arco
+            arco_local = stats_local.get('promedio_tiros_arco', 4) if stats_local else 4
+            arco_visitante = stats_visitante.get('promedio_tiros_arco', 4) if stats_visitante else 4
+            arco_total = arco_local + arco_visitante
+            arco_over_prob = min(90, max(10, 50 + (arco_total - 8) * 3))
+            pick_arco = "Over" if arco_over_prob > 50 else "Under"
+            
             modelos = r.get('modelos', {})
             mc = modelos.get('monte_carlo', {})
             top_scores = mc.get('top_scores', {})
             score_mas_probable = list(top_scores.keys())[0] if top_scores else "2-1"
             
-            col_space, col_ou, col_btts, col_corners, col_remates, col_tarjetas, col_score, col_space2 = st.columns([0.5, 1, 1, 1, 1, 1, 1, 0.5])
+            col_space, col_ou, col_btts, col_corners, col_remates, col_arco, col_tarjetas, col_score, col_space2 = st.columns([0.3, 1, 1, 1, 1, 1, 1, 1, 0.3])
             
             with col_ou:
                 pick_ou = r.get('pick_over_under', 'Over 2.5')
@@ -818,6 +825,18 @@ else:
                     <p style="color: #00ff88; margin: 5px 0; font-size: 16px; font-weight: bold;">{remates_total:.0f}</p>
                     <p style="color: {remates_color}; margin: 5px 0; font-size: 12px; font-weight: bold;">{remates_icon} {pick_remates}</p>
                     <p style="color: #fff; margin: 0; font-size: 12px;">{remates_over_prob:.0f}%</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col_arco:
+                arco_icon = "📈" if pick_arco == "Over" else "📉"
+                arco_color = "#00ff88" if pick_arco == "Over" else "#ff6b6b"
+                st.markdown(f"""
+                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; height: 100%;">
+                    <p style="color: #888; margin: 0; font-size: 10px;">🎯 Arco</p>
+                    <p style="color: #ff9f43; margin: 5px 0; font-size: 16px; font-weight: bold;">{arco_total:.0f}</p>
+                    <p style="color: {arco_color}; margin: 5px 0; font-size: 12px; font-weight: bold;">{arco_icon} {pick_arco}</p>
+                    <p style="color: #fff; margin: 0; font-size: 12px;">{arco_over_prob:.0f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
