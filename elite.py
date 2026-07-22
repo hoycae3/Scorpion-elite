@@ -556,7 +556,7 @@ else:
                 color_ajuste_vis = "#00ff88" if lambda_visitante_adj['factor'] > 1 else ("#ff6b6b" if lambda_visitante_adj['factor'] < 1 else "#00d4ff")
                 
                 # DOS COLUMNAS - listas una al lado de otra
-                col_local, col_visita = st.columns(2)
+                col_local, col_visita = st.columns([1, 1])
                 
                 with col_local:
                     st.markdown(f"<h4 style='color: #00ff88; text-align: center;'>🏠 {home}</h4>", unsafe_allow_html=True)
@@ -577,7 +577,7 @@ else:
                         ("🎯 Tiros Arco", f"{prom_tiros_arco_l:.1f}", "#fff"),
                     ]
                     for label, val, color in stats_list_l:
-                        st.markdown(f"<div style='display:flex; justify-content:space-between; padding:4px 10px; border-bottom:1px solid #333; font-size:14px;'><span>{label}</span><span style='color:{color}'>{val}</span></div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='display:flex; justify-content:space-between; padding:2px 5px; border-bottom:1px solid #333; font-size:12px;'><span>{label}</span><span style='color:{color}'>{val}</span></div>", unsafe_allow_html=True)
                 
                 with col_visita:
                     st.markdown(f"<h4 style='color: #ff6b6b; text-align: center;'>✈️ {away}</h4>", unsafe_allow_html=True)
@@ -598,7 +598,7 @@ else:
                         ("🎯 Tiros Arco", f"{prom_tiros_arco_v:.1f}", "#fff"),
                     ]
                     for label, val, color in stats_list_v:
-                        st.markdown(f"<div style='display:flex; justify-content:space-between; padding:4px 10px; border-bottom:1px solid #333; font-size:14px;'><span>{label}</span><span style='color:{color}'>{val}</span></div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='display:flex; justify-content:space-between; padding:2px 5px; border-bottom:1px solid #333; font-size:12px;'><span>{label}</span><span style='color:{color}'>{val}</span></div>", unsafe_allow_html=True)
                 
                 # ========================
                 # ÚLTIMOS 5 PARTIDOS
