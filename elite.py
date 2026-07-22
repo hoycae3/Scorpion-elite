@@ -15,6 +15,12 @@ from analysis_models import calcular
 from stats_extractor import calculate_team_lambda
 from stats_robot import run_robot_batch
 from scrapers_fallback import scrape_team_fallback
+from calibration import (
+    get_lambda_ajustada,
+    registrar_resultado,
+    obtener_estadisticas_calibracion,
+    resetear_calibracion
+)
 
 st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
 
@@ -466,11 +472,18 @@ else:
             stats_visitante = st.session_state.get('stats_visitante', {})
             
             if stats_local and stats_visitante:
-                st.markdown("##### 📊 Estadísticas del Robot")
+                st.markdown("##### 📊 Estadísticas del Robot (Calibradas)")
+                
+                # Obtener lambdas ajustadas
+                lambda_local_adj = get_lambda_ajustada(home, stats_local.get('lambda_local', 0), como_local=True)
+                lambda_visitante_adj = get_lambda_ajustada(away, stats_visitante.get('lambda_visitante', 0), como_local=False)
                 
                 col_space1, col_est1, col_est2, col_space2 = st.columns([1, 2, 2, 1])
                 
                 with col_est1:
+                    icono_ajuste_local = "🔼" if lambda_local_adj['factor'] > 1 else ("🔽" if lambda_local_adj['factor'] < 1 else "➖")
+                    color_ajuste_local = "#00ff88" if lambda_local_adj['factor'] > 1 else ("#ff6b6b" if lambda_local_adj['factor'] < 1 else "#00d4ff")
+                    
                     st.markdown(f"""
                     <div class="simple-card simple-card-green" style="padding: 15px;">
                         <h4 style="color: #00ff88; margin: 0 0 12px 0; font-size: 16px;">🏠 {home}</h4>
@@ -478,7 +491,8 @@ else:
                             <p style="margin: 3px 0;">PJ: <span style="color: #fff;">{stats_local.get('partidos_jugados', 0)}</span></p>
                             <p style="margin: 3px 0;">GF: <span style="color: #fff;">{stats_local.get('goles_favor', 0)}</span></p>
                             <p style="margin: 3px 0;">GC: <span style="color: #fff;">{stats_local.get('goles_contra', 0)}</span></p>
-                            <p style="margin: 3px 0;">λL: <span style="color: #00d4ff;">{stats_local.get('lambda_local', 0):.2f}</span></p>
+                            <p style="margin: 3px 0;">λL: <span style="color: #00d4ff;">{stats_local.get('lambda_local', 0):.2f}</span> → <span style="color: {color_ajuste_local};">{lambda_local_adj['lambda_ajustada']:.2f}</span> {icono_ajuste_local}</p>
+                            <p style="margin: 3px 0;">Factor: <span style="color: {color_ajuste_local};">{lambda_local_adj['factor']:.3f}</span></p>
                             <p style="margin: 3px 0;">Remates: <span style="color: #fff;">{stats_local.get('promedio_tiros', 0):.1f}</span></p>
                             <p style="margin: 3px 0;">Córners: <span style="color: #00d2d3;">{stats_local.get('promedio_corners_total', 0):.1f}</span></p>
                             <p style="margin: 3px 0;">Tarjetas: <span style="color: #ffd700;">{stats_local.get('promedio_amarillas', 0):.1f}</span></p>
@@ -487,6 +501,9 @@ else:
                     """, unsafe_allow_html=True)
                 
                 with col_est2:
+                    icono_ajuste_vis = "🔼" if lambda_visitante_adj['factor'] > 1 else ("🔽" if lambda_visitante_adj['factor'] < 1 else "➖")
+                    color_ajuste_vis = "#00ff88" if lambda_visitante_adj['factor'] > 1 else ("#ff6b6b" if lambda_visitante_adj['factor'] < 1 else "#00d4ff")
+                    
                     st.markdown(f"""
                     <div class="simple-card simple-card-red" style="padding: 15px;">
                         <h4 style="color: #ff6b6b; margin: 0 0 12px 0; font-size: 16px;">✈️ {away}</h4>
@@ -494,7 +511,8 @@ else:
                             <p style="margin: 3px 0;">PJ: <span style="color: #fff;">{stats_visitante.get('partidos_jugados', 0)}</span></p>
                             <p style="margin: 3px 0;">GF: <span style="color: #fff;">{stats_visitante.get('goles_favor', 0)}</span></p>
                             <p style="margin: 3px 0;">GC: <span style="color: #fff;">{stats_visitante.get('goles_contra', 0)}</span></p>
-                            <p style="margin: 3px 0;">λV: <span style="color: #00d4ff;">{stats_visitante.get('lambda_visitante', 0):.2f}</span></p>
+                            <p style="margin: 3px 0;">λV: <span style="color: #00d4ff;">{stats_visitante.get('lambda_visitante', 0):.2f}</span> → <span style="color: {color_ajuste_vis};">{lambda_visitante_adj['lambda_ajustada']:.2f}</span> {icono_ajuste_vis}</p>
+                            <p style="margin: 3px 0;">Factor: <span style="color: {color_ajuste_vis};">{lambda_visitante_adj['factor']:.3f}</span></p>
                             <p style="margin: 3px 0;">Remates: <span style="color: #fff;">{stats_visitante.get('promedio_tiros', 0):.1f}</span></p>
                             <p style="margin: 3px 0;">Córners: <span style="color: #00d2d3;">{stats_visitante.get('promedio_corners_total', 0):.1f}</span></p>
                             <p style="margin: 3px 0;">Tarjetas: <span style="color: #ffd700;">{stats_visitante.get('promedio_amarillas', 0):.1f}</span></p>
@@ -572,6 +590,33 @@ else:
                         }
                         
                         client.table('picks').insert(pick_data).execute()
+                        
+                        # Registrar en calibración si hay resultado
+                        if resultado_real and marcador:
+                            try:
+                                # Parsear marcador
+                                partes = marcador.split('-')
+                                if len(partes) == 2:
+                                    goles_local = int(partes[0].strip())
+                                    goles_visitante = int(partes[1].strip())
+                                    
+                                    # Registrar para calibración
+                                    registrar_resultado(
+                                        equipo_local=home,
+                                        equipo_visitante=away,
+                                        lambda_local_predicha=float(r.get('lambda_local', 0)),
+                                        lambda_visitante_predicha=float(r.get('lambda_visitante', 0)),
+                                        goles_local_real=goles_local,
+                                        goles_visitante_real=goles_visitante,
+                                        prediccion=pick,
+                                        resultado_real=resultado_real,
+                                        confianza=int(confianza),
+                                        rango=rango
+                                    )
+                                    st.info("🔧 Calibración actualizada")
+                            except Exception as cal_err:
+                                pass  # No mostrar error de calibración
+                        
                         st.success("✅ Pick guardado exitosamente!")
                         st.balloons()
                     except Exception as e:
