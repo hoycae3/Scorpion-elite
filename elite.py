@@ -358,7 +358,17 @@ else:
         st.markdown("### 🔍 Seleccionar Partido")
         
         col_space, col1, col2, col_space2 = st.columns([2, 1, 1, 2])
-        st.markdown("<style>.stColumn > div {width: 20% !important; min-width: 120px;} .stSelectbox label {font-size: 60px !important; text-align: center !important; font-weight: bold !important;}</style>", unsafe_allow_html=True)
+        st.markdown("""
+<style>
+[data-testid="stHorizontalBlock"] [data-testid="stSelectbox"] label {
+    font-size: 60px !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    display: block !important;
+    width: 100% !important;
+}
+</style>
+""", unsafe_allow_html=True)
         with col1:
             home_team = st.selectbox("🏠 Local", [""] + equipos_disponibles, key="home_select")
         with col2:
