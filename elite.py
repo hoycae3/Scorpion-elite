@@ -226,7 +226,7 @@ else:
             st.rerun()
     
     with col_menu2:
-        if st.button("📊 Análisis", use_container_width=True, type="primary" if st.session_state.page == "Analizador" else "secondary"):
+        if st.button("📊 Analizador", use_container_width=True, type="primary" if st.session_state.page == "Analizador" else "secondary"):
             st.session_state.page = "Analizador"
             st.rerun()
     
@@ -340,7 +340,7 @@ else:
     
     # Página: Analizador
     elif st.session_state.page == "Analizador":
-        pass
+        st.markdown("### 📊 Analizador")
         
         # Obtener lista de equipos disponibles
         client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -351,37 +351,28 @@ else:
         except:
             equipos_disponibles = []
         
-        # Selector de equipos - CSS para selectbox pequeños
-        st.markdown("""
-        <style>
-        /* Selectbox pequeños */
-        .stSelectbox {margin-top: -15px !important;}
-        div[data-baseweb="select"] {min-height: 32px !important;}
-        div[data-baseweb="select"] > div {min-height: 32px !important; padding: 0 12px !important;}
-        /* Placeholder más pequeño */
-        div[data-baseweb="select"] span {font-size: 12px !important;}
-        /* Botón analizar - gradiente verde/azul */
-        div[data-testid="stHorizontalBlock"] button {
-            background: linear-gradient(135deg, #00d2d3, #00ff88) !important;
-            border: none !important;
-            border-radius: 8px !important;
-            color: #000 !important;
-            font-weight: bold !important;
-        }
-        div[data-testid="stHorizontalBlock"] button:hover {
-            background: linear-gradient(135deg, #00ff88, #00d2d3) !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
+        # Mostrar equipos disponibles
+        if not equipos_disponibles:
+            st.warning("⚠️ No hay equipos guardados. Ve a 'Estadísticas' para agregar equipos.")
         
-        col1, col2, col3 = st.columns([3, 3, 1])
-        with col1:
-            home_team = st.selectbox("🏠", [""] + equipos_disponibles, key="home_select", label_visibility="visible")
-        with col2:
-            away_team = st.selectbox("✈️", [""] + equipos_disponibles, key="away_select", label_visibility="visible")
-        with col3:
-            st.write("")
-            analizar_click = st.button("🔍", use_container_width=True)
+        # Selector de equipos
+        st.markdown("### 🔍 Seleccionar Partido")
+        
+        # Opción para escribir manualmente o seleccionar
+        modo_entrada = st.radio("¿Cómo quieres elegir los equipos?", ["📋 Seleccionar de lista", "✏️ Escribir manualmente"], horizontal=True)
+        
+        if modo_entrada == "📋 Seleccionar de lista" and equipos_disponibles:
+            col1, col2 = st.columns(2)
+            with col1:
+                home_team = st.selectbox("🏠 Equipo Local", [""] + equipos_disponibles, key="home_select")
+            with col2:
+                away_team = st.selectbox("✈️ Equipo Visitante", [""] + equipos_disponibles, key="away_select")
+        else:
+            col1, col2 = st.columns(2)
+            with col1:
+                home_team = st.text_input("🏠 Equipo Local", placeholder="Escribe el nombre...")
+            with col2:
+                away_team = st.text_input("✈️ Equipo Visitante", placeholder="Escribe el nombre...")
         
         # Validar que ambos equipos tengan DATOS REALES en Supabase
         lambda_local = None
@@ -431,7 +422,7 @@ else:
         # Botón analizar - solo si ambos equipos existen
         analizar_disabled = not (equipo_local_ok and equipo_visitante_ok)
         
-        if analizar_click:
+        if st.button("🎯 ANALIZAR", type="primary", use_container_width=True, disabled=analizar_disabled):
             try:
                 if home_team and away_team and lambda_local and lambda_visitante and stats_local and stats_visitante:
                     with st.spinner("Analizando..."):
