@@ -355,15 +355,19 @@ else:
         if not equipos_disponibles:
             st.warning("⚠️ No hay equipos guardados. Ve a 'Estadísticas' para agregar equipos.")
         
-        # Selector de equipos - CSS para hacerlo compacto
+        # Selector de equipos - CSS para hacerlo muy compacto
         st.markdown("""
         <style>
-        /* Selectbox más pequeños */
-        [data-testid="stSelectbox"] [data-baseweb="select"] {
-            min-height: 28px !important;
+        /* Selectbox MUY pequeños */
+        [data-testid="stElement"] [data-baseweb="select"] {
+            min-height: 30px !important;
         }
-        [data-testid="stSelectbox"] [data-baseweb="select"] > div {
-            min-height: 28px !important;
+        [data-testid="stElement"] [data-baseweb="select"] > div {
+            min-height: 30px !important;
+        }
+        section[data-testid="stMainBlockContainer"] .stSelectbox > div > div {
+            min-height: 30px !important;
+            font-size: 12px !important;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -372,9 +376,9 @@ else:
         
         col1, col2 = st.columns(2)
         with col1:
-            home_team = st.selectbox("🏠", [""] + equipos_disponibles, key="home_select")
+            home_team = st.selectbox("🏠 Local", [""] + equipos_disponibles, key="home_select")
         with col2:
-            away_team = st.selectbox("✈️", [""] + equipos_disponibles, key="away_select")
+            away_team = st.selectbox("✈️ Visitante", [""] + equipos_disponibles, key="away_select")
         
         # Validar que ambos equipos tengan DATOS REALES en Supabase
         lambda_local = None
