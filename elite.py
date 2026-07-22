@@ -784,11 +784,13 @@ else:
                 pick_ou = r.get('pick_over_under', 'Over 2.5')
                 prob_ou = r.get('prob_over_under', 50)
                 ou_icon = "📈" if "Over" in pick_ou else "📉"
+                ou_symbol = "+" if "Over" in pick_ou else "-"
+                ou_color = "#00ff88" if "Over" in pick_ou else "#ff6b6b"
                 st.markdown(f"""
-                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; height: 100%;">
-                    <p style="color: #888; margin: 0; font-size: 10px;">O/U 2.5</p>
-                    <p style="color: #ff9f43; margin: 5px 0; font-size: 14px; font-weight: bold;">{ou_icon} {pick_ou}</p>
-                    <p style="color: #fff; margin: 0; font-size: 13px; font-weight: bold;">{prob_ou:.0f}%</p>
+                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
+                    <p style="color: #888; margin: 0; font-size: 12px;">±2.5 Goles</p>
+                    <p style="color: {ou_color}; margin: 8px 0; font-size: 18px; font-weight: bold;">{ou_symbol} 2.5</p>
+                    <p style="color: #fff; margin: 0; font-size: 16px; font-weight: bold;">{prob_ou:.0f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -797,22 +799,23 @@ else:
                 btts_yes = r.get('btts_yes', 50)
                 btts_icon = "✅" if pick_btts == "Sí" else "❌"
                 st.markdown(f"""
-                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; height: 100%;">
-                    <p style="color: #888; margin: 0; font-size: 10px;">Ambos Marcan</p>
-                    <p style="color: #a55eea; margin: 5px 0; font-size: 14px; font-weight: bold;">{btts_icon} {pick_btts}</p>
-                    <p style="color: #fff; margin: 0; font-size: 13px; font-weight: bold;">{btts_yes:.0f}%</p>
+                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
+                    <p style="color: #888; margin: 0; font-size: 12px;">Ambos Marcan</p>
+                    <p style="color: #a55eea; margin: 8px 0; font-size: 18px; font-weight: bold;">{btts_icon} {pick_btts}</p>
+                    <p style="color: #fff; margin: 0; font-size: 16px; font-weight: bold;">{btts_yes:.0f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_corners:
                 corners = r.get('corners', {})
                 total_c = corners.get('total_estimado', 10)
-                pick_corners = r.get('pick_corners', 'Over')
+                pick_corners = r.get('pick_corners', '+')
+                pick_corner_symbol = "+" if pick_corners == "+" else "-"
                 st.markdown(f"""
-                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; height: 100%;">
-                    <p style="color: #888; margin: 0; font-size: 10px;">Córners</p>
-                    <p style="color: #00d2d3; margin: 5px 0; font-size: 14px; font-weight: bold;">{total_c:.0f}</p>
-                    <p style="color: #fff; margin: 0; font-size: 12px;">{pick_corners}</p>
+                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
+                    <p style="color: #888; margin: 0; font-size: 12px;">Córners</p>
+                    <p style="color: #00d2d3; margin: 8px 0; font-size: 18px; font-weight: bold;">{total_c:.0f}</p>
+                    <p style="color: #fff; margin: 0; font-size: 14px;">{pick_corner_symbol} {total_c:.0f}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -820,11 +823,10 @@ else:
                 remates_icon = "📈" if pick_remates == "+" else "📉"
                 remates_color = "#00ff88" if pick_remates == "+" else "#ff6b6b"
                 st.markdown(f"""
-                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; height: 100%;">
-                    <p style="color: #888; margin: 0; font-size: 10px;">Remates</p>
-                    <p style="color: #00ff88; margin: 5px 0; font-size: 16px; font-weight: bold;">{remates_total:.0f}</p>
-                    <p style="color: {remates_color}; margin: 5px 0; font-size: 12px; font-weight: bold;">{remates_icon} {pick_remates}</p>
-                    <p style="color: #fff; margin: 0; font-size: 12px;">{remates_over_prob:.0f}%</p>
+                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
+                    <p style="color: #888; margin: 0; font-size: 12px;">Remates</p>
+                    <p style="color: #00ff88; margin: 8px 0; font-size: 18px; font-weight: bold;">{remates_total:.0f}</p>
+                    <p style="color: {remates_color}; margin: 0; font-size: 14px; font-weight: bold;">{remates_icon} {pick_remates}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -832,11 +834,10 @@ else:
                 arco_icon = "📈" if pick_arco == "+" else "📉"
                 arco_color = "#00ff88" if pick_arco == "+" else "#ff6b6b"
                 st.markdown(f"""
-                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; height: 100%;">
-                    <p style="color: #888; margin: 0; font-size: 10px;">🎯 Arco</p>
-                    <p style="color: #ff9f43; margin: 5px 0; font-size: 16px; font-weight: bold;">{arco_total:.0f}</p>
-                    <p style="color: {arco_color}; margin: 5px 0; font-size: 12px; font-weight: bold;">{arco_icon} {pick_arco}</p>
-                    <p style="color: #fff; margin: 0; font-size: 12px;">{arco_over_prob:.0f}%</p>
+                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
+                    <p style="color: #888; margin: 0; font-size: 12px;">🎯 Arco</p>
+                    <p style="color: #ff9f43; margin: 8px 0; font-size: 18px; font-weight: bold;">{arco_total:.0f}</p>
+                    <p style="color: {arco_color}; margin: 0; font-size: 14px; font-weight: bold;">{arco_icon} {pick_arco}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -844,11 +845,10 @@ else:
                 tarjetas_icon = "📈" if pick_tarjetas == "+" else "📉"
                 tarjetas_color = "#00ff88" if pick_tarjetas == "+" else "#ff6b6b"
                 st.markdown(f"""
-                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; height: 100%;">
-                    <p style="color: #888; margin: 0; font-size: 10px;">🟨 Tarjetas</p>
-                    <p style="color: #ffd700; margin: 5px 0; font-size: 16px; font-weight: bold;">{tarjetas_total:.1f}</p>
-                    <p style="color: {tarjetas_color}; margin: 5px 0; font-size: 12px; font-weight: bold;">{tarjetas_icon} {pick_tarjetas}</p>
-                    <p style="color: #fff; margin: 0; font-size: 12px;">{tarjetas_over_prob:.0f}%</p>
+                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
+                    <p style="color: #888; margin: 0; font-size: 12px;">🟨 Tarjetas</p>
+                    <p style="color: #ffd700; margin: 8px 0; font-size: 18px; font-weight: bold;">{tarjetas_total:.1f}</p>
+                    <p style="color: {tarjetas_color}; margin: 0; font-size: 14px; font-weight: bold;">{tarjetas_icon} {pick_tarjetas}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
