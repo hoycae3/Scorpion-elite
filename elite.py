@@ -556,7 +556,7 @@ else:
                 color_ajuste_vis = "#00ff88" if lambda_visitante_adj['factor'] > 1 else ("#ff6b6b" if lambda_visitante_adj['factor'] < 1 else "#00d4ff")
                 
                 # DOS COLUMNAS - listas una al lado de otra
-                sp1, col_local, col_visita, sp2 = st.columns([1, 2, 5, 1])
+                sp1, col_local, col_visita, sp2 = st.columns([1, 1, 1, 1])
                 
                 with col_local:
                     st.markdown(f"<h4 style='color: #00ff88; text-align: center;'>🏠 {home}</h4>", unsafe_allow_html=True)
