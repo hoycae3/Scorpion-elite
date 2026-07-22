@@ -351,14 +351,36 @@ else:
         except:
             equipos_disponibles = []
         
-        # Selector de equipos - todo en una línea
+        # Selector de equipos - CSS para selectbox pequeños
+        st.markdown("""
+        <style>
+        /* Selectbox pequeños */
+        .stSelectbox {margin-top: -15px !important;}
+        div[data-baseweb="select"] {min-height: 32px !important;}
+        div[data-baseweb="select"] > div {min-height: 32px !important; padding: 0 12px !important;}
+        /* Placeholder más pequeño */
+        div[data-baseweb="select"] span {font-size: 12px !important;}
+        /* Botón analizar - gradiente verde/azul */
+        div[data-testid="stHorizontalBlock"] button {
+            background: linear-gradient(135deg, #00d2d3, #00ff88) !important;
+            border: none !important;
+            border-radius: 8px !important;
+            color: #000 !important;
+            font-weight: bold !important;
+        }
+        div[data-testid="stHorizontalBlock"] button:hover {
+            background: linear-gradient(135deg, #00ff88, #00d2d3) !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
         col1, col2, col3 = st.columns([3, 3, 1])
         with col1:
             home_team = st.selectbox("🏠", [""] + equipos_disponibles, key="home_select", label_visibility="visible")
         with col2:
             away_team = st.selectbox("✈️", [""] + equipos_disponibles, key="away_select", label_visibility="visible")
         with col3:
-            st.write("")  # espacio
+            st.write("")
             analizar_click = st.button("🔍", use_container_width=True)
         
         # Validar que ambos equipos tengan DATOS REALES en Supabase
