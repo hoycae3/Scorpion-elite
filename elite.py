@@ -340,7 +340,7 @@ else:
     
     # Página: Analizador
     elif st.session_state.page == "Analizador":
-        st.markdown("### 📊 Análisis de Partido")
+        pass
         
         # Obtener lista de equipos disponibles
         client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -352,14 +352,12 @@ else:
             equipos_disponibles = []
         
         # Selector de equipos
-        st.markdown("### 🔍 Seleccionar Partido")
-        
         col1, col2 = st.columns(2)
         
         with col1:
-            home_team = st.selectbox("🏠 Equipo Local", [""] + equipos_disponibles, key="home_select")
+            home_team = st.selectbox("🏠 Local", [""] + equipos_disponibles, key="home_select")
         with col2:
-            away_team = st.selectbox("✈️ Equipo Visitante", [""] + equipos_disponibles, key="away_select")
+            away_team = st.selectbox("✈️ Visitante", [""] + equipos_disponibles, key="away_select")
         
         # Validar que ambos equipos tengan DATOS REALES en Supabase
         lambda_local = None
@@ -409,7 +407,7 @@ else:
         # Botón analizar - solo si ambos equipos existen
         analizar_disabled = not (equipo_local_ok and equipo_visitante_ok)
         
-        if st.button("🎯 ANALIZAR", type="primary", use_container_width=True, disabled=analizar_disabled):
+        if st.button("🎯 ANALIZAR", type="primary", disabled=analizar_disabled):
             try:
                 if home_team and away_team and lambda_local and lambda_visitante and stats_local and stats_visitante:
                     with st.spinner("Analizando..."):
