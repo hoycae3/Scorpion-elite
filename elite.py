@@ -212,7 +212,7 @@ else:
     # Menú horizontal arriba
     st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
     
-    col_menu1, col_menu2, col_menu3, col_menu4 = st.columns(4)
+    col_menu1, col_menu2, col_menu3, col_menu4, col_menu5 = st.columns(5)
     
     with col_menu1:
         if st.button("📂 Carga", use_container_width=True, type="primary" if st.session_state.page == "Carga" else "secondary"):
@@ -230,6 +230,11 @@ else:
             st.rerun()
     
     with col_menu4:
+        if st.button("📉 Dashboard", use_container_width=True, type="primary" if st.session_state.page == "Dashboard" else "secondary"):
+            st.session_state.page = "Dashboard"
+            st.rerun()
+    
+    with col_menu5:
         if st.button("🔑 Claves", use_container_width=True, type="primary" if st.session_state.page == "Claves" else "secondary"):
             st.session_state.page = "Claves"
             st.rerun()
@@ -1065,3 +1070,91 @@ else:
                                     st.rerun()
                                 else:
                                     st.error("No se pudo eliminar")
+
+
+    # ==================== PÁGINA: DASHBOARD ====================
+    elif st.session_state.page == "Dashboard":
+        st.markdown("### 📉 Dashboard de Rendimiento")
+        
+        # Obtener historial de Supabase
+        try:
+            client = create_client(SUPABASE_URL, SUPABASE_KEY)
+            response = client.table('historial_predicciones').select('*').order('fecha', desc=True).limit(100).execute()
+            predicciones = response.data if response.data else []
+        except Exception as e:
+            predicciones = []
+            st.warning(f"No se pudo conectar a Supabase: {str(e)[:50]}")
+        
+        # Métricas generales
+        total_picks = len(predicciones)
+        
+        if total_picks > 0:
+            # Calcular métricas
+            confianza_alta = len([p for p in predicciones if p.get('confianza', 0) >= 70])
+            confianza_media = len([p for p in predicciones if 50 <= p.get('confianza', 0) < 70])
+            confianza_baja = len([p for p in predicciones if p.get('confianza', 0) < 50])
+            
+            # Distribución por rango
+            rango_a = len([p for p in predicciones if p.get('rango', '') in ['A+', 'A']])
+            rango_b = len([p for p in predicciones if p.get('rango', '') == 'B'])
+            rango_c = len([p for p in predicciones if p.get('rango', '') == 'C'])
+            rango_d = len([p for p in predicciones if p.get('rango', '') == 'D'])
+            
+            # Mostrar métricas
+            st.markdown("##### 📊 Estadísticas Generales")
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Total Picks", total_picks)
+            with col2:
+                st.metric("Alta Confianza", confianza_alta, delta=f"{confianza_alta/total_picks*100:.1f}%")
+            with col3:
+                st.metric("Confianza Media", confianza_media)
+            with col4:
+                st.metric("Baja Confianza", confianza_baja)
+            
+            st.markdown("##### 📈 Distribución por Rango")
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Rango A (Excelente)", rango_a)
+            with col2:
+                st.metric("Rango B (Bueno)", rango_b)
+            with col3:
+                st.metric("Rango C (Regular)", rango_c)
+            with col4:
+                st.metric("Rango D (Bajo)", rango_d)
+            
+            # Últimas predicciones
+            st.markdown("##### 📋 Últimas Predicciones")
+            
+            if predicciones:
+                # Mostrar tabla
+                data = []
+                for p in predicciones[:20]:
+                    data.append({
+                        'Fecha': p.get('fecha', ''),
+                        'Liga': p.get('liga', ''),
+                        'Local': p.get('equipo_local', ''),
+                        'Visitante': p.get('equipo_visitante', ''),
+                        'Pick': p.get('prediccion_final', ''),
+                        'Prob': f"{p.get('probabilidad_final', 0):.1f}%",
+                        'Conf': f"{p.get('confianza', 0)}%",
+                        'Rango': p.get('rango', '')
+                    })
+                
+                import pandas as pd
+                df = pd.DataFrame(data)
+                st.dataframe(df, use_container_width=True, hide_index=True)
+            else:
+                st.info("📭 No hay predicciones guardadas aún")
+        else:
+            st.info("🎯 No hay datos de rendimiento aún. Las predicciones se guardarán automáticamente cuando analices partidos.")
+            st.markdown("""
+            ### 📖 Cómo funciona:
+            
+            1. **Ve a la pestaña 📊 Analizador**
+            2. **Selecciona dos equipos**
+            3. **Haz clic en 🎯 ANALIZAR**
+            4. **Los resultados se guardarán automáticamente**
+            
+            Vuelve aquí para ver tus estadísticas de rendimiento.
+            """)
