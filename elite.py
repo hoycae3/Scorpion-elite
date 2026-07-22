@@ -1,4 +1,3 @@
-import json
 import streamlit as st
 import pandas as pd
 import os
@@ -604,7 +603,7 @@ else:
                             client = create_client(SUPABASE_URL, SUPABASE_KEY)
                             r = st.session_state.analysis_result
                             
-                            # Guardar con columnas básicas + JSON para predicciones completas
+                            # Guardar predicciones básicas
                             pick_data = {
                                 'fecha': str(date.today()),
                                 'liga': stats_local.get('liga', 'Desconocida'),
@@ -619,18 +618,10 @@ else:
                                 'prediccion_btts': predicciones_act.get('btts', {}).get('pick', ''),
                                 'prediccion_corners': predicciones_act.get('corners', {}).get('pick', ''),
                                 'confianza': int(confianza),
-                                # Guardar TODAS las predicciones en JSON
-                                'notes': json.dumps({
-                                    'ou': predicciones_act.get('over_under', {}),
-                                    'btts': predicciones_act.get('btts', {}),
-                                    'corners': predicciones_act.get('corners', {}),
-                                    'remates': predicciones_act.get('remates', {}),
-                                    'tarjetas': predicciones_act.get('tarjetas', {}),
-                                })
                             }
                             
                             client.table('picks').insert(pick_data).execute()
-                            st.success("✅ Partido guardado con todas las predicciones!")
+                            st.success("✅ Partido guardado!")
                             st.balloons()
                             
                         except Exception as e:
