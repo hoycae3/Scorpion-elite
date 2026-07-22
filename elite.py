@@ -788,7 +788,7 @@ else:
                 ou_color = "#00ff88" if "Over" in pick_ou else "#ff6b6b"
                 st.markdown(f"""
                 <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
-                    <p style="color: #888; margin: 0; font-size: 12px;">±2.5 Goles</p>
+                    
                     <p style="color: {ou_color}; margin: 8px 0; font-size: 18px; font-weight: bold;">{ou_symbol} 2.5</p>
                     <p style="color: #fff; margin: 0; font-size: 16px; font-weight: bold;">{prob_ou:.0f}%</p>
                 </div>
