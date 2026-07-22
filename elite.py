@@ -364,6 +364,11 @@ else:
     font-size: 60px !important;
     font-weight: bold !important;
 }
+[data-testid="stSelectbox"] > div > div {
+    font-size: 32px !important;
+    padding: 15px !important;
+    min-height: 80px !important;
+}
 </style>
 """, unsafe_allow_html=True)
         with col1:
