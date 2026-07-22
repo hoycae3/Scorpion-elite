@@ -168,6 +168,16 @@ curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploy
 
 ## 📅 Historial de Cambios
 
+### 2026-07-22 - Sesión Integración UI con SuperRobot ✅
+
+| Cambio | Descripción |
+|--------|-------------|
+| Estadísticas avanzadas | Ahora muestra: V/E/D, diferencia de goles, tiros al arco |
+| Fuente de datos visible | Badge que muestra de dónde vienen los datos (🏦 football-data.co.uk, etc.) |
+| Últimos 5 partidos | Lista con resultado, marcador, corners y tarjetas |
+| Campo source | Se guarda en Supabase al buscar equipos |
+| AGENTS.md actualizado | Documenta estado real del proyecto |
+
 ### 2026-07-22 - Sesión Actualización Docs
 
 | Cambio | Descripción |
