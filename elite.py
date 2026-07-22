@@ -1,3 +1,4 @@
+import json
 import streamlit as st
 import pandas as pd
 import os
@@ -603,69 +604,29 @@ else:
                             client = create_client(SUPABASE_URL, SUPABASE_KEY)
                             r = st.session_state.analysis_result
                             
-                            # Guardar TODAS las predicciones + remates + tarjetas
+                            # Guardar con columnas básicas + JSON para predicciones completas
                             pick_data = {
                                 'fecha': str(date.today()),
                                 'liga': stats_local.get('liga', 'Desconocida'),
                                 'equipo_local': home,
                                 'equipo_visitante': away,
-                                
-                                # 1X2
                                 'prediccion_1x2': predicciones_act.get('1x2', {}).get('pick', ''),
                                 'prob_1x2': predicciones_act.get('1x2', {}).get('prob', 0),
                                 'p1': float(r.get('p1', 0)),
                                 'px': float(r.get('px', 0)),
                                 'p2': float(r.get('p2', 0)),
-                                
-                                # Over/Under
                                 'prediccion_ou': predicciones_act.get('over_under', {}).get('pick', ''),
-                                'prob_ou': predicciones_act.get('over_under', {}).get('prob', 0),
-                                'over_25': predicciones_act.get('over_under', {}).get('over_25', 0),
-                                'under_25': predicciones_act.get('over_under', {}).get('under_25', 0),
-                                
-                                # BTTS
                                 'prediccion_btts': predicciones_act.get('btts', {}).get('pick', ''),
-                                'prob_btts': predicciones_act.get('btts', {}).get('prob', 0),
-                                'btts_yes': predicciones_act.get('btts', {}).get('yes', 0),
-                                'btts_no': predicciones_act.get('btts', {}).get('no', 0),
-                                
-                                # Corners
                                 'prediccion_corners': predicciones_act.get('corners', {}).get('pick', ''),
-                                'corners_total_estimado': predicciones_act.get('corners', {}).get('total', 0),
-                                
-                                # REMATES - Predicción y probabilidades
-                                'prediccion_remates': predicciones_act.get('remates', {}).get('pick', ''),
-                                'remates_total_estimado': predicciones_act.get('remates', {}).get('total', 0),
-                                'remates_local': predicciones_act.get('remates', {}).get('local', 0),
-                                'remates_visitante': predicciones_act.get('remates', {}).get('visitante', 0),
-                                'over_remates': predicciones_act.get('remates', {}).get('over_prob', 0),
-                                'under_remates': predicciones_act.get('remates', {}).get('under_prob', 0),
-                                
-                                # TARJETAS
-                                'prediccion_tarjetas': predicciones_act.get('tarjetas', {}).get('pick', ''),
-                                'tarjetas_total_estimado': predicciones_act.get('tarjetas', {}).get('total', 0),
-                                'tarjetas_over_prob': predicciones_act.get('tarjetas', {}).get('over_prob', 0),
-                                'tarjetas_under_prob': predicciones_act.get('tarjetas', {}).get('under_prob', 0),
-                                
-                                # Confianza
                                 'confianza': int(confianza),
-                                'rango': rango,
-                                
-                                # Metadatos para calibración
-                                'lambda_local': float(r.get('lambda_local', 0)),
-                                'lambda_visitante': float(r.get('lambda_visitante', 0)),
-                                
-                                # Campos de resultado (se llenan después)
-                                'resultado_1x2': None,
-                                'resultado_ou': None,
-                                'resultado_btts': None,
-                                'resultado_remates': None,
-                                'resultado_tarjetas': None,
-                                'acertado_1x2': None,
-                                'acertado_ou': None,
-                                'acertado_btts': None,
-                                'acertado_remates': None,
-                                'acertado_tarjetas': None,
+                                # Guardar TODAS las predicciones en JSON
+                                'notes': json.dumps({
+                                    'ou': predicciones_act.get('over_under', {}),
+                                    'btts': predicciones_act.get('btts', {}),
+                                    'corners': predicciones_act.get('corners', {}),
+                                    'remates': predicciones_act.get('remates', {}),
+                                    'tarjetas': predicciones_act.get('tarjetas', {}),
+                                })
                             }
                             
                             client.table('picks').insert(pick_data).execute()
@@ -673,7 +634,7 @@ else:
                             st.balloons()
                             
                         except Exception as e:
-                            st.error(f"❌ Error: {str(e)[:100]}")
+                            st.error(f"❌ Error: {str(e)}")
             
             # ========================
             # PROBABILIDADES 1X2
