@@ -138,6 +138,14 @@ curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploy
 
 ## 📅 Historial de Cambios
 
+### 2026-07-22 - Sesión Arreglos
+
+| Cambio | Descripción |
+|--------|-------------|
+| Caché en archivo JSON | football-data ahora guarda en `/tmp/football_data_cache.json` (24h expiry) |
+| Bug fix elite.py | Corregido `equipos_a_guardar` → `con_stats` para guardar stats en Supabase |
+| Sin rate limiting | Los 356 equipos se cargan instantáneamente desde caché |
+
 ### 2026-07-21 - Sesión Diseño UI
 
 | Cambio | Descripción |
