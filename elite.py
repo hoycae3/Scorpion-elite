@@ -1311,11 +1311,14 @@ else:
                     res_1x2 = p.get('acertado_1x2')
                     res_ou = p.get('acertado_ou')
                     res_btts = p.get('acertado_btts')
+                    res_corners = p.get('acertado_corners')
+                    res_tarjetas = p.get('acertado_tarjetas')
+                    res_remates = p.get('acertado_remates')
                     
                     def icon(v):
-                        if v == True: return "✅"
-                        if v == False: return "❌"
-                        return "⏳"
+                        if v == True: return "🟢✅"
+                        if v == False: return "🔴❌"
+                        return "⚪-"
                     
                     pick_id = p.get('id')
                     ids_map[pick_id] = len(data)
@@ -1328,16 +1331,13 @@ else:
                         'X': f"{p.get('px', 0):.0f}%",
                         '2': f"{p.get('p2', 0):.0f}%",
                         'Prob': f"{p.get('prob_1x2', 0):.0f}%",
-                        'O/U': p.get('prediccion_ou', ''),
-                        'BTTS': p.get('prediccion_btts', ''),
-                        'Corners': p.get('prediccion_corners', ''),
-                        'Remates': p.get('prediccion_remates', ''),
-                        'Tarjetas': p.get('prediccion_tarjetas', ''),
-                        'Conf': p.get('confianza', 0),
                         'Marcador': p.get('marcador', '-'),
                         '1X2': icon(res_1x2),
-                        'O/U': icon(res_ou),
+                        'OU': icon(res_ou),
                         'BTTS': icon(res_btts),
+                        'Corners': icon(res_corners),
+                        'TAR': icon(res_tarjetas),
+                        'REM': icon(res_remates),
                     })
                 
                 import pandas as pd
@@ -1471,10 +1471,37 @@ else:
                                     pick_1x2 = p.get('prediccion_1x2', '')
                                     pick_ou = p.get('prediccion_ou', '')
                                     pick_btts = p.get('prediccion_btts', '')
+                                    pick_corners = p.get('prediccion_corners', '')
+                                    pick_tarjetas = p.get('prediccion_tarjetas', '')
+                                    pick_remates = p.get('prediccion_remates', '')
                                     
+                                    # 1X2
                                     acertado_1x2 = (pick_1x2 == resultado_1x2)
+                                    
+                                    # O/U
                                     acertado_ou = (pick_ou == resultado_ou)
+                                    
+                                    # BTTS
                                     acertado_btts = (pick_btts == resultado_btts)
+                                    
+                                    # CORNERS - Parsear "Over 11" o "Under 9.5"
+                                    def verificar_over_under(prediccion, valor_real):
+                                        if not prediccion:
+                                            return None
+                                        try:
+                                            if 'Over' in prediccion or 'over' in prediccion:
+                                                valor = float(prediccion.lower().replace('over','').replace('_',' ').strip())
+                                                return valor_real > valor
+                                            elif 'Under' in prediccion or 'under' in prediccion:
+                                                valor = float(prediccion.lower().replace('under','').replace('_',' ').strip())
+                                                return valor_real < valor
+                                        except:
+                                            return None
+                                        return None
+                                    
+                                    acertado_corners = verificar_over_under(pick_corners, total_corners)
+                                    acertado_tarjetas = verificar_over_under(pick_tarjetas, total_tarjetas)
+                                    acertado_remates = verificar_over_under(pick_remates, total_remates)
                                     
                                     # Actualizar
                                     client.table('picks').update({
@@ -1489,19 +1516,32 @@ else:
                                         'acertado_1x2': acertado_1x2,
                                         'acertado_ou': acertado_ou,
                                         'acertado_btts': acertado_btts,
+                                        'acertado_corners': acertado_corners,
+                                        'acertado_tarjetas': acertado_tarjetas,
+                                        'acertado_remates': acertado_remates,
                                     }).eq('id', int(pick_id_upd)).execute()
                                     
-                                    # Mostrar resumen
-                                    st.success("### ✅ RESULTADOS")
-                                    col_r1, col_r2, col_r3 = st.columns(3)
-                                    with col_r1:
-                                        st.metric("1X2", "✅" if acertado_1x2 else "❌", delta=f"Goles: {gl}-{gv}")
-                                    with col_r2:
-                                        st.metric("O/U", "✅" if acertado_ou else "❌", delta=f"Total: {total_gl}")
-                                    with col_r3:
-                                        st.metric("BTTS", "✅" if acertado_btts else "❌", delta=f"{resultado_btts}")
+                                    # Mostrar resumen con colores
+                                    st.success("### 📊 RESULTADOS")
                                     
-                                    st.info(f"📐 Corners: {total_corners} | 🟨 Tarjetas: {total_tarjetas} | 🎯 Remates: {total_remates}")
+                                    def resultado_icon(acertado):
+                                        if acertado == True: return "🟢✅"
+                                        if acertado == False: return "🔴❌"
+                                        return "⚪-"
+                                    
+                                    col_r1, col_r2, col_r3, col_r4, col_r5, col_r6 = st.columns(6)
+                                    with col_r1:
+                                        st.metric("1X2", resultado_icon(acertado_1x2), delta=f"{gl}-{gv}")
+                                    with col_r2:
+                                        st.metric("O/U", resultado_icon(acertado_ou), delta=f"Goles: {total_gl}")
+                                    with col_r3:
+                                        st.metric("BTTS", resultado_icon(acertado_btts), delta=f"{resultado_btts}")
+                                    with col_r4:
+                                        st.metric("Corners", resultado_icon(acertado_corners), delta=f"{total_corners}")
+                                    with col_r5:
+                                        st.metric("Tarjetas", resultado_icon(acertado_tarjetas), delta=f"{total_tarjetas}")
+                                    with col_r6:
+                                        st.metric("Remates", resultado_icon(acertado_remates), delta=f"{total_remates}")
                                     st.rerun()
                         except Exception as e:
                             st.error(f"❌ Error: {str(e)[:100]}")
