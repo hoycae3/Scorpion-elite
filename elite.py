@@ -354,30 +354,12 @@ else:
         # Selector de equipos
         st.markdown("### 🔍 Seleccionar Partido")
         
-        # Si hay equipos, mostrar radio. Si no, solo escritura manual
-        if equipos_disponibles:
-            modo_entrada = st.radio(
-                "¿Cómo quieres elegir los equipos?", 
-                ["📋 Seleccionar de lista", "✏️ Escribir manualmente"], 
-                horizontal=True,
-                index=0
-            )
-        else:
-            modo_entrada = "✏️ Escribir manualmente"
-            st.info("💡 No hay equipos en la base de datos. Escribe el nombre del equipo.")
-        
         col1, col2 = st.columns(2)
         
-        if modo_entrada == "📋 Seleccionar de lista" and equipos_disponibles:
-            with col1:
-                home_team = st.selectbox("🏠 Equipo Local", [""] + equipos_disponibles, key="home_select")
-            with col2:
-                away_team = st.selectbox("✈️ Equipo Visitante", [""] + equipos_disponibles, key="away_select")
-        else:
-            with col1:
-                home_team = st.text_input("🏠 Equipo Local", placeholder="Ej: Barcelona, Real Madrid...", key="home_text")
-            with col2:
-                away_team = st.text_input("✈️ Equipo Visitante", placeholder="Ej: Atletico Madrid, Sevilla...", key="away_text")
+        with col1:
+            home_team = st.selectbox("🏠 Equipo Local", [""] + equipos_disponibles, key="home_select")
+        with col2:
+            away_team = st.selectbox("✈️ Equipo Visitante", [""] + equipos_disponibles, key="away_select")
         
         # Validar que ambos equipos tengan DATOS REALES en Supabase
         lambda_local = None
