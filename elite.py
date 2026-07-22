@@ -358,6 +358,7 @@ else:
         st.markdown("### 🔍 Seleccionar Partido")
         
         col1, col2 = st.columns([1, 1])
+        st.markdown("<style>.stColumn > div {width: 10% !important; min-width: 120px;}</style>", unsafe_allow_html=True)
         with col1:
             home_team = st.selectbox("🏠 Local", [""] + equipos_disponibles, key="home_select")
         with col2:
