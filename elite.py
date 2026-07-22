@@ -355,7 +355,19 @@ else:
         if not equipos_disponibles:
             st.warning("⚠️ No hay equipos guardados. Ve a 'Estadísticas' para agregar equipos.")
         
-        # Selector de equipos
+        # Selector de equipos - CSS para hacerlo compacto
+        st.markdown("""
+        <style>
+        /* Selectbox más pequeños */
+        [data-testid="stSelectbox"] [data-baseweb="select"] {
+            min-height: 28px !important;
+        }
+        [data-testid="stSelectbox"] [data-baseweb="select"] > div {
+            min-height: 28px !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
         st.markdown("### 🔍 Seleccionar Partido")
         
         # Opción para escribir manualmente o seleccionar
@@ -364,15 +376,15 @@ else:
         if modo_entrada == "📋 Seleccionar de lista" and equipos_disponibles:
             col1, col2 = st.columns(2)
             with col1:
-                home_team = st.selectbox("🏠 Equipo Local", [""] + equipos_disponibles, key="home_select")
+                home_team = st.selectbox("🏠", [""] + equipos_disponibles, key="home_select")
             with col2:
-                away_team = st.selectbox("✈️ Equipo Visitante", [""] + equipos_disponibles, key="away_select")
+                away_team = st.selectbox("✈️", [""] + equipos_disponibles, key="away_select")
         else:
             col1, col2 = st.columns(2)
             with col1:
-                home_team = st.text_input("🏠 Equipo Local", placeholder="Escribe el nombre...")
+                home_team = st.text_input("🏠", placeholder="Escribe el nombre...")
             with col2:
-                away_team = st.text_input("✈️ Equipo Visitante", placeholder="Escribe el nombre...")
+                away_team = st.text_input("✈️", placeholder="Escribe el nombre...")
         
         # Validar que ambos equipos tengan DATOS REALES en Supabase
         lambda_local = None
