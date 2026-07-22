@@ -360,12 +360,9 @@ else:
         col_space, col1, col2, col_space2 = st.columns([2, 1, 1, 2])
         st.markdown("""
 <style>
-[data-testid="stHorizontalBlock"] [data-testid="stSelectbox"] label {
+.stSelectbox label {
     font-size: 60px !important;
     font-weight: bold !important;
-    text-align: center !important;
-    display: block !important;
-    width: 100% !important;
 }
 </style>
 """, unsafe_allow_html=True)
