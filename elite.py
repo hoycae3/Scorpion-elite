@@ -370,21 +370,11 @@ else:
         
         st.markdown("### 🔍 Seleccionar Partido")
         
-        # Opción para escribir manualmente o seleccionar
-        modo_entrada = st.radio("¿Cómo quieres elegir los equipos?", ["📋 Seleccionar de lista", "✏️ Escribir manualmente"], horizontal=True)
-        
-        if modo_entrada == "📋 Seleccionar de lista" and equipos_disponibles:
-            col1, col2 = st.columns(2)
-            with col1:
-                home_team = st.selectbox("🏠", [""] + equipos_disponibles, key="home_select")
-            with col2:
-                away_team = st.selectbox("✈️", [""] + equipos_disponibles, key="away_select")
-        else:
-            col1, col2 = st.columns(2)
-            with col1:
-                home_team = st.text_input("🏠", placeholder="Escribe el nombre...")
-            with col2:
-                away_team = st.text_input("✈️", placeholder="Escribe el nombre...")
+        col1, col2 = st.columns(2)
+        with col1:
+            home_team = st.selectbox("🏠", [""] + equipos_disponibles, key="home_select")
+        with col2:
+            away_team = st.selectbox("✈️", [""] + equipos_disponibles, key="away_select")
         
         # Validar que ambos equipos tengan DATOS REALES en Supabase
         lambda_local = None
