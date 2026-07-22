@@ -509,36 +509,60 @@ else:
             st.markdown("---")
             
             # ========================
-            # ESTADÍSTICAS DEL ROBOT - VERTICAL
+            # ESTADÍSTICAS AVANZADAS DEL ROBOT
             # ========================
             stats_local = st.session_state.get('stats_local', {})
             stats_visitante = st.session_state.get('stats_visitante', {})
             
             if stats_local and stats_visitante:
-                st.markdown("##### 📊 Estadísticas del Robot (Calibradas)")
+                # Fuente de datos
+                source_local = stats_local.get('source', 'football-data.co.uk')
+                source_visitante = stats_visitante.get('source', 'football-data.co.uk')
+                
+                st.markdown("##### 📊 Estadísticas Avanzadas (Calibradas)")
+                
+                # Badge de fuente de datos
+                col_src1, col_src2, col_src3 = st.columns([1, 1, 2])
+                with col_src1:
+                    st.markdown(f"**🏦 Fuente Local:** `{source_local}`")
+                with col_src2:
+                    st.markdown(f"**🏦 Fuente Visitante:** `{source_visitante}`")
                 
                 # Obtener lambdas ajustadas
                 lambda_local_adj = get_lambda_ajustada(home, stats_local.get('lambda_local', 0), como_local=True)
                 lambda_visitante_adj = get_lambda_ajustada(away, stats_visitante.get('lambda_visitante', 0), como_local=False)
                 
-                col_space1, col_est1, col_est2, col_space2 = st.columns([1, 2, 2, 1])
+                col_est1, col_est2 = st.columns(2)
                 
                 with col_est1:
                     icono_ajuste_local = "🔼" if lambda_local_adj['factor'] > 1 else ("🔽" if lambda_local_adj['factor'] < 1 else "➖")
                     color_ajuste_local = "#00ff88" if lambda_local_adj['factor'] > 1 else ("#ff6b6b" if lambda_local_adj['factor'] < 1 else "#00d4ff")
                     
+                    # Calcular promedios
+                    pj_l = stats_local.get('partidos_jugados', 1) or 1
+                    gf_l = stats_local.get('goles_favor', 0) or 0
+                    gc_l = stats_local.get('goles_contra', 0) or 0
+                    vic_l = stats_local.get('victorias', 0) or 0
+                    emp_l = stats_local.get('empates', 0) or 0
+                    der_l = stats_local.get('derrotas', 0) or 0
+                    prom_corners_l = stats_local.get('promedio_corners_total', 10) or 10
+                    prom_amarillas_l = stats_local.get('promedio_amarillas', 3) or 3
+                    prom_tiros_l = stats_local.get('promedio_tiros', 12) or 12
+                    prom_tiros_arco_l = stats_local.get('promedio_tiros_arco', 4) or 4
+                    
                     st.markdown(f"""
                     <div class="simple-card simple-card-green" style="padding: 15px;">
                         <h4 style="color: #00ff88; margin: 0 0 12px 0; font-size: 16px;">🏠 {home}</h4>
-                        <div style="font-size: 13px; line-height: 1.8;">
-                            <p style="margin: 3px 0;">PJ: <span style="color: #fff;">{stats_local.get('partidos_jugados', 0)}</span></p>
-                            <p style="margin: 3px 0;">GF: <span style="color: #fff;">{stats_local.get('goles_favor', 0)}</span></p>
-                            <p style="margin: 3px 0;">GC: <span style="color: #fff;">{stats_local.get('goles_contra', 0)}</span></p>
-                            <p style="margin: 3px 0;">λL: <span style="color: #00d4ff;">{stats_local.get('lambda_local', 0):.2f}</span> → <span style="color: {color_ajuste_local};">{lambda_local_adj['lambda_ajustada']:.2f}</span> {icono_ajuste_local}</p>
-                            <p style="margin: 3px 0;">Factor: <span style="color: {color_ajuste_local};">{lambda_local_adj['factor']:.3f}</span></p>
-                            <p style="margin: 3px 0;">Remates: <span style="color: #fff;">{stats_local.get('promedio_tiros', 0):.1f}</span></p>
-                            <p style="margin: 3px 0;">Córners: <span style="color: #00d2d3;">{stats_local.get('promedio_corners_total', 0):.1f}</span></p>
-                            <p style="margin: 3px 0;">Tarjetas: <span style="color: #ffd700;">{stats_local.get('promedio_amarillas', 0):.1f}</span></p>
+                        <div style="font-size: 12px; line-height: 1.6;">
+                            <p style="margin: 2px 0;">📅 PJ: <span style="color: #fff;">{pj_l}</span> | V: <span style="color: #00ff88;">{vic_l}</span> | E: <span style="color: #ffd700;">{emp_l}</span> | D: <span style="color: #ff6b6b;">{der_l}</span></p>
+                            <p style="margin: 2px 0;">⚽ GF: <span style="color: #fff;">{gf_l}</span> | GC: <span style="color: #ff6b6b;">{gc_l}</span> | Diff: <span style="color: #00d4ff;">{gf_l - gc_l:+.0f}</span></p>
+                            <hr style="margin: 8px 0; border-color: #333;">
+                            <p style="margin: 2px 0;">📊 λ Local: <span style="color: #00d4ff;">{stats_local.get('lambda_local', 0):.2f}</span> → <span style="color: {color_ajuste_local};">{lambda_local_adj['lambda_ajustada']:.2f}</span> {icono_ajuste_local}</p>
+                            <p style="margin: 2px 0;">⚡ Factor: <span style="color: {color_ajuste_local};">{lambda_local_adj['factor']:.3f}</span></p>
+                            <hr style="margin: 8px 0; border-color: #333;">
+                            <p style="margin: 2px 0;">🌽 Córners: <span style="color: #00d2d3;">{prom_corners_l:.1f}</span> avg</p>
+                            <p style="margin: 2px 0;">🟨 Amarillas: <span style="color: #ffd700;">{prom_amarillas_l:.1f}</span> avg</p>
+                            <p style="margin: 2px 0;">🔫 Tiros: <span style="color: #fff;">{prom_tiros_l:.1f}</span> | Arco: <span style="color: #fff;">{prom_tiros_arco_l:.1f}</span></p>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -547,21 +571,73 @@ else:
                     icono_ajuste_vis = "🔼" if lambda_visitante_adj['factor'] > 1 else ("🔽" if lambda_visitante_adj['factor'] < 1 else "➖")
                     color_ajuste_vis = "#00ff88" if lambda_visitante_adj['factor'] > 1 else ("#ff6b6b" if lambda_visitante_adj['factor'] < 1 else "#00d4ff")
                     
+                    # Calcular promedios
+                    pj_v = stats_visitante.get('partidos_jugados', 1) or 1
+                    gf_v = stats_visitante.get('goles_favor', 0) or 0
+                    gc_v = stats_visitante.get('goles_contra', 0) or 0
+                    vic_v = stats_visitante.get('victorias', 0) or 0
+                    emp_v = stats_visitante.get('empates', 0) or 0
+                    der_v = stats_visitante.get('derrotas', 0) or 0
+                    prom_corners_v = stats_visitante.get('promedio_corners_total', 10) or 10
+                    prom_amarillas_v = stats_visitante.get('promedio_amarillas', 3) or 3
+                    prom_tiros_v = stats_visitante.get('promedio_tiros', 12) or 12
+                    prom_tiros_arco_v = stats_visitante.get('promedio_tiros_arco', 4) or 4
+                    
                     st.markdown(f"""
                     <div class="simple-card simple-card-red" style="padding: 15px;">
                         <h4 style="color: #ff6b6b; margin: 0 0 12px 0; font-size: 16px;">✈️ {away}</h4>
-                        <div style="font-size: 13px; line-height: 1.8;">
-                            <p style="margin: 3px 0;">PJ: <span style="color: #fff;">{stats_visitante.get('partidos_jugados', 0)}</span></p>
-                            <p style="margin: 3px 0;">GF: <span style="color: #fff;">{stats_visitante.get('goles_favor', 0)}</span></p>
-                            <p style="margin: 3px 0;">GC: <span style="color: #fff;">{stats_visitante.get('goles_contra', 0)}</span></p>
-                            <p style="margin: 3px 0;">λV: <span style="color: #00d4ff;">{stats_visitante.get('lambda_visitante', 0):.2f}</span> → <span style="color: {color_ajuste_vis};">{lambda_visitante_adj['lambda_ajustada']:.2f}</span> {icono_ajuste_vis}</p>
-                            <p style="margin: 3px 0;">Factor: <span style="color: {color_ajuste_vis};">{lambda_visitante_adj['factor']:.3f}</span></p>
-                            <p style="margin: 3px 0;">Remates: <span style="color: #fff;">{stats_visitante.get('promedio_tiros', 0):.1f}</span></p>
-                            <p style="margin: 3px 0;">Córners: <span style="color: #00d2d3;">{stats_visitante.get('promedio_corners_total', 0):.1f}</span></p>
-                            <p style="margin: 3px 0;">Tarjetas: <span style="color: #ffd700;">{stats_visitante.get('promedio_amarillas', 0):.1f}</span></p>
+                        <div style="font-size: 12px; line-height: 1.6;">
+                            <p style="margin: 2px 0;">📅 PJ: <span style="color: #fff;">{pj_v}</span> | V: <span style="color: #00ff88;">{vic_v}</span> | E: <span style="color: #ffd700;">{emp_v}</span> | D: <span style="color: #ff6b6b;">{der_v}</span></p>
+                            <p style="margin: 2px 0;">⚽ GF: <span style="color: #fff;">{gf_v}</span> | GC: <span style="color: #ff6b6b;">{gc_v}</span> | Diff: <span style="color: #00d4ff;">{gf_v - gc_v:+.0f}</span></p>
+                            <hr style="margin: 8px 0; border-color: #333;">
+                            <p style="margin: 2px 0;">📊 λ Visitante: <span style="color: #00d4ff;">{stats_visitante.get('lambda_visitante', 0):.2f}</span> → <span style="color: {color_ajuste_vis};">{lambda_visitante_adj['lambda_ajustada']:.2f}</span> {icono_ajuste_vis}</p>
+                            <p style="margin: 2px 0;">⚡ Factor: <span style="color: {color_ajuste_vis};">{lambda_visitante_adj['factor']:.3f}</span></p>
+                            <hr style="margin: 8px 0; border-color: #333;">
+                            <p style="margin: 2px 0;">🌽 Córners: <span style="color: #00d2d3;">{prom_corners_v:.1f}</span> avg</p>
+                            <p style="margin: 2px 0;">🟨 Amarillas: <span style="color: #ffd700;">{prom_amarillas_v:.1f}</span> avg</p>
+                            <p style="margin: 2px 0;">🔫 Tiros: <span style="color: #fff;">{prom_tiros_v:.1f}</span> | Arco: <span style="color: #fff;">{prom_tiros_arco_v:.1f}</span></p>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
+                
+                # ========================
+                # ÚLTIMOS 5 PARTIDOS
+                # ========================
+                ultimos_local = stats_local.get('ultimos_5_partidos', [])
+                ultimos_visitante = stats_visitante.get('ultimos_5_partidos', [])
+                
+                if ultimos_local or ultimos_visitante:
+                    st.markdown("##### 📅 Forma Reciente")
+                    
+                    col_forma1, col_forma2 = st.columns(2)
+                    
+                    with col_forma1:
+                        st.markdown(f"**{home} - Últimos 5**")
+                        if ultimos_local:
+                            for i, partido in enumerate(ultimos_local[:5]):
+                                resultado = partido.get('resultado', '?')
+                                resultado_icon = {'V': '🟢', 'E': '🟡', 'D': '🔴'}.get(resultado, '⚪')
+                                marcador = f"{partido.get('goles_favor', 0)}-{partido.get('goles_contra', 0)}"
+                                rival = partido.get('rival', '?')
+                                corners = partido.get('corners', 0)
+                                tarjetas = partido.get('tarjetas', 0)
+                                st.markdown(f"&nbsp;&nbsp;{resultado_icon} vs {rival} ({marcador}) | 🌽{corners} 🟨{tarjetas}")
+                        else:
+                            st.info("Sin datos de forma reciente")
+                    
+                    with col_forma2:
+                        st.markdown(f"**{away} - Últimos 5**")
+                        if ultimos_visitante:
+                            for i, partido in enumerate(ultimos_visitante[:5]):
+                                resultado = partido.get('resultado', '?')
+                                resultado_icon = {'V': '🟢', 'E': '🟡', 'D': '🔴'}.get(resultado, '⚪')
+                                marcador = f"{partido.get('goles_favor', 0)}-{partido.get('goles_contra', 0)}"
+                                rival = partido.get('rival', '?')
+                                corners = partido.get('corners', 0)
+                                tarjetas = partido.get('tarjetas', 0)
+                                st.markdown(f"&nbsp;&nbsp;{resultado_icon} vs {rival} ({marcador}) | 🌽{corners} 🟨{tarjetas}")
+                        else:
+                            st.info("Sin datos de forma reciente")
             
             # ========================
             # RECUADRO PRINCIPAL
@@ -909,6 +985,8 @@ else:
                                         'promedio_tiros_arco': float(r.get('tiros_arco_promedio', 4)) or 4,
                                         'promedio_corners_total': float(r.get('corners_promedio', 10)) or 10,
                                         'promedio_amarillas': float(r.get('tarjetas_promedio', 3)) or 3,
+                                        # Fuente de datos
+                                        'source': r.get('source', 'football-data.co.uk'),
                                         # Guardar últimos 5 partidos como JSON
                                         'ultimos_5_partidos': r.get('ultimos_5_partidos', []),
                                     }
