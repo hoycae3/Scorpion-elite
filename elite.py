@@ -1323,10 +1323,17 @@ else:
                         'Fecha': p.get('fecha', ''),
                         'Partido': f"{p.get('equipo_local', '')} vs {p.get('equipo_visitante', '')}",
                         'Pick': p.get('prediccion_1x2', ''),
+                        'Prob': f"{p.get('prob_1x2', 0):.0f}%",
+                        '1': f"{p.get('p1', 0):.1f}%",
+                        'X': f"{p.get('px', 0):.1f}%",
+                        '2': f"{p.get('p2', 0):.1f}%",
+                        'O/U': p.get('prediccion_ou', ''),
+                        'BTTS': p.get('prediccion_btts', ''),
+                        'Corners': p.get('prediccion_corners', ''),
                         'Conf': f"{p.get('confianza', 0)}%",
                         '1X2': icon(res_1x2),
-                        'O/U': icon(res_ou),
-                        'BTTS': icon(res_btts),
+                        'O/U R': icon(res_ou),
+                        'BTTS R': icon(res_btts),
                     })
                 
                 import pandas as pd
