@@ -355,7 +355,7 @@ else:
         if not equipos_disponibles:
             st.warning("⚠️ No hay equipos guardados. Ve a 'Estadísticas' para agregar equipos.")
         
-        st.markdown("### 🔍 Seleccionar Partido")
+        
         
         col_space, col1, col2, col_space2 = st.columns([2, 1, 1, 2])
         st.markdown("""
@@ -364,13 +364,11 @@ else:
     font-size: 60px !important;
     font-weight: bold !important;
 }
-[data-testid="stSelectbox"] > div > div {
-    font-size: 32px !important;
-    padding: 15px !important;
-    min-height: 80px !important;
-}
 </style>
 """, unsafe_allow_html=True)
+
+# Título grande
+st.markdown("<h1 style='font-size: 50px; text-align: center;'>🔍 Seleccionar Partido</h1>", unsafe_allow_html=True)
         with col1:
             home_team = st.selectbox("🏠 Local", [""] + equipos_disponibles, key="home_select")
         with col2:
