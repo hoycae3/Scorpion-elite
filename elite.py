@@ -761,11 +761,11 @@ else:
                             st.info("💡 Estos equipos no están en football-data ni en API-Football")
                         
                         # Guardar estadísticas en Supabase
-                        if equipos_a_guardar:
+                        if con_stats:
                             st.info("💾 Guardando estadísticas en Supabase...")
                             guardados = 0
                             errores = 0
-                            for r in equipos_a_guardar:
+                            for r in con_stats:
                                 try:
                                     equipo_nombre = r.get('equipo_real', r['equipo'])
                                     data = {

@@ -797,15 +797,60 @@ def run_robot_fbref(teams: List[str], use_proxy: bool = False, proxy_api_key: st
 # ═══════════════════════════════════════════════════════════════════════════════
 
 _fd_cache = {}
+_fd_cache_file = "/tmp/football_data_cache.json"
+_fd_cache_expiry = 24 * 60 * 60  # 24 horas en segundos
 
-def get_football_data_stats() -> Dict:
+def _load_cache_from_file() -> Optional[Dict]:
+    """Carga el caché desde archivo JSON si existe y no está expirado."""
+    import os
+    import json
+    import time
+    try:
+        if os.path.exists(_fd_cache_file):
+            with open(_fd_cache_file, 'r') as f:
+                data = json.load(f)
+            cache_time = data.get('_cache_time', 0)
+            if time.time() - cache_time < _fd_cache_expiry:
+                logger.info(f"📂 Caché encontrado ({len(data)} equipos) - usando datos guardados")
+                return data
+            else:
+                logger.info("📂 Caché expirado, descargando datos nuevos...")
+    except Exception as e:
+        logger.debug(f"Error cargando caché: {e}")
+    return None
+
+def _save_cache_to_file(data: Dict):
+    """Guarda el caché en archivo JSON."""
+    import json
+    import time
+    try:
+        data['_cache_time'] = time.time()
+        with open(_fd_cache_file, 'w') as f:
+            json.dump(data, f)
+        logger.info(f"💾 Caché guardado en {_fd_cache_file}")
+    except Exception as e:
+        logger.warning(f"Error guardando caché: {e}")
+
+def get_football_data_stats(force_refresh: bool = False) -> Dict:
     """
     Descarga estadísticas de football-data.co.uk (acceso directo, sin Cloudflare).
     Incluye: goles, corners, tarjetas, tiros, faltas.
+    
+    Usa caché en memoria (por sesión) y en archivo (entre sesiones).
     """
     global _fd_cache
-    if _fd_cache:
+    
+    # 1. Verificar caché en memoria
+    if _fd_cache and not force_refresh:
+        logger.info(f"📂 Usando caché en memoria ({len(_fd_cache)} equipos)")
         return _fd_cache
+    
+    # 2. Verificar caché en archivo
+    if not force_refresh:
+        file_cache = _load_cache_from_file()
+        if file_cache:
+            _fd_cache = file_cache
+            return _fd_cache
     
     import csv
     from io import StringIO
@@ -815,6 +860,10 @@ def get_football_data_stats() -> Dict:
     all_matches = {}  # Almacenar últimos partidos por equipo
     
     logger.info(f"📥 Descargando datos de football-data.co.uk ({len(FD_LEAGUE_URLS)} ligas)...")
+    
+    # Delay inicial más largo para evitar bloqueos
+    logger.info("⏳ Esperando 3s antes de descargar...")
+    time.sleep(3)
     
     for league, url in FD_LEAGUE_URLS.items():
         try:
@@ -984,6 +1033,8 @@ def get_football_data_stats() -> Dict:
         all_stats[equipo]['ultimos_5_partidos'] = matches_sorted[:5]
     
     _fd_cache = all_stats
+    # Guardar en caché de archivo para futuras sesiones
+    _save_cache_to_file(all_stats.copy())
     logger.info(f"📊 Total equipos cargados: {len(all_stats)}")
     return all_stats
 
