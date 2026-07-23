@@ -161,16 +161,320 @@ if "user_data" not in st.session_state:
 if "is_admin" not in st.session_state:
     st.session_state.is_admin = False
 
-# CSS
+# CSS Mejorado
 st.markdown("""
 <style>
-.stApp { background: #0a0a0a; }
-.title { color: #ffd700; font-size: 48px; font-weight: bold; margin: 0; line-height: 48px; }
-.header { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 2px solid #333; }
+/* Fondo general */
+.stApp { background: #0a0a0a !important; }
+.main { background: #0a0a0a !important; }
+
+/* Título principal */
+.title { color: #ffd700; font-size: 42px; font-weight: bold; margin: 0; line-height: 48px; text-align: center; }
+
+/* DataFrames */
 .stDataFrame { background: #1a1a1a; }
+
+/* Headers */
+.header { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 2px solid #333; }
 .section-title { margin-top: 5px; margin-bottom: 0; }
 div.block-container { padding-top: 1rem; }
 div[data-testid="stHorizontalBlock"] { align-items: center; }
+
+/* ══════════════════════════════════════════════════════════ */
+/* CAJAS / CUADROS MEJORADOS                             */
+/* ══════════════════════════════════════════════════════════ */
+
+/* Caja principal de probabilidades 1X2 */
+.caja-1x2 {
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 12px;
+    padding: 20px 15px;
+    text-align: center;
+    margin: 5px;
+    border: 2px solid #333;
+    transition: all 0.3s ease;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.caja-1x2:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.caja-local {
+    border-color: #00ff88;
+    box-shadow: 0 0 20px rgba(0,255,136,0.1);
+}
+
+.caja-empate {
+    border-color: #ffd700;
+    box-shadow: 0 0 20px rgba(255,215,0,0.1);
+}
+
+.caja-visitante {
+    border-color: #ff6b6b;
+    box-shadow: 0 0 20px rgba(255,107,107,0.1);
+}
+
+/* Etiqueta del equipo */
+.etiqueta-equipo {
+    color: #888;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 8px 0;
+}
+
+/* Probabilidad grande */
+.probabilidad {
+    color: #fff;
+    font-size: 36px;
+    font-weight: bold;
+    margin: 5px 0 0 0;
+}
+
+/* Equipo Local */
+.etiqueta-local { color: #00ff88 !important; }
+.etiqueta-empate { color: #ffd700 !important; }
+.etiqueta-visitante { color: #ff6b6b !important; }
+
+/* ══════════════════════════════════════════════════════════ */
+/* CAJAS DE PREDICCIONES ADICIONALES                     */
+/* ══════════════════════════════════════════════════════════ */
+
+.caja-prediccion {
+    background: linear-gradient(180deg, #1a1a2e 0%, #12121f 100%);
+    border-radius: 10px;
+    padding: 15px 10px;
+    text-align: center;
+    margin: 3px;
+    border: 1px solid #2a2a3e;
+    min-height: 130px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.caja-prediccion:hover {
+    border-color: #3a3a4e;
+    background: linear-gradient(180deg, #1f1f35 0%, #15152a 100%);
+}
+
+/* Título de la caja */
+.titulo-caja {
+    color: #666;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 8px 0;
+}
+
+/* Valor principal */
+.valor-caja {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+/* Pick */
+.pick-caja {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 3px 0 0 0;
+}
+
+/* Colores de Picks */
+.pick-over { color: #00ff88; }
+.pick-under { color: #ff6b6b; }
+.pick-si { color: #a55eea; }
+.pick-no { color: #666; }
+
+/* ══════════════════════════════════════════════════════════ */
+/* CAJAS DE FORMA RECIENTE                               */
+/* ══════════════════════════════════════════════════════════ */
+
+.caja-forma {
+    background: #1a1a2e;
+    border-radius: 10px;
+    padding: 15px;
+    border: 1px solid #2a2a3e;
+}
+
+.caja-forma-local {
+    border-left: 4px solid #00ff88;
+}
+
+.caja-forma-visitante {
+    border-right: 4px solid #ff6b6b;
+}
+
+.forma-titulo {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 10px 0;
+}
+
+.forma-local .forma-titulo { color: #00ff88; }
+.forma-visitante .forma-titulo { color: #ff6b6b; }
+
+/* Letras de forma */
+.forma-letras {
+    font-size: 16px;
+    letter-spacing: 3px;
+    margin: 5px 0;
+}
+
+.forma-g { color: #00ff88; font-weight: bold; }
+.forma-e { color: #ffd700; font-weight: bold; }
+.forma-p { color: #ff6b6b; font-weight: bold; }
+
+.forma-stats {
+    color: #888;
+    font-size: 11px;
+    margin: 8px 0 0 0;
+}
+
+.forma-stats span { color: #fff; }
+
+/* ══════════════════════════════════════════════════════════ */
+/* RECUADRO PRINCIPAL DE ANÁLISIS                        */
+/* ══════════════════════════════════════════════════════════ */
+
+.caja-analisis {
+    background: linear-gradient(135deg, #1a2a3a 0%, #0d1a26 50%, #1a1a2e 100%);
+    border: 2px solid #00d4ff;
+    border-radius: 15px;
+    padding: 20px 30px;
+    text-align: center;
+    margin: 15px auto;
+    max-width: 550px;
+    box-shadow: 0 0 30px rgba(0,212,255,0.15), inset 0 0 20px rgba(0,0,0,0.3);
+}
+
+.analisis-etiqueta {
+    color: #00d4ff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin: 0;
+}
+
+.analisis-partido {
+    color: #fff;
+    font-size: 26px;
+    margin: 8px 0;
+}
+
+.analisis-score {
+    color: #00d4ff;
+    font-size: 14px;
+    margin: 5px 0;
+}
+
+.analisis-pick {
+    color: #00d4ff;
+    font-size: 32px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.analisis-confianza {
+    display: inline-block;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid #00d4ff;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+/* ══════════════════════════════════════════════════════════ */
+/* ESTADÍSTICAS DE EQUIPOS                               */
+/* ══════════════════════════════════════════════════════════ */
+
+.caja-stats-equipo {
+    background: #1a1a2e;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #2a2a3e;
+}
+
+.titulo-equipo {
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    margin: 0 0 15px 0;
+}
+
+.stats-fila {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid #2a2a3e;
+    font-size: 13px;
+}
+
+.stats-label { color: #888; }
+.stats-value { color: #fff; font-weight: 600; }
+.stats-value-positivo { color: #00ff88; }
+.stats-value-negativo { color: #ff6b6b; }
+.stats-value-neutro { color: #00d4ff; }
+
+/* ══════════════════════════════════════════════════════════ */
+/* BADGES Y TAGS                                         */
+/* ══════════════════════════════════════════════════════════ */
+
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badge-verde {
+    background: rgba(0,255,136,0.15);
+    color: #00ff88;
+    border: 1px solid #00ff88;
+}
+
+.badge-rojo {
+    background: rgba(255,107,107,0.15);
+    color: #ff6b6b;
+    border: 1px solid #ff6b6b;
+}
+
+.badge-amarillo {
+    background: rgba(255,215,0,0.15);
+    color: #ffd700;
+    border: 1px solid #ffd700;
+}
+
+.badge-azul {
+    background: rgba(0,212,255,0.15);
+    color: #00d4ff;
+    border: 1px solid #00d4ff;
+}
+
+/* Forma recent badge */
+.forma-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    margin: 0 2px;
+}
+
+.forma-badge-g { background: #00ff88; color: #000; }
+.forma-badge-e { background: #ffd700; color: #000; }
+.forma-badge-p { background: #ff6b6b; color: #fff; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -640,7 +944,7 @@ else:
                             st.info("Sin datos de forma reciente")
             
             # ========================
-            # RECUADRO PRINCIPAL
+            # RECUADRO PRINCIPAL DE ANÁLISIS
             # ========================
             pick = r.get('pick_1x2', 'X')
             confianza = r.get('confianza', 0)
@@ -651,14 +955,12 @@ else:
             rango_color = {"A+": "🟢", "A": "🟢", "B": "🔵", "C": "🟡", "D": "🔴"}
             
             st.markdown(f"""
-            <div style="background: #1a1a2e; border: 1px solid #00d4ff; border-radius: 8px; padding: 12px 20px; text-align: center; margin: 10px auto; max-width: 500px;">
-                <p style="color: #00d4ff; margin: 0; font-size: 10px; font-weight: 600; letter-spacing: 1px;">⚡ ANÁLISIS</p>
-                <p style="color: white; margin: 5px 0; font-size: 28px;">⚽ {home} vs {away}</p>
-                <p style="color: #00d4ff; margin: 3px 0; font-size: 14px;">Expected Score: {marcador}</p>
-                <p style="color: #00d4ff; margin: 8px 0; font-size: 28px; font-weight: bold;">
-                    {pick_icon.get(pick, '🎯')} {pick}
-                </p>
-                <span style="background: rgba(0, 212, 255, 0.1); border: 1px solid #00d4ff; padding: 3px 10px; border-radius: 10px; font-size: 11px;">
+            <div class="caja-analisis">
+                <p class="analisis-etiqueta">⚡ ANÁLISIS PRINCIPAL</p>
+                <p class="analisis-partido">⚽ {home} vs {away}</p>
+                <p class="analisis-score">Expected Score: {marcador}</p>
+                <p class="analisis-pick">{pick_icon.get(pick, '🎯')} {pick}</p>
+                <span class="analisis-confianza">
                     {rango_color.get(rango, '⚪')} {confianza}% ({rango})
                 </span>
             </div>
@@ -710,7 +1012,7 @@ else:
                             st.error(f"❌ Error: {str(e)}")
             
             # ========================
-            # PROBABILIDADES 1X2
+            # PROBABILIDADES 1X2 (CUADROS MEJORADOS)
             # ========================
             st.markdown("##### 🎯 Probabilidades (1X2)")
             
@@ -718,34 +1020,39 @@ else:
             px = r.get('px', 0)
             p2 = r.get('p2', 0)
             
+            # Determinar cuál tiene mayor probabilidad
+            es_local_max = p1 > px and p1 > p2
+            es_empate_max = px > p1 and px > p2
+            es_visita_max = p2 > p1 and p2 > px
+            
             col1, col2, col3 = st.columns([1.5, 1, 1.5])
             with col1:
-                border = '2px solid #00ff88' if p1 > px and p1 > p2 else '1px solid rgba(255,255,255,0.1)'
+                clase = "caja-1x2 caja-local" if es_local_max else "caja-1x2"
                 st.markdown(f"""
-                <div class="simple-card" style="border: {border}; text-align: center;">
-                    <p style="color: #00ff88; margin: 0; font-size: 13px;">🏠 {home}</p>
-                    <p style="color: white; margin: 10px 0 0 0; font-size: 28px;">{p1:.1f}%</p>
+                <div class="{clase}">
+                    <p class="etiqueta-equipo etiqueta-local">🏠 {home}</p>
+                    <p class="probabilidad">{p1:.1f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             with col2:
-                border = '2px solid #ffd700' if px > p1 and px > p2 else '1px solid rgba(255,255,255,0.1)'
+                clase = "caja-1x2 caja-empate" if es_empate_max else "caja-1x2"
                 st.markdown(f"""
-                <div class="simple-card" style="border: {border}; text-align: center;">
-                    <p style="color: #ffd700; margin: 0; font-size: 13px;">🤝 Empate</p>
-                    <p style="color: white; margin: 10px 0 0 0; font-size: 28px;">{px:.1f}%</p>
+                <div class="{clase}">
+                    <p class="etiqueta-equipo etiqueta-empate">🤝 Empate</p>
+                    <p class="probabilidad">{px:.1f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             with col3:
-                border = '2px solid #ff6b6b' if p2 > p1 and p2 > px else '1px solid rgba(255,255,255,0.1)'
+                clase = "caja-1x2 caja-visitante" if es_visita_max else "caja-1x2"
                 st.markdown(f"""
-                <div class="simple-card" style="border: {border}; text-align: center;">
-                    <p style="color: #ff6b6b; margin: 0; font-size: 13px;">✈️ {away}</p>
-                    <p style="color: white; margin: 10px 0 0 0; font-size: 28px;">{p2:.1f}%</p>
+                <div class="{clase}">
+                    <p class="etiqueta-equipo etiqueta-visitante">✈️ {away}</p>
+                    <p class="probabilidad">{p2:.1f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             # ========================
-            # PREDICCIONES ADICIONALES
+            # PREDICCIONES ADICIONALES (CUADROS MEJORADOS)
             # ========================
             st.markdown("##### 📊 Predicciones Adicionales")
             
@@ -783,14 +1090,13 @@ else:
             with col_ou:
                 pick_ou = r.get('pick_over_under', 'Over 2.5')
                 prob_ou = r.get('prob_over_under', 50)
-                ou_icon = "📈" if "Over" in pick_ou else "📉"
                 ou_symbol = "+" if "Over" in pick_ou else "-"
-                ou_color = "#00ff88" if "Over" in pick_ou else "#ff6b6b"
+                ou_color_class = "pick-over" if "Over" in pick_ou else "pick-under"
                 st.markdown(f"""
-                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
-                    
-                    <p style="color: {ou_color}; margin: 8px 0; font-size: 18px; font-weight: bold;">{ou_symbol} 2.5</p>
-                    <p style="color: #fff; margin: 0; font-size: 16px; font-weight: bold;">{prob_ou:.0f}%</p>
+                <div class="caja-prediccion">
+                    <p class="titulo-caja">📈 Over/Under 2.5</p>
+                    <p class="valor-caja {ou_color_class}">{ou_symbol} 2.5</p>
+                    <p class="pick-caja">{prob_ou:.0f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -798,11 +1104,12 @@ else:
                 pick_btts = r.get('pick_btts', 'No')
                 btts_yes = r.get('btts_yes', 50)
                 btts_icon = "✅" if pick_btts == "Sí" else "❌"
+                btts_color_class = "pick-si" if pick_btts == "Sí" else "pick-no"
                 st.markdown(f"""
-                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
-                    
-                    <p style="color: #a55eea; margin: 8px 0; font-size: 18px; font-weight: bold;">{btts_icon} {pick_btts}</p>
-                    <p style="color: #fff; margin: 0; font-size: 16px; font-weight: bold;">{btts_yes:.0f}%</p>
+                <div class="caja-prediccion">
+                    <p class="titulo-caja">⚽ Ambos Marcan</p>
+                    <p class="valor-caja {btts_color_class}">{btts_icon} {pick_btts}</p>
+                    <p class="pick-caja">{btts_yes:.0f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -812,57 +1119,57 @@ else:
                 pick_corners = r.get('pick_corners', '+')
                 pick_corner_symbol = "+" if pick_corners == "+" else "-"
                 st.markdown(f"""
-                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
-                    
-                    <p style="color: #00d2d3; margin: 8px 0; font-size: 18px; font-weight: bold;">{total_c:.0f}</p>
-                    <p style="color: #fff; margin: 0; font-size: 14px;">{pick_corner_symbol} {total_c:.0f}</p>
+                <div class="caja-prediccion">
+                    <p class="titulo-caja">🌽 Córners Total</p>
+                    <p class="valor-caja" style="color: #00d2d3;">{total_c:.0f}</p>
+                    <p class="pick-caja">{pick_corner_symbol} {total_c:.0f}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_remates:
                 remates_icon = "📈" if pick_remates == "+" else "📉"
-                remates_color = "#00ff88" if pick_remates == "+" else "#ff6b6b"
+                remates_color_class = "pick-over" if pick_remates == "+" else "pick-under"
                 st.markdown(f"""
-                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
-                    
-                    <p style="color: #00ff88; margin: 8px 0; font-size: 18px; font-weight: bold;">{remates_total:.0f}</p>
-                    <p style="color: {remates_color}; margin: 0; font-size: 14px; font-weight: bold;">{remates_icon} {pick_remates}</p>
+                <div class="caja-prediccion">
+                    <p class="titulo-caja">🔫 Tiros Total</p>
+                    <p class="valor-caja" style="color: #00ff88;">{remates_total:.0f}</p>
+                    <p class="pick-caja {remates_color_class}">{remates_icon} {pick_remates}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_arco:
                 arco_icon = "📈" if pick_arco == "+" else "📉"
-                arco_color = "#00ff88" if pick_arco == "+" else "#ff6b6b"
+                arco_color_class = "pick-over" if pick_arco == "+" else "pick-under"
                 st.markdown(f"""
-                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
-                    
-                    <p style="color: #ff9f43; margin: 8px 0; font-size: 18px; font-weight: bold;">{arco_total:.0f}</p>
-                    <p style="color: {arco_color}; margin: 0; font-size: 14px; font-weight: bold;">{arco_icon} {pick_arco}</p>
+                <div class="caja-prediccion">
+                    <p class="titulo-caja">🎯 Tiros Arco</p>
+                    <p class="valor-caja" style="color: #ff9f43;">{arco_total:.0f}</p>
+                    <p class="pick-caja {arco_color_class}">{arco_icon} {pick_arco}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_tarjetas:
                 tarjetas_icon = "📈" if pick_tarjetas == "+" else "📉"
-                tarjetas_color = "#00ff88" if pick_tarjetas == "+" else "#ff6b6b"
+                tarjetas_color_class = "pick-over" if pick_tarjetas == "+" else "pick-under"
                 st.markdown(f"""
-                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
-                    
-                    <p style="color: #ffd700; margin: 8px 0; font-size: 18px; font-weight: bold;">{tarjetas_total:.1f}</p>
-                    <p style="color: {tarjetas_color}; margin: 0; font-size: 14px; font-weight: bold;">{tarjetas_icon} {pick_tarjetas}</p>
+                <div class="caja-prediccion">
+                    <p class="titulo-caja">🟨 Amarillas Total</p>
+                    <p class="valor-caja" style="color: #ffd700;">{tarjetas_total:.1f}</p>
+                    <p class="pick-caja {tarjetas_color_class}">{tarjetas_icon} {pick_tarjetas}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_score:
                 st.markdown(f"""
-                <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px; text-align: center; height: 100%;">
-                    <p style="color: #888; margin: 0; font-size: 11px;">🎯 Marcador</p>
-                    <p style="color: #ff6b6b; margin: 8px 0; font-size: 16px; font-weight: bold;">{score_mas_probable}</p>
-                    <p style="color: #fff; margin: 0; font-size: 12px;">Probable</p>
+                <div class="caja-prediccion">
+                    <p class="titulo-caja">🎯 Marcador Probable</p>
+                    <p class="valor-caja" style="color: #ff6b6b;">{score_mas_probable}</p>
+                    <p class="pick-caja" style="color: #888;">Más probable</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             # ========================
-            # FORMA RECIENTE
+            # FORMA RECIENTE (CUADROS MEJORADOS)
             # ========================
             st.markdown("##### 📅 Forma Reciente (Últimos 5)")
             
@@ -877,20 +1184,21 @@ else:
                 gf = forma_l.get('goles_favor_5', 0)
                 gc = forma_l.get('goles_contra_5', 0)
                 
-                forma_html = "".join([
-                    f"<span class='forma-g'>{c}</span> " if c=='G' else (
-                    f"<span class='forma-e'>{c}</span> " if c=='E' else (
-                    f"<span class='forma-p'>{c}</span> " if c=='P' else c + " "
+                # Crear badges de forma
+                badges_forma = "".join([
+                    f"<span class='forma-badge forma-badge-g'>{c}</span>" if c=='G' else (
+                    f"<span class='forma-badge forma-badge-e'>{c}</span>" if c=='E' else (
+                    f"<span class='forma-badge forma-badge-p'>{c}</span>" if c=='P' else c
                     )) for c in letras
                 ])
                 
                 st.markdown(f"""
-                <div class="simple-card simple-card-green">
-                    <h4 style="color: #00ff88; margin: 0 0 8px 0; font-size: 13px;">🏠 {home}</h4>
-                    <p style="margin: 0 0 5px 0; font-size: 14px;">{forma_html}</p>
-                    <p style="color: #888; margin: 0; font-size: 11px;">
-                        Puntos: <span style="color: #fff;">{puntos:.0f}%</span> | 
-                        Goles: <span style="color: #fff;">{gf}f/{gc}c</span>
+                <div class="caja-forma caja-forma-local">
+                    <p class="forma-titulo">🏠 {home}</p>
+                    <div class="forma-letras">{badges_forma}</div>
+                    <p class="forma-stats">
+                        Puntos: <span>{puntos:.0f}%</span> | 
+                        Goles: <span>{gf}f/{gc}c</span>
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
@@ -901,20 +1209,21 @@ else:
                 gf_v = forma_v.get('goles_favor_5', 0)
                 gc_v = forma_v.get('goles_contra_5', 0)
                 
-                forma_html_v = "".join([
-                    f"<span class='forma-g'>{c}</span> " if c=='G' else (
-                    f"<span class='forma-e'>{c}</span> " if c=='E' else (
-                    f"<span class='forma-p'>{c}</span> " if c=='P' else c + " "
+                # Crear badges de forma
+                badges_forma_v = "".join([
+                    f"<span class='forma-badge forma-badge-g'>{c}</span>" if c=='G' else (
+                    f"<span class='forma-badge forma-badge-e'>{c}</span>" if c=='E' else (
+                    f"<span class='forma-badge forma-badge-p'>{c}</span>" if c=='P' else c
                     )) for c in letras_v
                 ])
                 
                 st.markdown(f"""
-                <div class="simple-card simple-card-red">
-                    <h4 style="color: #ff6b6b; margin: 0 0 8px 0; font-size: 13px;">✈️ {away}</h4>
-                    <p style="margin: 0 0 5px 0; font-size: 14px;">{forma_html_v}</p>
-                    <p style="color: #888; margin: 0; font-size: 11px;">
-                        Puntos: <span style="color: #fff;">{puntos_v:.0f}%</span> | 
-                        Goles: <span style="color: #fff;">{gf_v}f/{gc_v}c</span>
+                <div class="caja-forma caja-forma-visitante">
+                    <p class="forma-titulo">✈️ {away}</p>
+                    <div class="forma-letras">{badges_forma_v}</div>
+                    <p class="forma-stats">
+                        Puntos: <span>{puntos_v:.0f}%</span> | 
+                        Goles: <span>{gf_v}f/{gc_v}c</span>
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
