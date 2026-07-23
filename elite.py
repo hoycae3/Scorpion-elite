@@ -1274,12 +1274,9 @@ else:
                             st.markdown("### 📊 Equipos con estadísticas reales")
                             for r in con_stats:
                                 fuente = r.get('fuentes_probadas', ['?'])[-1]
-                                fuente_nombre = {
-                                    'football-data.co.uk': '🌐 football-data',
-                                    'api-football.com': '🔷 API-Football'
-                                }.get(fuente, fuente)
-                                st.markdown(f"- **{r.get('equipo_real', r['equipo'])}** ({r.get('liga', 'N/A')})")
-                                st.markdown(f"  `λL={r['lambda_local']} | λV={r['lambda_visitante']} | Partidos={r['partidos_jugados']} | Fuente: {fuente_nombre}`")
+                                fuente_icono = "🌐" if 'football' in fuente.lower() else ("🔷" if 'api' in fuente.lower() else ("📊" if 'WhoScored' in fuente else "📈"))
+                                st.markdown(f"- **{r.get('equipo_real', r['equipo'])}** ({r.get('liga', 'N/A')}) {fuente_icono}")
+                                st.markdown(f"  `λL={r.get('lambda_local', 0):.2f} | λV={r.get('lambda_visitante', 0):.2f} | PJ={r.get('partidos_jugados', 0)}`")
                         
                         # Mostrar equipos SIN estadísticas (NO encontrados)
                         if no_encontrados:
@@ -1296,6 +1293,26 @@ else:
                             for r in con_stats:
                                 try:
                                     equipo_nombre = r.get('equipo_real', r['equipo'])
+                                    fuente = r.get('fuentes_probadas', ['football-data.co.uk'])[-1]
+                                    
+                                    # Determinar fuente de datos
+                                    if 'football-data' in fuente:
+                                        source_fbdata = True
+                                        source_whoscored = False
+                                        source_fbref = False
+                                    elif 'WhoScored' in fuente:
+                                        source_fbdata = False
+                                        source_whoscored = True
+                                        source_fbref = False
+                                    elif 'FBref' in fuente:
+                                        source_fbdata = False
+                                        source_whoscored = False
+                                        source_fbref = True
+                                    else:
+                                        source_fbdata = True
+                                        source_whoscored = False
+                                        source_fbref = False
+                                    
                                     data = {
                                         'equipo': equipo_nombre,
                                         'liga': r.get('liga', 'Desconocida'),
@@ -1308,28 +1325,31 @@ else:
                                         'goles_contra': r.get('goles_contra', 0) or 0,
                                         'lambda_local': float(r.get('lambda_local', 1.3)) or 1.3,
                                         'lambda_visitante': float(r.get('lambda_visitante', 1.1)) or 1.1,
-                                        # Nuevos stats
+                                        # Stats avanzados
                                         'promedio_tiros': float(r.get('tiros_promedio', 12)) or 12,
                                         'promedio_tiros_arco': float(r.get('tiros_arco_promedio', 4)) or 4,
                                         'promedio_corners_total': float(r.get('corners_promedio', 10)) or 10,
                                         'promedio_amarillas': float(r.get('tarjetas_promedio', 3)) or 3,
-                                        # Fuente de datos
-                                        'source': r.get('source', 'football-data.co.uk'),
-                                        # Guardar últimos 5 partidos como JSON
+                                        # Fuentes de datos
+                                        'source_fbdata': source_fbdata,
+                                        'source_whoscored': source_whoscored,
+                                        'source_fbref': source_fbref,
+                                        # Últimos 5 partidos
                                         'ultimos_5_partidos': r.get('ultimos_5_partidos', []),
                                     }
                                     
                                     # Intentar upsert (actualizar si existe)
                                     try:
                                         client.table('equipos_stats').upsert(data).execute()
-                                    except:
-                                        # Si falla upsert, intentar insert directo
+                                    except Exception as upsert_error:
+                                        # Si falla upsert, intentar sin últimos 5 partidos
                                         try:
-                                            client.table('equipos_stats').insert(data).execute()
-                                        except Exception as insert_error:
-                                            # Crear sin los campos nuevos
                                             data_basic = {k: v for k, v in data.items() if k != 'ultimos_5_partidos'}
-                                            client.table('equipos_stats').insert(data_basic).execute()
+                                            client.table('equipos_stats').upsert(data_basic).execute()
+                                        except Exception as e2:
+                                            errores += 1
+                                            logger.error(f"Error guardando {equipo_nombre}: {e2}")
+                                            continue
                                     
                                     guardados += 1
                                     st.info(f"✅ {equipo_nombre}")
