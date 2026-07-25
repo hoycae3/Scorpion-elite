@@ -668,6 +668,10 @@ else:
     elif st.session_state.page == "Analizador":
         pass  # Sin título
         
+        # Inicializar selected_match en session_state
+        if 'selected_match_index' not in st.session_state:
+            st.session_state.selected_match_index = None
+        
         # Obtener lista de equipos disponibles
         client = create_client(SUPABASE_URL, SUPABASE_KEY)
         try:
@@ -676,6 +680,52 @@ else:
             equipos_disponibles = sorted(set(equipos_disponibles))
         except:
             equipos_disponibles = []
+        
+        # Obtener partidos de Supabase
+        try:
+            response_partidos = client.table('partidos').select('*').order('fecha', desc=True).order('hora', desc=True).execute()
+            partidos_data = response_partidos.data if response_partidos.data else []
+        except:
+            partidos_data = []
+        
+        # Mostrar partidos disponibles si hay
+        if partidos_data:
+            st.markdown("### 📋 Partidos en Base de Datos")
+            
+            # Crear opciones para el selector
+            partido_options = ["-- Seleccionar partido --"]
+            partido_dict = {}
+            for i, p in enumerate(partidos_data):
+                fecha = p.get('fecha', '')[:10] if p.get('fecha') else ''
+                hora = p.get('hora', '')[:5] if p.get('hora') else ''
+                local = p.get('equipo_local', '?')
+                visitante = p.get('equipo_visitante', '?')
+                pais = p.get('pais', '')
+                label = f"{fecha} {hora} | {local} vs {visitante}"
+                if pais:
+                    label += f" ({pais})"
+                partido_options.append(label)
+                partido_dict[i + 1] = p  # +1 porque el primer elemento es el placeholder
+            
+            # Selector de partido
+            selected_idx = st.selectbox(
+                "Selecciona un partido para analizar:", 
+                range(len(partido_options)), 
+                format_func=lambda x: partido_options[x],
+                key="match_selector"
+            )
+            
+            # Si se seleccionó un partido (no el placeholder)
+            if selected_idx > 0 and selected_idx in partido_dict:
+                p = partido_dict[selected_idx]
+                st.session_state.selected_match_index = selected_idx
+                st.success(f"✅ Partido seleccionado: {p.get('equipo_local')} vs {p.get('equipo_visitante')}")
+            elif selected_idx == 0:
+                st.session_state.selected_match_index = None
+            
+            st.markdown("---")
+        elif not equipos_disponibles:
+            st.warning("⚠️ No hay partidos ni equipos guardados. Sube un Excel y busca los equipos.")
         
         # Mostrar equipos disponibles
         if not equipos_disponibles:
