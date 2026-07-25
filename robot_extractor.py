@@ -1816,6 +1816,92 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                 logger.info("   ⏳ Esperando 7s para evitar rate limit...")
                 time.sleep(7)
     
+    # PASO 3: Soccerway para equipos no encontrados
+    pendientes = [r for r in results if r.get('encontrado') == False]
+    if pendientes:
+        logger.info("="*50)
+        logger.info(f"📊 PASO 3: Buscando {len(pendientes)} equipos en Soccerway")
+        logger.info("="*50)
+        
+        soccerway = SoccerwayScraper()
+        for result in pendientes:
+            team_name = result['equipo']
+            logger.info(f"🔍 {team_name}...")
+            
+            try:
+                team_url = soccerway.search_team(team_name)
+                if team_url:
+                    stats = soccerway.get_team_stats_summary(team_url)
+                    if stats:
+                        result['encontrado'] = True
+                        result['sin_estadisticas'] = False
+                        result['equipo_real'] = team_name
+                        result['liga'] = stats.get('liga', 'Soccerway')
+                        result['partidos_jugados'] = stats.get('partidos', 0)
+                        result['victorias'] = stats.get('victorias', 0)
+                        result['empates'] = stats.get('empates', 0)
+                        result['derrotas'] = stats.get('derrotas', 0)
+                        result['goles_favor'] = stats.get('goles_favor', 0)
+                        result['goles_contra'] = stats.get('goles_contra', 0)
+                        result['fuentes_probadas'].append('soccerway')
+                        logger.info(f"   ✅ Encontrado en Soccerway")
+            except Exception as e:
+                logger.debug(f"   ⚠️ Soccerway error: {e}")
+
+    # PASO 4: WhoScored para equipos no encontrados
+    pendientes = [r for r in results if r.get('encontrado') == False]
+    if pendientes:
+        logger.info("="*50)
+        logger.info(f"📊 PASO 4: Buscando {len(pendientes)} equipos en WhoScored")
+        logger.info("="*50)
+        
+        whoscored = WhoScoredScraper()
+        for result in pendientes:
+            team_name = result['equipo']
+            logger.info(f"🔍 {team_name}...")
+            
+            try:
+                team_url = whoscored.search_team(team_name)
+                if team_url:
+                    stats = whoscored.get_team_stats(team_url)
+                    if stats:
+                        result['encontrado'] = True
+                        result['sin_estadisticas'] = False
+                        result['fuentes_probadas'].append('whoscored')
+                        if not result.get('partidos_jugados'):
+                            result['partidos_jugados'] = stats.get('partidos', 20)
+                        logger.info(f"   ✅ Encontrado en WhoScored")
+            except Exception as e:
+                logger.debug(f"   ⚠️ WhoScored error: {e}")
+
+    # PASO 5: FBref para equipos no encontrados
+    pendientes = [r for r in results if r.get('encontrado') == False]
+    if pendientes:
+        logger.info("="*50)
+        logger.info(f"📊 PASO 5: Buscando {len(pendientes)} equipos en FBref")
+        logger.info("="*50)
+        
+        fbref = FBrefAdvancedScraper()
+        for result in pendientes:
+            team_name = result['equipo']
+            logger.info(f"🔍 {team_name}...")
+            
+            try:
+                team_info = fbref.find_team(team_name)
+                if team_info:
+                    stats = fbref.get_team_stats(team_info['url'])
+                    if stats:
+                        result['encontrado'] = True
+                        result['sin_estadisticas'] = False
+                        result['equipo_real'] = team_info['name']
+                        result['liga'] = team_info.get('league', 'FBref')
+                        result['fuentes_probadas'].append('fbref')
+                        if not result.get('partidos_jugados'):
+                            result['partidos_jugados'] = stats.get('partidos', 20)
+                        logger.info(f"   ✅ Encontrado en FBref")
+            except Exception as e:
+                logger.debug(f"   ⚠️ FBref error: {e}")
+
     # Resumen
     encontrados = sum(1 for r in results if r.get('encontrado') == True)
     no_encontrados = sum(1 for r in results if r.get('encontrado') == False)
