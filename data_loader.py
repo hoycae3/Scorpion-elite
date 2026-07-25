@@ -65,6 +65,21 @@ PAIS_MAP = {
     'bolivia': 'Bolivia',
 }
 
+# Mapeo de países a ligas por defecto
+PAIS_LIGA_DEFAULT = {
+    'México': 'Liga MX, Apertura',
+    'Brasil': 'Brasileirão',
+    'Argentina': 'Liga Profesional Argentina',
+    'Colombia': 'Primera A - Clausura',
+    'Chile': 'Primera División',
+    'Perú': 'Liga 1',
+    'Uruguay': 'Primera División',
+    'Paraguay': 'Primera División',
+    'Ecuador': 'Liga Pro',
+    'Venezuela': 'Primera División',
+    'Estados Unidos': 'MLS',
+}
+
 
 def parse_date_from_header(text: str) -> str:
     """Extrae fecha del header (ej: 'Hoy - 18.07.' → 2026-07-18)"""
@@ -262,8 +277,8 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
         second = text[half:]
         return normalize_text(first) == normalize_text(second)
     
-    def find_liga_above(posicion):
-        """Busca la liga en las filas anteriores"""
+    def find_liga_above(posicion, pais_default=""):
+        """Busca la liga en las filas anteriores. Si no encuentra, usa la del país."""
         # Patrones de liga conocidos
         liga_patterns = ['liga mx', 'liga mx apertura', 'primera a', 'copa de la liga', 'liga profesional',
                         'apertura', 'clausura', 'serie a', 'premier league', 'la liga', 'bundesliga',
@@ -310,6 +325,10 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
             # Si no parece ser un equipo y tiene más de 5 caracteres, podría ser una liga
             if len(prev) > 5 and prev[0].isupper():
                 return prev.strip()
+        
+        # Si no encontró liga, usar la del país
+        if pais_default and pais_default in PAIS_LIGA_DEFAULT:
+            return PAIS_LIGA_DEFAULT[pais_default]
         
         return ""
     
@@ -378,12 +397,13 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
         if re.match(r'^\d{1,2}:\d{2}:\d{2}$', row):
             hora = row[:5]  # Solo HH:MM
             
-            # Buscar país y liga para este partido
+            # Buscar país primero
             pais_encontrado = find_pais_above(i)
-            liga_encontrada = find_liga_above(i)
-            
             if pais_encontrado:
                 current_pais = pais_encontrado
+            
+            # Buscar liga (usando el país como default si no se encuentra)
+            liga_encontrada = find_liga_above(i, current_pais)
             if liga_encontrada:
                 current_liga = liga_encontrada
             
