@@ -694,29 +694,29 @@ else:
         # Mostrar partidos disponibles si hay
         if partidos_data:
             st.markdown("### 📋 Partidos en Base de Datos")
-            st.caption(f"Total: {len(partidos_data)} partidos")
+            st.markdown(f"**Total: {len(partidos_data)} partidos**")
             
             # Emoji por país
             pais_emoji = {'México': '🇲🇽', 'Colombia': '🇨🇴', 'Argentina': '🇦🇷', 'Brasil': '🇧🇷', 'Chile': '🇨🇱'}
             
-            # Header de la tabla
+            # Header de la tabla con colores
             cols_header = st.columns([1.5, 2, 2, 0.7, 1, 0.6])
             with cols_header[0]:
-                st.markdown("**Fecha**")
+                st.markdown("**<span style='color:#00d4aa'>📅 Fecha</span>**", unsafe_allow_html=True)
             with cols_header[1]:
-                st.markdown("**Local**")
+                st.markdown("**<span style='color:#00d4aa'>🏠 Local</span>**", unsafe_allow_html=True)
             with cols_header[2]:
-                st.markdown("**Visitante**")
+                st.markdown("**<span style='color:#00d4aa'>✈️ Visitante</span>**", unsafe_allow_html=True)
             with cols_header[3]:
-                st.markdown("**Hora**")
+                st.markdown("**<span style='color:#00d4aa'>⏰ Hora</span>**", unsafe_allow_html=True)
             with cols_header[4]:
-                st.markdown("**País**")
+                st.markdown("**<span style='color:#00d4aa'>🌍 País</span>**", unsafe_allow_html=True)
             with cols_header[5]:
-                st.markdown("**🎯**")
+                st.markdown("**<span style='color:#00d4aa'>🎯</span>**", unsafe_allow_html=True)
             
             st.markdown("---")
             
-            # Filas de partidos
+            # Filas de partidos con colores
             for p in partidos_data:
                 fecha = p.get('fecha', '')[:10] if p.get('fecha') else ''
                 hora = p.get('hora', '')[:5] if p.get('hora') else ''
@@ -728,15 +728,15 @@ else:
                 cols_row = st.columns([1.5, 2, 2, 0.7, 1, 0.6])
                 
                 with cols_row[0]:
-                    st.caption(f"📅 {fecha}")
+                    st.markdown(f"<span style='color:#ffffff; font-size:13px'>📅 {fecha}</span>", unsafe_allow_html=True)
                 with cols_row[1]:
-                    st.caption(f"🏠 **{local}**")
+                    st.markdown(f"<span style='color:#00ff88; font-size:13px'>🏠 **{local}**</span>", unsafe_allow_html=True)
                 with cols_row[2]:
-                    st.caption(f"✈️ **{visitante}**")
+                    st.markdown(f"<span style='color:#ff6b6b; font-size:13px'>✈️ **{visitante}**</span>", unsafe_allow_html=True)
                 with cols_row[3]:
-                    st.caption(f"⏰ {hora}")
+                    st.markdown(f"<span style='color:#ffd700; font-size:13px'>⏰ {hora}</span>", unsafe_allow_html=True)
                 with cols_row[4]:
-                    st.caption(f"{emoji} {pais[:6]}")
+                    st.markdown(f"<span style='color:#00d4aa; font-size:13px'>{emoji} {pais[:6]}</span>", unsafe_allow_html=True)
                 with cols_row[5]:
                     if st.button("🎯", key=f"match_{p.get('id')}", help=f"Analizar {local} vs {visitante}", use_container_width=True):
                         selected_match = p
