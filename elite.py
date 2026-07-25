@@ -699,54 +699,48 @@ else:
             # Emoji por país
             pais_emoji = {'México': '🇲🇽', 'Colombia': '🇨🇴', 'Argentina': '🇦🇷', 'Brasil': '🇧🇷', 'Chile': '🇨🇱'}
             
-            # Crear cards en grupos de 2
-            for i in range(0, len(partidos_data), 2):
-                cols = st.columns(2)
+            # Cards horizontales
+            for p in partidos_data:
+                fecha = p.get('fecha', '')[:10] if p.get('fecha') else ''
+                hora = p.get('hora', '')[:5] if p.get('hora') else ''
+                local = p.get('equipo_local', '?')
+                visitante = p.get('equipo_visitante', '?')
+                pais = p.get('pais', '')
+                liga = p.get('liga', '')
+                emoji = pais_emoji.get(pais, '🌍')
                 
-                for j in range(2):
-                    idx = i + j
-                    if idx >= len(partidos_data):
-                        break
-                    
-                    p = partidos_data[idx]
-                    fecha = p.get('fecha', '')[:10] if p.get('fecha') else ''
-                    hora = p.get('hora', '')[:5] if p.get('hora') else ''
-                    local = p.get('equipo_local', '?')
-                    visitante = p.get('equipo_visitante', '?')
-                    pais = p.get('pais', '')
-                    emoji = pais_emoji.get(pais, '🌍')
-                    
-                    with cols[j]:
-                        # Card con estilo
-                        st.markdown(f"""
-                        <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
-                        border: 1px solid #00d4aa; border-radius: 12px; padding: 15px; 
-                        margin-bottom: 10px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <span style="background: #00d4aa; color: black; padding: 3px 8px; 
-                                border-radius: 20px; font-size: 11px; font-weight: bold;">
-                                    {emoji} {pais}
-                                </span>
-                                <span style="color: #888; font-size: 12px;">⏰ {hora}</span>
-                            </div>
-                            <div style="text-align: center; margin: 10px 0;">
-                                <div style="font-size: 15px; color: #00d4aa; font-weight: bold;">
-                                    {local}
-                                </div>
-                                <div style="color: #666; font-size: 12px; margin: 5px 0;">vs</div>
-                                <div style="font-size: 15px; color: #ff6b6b; font-weight: bold;">
-                                    {visitante}
-                                </div>
-                            </div>
-                            <div style="text-align: center; font-size: 11px; color: #666;">
-                                📅 {fecha}
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                        if st.button(f"🎯 Analizar", key=f"match_{p.get('id')}", help=f"Analizar {local} vs {visitante}", use_container_width=True):
-                            selected_match = p
-                            st.session_state.selected_match_data = selected_match
+                # Card horizontal
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
+                border: 1px solid #00d4aa; border-radius: 10px; padding: 12px 15px; 
+                margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="flex: 0 0 80px;">
+                        <span style="background: #00d4aa; color: black; padding: 4px 8px; 
+                        border-radius: 15px; font-size: 11px; font-weight: bold;">
+                            {emoji} {pais[:5]}
+                        </span>
+                    </div>
+                    <div style="flex: 1; text-align: center;">
+                        <span style="color: #00d4aa; font-size: 14px; font-weight: bold;">
+                            {local}
+                        </span>
+                        <span style="color: #666; margin: 0 10px;">⚽ vs ⚽</span>
+                        <span style="color: #ff6b6b; font-size: 14px; font-weight: bold;">
+                            {visitante}
+                        </span>
+                    </div>
+                    <div style="flex: 0 0 100px; text-align: center;">
+                        <div style="color: #888; font-size: 12px;">⏰ {hora}</div>
+                        <div style="color: #666; font-size: 10px;">📅 {fecha[5:]}</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                col_btn, col_space = st.columns([1, 4])
+                with col_btn:
+                    if st.button(f"🎯 Analizar", key=f"match_{p.get('id')}", help=f"Analizar {local} vs {visitante}"):
+                        selected_match = p
+                        st.session_state.selected_match_data = selected_match
         elif not equipos_disponibles:
             st.warning("⚠️ No hay partidos ni equipos guardados. Sube un Excel y busca los equipos.")
         
