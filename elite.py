@@ -694,40 +694,66 @@ else:
         # Mostrar partidos disponibles si hay
         if partidos_data:
             st.markdown("### 📋 Partidos en Base de Datos")
+            st.info(f"Total: {len(partidos_data)} partidos")
             
-            # Crear opciones para el selector
-            partido_options = ["-- Seleccionar partido --"]
-            partido_dict = {}
-            for i, p in enumerate(partidos_data):
+            # Crear tabla con columnas
+            cols = st.columns([1, 2, 2, 1, 1, 1])  # Fecha, Local, Visitante, Hora, País, Acción
+            
+            # Header
+            with cols[0]:
+                st.markdown("**📅 Fecha**")
+            with cols[1]:
+                st.markdown("**🏠 Local**")
+            with cols[2]:
+                st.markdown("**✈️ Visitante**")
+            with cols[3]:
+                st.markdown("**⏰ Hora**")
+            with cols[4]:
+                st.markdown("**🌍 País**")
+            with cols[5]:
+                st.markdown("**🎯**")
+            
+            st.markdown("---")
+            
+            # Variable para el partido seleccionado
+            selected_match = None
+            
+            # Mostrar cada partido en una fila
+            for p in partidos_data:
                 fecha = p.get('fecha', '')[:10] if p.get('fecha') else ''
                 hora = p.get('hora', '')[:5] if p.get('hora') else ''
                 local = p.get('equipo_local', '?')
                 visitante = p.get('equipo_visitante', '?')
                 pais = p.get('pais', '')
-                label = f"{fecha} {hora} | {local} vs {visitante}"
-                if pais:
-                    label += f" ({pais})"
-                partido_options.append(label)
-                partido_dict[i + 1] = p  # +1 porque el primer elemento es el placeholder
-            
-            # Selector de partido
-            selected_idx = st.selectbox(
-                "Selecciona un partido para analizar:", 
-                range(len(partido_options)), 
-                format_func=lambda x: partido_options[x],
-                key="match_selector"
-            )
-            
-            # Si se seleccionó un partido (no el placeholder)
-            if selected_idx > 0 and selected_idx in partido_dict:
-                selected_match = partido_dict[selected_idx]
-                st.session_state.selected_match_data = selected_match
-                st.success(f"✅ Partido seleccionado: {selected_match.get('equipo_local')} vs {selected_match.get('equipo_visitante')}")
-            elif selected_idx == 0:
-                st.session_state.selected_match_data = None
-                selected_match = None
+                
+                cols = st.columns([1, 2, 2, 1, 1, 1])
+                
+                with cols[0]:
+                    st.markdown(f"{fecha}")
+                with cols[1]:
+                    st.markdown(f"**{local}**")
+                with cols[2]:
+                    st.markdown(f"**{visitante}**")
+                with cols[3]:
+                    st.markdown(f"{hora}")
+                with cols[4]:
+                    # Bandera emoji según país
+                    pais_emoji = {'México': '🇲🇽', 'Colombia': '🇨🇴', 'Argentina': '🇦🇷', 'Brasil': '🇧🇷', 'Chile': '🇨🇱'}
+                    emoji = pais_emoji.get(pais, '🌍')
+                    st.markdown(f"{emoji} {pais}")
+                with cols[5]:
+                    # Botón para seleccionar
+                    if st.button("🎯", key=f"match_{p.get('id')}", help=f"Analizar {local} vs {visitante}"):
+                        selected_match = p
+                        st.session_state.selected_match_data = selected_match
+                        st.rerun()
             
             st.markdown("---")
+            
+            # Si se seleccionó un partido, mostrar confirmación
+            if st.session_state.selected_match_data:
+                p = st.session_state.selected_match_data
+                st.success(f"✅ Partido seleccionado: **{p.get('equipo_local')}** vs **{p.get('equipo_visitante')}** - Scroll abajo para analizar")
         elif not equipos_disponibles:
             st.warning("⚠️ No hay partidos ni equipos guardados. Sube un Excel y busca los equipos.")
         
