@@ -510,7 +510,7 @@ if not st.session_state.logged:
                 st.session_state.logged = True
                 st.session_state.is_admin = True
                 st.session_state.user_data = {"nombre": "Admin", "plan": "admin", "es_admin": 1}
-                st.rerun()
+                safe_rerun()
             else:
                 st.error("Password incorrecta")
 
@@ -529,7 +529,7 @@ else:
             st.session_state.logged = False
             st.session_state.user_data = None
             st.session_state.is_admin = False
-            st.rerun()
+            safe_rerun()
     
     # Menú horizontal arriba
     st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
@@ -539,27 +539,27 @@ else:
     with col_menu1:
         if st.button("📂 Carga", use_container_width=True, type="primary" if st.session_state.page == "Carga" else "secondary"):
             st.session_state.page = "Carga"
-            st.rerun()
+            safe_rerun()
     
     with col_menu2:
         if st.button("📊 Analizador", use_container_width=True, type="primary" if st.session_state.page == "Analizador" else "secondary"):
             st.session_state.page = "Analizador"
-            st.rerun()
+            safe_rerun()
     
     with col_menu3:
         if st.button("📈 Estadísticas", use_container_width=True, type="primary" if st.session_state.page == "Estadisticas" else "secondary"):
             st.session_state.page = "Estadisticas"
-            st.rerun()
+            safe_rerun()
     
     with col_menu4:
         if st.button("📉 Dashboard", use_container_width=True, type="primary" if st.session_state.page == "Dashboard" else "secondary"):
             st.session_state.page = "Dashboard"
-            st.rerun()
+            safe_rerun()
     
     with col_menu5:
         if st.button("🔑 Claves", use_container_width=True, type="primary" if st.session_state.page == "Claves" else "secondary"):
             st.session_state.page = "Claves"
-            st.rerun()
+            safe_rerun()
     
     st.markdown("---")
     
@@ -1790,7 +1790,7 @@ else:
                 else:
                     if db_crear_usuario(nueva_clave.strip(), nombre.strip(), plan, dias):
                         st.success(f"✅ Clave '{nueva_clave}' creada para {nombre}")
-                        st.rerun()
+                        safe_rerun()
                     else:
                         st.error("❌ Esta clave ya existe. Usa otra.")
         
@@ -1825,17 +1825,17 @@ else:
                             if st.button(f"👑 Mes", key=f"mes_{u['id']}"):
                                 db_actualizar_plan(u['id'], "mes", 30)
                                 st.success("Plan actualizado a Mes")
-                                st.rerun()
+                                safe_rerun()
                         with col_b:
                             if st.button(f"📆 Semana", key=f"sem_{u['id']}"):
                                 db_actualizar_plan(u['id'], "semana", 7)
                                 st.success("Plan actualizado a Semana")
-                                st.rerun()
+                                safe_rerun()
                         with col_c:
                             if st.button(f"🗑️ Eliminar", key=f"del_{u['id']}"):
                                 if db_eliminar_usuario(u['id']):
                                     st.success("✅ Eliminado")
-                                    st.rerun()
+                                    safe_rerun()
                                 else:
                                     st.error("No se pudo eliminar")
 
@@ -1926,7 +1926,7 @@ else:
                 if st.button("🔄 Resetear Calibración"):
                     resetear_calibracion()
                     st.success("Calibración reseteada")
-                    st.rerun()
+                    safe_rerun()
             
             # Botones de acción
             col_del, col_result = st.columns([1, 2])
@@ -2089,6 +2089,6 @@ if st.session_state.get('needs_rerun', False):
         st.rerun(scope="fragment")
     except Exception:
         try:
-            st.rerun()
+            safe_rerun()
         except Exception:
             pass
