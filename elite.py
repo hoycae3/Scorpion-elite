@@ -9,6 +9,11 @@ from datetime import date, timedelta
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+def safe_rerun():
+    """Rerun seguro que evita errores de React removeChild"""
+    st.session_state.needs_rerun = True
+
 from supabase import create_client
 from data_loader import parse_flashscore_excel, validate_matches
 from analysis_models import calcular
@@ -160,6 +165,10 @@ if "user_data" not in st.session_state:
     st.session_state.user_data = None
 if "is_admin" not in st.session_state:
     st.session_state.is_admin = False
+if "needs_rerun" not in st.session_state:
+    st.session_state.needs_rerun = False
+if "rerun_counter" not in st.session_state:
+    st.session_state.rerun_counter = 0
 
 # CSS Mejorado
 st.markdown("""
@@ -634,8 +643,8 @@ else:
                         if st.button("🗑️ Borrar todos", type="secondary", use_container_width=True):
                             client = create_client(SUPABASE_URL, SUPABASE_KEY)
                             client.table('partidos').delete().neq('id', 0).execute()
-                            st.success("✅ Partidos eliminados")
-                            st.rerun()
+                            st.session_state.partidos_deleted = True
+                            safe_rerun()
                 else:
                     st.warning("No se encontraron partidos en el archivo")
                     
@@ -1334,18 +1343,23 @@ else:
                                         'source_fbdata': source_fbdata,
                                         'source_whoscored': source_whoscored,
                                         'source_fbref': source_fbref,
-                                        # Últimos 5 partidos
-                                        'ultimos_5_partidos': r.get('ultimos_5_partidos', []),
+                                        # Últimos 5 partidos (temporalmente omitido para evitar errores)
+                                        # 'ultimos_5_partidos': r.get('ultimos_5_partidos', []),
                                     }
                                     
-                                    # Intentar upsert (actualizar si existe)
+                                    # Intentar upsert con on_conflict para UNIQUE(equipo, temporada)
                                     try:
-                                        client.table('equipos_stats').upsert(data).execute()
+                                        client.table('equipos_stats').upsert(
+                                            data, 
+                                            on_conflict='equipo,temporada'
+                                        ).execute()
                                     except Exception as upsert_error:
-                                        # Si falla upsert, intentar sin últimos 5 partidos
+                                        # Si falla, intentar con solo 'equipo' como clave única
                                         try:
-                                            data_basic = {k: v for k, v in data.items() if k != 'ultimos_5_partidos'}
-                                            client.table('equipos_stats').upsert(data_basic).execute()
+                                            client.table('equipos_stats').upsert(
+                                                data, 
+                                                on_conflict='equipo'
+                                            ).execute()
                                         except Exception as e2:
                                             errores += 1
                                             logger.error(f"Error guardando {equipo_nombre}: {e2}")
@@ -1528,13 +1542,13 @@ else:
                                     'lambda_visitante': eq_lambda_v,
                                 }
                                 client.table('equipos_stats').update(update_data).eq('id', eq.get('id')).execute()
+                                st.session_state.equipo_updated = eq.get('equipo')
                                 st.success("✅ Datos actualizados")
-                                st.rerun()
                             
                             if deleted:
                                 client.table('equipos_stats').delete().eq('id', eq.get('id')).execute()
+                                st.session_state.equipo_deleted = eq.get('equipo')
                                 st.success("✅ Equipo eliminado")
-                                st.rerun()
             else:
                 st.info("📭 No hay equipos guardados. Agrega uno con el formulario de arriba.")
         except Exception as e:
@@ -1725,7 +1739,7 @@ else:
                             for pick_id in to_delete:
                                 client.table('picks').delete().eq('id', pick_id).execute()
                             st.success(f"✅ Eliminados {len(to_delete)} duplicados")
-                            st.rerun()
+                            safe_rerun()
                         else:
                             st.info("No hay duplicados")
             
@@ -1765,8 +1779,8 @@ else:
                         with col_del:
                             if st.button("🗑️", key=f"del_{pick_id}"):
                                 client.table('picks').delete().eq('id', pick_id).execute()
+                                st.session_state.pick_deleted = pick_id
                                 st.success("✅ Eliminado")
-                                st.rerun()
                         
                         st.markdown("---")
                         st.markdown("### 📝 Actualizar Resultado Real")
@@ -1833,7 +1847,7 @@ else:
                                     }).eq('id', pick_id).execute()
                                     
                                     st.success("✅ Guardado!")
-                                    st.rerun()
+                                    safe_rerun()
                                 except Exception as e:
                                     st.error(f"❌ {str(e)[:50]}")
             else:
@@ -1852,3 +1866,20 @@ else:
             
             Vuelve aquí para ver tu rendimiento.
             """)
+
+# ══════════════════════════════════════════════════════════
+# MANEJO DE RERUNS AL FINAL DEL SCRIPT
+# ══════════════════════════════════════════════════════════
+if st.session_state.get('needs_rerun', False):
+    st.session_state.needs_rerun = False
+    # Limpiar estados temporales
+    for key in ['partidos_deleted', 'equipo_updated', 'equipo_deleted', 'pick_deleted']:
+        if key in st.session_state:
+            del st.session_state[key]
+    try:
+        st.rerun(scope="fragment")
+    except Exception:
+        try:
+            st.rerun()
+        except Exception:
+            pass
