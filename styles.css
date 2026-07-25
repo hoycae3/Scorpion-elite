@@ -1,8 +1,10 @@
-/* Scorpion Elite - Diseño Simple */
+/* Scorpion Elite - Diseño Completo */
 
-/* Variables CSS */
+/* ══════════════════════════════════════════════════════════ */
+/* VARIABLES CSS                                             */
+/* ══════════════════════════════════════════════════════════ */
 :root {
-    --bg-dark: #0a0a14;
+    --bg-dark: #0a0a0a;
     --bg-card: #1a1a2e;
     --accent-primary: #00d4ff;
     --accent-success: #00ff88;
@@ -13,7 +15,9 @@
     --border-color: rgba(255, 255, 255, 0.1);
 }
 
-/* CONFIGURACIÓN DE LA PÁGINA */
+/* ══════════════════════════════════════════════════════════ */
+/* CONFIGURACIÓN DE LA PÁGINA                               */
+/* ══════════════════════════════════════════════════════════ */
 .stApp {
     background-color: var(--bg-dark) !important;
     color: var(--text-primary) !important;
@@ -23,17 +27,331 @@ body, .stApp > div, main {
     background-color: var(--bg-dark) !important;
 }
 
+div.block-container { padding-top: 1rem; }
+div[data-testid="stHorizontalBlock"] { align-items: center; }
+
+/* ══════════════════════════════════════════════════════════ */
+/* FONDO GENERAL                                             */
+/* ══════════════════════════════════════════════════════════ */
+.stApp { background: #0a0a0a !important; }
+.main { background: #0a0a0a !important; }
+
+/* Título principal */
+.title { color: #ffd700; font-size: 42px; font-weight: bold; margin: 0; line-height: 48px; text-align: center; }
+
+/* DataFrames */
+.stDataFrame { background: #1a1a1a; }
+
+/* Headers */
+.header { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 2px solid #333; }
+.section-title { margin-top: 5px; margin-bottom: 0; }
+
 /* Sidebar */
-.css-1d391kg {
-    background: var(--bg-card) !important;
-}
+.css-1d391kg { background: var(--bg-card) !important; }
 
 /* TÍTULOS */
-h1, h2, h3, h4 {
-    color: var(--text-primary) !important;
+h1, h2, h3, h4 { color: var(--text-primary) !important; }
+
+/* ══════════════════════════════════════════════════════════ */
+/* CAJAS / CUADROS MEJORADOS                               */
+/* ══════════════════════════════════════════════════════════ */
+
+/* Caja principal de probabilidades 1X2 */
+.caja-1x2 {
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 12px;
+    padding: 20px 15px;
+    text-align: center;
+    margin: 5px;
+    border: 2px solid #333;
+    transition: all 0.3s ease;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
-/* TARJETAS SIMPLES */
+.caja-1x2:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.caja-local {
+    border-color: #00ff88;
+    box-shadow: 0 0 20px rgba(0,255,136,0.1);
+}
+
+.caja-empate {
+    border-color: #ffd700;
+    box-shadow: 0 0 20px rgba(255,215,0,0.1);
+}
+
+.caja-visitante {
+    border-color: #ff6b6b;
+    box-shadow: 0 0 20px rgba(255,107,107,0.1);
+}
+
+/* Etiqueta del equipo */
+.etiqueta-equipo {
+    color: #888;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 8px 0;
+}
+
+/* Probabilidad grande */
+.probabilidad {
+    color: #fff;
+    font-size: 36px;
+    font-weight: bold;
+    margin: 5px 0 0 0;
+}
+
+/* Equipo Local */
+.etiqueta-local { color: #00ff88 !important; }
+.etiqueta-empate { color: #ffd700 !important; }
+.etiqueta-visitante { color: #ff6b6b !important; }
+
+/* ══════════════════════════════════════════════════════════ */
+/* CAJAS DE PREDICCIONES ADICIONALES                       */
+/* ══════════════════════════════════════════════════════════ */
+
+.caja-prediccion {
+    background: linear-gradient(180deg, #1a1a2e 0%, #12121f 100%);
+    border-radius: 10px;
+    padding: 15px 10px;
+    text-align: center;
+    margin: 3px;
+    border: 1px solid #2a2a3e;
+    min-height: 130px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.caja-prediccion:hover {
+    border-color: #3a3a4e;
+    background: linear-gradient(180deg, #1f1f35 0%, #15152a 100%);
+}
+
+/* Título de la caja */
+.titulo-caja {
+    color: #666;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 8px 0;
+}
+
+/* Valor principal */
+.valor-caja {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+/* Pick */
+.pick-caja {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 3px 0 0 0;
+}
+
+/* Colores de Picks */
+.pick-over { color: #00ff88; }
+.pick-under { color: #ff6b6b; }
+.pick-si { color: #a55eea; }
+.pick-no { color: #666; }
+
+/* ══════════════════════════════════════════════════════════ */
+/* CAJAS DE FORMA RECIENTE                                 */
+/* ══════════════════════════════════════════════════════════ */
+
+.caja-forma {
+    background: #1a1a2e;
+    border-radius: 10px;
+    padding: 15px;
+    border: 1px solid #2a2a3e;
+}
+
+.caja-forma-local {
+    border-left: 4px solid #00ff88;
+}
+
+.caja-forma-visitante {
+    border-right: 4px solid #ff6b6b;
+}
+
+.forma-titulo {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 10px 0;
+}
+
+.forma-local .forma-titulo { color: #00ff88; }
+.forma-visitante .forma-titulo { color: #ff6b6b; }
+
+/* Letras de forma */
+.forma-letras {
+    font-size: 16px;
+    letter-spacing: 3px;
+    margin: 5px 0;
+}
+
+.forma-g { color: #00ff88; font-weight: bold; }
+.forma-e { color: #ffd700; font-weight: bold; }
+.forma-p { color: #ff6b6b; font-weight: bold; }
+
+.forma-stats {
+    color: #888;
+    font-size: 11px;
+    margin: 8px 0 0 0;
+}
+
+.forma-stats span { color: #fff; }
+
+/* ══════════════════════════════════════════════════════════ */
+/* RECUADRO PRINCIPAL DE ANÁLISIS                          */
+/* ══════════════════════════════════════════════════════════ */
+
+.caja-analisis {
+    background: linear-gradient(135deg, #1a2a3a 0%, #0d1a26 50%, #1a1a2e 100%);
+    border: 2px solid #00d4ff;
+    border-radius: 15px;
+    padding: 20px 30px;
+    text-align: center;
+    margin: 15px auto;
+    max-width: 550px;
+    box-shadow: 0 0 30px rgba(0,212,255,0.15), inset 0 0 20px rgba(0,0,0,0.3);
+}
+
+.analisis-etiqueta {
+    color: #00d4ff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin: 0;
+}
+
+.analisis-partido {
+    color: #fff;
+    font-size: 26px;
+    margin: 8px 0;
+}
+
+.analisis-score {
+    color: #00d4ff;
+    font-size: 14px;
+    margin: 5px 0;
+}
+
+.analisis-pick {
+    color: #00d4ff;
+    font-size: 32px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.analisis-confianza {
+    display: inline-block;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid #00d4ff;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+/* ══════════════════════════════════════════════════════════ */
+/* ESTADÍSTICAS DE EQUIPOS                                 */
+/* ══════════════════════════════════════════════════════════ */
+
+.caja-stats-equipo {
+    background: #1a1a2e;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #2a2a3e;
+}
+
+.titulo-equipo {
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    margin: 0 0 15px 0;
+}
+
+.stats-fila {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid #2a2a3e;
+    font-size: 13px;
+}
+
+.stats-label { color: #888; }
+.stats-value { color: #fff; font-weight: 600; }
+.stats-value-positivo { color: #00ff88; }
+.stats-value-negativo { color: #ff6b6b; }
+.stats-value-neutro { color: #00d4ff; }
+
+/* ══════════════════════════════════════════════════════════ */
+/* BADGES Y TAGS                                            */
+/* ══════════════════════════════════════════════════════════ */
+
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badge-verde {
+    background: rgba(0,255,136,0.15);
+    color: #00ff88;
+    border: 1px solid #00ff88;
+}
+
+.badge-rojo {
+    background: rgba(255,107,107,0.15);
+    color: #ff6b6b;
+    border: 1px solid #ff6b6b;
+}
+
+.badge-amarillo {
+    background: rgba(255,215,0,0.15);
+    color: #ffd700;
+    border: 1px solid #ffd700;
+}
+
+.badge-azul {
+    background: rgba(0,212,255,0.15);
+    color: #00d4ff;
+    border: 1px solid #00d4ff;
+}
+
+/* Forma recent badge */
+.forma-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    margin: 0 2px;
+}
+
+.forma-badge-g { background: #00ff88; color: #000; }
+.forma-badge-e { background: #ffd700; color: #000; }
+.forma-badge-p { background: #ff6b6b; color: #fff; }
+
+/* ══════════════════════════════════════════════════════════ */
+/* TARJETAS SIMPLES                                         */
+/* ══════════════════════════════════════════════════════════ */
+
 .simple-card {
     background: var(--bg-card) !important;
     border: 1px solid var(--border-color) !important;
@@ -41,13 +359,8 @@ h1, h2, h3, h4 {
     padding: 12px !important;
 }
 
-.simple-card-green {
-    border-left: 3px solid var(--accent-success) !important;
-}
-
-.simple-card-red {
-    border-right: 3px solid var(--accent-danger) !important;
-}
+.simple-card-green { border-left: 3px solid var(--accent-success) !important; }
+.simple-card-red { border-right: 3px solid var(--accent-danger) !important; }
 
 /* PICK PRINCIPAL */
 .main-pick {
@@ -67,11 +380,6 @@ h1, h2, h3, h4 {
     font-size: 12px;
     font-weight: 600;
 }
-
-/* FORMA BADGES */
-.forma-g {color: #00ff88; font-weight: bold;}
-.forma-e {color: #ffd700; font-weight: bold;}
-.forma-p {color: #ff6b6b; font-weight: bold;}
 
 /* METRICS */
 .stMetric label {

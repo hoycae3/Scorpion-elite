@@ -5,14 +5,11 @@ import sqlite3
 import hashlib
 import logging
 from datetime import date, timedelta
+from pathlib import Path
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-def safe_rerun():
-    """Rerun seguro que evita errores de React removeChild"""
-    st.session_state.needs_rerun = True
 
 from supabase import create_client
 from data_loader import parse_flashscore_excel, validate_matches
@@ -30,125 +27,151 @@ from calibration import (
 st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
 
 # ══════════════════════════════════════════════════════════
-# CONFIGURACION
+# CONFIGURACION - Variables de entorno SOLO
 # ══════════════════════════════════════════════════════════
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "scorpion2026")
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://jjtifureeygvygxtpuku.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqdGlmdXJlZXlndnlneHRwdWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTI2NDcsImV4cCI6MjA5OTg4ODY0N30.6f8dgLmHx9x9W-5X2Ld31rPkeZ6HJGSeGgx3oq9XSRA")
-DB_PATH = "/tmp/scorpion_users.db"
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+DB_PATH = os.getenv("DB_PATH", "/tmp/scorpion_users.db")
 
 # ══════════════════════════════════════════════════════════
-# SISTEMA DE USUARIOS (SQLite local)
+# CLIENTE SUPABASE UNIFICADO con @st.cache_resource
+# ══════════════════════════════════════════════════════════
+@st.cache_resource
+def get_supabase_client():
+    """Crea y cachea el cliente de Supabase - se reutiliza en toda la app"""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        logger.warning("SUPABASE_URL o SUPABASE_KEY no están configurados")
+        return None
+    try:
+        return create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        logger.error(f"Error al crear cliente Supabase: {e}")
+        return None
+
+def get_client():
+    """Función de compatibilidad - retorna cliente de Supabase"""
+    return get_supabase_client()
+
+# ══════════════════════════════════════════════════════════
+# SISTEMA DE USUARIOS (SQLite local) - Thread-safe
 # ══════════════════════════════════════════════════════════
 def get_hoy():
     return str(date.today())
 
-def get_conn():
-    return sqlite3.connect(DB_PATH, check_same_thread=False)
-
 def init_db():
-    c = get_conn()
-    c.executescript("""
-    CREATE TABLE IF NOT EXISTS usuarios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        password TEXT UNIQUE NOT NULL,
-        nombre TEXT,
-        plan TEXT DEFAULT 'gratis',
-        fecha_inicio TEXT,
-        dias INTEGER DEFAULT 36500,
-        activo INTEGER DEFAULT 1,
-        es_admin INTEGER DEFAULT 0,
-        creado TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE TABLE IF NOT EXISTS picks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        fecha TEXT, liga TEXT, local TEXT, visitante TEXT, hora TEXT,
-        mercado TEXT, detalle TEXT, cuota REAL, edge REAL,
-        confianza REAL, rango TEXT, notas TEXT, plan_min TEXT DEFAULT 'gratis'
-    );
-    """)
-    # Crear admin si no existe
-    h = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()
-    c.execute("INSERT OR IGNORE INTO usuarios (password,nombre,plan,fecha_inicio,dias,activo,es_admin) VALUES (?,?,?,?,?,?,?)",
-              (h,"Administrador","admin",get_hoy(),36500,1,1))
-    c.commit(); c.close()
+    """Inicializa la base de datos SQLite con context manager"""
+    with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
+        conn.executescript("""
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            password TEXT UNIQUE NOT NULL,
+            nombre TEXT,
+            plan TEXT DEFAULT 'gratis',
+            fecha_inicio TEXT,
+            dias INTEGER DEFAULT 36500,
+            activo INTEGER DEFAULT 1,
+            es_admin INTEGER DEFAULT 0,
+            creado TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS picks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha TEXT, liga TEXT, local TEXT, visitante TEXT, hora TEXT,
+            mercado TEXT, detalle TEXT, cuota REAL, edge REAL,
+            confianza REAL, rango TEXT, notas TEXT, plan_min TEXT DEFAULT 'gratis'
+        );
+        """)
+        if ADMIN_PASSWORD:
+            h = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()
+            conn.execute("INSERT OR IGNORE INTO usuarios (password,nombre,plan,fecha_inicio,dias,activo,es_admin) VALUES (?,?,?,?,?,?,?)",
+                        (h,"Administrador","admin",get_hoy(),36500,1,1))
+        conn.commit()
 
 def db_get_by_password(pwd_hash):
+    """Obtiene usuario por password hash - usa context manager"""
     try:
-        c = get_conn()
-        c.row_factory = sqlite3.Row
-        # Verificar que la tabla existe
-        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='usuarios'")
-        if not c.fetchone():
-            return None
-        r = c.execute("SELECT * FROM usuarios WHERE password=?", (pwd_hash,)).fetchone()
-        c.close()
-        return dict(r) if r else None
+        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
+            conn.row_factory = sqlite3.Row
+            conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='usuarios'")
+            if not conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='usuarios'").fetchone():
+                return None
+            r = conn.execute("SELECT * FROM usuarios WHERE password=?", (pwd_hash,)).fetchone()
+            return dict(r) if r else None
     except Exception as e:
+        logger.error(f"Error en db_get_by_password: {e}")
         return None
 
 def db_get_by_id(user_id):
+    """Obtiene usuario por ID - usa context manager"""
     try:
-        c = get_conn()
-        c.row_factory = sqlite3.Row
-        r = c.execute("SELECT * FROM usuarios WHERE id=?", (user_id,)).fetchone()
-        c.close()
-        return dict(r) if r else None
+        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
+            conn.row_factory = sqlite3.Row
+            r = conn.execute("SELECT * FROM usuarios WHERE id=?", (user_id,)).fetchone()
+            return dict(r) if r else None
     except Exception as e:
+        logger.error(f"Error en db_get_by_id: {e}")
         return None
 
 def db_todos():
-    c = get_conn()
-    r = c.execute("SELECT * FROM usuarios ORDER BY id ASC").fetchall()
-    c.close()
-    return [dict(x) for x in r]
+    """Obtiene todos los usuarios - usa context manager"""
+    try:
+        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
+            r = conn.execute("SELECT * FROM usuarios ORDER BY id ASC").fetchall()
+            return [dict(x) for x in r]
+    except Exception as e:
+        logger.error(f"Error en db_todos: {e}")
+        return []
 
 def db_crear_usuario(password, nombre, plan, dias):
-    """Crea un nuevo usuario con password"""
-    c = get_conn()
+    """Crea un nuevo usuario - usa context manager"""
     pwd_hash = hashlib.sha256(password.encode()).hexdigest()
     try:
-        c.execute("""INSERT INTO usuarios (password, nombre, plan, fecha_inicio, dias, activo)
-                      VALUES (?, ?, ?, ?, ?, 1)""",
-                  (pwd_hash, nombre, plan, get_hoy(), dias))
-        c.commit()
-        success = True
+        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
+            conn.execute("""INSERT INTO usuarios (password, nombre, plan, fecha_inicio, dias, activo)
+                          VALUES (?, ?, ?, ?, ?, 1)""",
+                        (pwd_hash, nombre, plan, get_hoy(), dias))
+            conn.commit()
+            return True
     except sqlite3.IntegrityError:
-        success = False
-    c.close()
-    return success
+        return False
+    except Exception as e:
+        logger.error(f"Error en db_crear_usuario: {e}")
+        return False
 
 def db_eliminar_usuario(user_id):
-    """Elimina un usuario por ID"""
-    c = get_conn()
-    c.execute("DELETE FROM usuarios WHERE id=? AND es_admin=0", (user_id,))
-    c.commit()
-    affected = c.total_changes
-    c.close()
-    return affected > 0
+    """Elimina un usuario - usa context manager"""
+    try:
+        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
+            conn.execute("DELETE FROM usuarios WHERE id=? AND es_admin=0", (user_id,))
+            conn.commit()
+            return conn.total_changes > 0
+    except Exception as e:
+        logger.error(f"Error en db_eliminar_usuario: {e}")
+        return False
 
 def db_actualizar_plan(user_id, plan, dias):
-    c = get_conn()
-    c.execute("UPDATE usuarios SET plan=?, dias=?, fecha_inicio=? WHERE id=?", 
-               (plan, dias, get_hoy(), user_id))
-    c.commit(); c.close()
+    """Actualiza plan de usuario - usa context manager"""
+    try:
+        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
+            conn.execute("UPDATE usuarios SET plan=?, dias=?, fecha_inicio=? WHERE id=?", 
+                        (plan, dias, get_hoy(), user_id))
+            conn.commit()
+    except Exception as e:
+        logger.error(f"Error en db_actualizar_plan: {e}")
 
 def db_login(password):
     """Verifica password y retorna usuario"""
-    # Asegurar que la DB existe
     init_db()
     pwd_hash = hashlib.sha256(password.encode()).hexdigest()
     result = db_get_by_password(pwd_hash)
     if result:
         return result
-    # Fallback: crear admin si no existe
     if password == ADMIN_PASSWORD:
         h = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()
-        c = get_conn()
-        c.execute("INSERT OR IGNORE INTO usuarios (password,nombre,plan,fecha_inicio,dias,activo,es_admin) VALUES (?,?,?,?,?,?,?)",
-                  (h,"Administrador","admin",get_hoy(),36500,1,1))
-        c.commit()
-        c.close()
+        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
+            conn.execute("INSERT OR IGNORE INTO usuarios (password,nombre,plan,fecha_inicio,dias,activo,es_admin) VALUES (?,?,?,?,?,?,?)",
+                        (h,"Administrador","admin",get_hoy(),36500,1,1))
+            conn.commit()
         return db_get_by_password(pwd_hash)
     return None
 
@@ -165,330 +188,23 @@ if "user_data" not in st.session_state:
     st.session_state.user_data = None
 if "is_admin" not in st.session_state:
     st.session_state.is_admin = False
-if "needs_rerun" not in st.session_state:
-    st.session_state.needs_rerun = False
-if "rerun_counter" not in st.session_state:
-    st.session_state.rerun_counter = 0
-# Equipos del Excel actual (para buscar solo los del último Excel cargado)
 if "equipos_excel_actual" not in st.session_state:
     st.session_state.equipos_excel_actual = []
 
-# CSS Mejorado
-st.markdown("""
-<style>
-/* Fondo general */
-.stApp { background: #0a0a0a !important; }
-.main { background: #0a0a0a !important; }
+# ══════════════════════════════════════════════════════════
+# CSS EXTERNO - Leer desde archivo styles.css
+# ══════════════════════════════════════════════════════════
+@st.cache_data(ttl=3600)
+def load_css():
+    """Carga el CSS desde el archivo externo - cacheado por 1 hora"""
+    css_path = Path(__file__).parent / "styles.css"
+    try:
+        return css_path.read_text()
+    except Exception as e:
+        logger.warning(f"No se pudo cargar styles.css: {e}")
+        return ""
 
-/* Título principal */
-.title { color: #ffd700; font-size: 42px; font-weight: bold; margin: 0; line-height: 48px; text-align: center; }
-
-/* DataFrames */
-.stDataFrame { background: #1a1a1a; }
-
-/* Headers */
-.header { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 2px solid #333; }
-.section-title { margin-top: 5px; margin-bottom: 0; }
-div.block-container { padding-top: 1rem; }
-div[data-testid="stHorizontalBlock"] { align-items: center; }
-
-/* ══════════════════════════════════════════════════════════ */
-/* CAJAS / CUADROS MEJORADOS                             */
-/* ══════════════════════════════════════════════════════════ */
-
-/* Caja principal de probabilidades 1X2 */
-.caja-1x2 {
-    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-    border-radius: 12px;
-    padding: 20px 15px;
-    text-align: center;
-    margin: 5px;
-    border: 2px solid #333;
-    transition: all 0.3s ease;
-    min-height: 120px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.caja-1x2:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-}
-
-.caja-local {
-    border-color: #00ff88;
-    box-shadow: 0 0 20px rgba(0,255,136,0.1);
-}
-
-.caja-empate {
-    border-color: #ffd700;
-    box-shadow: 0 0 20px rgba(255,215,0,0.1);
-}
-
-.caja-visitante {
-    border-color: #ff6b6b;
-    box-shadow: 0 0 20px rgba(255,107,107,0.1);
-}
-
-/* Etiqueta del equipo */
-.etiqueta-equipo {
-    color: #888;
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin: 0 0 8px 0;
-}
-
-/* Probabilidad grande */
-.probabilidad {
-    color: #fff;
-    font-size: 36px;
-    font-weight: bold;
-    margin: 5px 0 0 0;
-}
-
-/* Equipo Local */
-.etiqueta-local { color: #00ff88 !important; }
-.etiqueta-empate { color: #ffd700 !important; }
-.etiqueta-visitante { color: #ff6b6b !important; }
-
-/* ══════════════════════════════════════════════════════════ */
-/* CAJAS DE PREDICCIONES ADICIONALES                     */
-/* ══════════════════════════════════════════════════════════ */
-
-.caja-prediccion {
-    background: linear-gradient(180deg, #1a1a2e 0%, #12121f 100%);
-    border-radius: 10px;
-    padding: 15px 10px;
-    text-align: center;
-    margin: 3px;
-    border: 1px solid #2a2a3e;
-    min-height: 130px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-.caja-prediccion:hover {
-    border-color: #3a3a4e;
-    background: linear-gradient(180deg, #1f1f35 0%, #15152a 100%);
-}
-
-/* Título de la caja */
-.titulo-caja {
-    color: #666;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin: 0 0 8px 0;
-}
-
-/* Valor principal */
-.valor-caja {
-    font-size: 24px;
-    font-weight: bold;
-    margin: 5px 0;
-}
-
-/* Pick */
-.pick-caja {
-    font-size: 16px;
-    font-weight: 600;
-    margin: 3px 0 0 0;
-}
-
-/* Colores de Picks */
-.pick-over { color: #00ff88; }
-.pick-under { color: #ff6b6b; }
-.pick-si { color: #a55eea; }
-.pick-no { color: #666; }
-
-/* ══════════════════════════════════════════════════════════ */
-/* CAJAS DE FORMA RECIENTE                               */
-/* ══════════════════════════════════════════════════════════ */
-
-.caja-forma {
-    background: #1a1a2e;
-    border-radius: 10px;
-    padding: 15px;
-    border: 1px solid #2a2a3e;
-}
-
-.caja-forma-local {
-    border-left: 4px solid #00ff88;
-}
-
-.caja-forma-visitante {
-    border-right: 4px solid #ff6b6b;
-}
-
-.forma-titulo {
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0 0 10px 0;
-}
-
-.forma-local .forma-titulo { color: #00ff88; }
-.forma-visitante .forma-titulo { color: #ff6b6b; }
-
-/* Letras de forma */
-.forma-letras {
-    font-size: 16px;
-    letter-spacing: 3px;
-    margin: 5px 0;
-}
-
-.forma-g { color: #00ff88; font-weight: bold; }
-.forma-e { color: #ffd700; font-weight: bold; }
-.forma-p { color: #ff6b6b; font-weight: bold; }
-
-.forma-stats {
-    color: #888;
-    font-size: 11px;
-    margin: 8px 0 0 0;
-}
-
-.forma-stats span { color: #fff; }
-
-/* ══════════════════════════════════════════════════════════ */
-/* RECUADRO PRINCIPAL DE ANÁLISIS                        */
-/* ══════════════════════════════════════════════════════════ */
-
-.caja-analisis {
-    background: linear-gradient(135deg, #1a2a3a 0%, #0d1a26 50%, #1a1a2e 100%);
-    border: 2px solid #00d4ff;
-    border-radius: 15px;
-    padding: 20px 30px;
-    text-align: center;
-    margin: 15px auto;
-    max-width: 550px;
-    box-shadow: 0 0 30px rgba(0,212,255,0.15), inset 0 0 20px rgba(0,0,0,0.3);
-}
-
-.analisis-etiqueta {
-    color: #00d4ff;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    margin: 0;
-}
-
-.analisis-partido {
-    color: #fff;
-    font-size: 26px;
-    margin: 8px 0;
-}
-
-.analisis-score {
-    color: #00d4ff;
-    font-size: 14px;
-    margin: 5px 0;
-}
-
-.analisis-pick {
-    color: #00d4ff;
-    font-size: 32px;
-    font-weight: bold;
-    margin: 10px 0;
-}
-
-.analisis-confianza {
-    display: inline-block;
-    background: rgba(0,212,255,0.1);
-    border: 1px solid #00d4ff;
-    padding: 5px 15px;
-    border-radius: 20px;
-    font-size: 13px;
-    margin-top: 5px;
-}
-
-/* ══════════════════════════════════════════════════════════ */
-/* ESTADÍSTICAS DE EQUIPOS                               */
-/* ══════════════════════════════════════════════════════════ */
-
-.caja-stats-equipo {
-    background: #1a1a2e;
-    border-radius: 12px;
-    padding: 20px;
-    border: 1px solid #2a2a3e;
-}
-
-.titulo-equipo {
-    font-size: 16px;
-    font-weight: 700;
-    text-align: center;
-    margin: 0 0 15px 0;
-}
-
-.stats-fila {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 12px;
-    border-bottom: 1px solid #2a2a3e;
-    font-size: 13px;
-}
-
-.stats-label { color: #888; }
-.stats-value { color: #fff; font-weight: 600; }
-.stats-value-positivo { color: #00ff88; }
-.stats-value-negativo { color: #ff6b6b; }
-.stats-value-neutro { color: #00d4ff; }
-
-/* ══════════════════════════════════════════════════════════ */
-/* BADGES Y TAGS                                         */
-/* ══════════════════════════════════════════════════════════ */
-
-.badge {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-}
-
-.badge-verde {
-    background: rgba(0,255,136,0.15);
-    color: #00ff88;
-    border: 1px solid #00ff88;
-}
-
-.badge-rojo {
-    background: rgba(255,107,107,0.15);
-    color: #ff6b6b;
-    border: 1px solid #ff6b6b;
-}
-
-.badge-amarillo {
-    background: rgba(255,215,0,0.15);
-    color: #ffd700;
-    border: 1px solid #ffd700;
-}
-
-.badge-azul {
-    background: rgba(0,212,255,0.15);
-    color: #00d4ff;
-    border: 1px solid #00d4ff;
-}
-
-/* Forma recent badge */
-.forma-badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: bold;
-    margin: 0 2px;
-}
-
-.forma-badge-g { background: #00ff88; color: #000; }
-.forma-badge-e { background: #ffd700; color: #000; }
-.forma-badge-p { background: #ff6b6b; color: #fff; }
-</style>
-""", unsafe_allow_html=True)
+st.markdown(f"<style>{load_css()}</style>", unsafe_allow_html=True)
 
 # Login
 if not st.session_state.logged:
@@ -510,7 +226,7 @@ if not st.session_state.logged:
                 st.session_state.logged = True
                 st.session_state.is_admin = True
                 st.session_state.user_data = {"nombre": "Admin", "plan": "admin", "es_admin": 1}
-                safe_rerun()
+                st.rerun()
             else:
                 st.error("Password incorrecta")
 
@@ -529,7 +245,7 @@ else:
             st.session_state.logged = False
             st.session_state.user_data = None
             st.session_state.is_admin = False
-            safe_rerun()
+            st.rerun()
     
     # Menú horizontal arriba
     st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
@@ -539,27 +255,27 @@ else:
     with col_menu1:
         if st.button("📂 Carga", use_container_width=True, type="primary" if st.session_state.page == "Carga" else "secondary"):
             st.session_state.page = "Carga"
-            safe_rerun()
+            st.rerun()
     
     with col_menu2:
         if st.button("📊 Analizador", use_container_width=True, type="primary" if st.session_state.page == "Analizador" else "secondary"):
             st.session_state.page = "Analizador"
-            safe_rerun()
+            st.rerun()
     
     with col_menu3:
         if st.button("📈 Estadísticas", use_container_width=True, type="primary" if st.session_state.page == "Estadisticas" else "secondary"):
             st.session_state.page = "Estadisticas"
-            safe_rerun()
+            st.rerun()
     
     with col_menu4:
         if st.button("📉 Dashboard", use_container_width=True, type="primary" if st.session_state.page == "Dashboard" else "secondary"):
             st.session_state.page = "Dashboard"
-            safe_rerun()
+            st.rerun()
     
     with col_menu5:
         if st.button("🔑 Claves", use_container_width=True, type="primary" if st.session_state.page == "Claves" else "secondary"):
             st.session_state.page = "Claves"
-            safe_rerun()
+            st.rerun()
     
     st.markdown("---")
     
@@ -620,7 +336,7 @@ else:
                         if st.button("✅ Guardar en Supabase", type="primary", use_container_width=True):
                             with st.spinner("Guardando..."):
                                 try:
-                                    client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                                    client = get_client()
                                     
                                     guardados = 0
                                     errores = 0
@@ -654,10 +370,10 @@ else:
                                     st.error(f"Error de conexión: {str(e)[:100]}")
                     with col_borrar:
                         if st.button("🗑️ Borrar todos", type="secondary", use_container_width=True):
-                            client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                            client = get_client()
                             client.table('partidos').delete().neq('id', 0).execute()
                             st.session_state.partidos_deleted = True
-                            safe_rerun()
+                            st.rerun()
                 else:
                     st.warning("No se encontraron partidos en el archivo")
                     
@@ -673,7 +389,7 @@ else:
             st.session_state.selected_match_data = None
         
         # Obtener lista de equipos disponibles
-        client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        client = get_client()
         try:
             response_equipos = client.table('equipos_stats').select('equipo, liga').execute()
             equipos_disponibles = [e['equipo'].title() for e in response_equipos.data] if response_equipos.data else []
@@ -911,7 +627,7 @@ else:
         
         if home_team:
             try:
-                client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                client = get_client()
                 resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{home_team}%').execute()
                 if resp.data and resp.data[0].get('lambda_local', 0) > 0:
                     stats_local = resp.data[0]
@@ -925,7 +641,7 @@ else:
         
         if away_team:
             try:
-                client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                client = get_client()
                 resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{away_team}%').execute()
                 if resp.data and resp.data[0].get('lambda_visitante', 0) > 0:
                     stats_visitante = resp.data[0]
@@ -1202,7 +918,7 @@ else:
                 with col_btn:
                     if st.button("💾 GUARDAR PARTIDO", type="primary", use_container_width=True):
                         try:
-                            client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                            client = get_client()
                             r = st.session_state.analysis_result
                             
                             # Guardar TODAS las predicciones
@@ -1664,7 +1380,7 @@ else:
                         })
                 
                 # Guardar en Supabase
-                client = create_client(SUPABASE_URL, SUPABASE_KEY)
+                client = get_client()
                 data = {
                     'equipo': equipo,
                     'liga': liga,
@@ -1702,7 +1418,7 @@ else:
         st.markdown("---")
         st.markdown("### 📋 Equipos Guardados")
         
-        client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        client = get_client()
         try:
             response = client.table('equipos_stats').select('*').execute()
             
@@ -1792,7 +1508,7 @@ else:
                 else:
                     if db_crear_usuario(nueva_clave.strip(), nombre.strip(), plan, dias):
                         st.success(f"✅ Clave '{nueva_clave}' creada para {nombre}")
-                        safe_rerun()
+                        st.rerun()
                     else:
                         st.error("❌ Esta clave ya existe. Usa otra.")
         
@@ -1827,17 +1543,17 @@ else:
                             if st.button(f"👑 Mes", key=f"mes_{u['id']}"):
                                 db_actualizar_plan(u['id'], "mes", 30)
                                 st.success("Plan actualizado a Mes")
-                                safe_rerun()
+                                st.rerun()
                         with col_b:
                             if st.button(f"📆 Semana", key=f"sem_{u['id']}"):
                                 db_actualizar_plan(u['id'], "semana", 7)
                                 st.success("Plan actualizado a Semana")
-                                safe_rerun()
+                                st.rerun()
                         with col_c:
                             if st.button(f"🗑️ Eliminar", key=f"del_{u['id']}"):
                                 if db_eliminar_usuario(u['id']):
                                     st.success("✅ Eliminado")
-                                    safe_rerun()
+                                    st.rerun()
                                 else:
                                     st.error("No se pudo eliminar")
 
@@ -1848,7 +1564,7 @@ else:
         
         # Obtener picks de Supabase
         try:
-            client = create_client(SUPABASE_URL, SUPABASE_KEY)
+            client = get_client()
             response = client.table('picks').select('*').order('fecha', desc=True).limit(200).execute()
             picks = response.data if response.data else []
         except Exception as e:
@@ -1928,7 +1644,7 @@ else:
                 if st.button("🔄 Resetear Calibración"):
                     resetear_calibracion()
                     st.success("Calibración reseteada")
-                    safe_rerun()
+                    st.rerun()
             
             # Botones de acción
             col_del, col_result = st.columns([1, 2])
@@ -1950,7 +1666,7 @@ else:
                             for pick_id in to_delete:
                                 client.table('picks').delete().eq('id', pick_id).execute()
                             st.success(f"✅ Eliminados {len(to_delete)} duplicados")
-                            safe_rerun()
+                            st.rerun()
                         else:
                             st.info("No hay duplicados")
             
@@ -2058,7 +1774,7 @@ else:
                                     }).eq('id', pick_id).execute()
                                     
                                     st.success("✅ Guardado!")
-                                    safe_rerun()
+                                    st.rerun()
                                 except Exception as e:
                                     st.error(f"❌ {str(e)[:50]}")
             else:
@@ -2077,20 +1793,3 @@ else:
             
             Vuelve aquí para ver tu rendimiento.
             """)
-
-# ══════════════════════════════════════════════════════════
-# MANEJO DE RERUNS AL FINAL DEL SCRIPT
-# ══════════════════════════════════════════════════════════
-if st.session_state.get('needs_rerun', False):
-    st.session_state.needs_rerun = False
-    # Limpiar estados temporales
-    for key in ['partidos_deleted', 'equipo_updated', 'equipo_deleted', 'pick_deleted']:
-        if key in st.session_state:
-            del st.session_state[key]
-    try:
-        st.rerun(scope="fragment")
-    except Exception:
-        try:
-            safe_rerun()
-        except Exception:
-            pass
