@@ -694,31 +694,32 @@ else:
         # Mostrar partidos disponibles si hay
         if partidos_data:
             st.markdown("### 📋 Partidos en Base de Datos")
-            st.info(f"Total: {len(partidos_data)} partidos")
+            st.caption(f"Total: {len(partidos_data)} partidos")
             
-            # Crear tabla con columnas
-            cols = st.columns([1, 2, 2, 1, 1, 1])  # Fecha, Local, Visitante, Hora, País, Acción
+            # Tabla compacta
+            st.markdown("""
+            <style>
+            .compact-table { font-size: 12px !important; }
+            .compact-table td { padding: 2px 5px !important; }
+            </style>
+            """, unsafe_allow_html=True)
             
-            # Header
-            with cols[0]:
-                st.markdown("**📅 Fecha**")
-            with cols[1]:
-                st.markdown("**🏠 Local**")
-            with cols[2]:
-                st.markdown("**✈️ Visitante**")
-            with cols[3]:
-                st.markdown("**⏰ Hora**")
-            with cols[4]:
-                st.markdown("**🌍 País**")
-            with cols[5]:
+            # Header compacto
+            header_cols = st.columns([1.5, 2.5, 2.5, 0.8, 1, 0.8])
+            with header_cols[0]:
+                st.markdown("**Fecha**")
+            with header_cols[1]:
+                st.markdown("**Local**")
+            with header_cols[2]:
+                st.markdown("**Visitante**")
+            with header_cols[3]:
+                st.markdown("**Hora**")
+            with header_cols[4]:
+                st.markdown("**País**")
+            with header_cols[5]:
                 st.markdown("**🎯**")
             
-            st.markdown("---")
-            
-            # Variable para el partido seleccionado
-            selected_match = None
-            
-            # Mostrar cada partido en una fila
+            # Mostrar cada partido en una fila compacta
             for p in partidos_data:
                 fecha = p.get('fecha', '')[:10] if p.get('fecha') else ''
                 hora = p.get('hora', '')[:5] if p.get('hora') else ''
@@ -726,40 +727,150 @@ else:
                 visitante = p.get('equipo_visitante', '?')
                 pais = p.get('pais', '')
                 
-                cols = st.columns([1, 2, 2, 1, 1, 1])
+                row_cols = st.columns([1.5, 2.5, 2.5, 0.8, 1, 0.8])
                 
-                with cols[0]:
-                    st.markdown(f"{fecha}")
-                with cols[1]:
-                    st.markdown(f"**{local}**")
-                with cols[2]:
-                    st.markdown(f"**{visitante}**")
-                with cols[3]:
-                    st.markdown(f"{hora}")
-                with cols[4]:
-                    # Bandera emoji según país
+                with row_cols[0]:
+                    st.caption(f"📅 {fecha}")
+                with row_cols[1]:
+                    st.caption(f"🏠 {local}")
+                with row_cols[2]:
+                    st.caption(f"✈️ {visitante}")
+                with row_cols[3]:
+                    st.caption(f"⏰ {hora}")
+                with row_cols[4]:
                     pais_emoji = {'México': '🇲🇽', 'Colombia': '🇨🇴', 'Argentina': '🇦🇷', 'Brasil': '🇧🇷', 'Chile': '🇨🇱'}
-                    emoji = pais_emoji.get(pais, '🌍')
-                    st.markdown(f"{emoji} {pais}")
-                with cols[5]:
-                    # Botón para seleccionar
-                    if st.button("🎯", key=f"match_{p.get('id')}", help=f"Analizar {local} vs {visitante}"):
+                    st.caption(f"{pais_emoji.get(pais, '🌍')} {pais[:6]}")
+                with row_cols[5]:
+                    # Botón que ejecuta análisis directamente
+                    if st.button("🎯", key=f"match_{p.get('id')}", help=f"Analizar {local} vs {visitante}", use_container_width=True):
                         selected_match = p
                         st.session_state.selected_match_data = selected_match
-                        st.rerun()
-            
-            st.markdown("---")
-            
-            # Si se seleccionó un partido, mostrar confirmación
-            if st.session_state.selected_match_data:
-                p = st.session_state.selected_match_data
-                st.success(f"✅ Partido seleccionado: **{p.get('equipo_local')}** vs **{p.get('equipo_visitante')}** - Scroll abajo para analizar")
         elif not equipos_disponibles:
             st.warning("⚠️ No hay partidos ni equipos guardados. Sube un Excel y busca los equipos.")
         
         # Mostrar equipos disponibles
         if not equipos_disponibles:
             st.warning("⚠️ No hay equipos guardados. Ve a 'Estadísticas' para agregar equipos.")
+        
+        # Si hay un partido seleccionado, hacer análisis automático
+        if st.session_state.selected_match_data:
+            p = st.session_state.selected_match_data
+            local_nombre = p.get('equipo_local', '')
+            visitante_nombre = p.get('equipo_visitante', '')
+            
+            st.markdown("---")
+            st.markdown(f"### 🎯 Analizando: **{local_nombre}** vs **{visitante_nombre}**")
+            
+            # Buscar stats de los equipos
+            stats_local = None
+            stats_visitante = None
+            home_team = ""
+            away_team = ""
+            
+            # Buscar equipo local
+            for eq in equipos_disponibles:
+                if local_nombre.lower() in eq.lower() or eq.lower() in local_nombre.lower():
+                    try:
+                        resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{eq}%').execute()
+                        if resp.data and resp.data[0].get('lambda_local', 0) > 0:
+                            stats_local = resp.data[0]
+                            home_team = eq
+                            break
+                    except:
+                        pass
+            
+            # Buscar equipo visitante
+            for eq in equipos_disponibles:
+                if visitante_nombre.lower() in eq.lower() or eq.lower() in visitante_nombre.lower():
+                    try:
+                        resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{eq}%').execute()
+                        if resp.data and resp.data[0].get('lambda_visitante', 0) > 0:
+                            stats_visitante = resp.data[0]
+                            away_team = eq
+                            break
+                    except:
+                        pass
+            
+            # Verificar si tenemos los stats
+            if stats_local and stats_visitante:
+                lambda_local = stats_local.get('lambda_local', 0)
+                lambda_visitante = stats_visitante.get('lambda_visitante', 0)
+                
+                with st.spinner("Analizando..."):
+                    result = calcular(
+                        lambda_local=lambda_local,
+                        lambda_visitante=lambda_visitante,
+                        corners_local=float(stats_local.get('promedio_corners_total', 10)),
+                        corners_visitante=float(stats_visitante.get('promedio_corners_total', 10)),
+                        tarjetas_local=float(stats_local.get('promedio_amarillas', 3)),
+                        tarjetas_visitante=float(stats_visitante.get('promedio_amarillas', 3)),
+                        tiros_local=float(stats_local.get('promedio_tiros', 12)),
+                        tiros_visitante=float(stats_visitante.get('promedio_tiros', 12)),
+                        tiros_arco_local=float(stats_local.get('promedio_tiros_arco', 4)),
+                        tiros_arco_visitante=float(stats_visitante.get('promedio_tiros_arco', 4)),
+                        ultimos_5_local=stats_local.get('ultimos_5_partidos', []),
+                        ultimos_5_visitante=stats_visitante.get('ultimos_5_partidos', []),
+                    )
+                    
+                    st.session_state.analysis_result = result
+                    st.session_state.home = home_team
+                    st.session_state.away = away_team
+                    st.session_state.stats_local = stats_local
+                    st.session_state.stats_visitante = stats_visitante
+                    
+                    # Calcular predicciones
+                    remates_total = float(stats_local.get('promedio_tiros', 12)) + float(stats_visitante.get('promedio_tiros', 12))
+                    remates_over_prob = min(90, max(10, 50 + (remates_total - 24) * 2))
+                    
+                    tarjetas_total = float(stats_local.get('promedio_amarillas', 3)) + float(stats_visitante.get('promedio_amarillas', 3))
+                    tarjetas_over_prob = min(90, max(10, 50 + (tarjetas_total - 6) * 5))
+                    
+                    st.session_state.predicciones_actuales = {
+                        '1x2': {
+                            'pick': result.get('pick_1x2', ''),
+                            'prob': float(result.get('prob_1x2', 0))
+                        },
+                        'over_under': {
+                            'pick': result.get('pick_over_under', ''),
+                            'prob': float(result.get('prob_over_under', 0)),
+                            'over_25': float(result.get('over_under', {}).get('over_25', 0)),
+                            'under_25': float(result.get('over_under', {}).get('under_25', 0))
+                        },
+                        'btts': {
+                            'pick': result.get('pick_btts', ''),
+                            'prob': float(result.get('btts_yes', 0)),
+                            'yes': float(result.get('btts_yes', 0)),
+                            'no': float(result.get('btts_no', 0))
+                        },
+                        'corners': {
+                            'pick': result.get('pick_corners', ''),
+                            'total': float(result.get('corners', {}).get('total_estimado', 0))
+                        },
+                        'remates': {
+                            'pick': f"+ {remates_total:.0f}" if remates_over_prob > 50 else f"- {remates_total:.0f}",
+                            'total': remates_total,
+                            'local': float(stats_local.get('promedio_tiros', 12)),
+                            'visitante': float(stats_visitante.get('promedio_tiros', 12)),
+                            'over_prob': remates_over_prob,
+                            'under_prob': 100 - remates_over_prob
+                        },
+                        'tarjetas': {
+                            'pick': f"Over {tarjetas_total:.1f}" if tarjetas_over_prob > 50 else f"Under {tarjetas_total:.1f}",
+                            'total': tarjetas_total,
+                            'over_prob': tarjetas_over_prob,
+                            'under_prob': 100 - tarjetas_over_prob
+                        }
+                    }
+                
+                st.success("✅ ¡Análisis completado! Abajo verás los resultados.")
+            else:
+                equipos_faltantes = []
+                if not stats_local:
+                    equipos_faltantes.append(local_nombre)
+                if not stats_visitante:
+                    equipos_faltantes.append(visitante_nombre)
+                st.error(f"⚠️ Equipos sin estadísticas: {', '.join(equipos_faltantes)}")
+                st.info("📝 Ve a 'Estadísticas' y busca estos equipos para obtener sus estadísticas.")
         
         
         
