@@ -1593,56 +1593,59 @@ else:
         
         # Formulario para agregar equipo
         with st.form("form_equipo", clear_on_submit=True):
-            col1, col2, col3 = st.columns(3)
-            with col1:
+            # Campos básicos en 2 columnas
+            col_nom, col_liga = st.columns(2)
+            with col_nom:
                 equipo = st.text_input("Nombre del Equipo", placeholder="Ej: Barcelona")
-            with col2:
+            with col_liga:
                 liga = st.text_input("Liga", placeholder="Ej: La Liga")
-            with col3:
-                temporada = st.text_input("Temporada", value="2025")
             
-            st.markdown("** Estadísticas de Temporada**")
-            col_pj, col_vic, col_emp, col_der = st.columns(4)
-            with col_pj:
-                partidos = st.number_input("Partidos Jugados", min_value=0, value=0)
-            with col_vic:
-                victorias = st.number_input("Victorias", min_value=0, value=0)
-            with col_emp:
-                empates = st.number_input("Empates", min_value=0, value=0)
-            with col_der:
-                derrotas = st.number_input("Derrotas", min_value=0, value=0)
+            # Estadísticas principales en una línea
+            st.markdown("**📊 Estadísticas de Temporada**")
+            col_stats = st.columns([1, 1, 1, 1, 1, 1, 1])
+            with col_stats[0]:
+                partidos = st.number_input("PJ", min_value=0, value=0, help="Partidos Jugados")
+            with col_stats[1]:
+                victorias = st.number_input("V", min_value=0, value=0, help="Victorias")
+            with col_stats[2]:
+                empates = st.number_input("E", min_value=0, value=0, help="Empates")
+            with col_stats[3]:
+                derrotas = st.number_input("D", min_value=0, value=0, help="Derrotas")
+            with col_stats[4]:
+                goles_favor = st.number_input("GF", min_value=0, value=0, help="Goles a Favor")
+            with col_stats[5]:
+                goles_contra = st.number_input("GC", min_value=0, value=0, help="Goles en Contra")
+            with col_stats[6]:
+                temporada = st.text_input("Temp", value="2025", help="Temporada")
             
-            col_gf, col_gc = st.columns(2)
-            with col_gf:
-                goles_favor = st.number_input("Goles a Favor", min_value=0, value=0)
-            with col_gc:
-                goles_contra = st.number_input("Goles en Contra", min_value=0, value=0)
+            # Expander: Estadísticas Avanzadas
+            with st.expander("📊 ⬆️ Estadísticas Avanzadas (opcional)"):
+                col_avanz = st.columns(4)
+                with col_avanz[0]:
+                    promedio_corners = st.number_input("Corners/partido", min_value=0.0, value=10.0, step=0.5, format="%.1f", key="corners")
+                with col_avanz[1]:
+                    promedio_tarjetas = st.number_input("Tarjetas/partido", min_value=0.0, value=3.0, step=0.5, format="%.1f", key="tarjetas")
+                with col_avanz[2]:
+                    promedio_tiros = st.number_input("Tiros/partido", min_value=0.0, value=12.0, step=0.5, format="%.1f", key="tiros")
+                with col_avanz[3]:
+                    promedio_tiros_arco = st.number_input("T.Arco/partido", min_value=0.0, value=4.0, step=0.5, format="%.1f", key="tiros_arco")
             
-            st.markdown("**📊 Estadísticas Avanzadas (Opcional)**")
-            col_corners, col_tarjetas = st.columns(2)
-            with col_corners:
-                promedio_corners = st.number_input("Promedio Córners/partido", min_value=0.0, value=10.0, step=0.5, format="%.1f")
-            with col_tarjetas:
-                promedio_tarjetas = st.number_input("Promedio Tarjetas/partido", min_value=0.0, value=3.0, step=0.5, format="%.1f")
+            # Expander: Últimos 5 Partidos
+            with st.expander("📅 Últimos 5 Partidos (opcional)"):
+                st.caption("G=Ganó, E=Empate, P=Perdió")
+                col_ult = st.columns(5)
+                with col_ult[0]:
+                    u1 = st.selectbox("1", ["", "G", "E", "P"], index=0, key="u1")
+                with col_ult[1]:
+                    u2 = st.selectbox("2", ["", "G", "E", "P"], index=0, key="u2")
+                with col_ult[2]:
+                    u3 = st.selectbox("3", ["", "G", "E", "P"], index=0, key="u3")
+                with col_ult[3]:
+                    u4 = st.selectbox("4", ["", "G", "E", "P"], index=0, key="u4")
+                with col_ult[4]:
+                    u5 = st.selectbox("5", ["", "G", "E", "P"], index=0, key="u5")
             
-            col_tiros, col_tiros_arco = st.columns(2)
-            with col_tiros:
-                promedio_tiros = st.number_input("Promedio Tiros/partido", min_value=0.0, value=12.0, step=0.5, format="%.1f")
-            with col_tiros_arco:
-                promedio_tiros_arco = st.number_input("Promedio Tiros al Arco/partido", min_value=0.0, value=4.0, step=0.5, format="%.1f")
-            
-            st.markdown("**📅 Últimos 5 Partidos (Opcional - G=Ganó, E=Empate, P=Perdió)**")
-            col_u1, col_u2, col_u3 = st.columns(3)
-            with col_u1:
-                u1 = st.selectbox("Partido 1", ["", "G", "E", "P"], index=0, key="u1")
-                u2 = st.selectbox("Partido 2", ["", "G", "E", "P"], index=0, key="u2")
-            with col_u2:
-                u3 = st.selectbox("Partido 3", ["", "G", "E", "P"], index=0, key="u3")
-                u4 = st.selectbox("Partido 4", ["", "G", "E", "P"], index=0, key="u4")
-            with col_u3:
-                u5 = st.selectbox("Partido 5", ["", "G", "E", "P"], index=0, key="u5")
-            
-            submitted = st.form_submit_button("💾 Guardar Equipo", use_container_width=True)
+            submitted = st.form_submit_button("💾 GUARDAR EQUIPO", use_container_width=True, type="primary")
             
             if submitted and equipo:
                 # Calcular lambdas
