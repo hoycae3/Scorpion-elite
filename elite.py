@@ -891,11 +891,8 @@ else:
         
         
         
-        col_space, col1, col2, col_space2 = st.columns([2, 1, 1, 2])
-        
-        # Determinar qué equipos mostrar en los selectores
+        # Si hay un partido seleccionado de la lista, usar esos equipos
         if selected_match:
-            # Autocompletar desde el partido seleccionado
             local_nombre = selected_match.get('equipo_local', '')
             visitante_nombre = selected_match.get('equipo_visitante', '')
             
@@ -905,26 +902,9 @@ else:
             
             home_team = local_match if local_match else (local_nombre.title() if local_nombre else "")
             away_team = visitante_match if visitante_match else (visitante_nombre.title() if visitante_nombre else "")
-            
-            # Mostrar los equipos seleccionados con estilo
-            with col1:
-                st.markdown(f"""
-                <div style="background: linear-gradient(135deg, #00d4aa 0%, #00a085 100%); 
-                padding: 15px; border-radius: 10px; text-align: center;">
-                <span style="font-size: 14px; opacity: 0.8;">🏠 LOCAL</span><br>
-                <span style="font-size: 18px; font-weight: bold;">{home_team}</span>
-                </div>
-                """, unsafe_allow_html=True)
-            with col2:
-                st.markdown(f"""
-                <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%); 
-                padding: 15px; border-radius: 10px; text-align: center;">
-                <span style="font-size: 14px; opacity: 0.8;">✈️ VISITANTE</span><br>
-                <span style="font-size: 18px; font-weight: bold;">{away_team}</span>
-                </div>
-                """, unsafe_allow_html=True)
         else:
-            # Usar selectores normales
+            # Usar selectores si no hay partido seleccionado
+            col_space, col1, col2, col_space2 = st.columns([2, 1, 1, 2])
             st.markdown("""
 <style>
 .stSelectbox label {
