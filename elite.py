@@ -669,8 +669,8 @@ else:
         pass  # Sin título
         
         # Inicializar selected_match en session_state
-        if 'selected_match_index' not in st.session_state:
-            st.session_state.selected_match_index = None
+        if 'selected_match_data' not in st.session_state:
+            st.session_state.selected_match_data = None
         
         # Obtener lista de equipos disponibles
         client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -687,6 +687,9 @@ else:
             partidos_data = response_partidos.data if response_partidos.data else []
         except:
             partidos_data = []
+        
+        # Variable para el partido seleccionado
+        selected_match = None
         
         # Mostrar partidos disponibles si hay
         if partidos_data:
@@ -717,11 +720,12 @@ else:
             
             # Si se seleccionó un partido (no el placeholder)
             if selected_idx > 0 and selected_idx in partido_dict:
-                p = partido_dict[selected_idx]
-                st.session_state.selected_match_index = selected_idx
-                st.success(f"✅ Partido seleccionado: {p.get('equipo_local')} vs {p.get('equipo_visitante')}")
+                selected_match = partido_dict[selected_idx]
+                st.session_state.selected_match_data = selected_match
+                st.success(f"✅ Partido seleccionado: {selected_match.get('equipo_local')} vs {selected_match.get('equipo_visitante')}")
             elif selected_idx == 0:
-                st.session_state.selected_match_index = None
+                st.session_state.selected_match_data = None
+                selected_match = None
             
             st.markdown("---")
         elif not equipos_disponibles:
@@ -734,7 +738,40 @@ else:
         
         
         col_space, col1, col2, col_space2 = st.columns([2, 1, 1, 2])
-        st.markdown("""
+        
+        # Determinar qué equipos mostrar en los selectores
+        if selected_match:
+            # Autocompletar desde el partido seleccionado
+            local_nombre = selected_match.get('equipo_local', '')
+            visitante_nombre = selected_match.get('equipo_visitante', '')
+            
+            # Buscar coincidencia en equipos disponibles
+            local_match = next((e for e in equipos_disponibles if local_nombre.lower() in e.lower() or e.lower() in local_nombre.lower()), None)
+            visitante_match = next((e for e in equipos_disponibles if visitante_nombre.lower() in e.lower() or e.lower() in visitante_nombre.lower()), None)
+            
+            home_team = local_match if local_match else (local_nombre.title() if local_nombre else "")
+            away_team = visitante_match if visitante_match else (visitante_nombre.title() if visitante_nombre else "")
+            
+            # Mostrar los equipos seleccionados con estilo
+            with col1:
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #00d4aa 0%, #00a085 100%); 
+                padding: 15px; border-radius: 10px; text-align: center;">
+                <span style="font-size: 14px; opacity: 0.8;">🏠 LOCAL</span><br>
+                <span style="font-size: 18px; font-weight: bold;">{home_team}</span>
+                </div>
+                """, unsafe_allow_html=True)
+            with col2:
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%); 
+                padding: 15px; border-radius: 10px; text-align: center;">
+                <span style="font-size: 14px; opacity: 0.8;">✈️ VISITANTE</span><br>
+                <span style="font-size: 18px; font-weight: bold;">{away_team}</span>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            # Usar selectores normales
+            st.markdown("""
 <style>
 .stSelectbox label {
     font-size: 120px !important;
@@ -742,10 +779,10 @@ else:
 }
 </style>
 """, unsafe_allow_html=True)
-        with col1:
-            home_team = st.selectbox("🏠 Local", [""] + equipos_disponibles, key="home_select")
-        with col2:
-            away_team = st.selectbox("✈️ Visitante", [""] + equipos_disponibles, key="away_select")
+            with col1:
+                home_team = st.selectbox("🏠 Local", [""] + equipos_disponibles, key="home_select")
+            with col2:
+                away_team = st.selectbox("✈️ Visitante", [""] + equipos_disponibles, key="away_select")
         
         # Validar que ambos equipos tengan DATOS REALES en Supabase
         lambda_local = None
