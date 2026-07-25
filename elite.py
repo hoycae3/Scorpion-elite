@@ -169,6 +169,9 @@ if "needs_rerun" not in st.session_state:
     st.session_state.needs_rerun = False
 if "rerun_counter" not in st.session_state:
     st.session_state.rerun_counter = 0
+# Equipos del Excel actual (para buscar solo los del último Excel cargado)
+if "equipos_excel_actual" not in st.session_state:
+    st.session_state.equipos_excel_actual = []
 
 # CSS Mejorado
 st.markdown("""
@@ -582,6 +585,16 @@ else:
                 
                 if not df_partidos.empty:
                     st.session_state.df_partidos = df_partidos
+                    
+                    # Guardar equipos del Excel actual para buscarlos después
+                    equipos_excel = set()
+                    for _, row in df_partidos.iterrows():
+                        if pd.notna(row.get('equipo_local')):
+                            equipos_excel.add(row['equipo_local'])
+                        if pd.notna(row.get('equipo_visitante')):
+                            equipos_excel.add(row['equipo_visitante'])
+                    st.session_state.equipos_excel_actual = sorted(list(equipos_excel))
+                    st.info(f"📋 {len(equipos_excel)} equipos guardados para búsqueda: {', '.join(sorted(equipos_excel)[:10])}{'...' if len(equipos_excel) > 10 else ''}")
                     
                     # Mostrar errores de validación
                     df_validated, errors = validate_matches(df_partidos)
@@ -1242,32 +1255,28 @@ else:
         st.markdown("### 📈 Estadísticas")
         
         # Sección: Robot automático
-        st.markdown("### 🤖 Buscar Todos los Equipos del Excel")
-        st.info("Sube tu Excel con partidos → Presiona el botón → El robot busca automáticamente TODOS los equipos en football-data y Soccerway")
+        st.markdown("### 🤖 Buscar Equipos del Excel Actual")
         
-        if st.button("🔄 Buscar Equipos del Excel", type="primary", use_container_width=True):
+        # Mostrar equipos del Excel actual
+        equipos_excel = st.session_state.get('equipos_excel_actual', [])
+        if equipos_excel:
+            st.info(f"📋 Equipos del Excel actual: {len(equipos_excel)} - {', '.join(equipos_excel[:15])}{'...' if len(equipos_excel) > 15 else ''}")
+        else:
+            st.warning("⚠️ No hay equipos del Excel actual. Sube un Excel en la pestaña 'Carga' primero.")
+        
+        if st.button("🔄 Buscar Equipos del Excel", type="primary", use_container_width=True, disabled=not equipos_excel):
             with st.spinner("Buscando equipos..."):
                 try:
-                    # Obtener equipos de Supabase
-                    client = create_client(SUPABASE_URL, SUPABASE_KEY)
-                    response = client.table('partidos').select('equipo_local, equipo_visitante').execute()
+                    # Usar equipos del Excel actual (guardados en session_state)
+                    equipos = equipos_excel
                     
-                    if not response.data:
-                        st.warning("⚠️ No hay partidos en Supabase. Sube un Excel primero.")
+                    if not equipos:
+                        st.warning("⚠️ No hay equipos para buscar. Sube un Excel primero.")
                     else:
-                        # Extraer equipos únicos
-                        equipos = set()
-                        for p in response.data:
-                            if p.get('equipo_local'):
-                                equipos.add(p['equipo_local'])
-                            if p.get('equipo_visitante'):
-                                equipos.add(p['equipo_visitante'])
-                        
-                        equipos = sorted(list(equipos))
-                        st.info(f"📊 {len(equipos)} equipos encontrados: {', '.join(equipos)}")
+                        st.info(f"📊 {len(equipos)} equipos a buscar: {', '.join(equipos)}")
                         
                         # Buscar todos con el robot
-                        with st.spinner("🤖 Buscando en football-data y API-Football..."):
+                        with st.spinner("🤖 Buscando en football-data y Soccerway..."):
                             results = run_robot_batch(equipos)
                         
                         # Clasificar resultados
