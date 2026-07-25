@@ -1318,15 +1318,15 @@ else:
             with col_stats1[0]:
                 partidos = st.number_input("PJ", min_value=0, value=0, key="eq_pj")
             with col_stats1[1]:
-                victorias = st.number_input("V", min_value=0, value=0, key="eq_v")
+                victorias = st.number_input("G", min_value=0, value=0, key="eq_v", help="Ganados")
             with col_stats1[2]:
-                empates = st.number_input("E", min_value=0, value=0, key="eq_e")
+                empates = st.number_input("E", min_value=0, value=0, key="eq_e", help="Empates")
             with col_stats1[3]:
-                derrotas = st.number_input("D", min_value=0, value=0, key="eq_d")
+                derrotas = st.number_input("P", min_value=0, value=0, key="eq_d", help="Perdidos")
             with col_stats1[4]:
-                goles_favor = st.number_input("GF", min_value=0, value=0, key="eq_gf")
+                goles_favor = st.number_input("GF", min_value=0, value=0, key="eq_gf", help="Goles a Favor")
             with col_stats1[5]:
-                goles_contra = st.number_input("GC", min_value=0, value=0, key="eq_gc")
+                goles_contra = st.number_input("GC", min_value=0, value=0, key="eq_gc", help="Goles en Contra")
             with col_stats1[6]:
                 temporada = st.text_input("Temp", value="2025", key="eq_temp")
             
