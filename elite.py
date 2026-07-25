@@ -1314,34 +1314,32 @@ else:
                 liga = st.text_input("🏆 Liga", placeholder="La Liga")
             
             # Línea 2: Stats principales
-            st.markdown("**Partidos | Ganados | Empates | Perdidos | GF | GC | Temp**")
             col_stats1 = st.columns([1, 1, 1, 1, 1, 1, 1])
             with col_stats1[0]:
-                partidos = st.number_input("PJ", min_value=0, value=0, key="eq_pj", label_visibility="collapsed")
+                partidos = st.number_input("Partidos", min_value=0, value=0, key="eq_pj")
             with col_stats1[1]:
-                victorias = st.number_input("G", min_value=0, value=0, key="eq_v", label_visibility="collapsed")
+                victorias = st.number_input("Ganados (G)", min_value=0, value=0, key="eq_v")
             with col_stats1[2]:
-                empates = st.number_input("E", min_value=0, value=0, key="eq_e", label_visibility="collapsed")
+                empates = st.number_input("Empate (E)", min_value=0, value=0, key="eq_e")
             with col_stats1[3]:
-                derrotas = st.number_input("P", min_value=0, value=0, key="eq_d", label_visibility="collapsed")
+                derrotas = st.number_input("Perdido (P)", min_value=0, value=0, key="eq_d")
             with col_stats1[4]:
-                goles_favor = st.number_input("GF", min_value=0, value=0, key="eq_gf", label_visibility="collapsed")
+                goles_favor = st.number_input("Goles Favor", min_value=0, value=0, key="eq_gf")
             with col_stats1[5]:
-                goles_contra = st.number_input("GC", min_value=0, value=0, key="eq_gc", label_visibility="collapsed")
+                goles_contra = st.number_input("Goles Contra", min_value=0, value=0, key="eq_gc")
             with col_stats1[6]:
-                temporada = st.text_input("Temp", value="2025", key="eq_temp", label_visibility="collapsed")
+                temporada = st.text_input("Temporada", value="2025", key="eq_temp")
             
             # Línea 3: Stats avanzadas
-            st.markdown("**Corners | Tarjetas | Tiros | Tiros Arco**")
             col_stats2 = st.columns([1, 1, 1, 1])
             with col_stats2[0]:
-                promedio_corners = st.number_input("Corners", min_value=0.0, value=10.0, step=0.5, format="%.1f", key="eq_corners", label_visibility="collapsed")
+                promedio_corners = st.number_input("Promedio Corners", min_value=0.0, value=10.0, step=0.5, format="%.1f", key="eq_corners")
             with col_stats2[1]:
-                promedio_tarjetas = st.number_input("Tarjetas", min_value=0.0, value=3.0, step=0.5, format="%.1f", key="eq_tarjetas", label_visibility="collapsed")
+                promedio_tarjetas = st.number_input("Promedio Tarjetas", min_value=0.0, value=3.0, step=0.5, format="%.1f", key="eq_tarjetas")
             with col_stats2[2]:
-                promedio_tiros = st.number_input("Tiros", min_value=0.0, value=12.0, step=0.5, format="%.1f", key="eq_tiros", label_visibility="collapsed")
+                promedio_tiros = st.number_input("Promedio Tiros", min_value=0.0, value=12.0, step=0.5, format="%.1f", key="eq_tiros")
             with col_stats2[3]:
-                promedio_tiros_arco = st.number_input("T.Arco", min_value=0.0, value=4.0, step=0.5, format="%.1f", key="eq_tarcos", label_visibility="collapsed")
+                promedio_tiros_arco = st.number_input("Tiros al Arco", min_value=0.0, value=4.0, step=0.5, format="%.1f", key="eq_tarcos")
             
             # Línea 4: Últimos 5
             st.markdown("**📅 Últimos 5:** G=Ganó | E=Empate | P=Perdió")
