@@ -195,16 +195,18 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
     """
     Parsea un DataFrame de Excel formato Flashscore vertical.
     
-    Formato real del Excel:
-    - Fecha header (ej: "Hoy - 18.07." o "Mañana - 19.07.")
+    Formato del Excel:
+    - Fecha header (ej: "2026-07-25 00:00:00")
+    - Vacío
     - Liga
-    - PAÍS:
-    - (Fútbol)
-    - Clasificación/Tabla En Directo/Cuadro
+    - País duplicado (ej: "MexicoMéxico")
+    - Fecha-hora Excel (para hora)
     - Hora (HH:MM:SS)
-    - Equipo Local (duplicado)
-    - Equipo Visitante (duplicado)
-    - --
+    - Separador "-" 
+    - Equipo Local
+    - Abreviatura Local
+    - Equipo Visitante
+    - Abreviatura Visitante
     """
     if df.empty:
         return pd.DataFrame()
@@ -218,48 +220,157 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
         else:
             rows.append(str(val).strip())
     
-    # Detectar todas las fechas
-    fecha_por_posicion = {}
-    fecha_keys = ['hoy', 'mañana', 'manana', 'tomorrow', 'today', 'yesterday']
-    
+    # Detectar fecha del día (buscar "2026-..." que indica fecha real)
+    fecha_del_dia = None
     for i, row in enumerate(rows):
-        row_lower = row.lower()
-        if any(keyword in row_lower for keyword in fecha_keys):
-            fecha_por_posicion[i] = parse_date_from_header(row)
+        # Buscar fecha tipo "2026-07-25" (año actual)
+        if re.match(r'^\d{4}-\d{2}-\d{2}', row):
+            # Solo tomar fechas que parezcan ser del día (no 1900, 1901 que son horas de Excel)
+            year = int(row[:4])
+            if year >= 2025:  # Fechas reales
+                fecha_del_dia = row[:10]
+                break
+    
+    if not fecha_del_dia:
+        fecha_del_dia = datetime.now().strftime("%Y-%m-%d")
     
     # Estados para el parser
     current_pais = ""
     current_liga = ""
     matches = []
     
-    # Encontrar la fecha aplicable para una posición
-    def get_fecha(posicion):
-        for pos in sorted(fecha_por_posicion.keys(), reverse=True):
-            if pos <= posicion:
-                return fecha_por_posicion[pos]
-        return datetime.now().strftime("%Y-%m-%d")
+    # Mapeo de países desde texto duplicado
+    pais_map = {
+        'Mexico': 'México',
+        'Colombia': 'Colombia', 
+        'Argentina': 'Argentina',
+        'Brasil': 'Brasil',
+        'Chile': 'Chile',
+        'Peru': 'Perú',
+        'Uruguay': 'Uruguay',
+        'Paraguay': 'Paraguay',
+        'Ecuador': 'Ecuador',
+        'Venezuela': 'Venezuela',
+    }
     
+    def is_country_dup(text):
+        """Verifica si el texto es un país duplicado"""
+        if len(text) < 6:
+            return False
+        half = len(text) // 2
+        first = text[:half]
+        second = text[half:]
+        return normalize_text(first) == normalize_text(second)
+    
+    def find_liga_above(posicion):
+        """Busca la liga en las filas anteriores"""
+        # Patrones de liga conocidos
+        liga_patterns = ['liga mx', 'liga mx apertura', 'primera a', 'copa de la liga', 'liga profesional',
+                        'apertura', 'clausura', 'serie a', 'premier league', 'la liga', 'bundesliga',
+                        'ligue 1', 'champions', 'copa libertadores', 'copa sudamericana']
+        
+        for back in range(1, 25):  # Buscar más hacia arriba
+            if posicion - back < 0:
+                break
+            prev = rows[posicion - back]
+            # Ignorar filas vacías, separadores
+            if not prev or prev == '-':
+                continue
+            # Ignorar fechas de Excel (1900-01-xx)
+            if re.match(r'^\d{4}-\d{2}-\d{2}', prev):
+                continue
+            # Ignorar horas
+            if re.match(r'^\d{1,2}:\d{2}:\d{2}$', prev):
+                continue
+            # Ignorar países duplicados
+            if is_country_dup(prev):
+                continue
+            # Detectar país con :
+            if prev.endswith(':') and '(' not in prev:
+                continue  # El país viene después de la liga, buscar más arriba
+            # Ignorar "Clasificación", "Tabla", etc.
+            if prev in ['Clasificación', 'Tabla', 'Cuadro', 'En Directo']:
+                continue
+            
+            # Normalizar para comparación (quitar tildes)
+            prev_lower = normalize_text(prev)
+            
+            # Si el texto contiene patrones de liga, devolverlo
+            if any(pattern in prev_lower for pattern in liga_patterns):
+                return prev.strip()
+            
+            # Excluir nombres que parecen equipos
+            equipos_comunes = ['guadalajara', 'atl', 'santos', 'tigres', 'san luis', 
+                              'boyaca', 'chico', 'medellin', 'pasto', 'millonarios',
+                              'bucaramanga', 'tolima', 'junior', 'estudiantes', 'newells',
+                              'talleres', 'river', 'barracas', 'lanus', 'lorenzo', 'cd ', 'juarez', 'atlas']
+            if any(eq in prev_lower for eq in equipos_comunes):
+                continue
+            
+            # Si no parece ser un equipo y tiene más de 5 caracteres, podría ser una liga
+            if len(prev) > 5 and prev[0].isupper():
+                return prev.strip()
+        
+        return ""
+    
+    def normalize_text(text):
+        """Normaliza texto eliminando tildes y caracteres especiales para comparación"""
+        import unicodedata
+        return ''.join(
+            c for c in unicodedata.normalize('NFD', text)
+            if unicodedata.category(c) != 'Mn'
+        ).lower()
+    
+    def find_pais_above(posicion):
+        """Busca el país en las filas anteriores"""
+        # Primero buscar país con : (más confiable)
+        for back in range(1, 25):
+            if posicion - back < 0:
+                break
+            prev = rows[posicion - back]
+            if not prev:
+                continue
+            # Detectar país con : (ej: "COLOMBIA:", "ARGENTINA:")
+            if prev.endswith(':') and '(' not in prev:
+                return get_pais_normalizado(prev)
+        
+        # Si no encontró, buscar país duplicado
+        for back in range(1, 25):
+            if posicion - back < 0:
+                break
+            prev = rows[posicion - back]
+            if not prev:
+                continue
+            # Ignorar "Clasificación", "Tabla", etc.
+            if prev in ['Clasificación', 'Tabla', 'Cuadro', 'En Directo']:
+                continue
+            # Detectar país duplicado (ej: "MexicoMéxico")
+            if is_country_dup(prev):
+                half = len(prev) // 2
+                first_half = prev[:half]
+                # Verificar que sea un país conocido
+                if first_half in pais_map or first_half.lower() in ['mexico', 'colombia', 'argentina', 'brasil']:
+                    return pais_map.get(first_half, first_half)
+        
+        return ""
+    
+    # Procesar filas
     i = 0
     while i < len(rows):
         row = rows[i]
         
-        # Detectar fecha (keywords)
-        row_lower = row.lower()
-        if any(keyword in row_lower for keyword in fecha_keys):
+        # Ignorar filas vacías
+        if not row:
             i += 1
             continue
         
-        # Detectar país (termina con :)
-        if row.endswith(':') and len(row) > 1 and not row.startswith('('):
-            current_pais = get_pais_normalizado(row)
-            # Buscar liga en las filas anteriores
-            for back in range(1, 5):
-                if i - back >= 0:
-                    prev = rows[i - back]
-                    if prev and not prev.endswith(':') and '(' not in prev and 'Clasificación' not in prev and 'Tabla' not in prev and 'Cuadro' not in prev:
-                        if not re.match(r'^\d', prev) and prev != '--':
-                            current_liga = prev.strip()
-                            break
+        # Ignorar separadores "-"
+        if row == '-':
+            i += 1
+            continue
+        
+        # Ignorar "Clasificación", "Tabla", etc.
+        if row in ['Clasificación', 'Tabla', 'Cuadro', 'En Directo']:
             i += 1
             continue
         
@@ -267,18 +378,49 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
         if re.match(r'^\d{1,2}:\d{2}:\d{2}$', row):
             hora = row[:5]  # Solo HH:MM
             
-            # Los siguientes dos rows son los equipos
+            # Buscar país y liga para este partido
+            pais_encontrado = find_pais_above(i)
+            liga_encontrada = find_liga_above(i)
+            
+            if pais_encontrado:
+                current_pais = pais_encontrado
+            if liga_encontrada:
+                current_liga = liga_encontrada
+            
+            # Los siguientes rows son los equipos
             home = ""
             away = ""
             
-            if i + 1 < len(rows):
-                home = clean_team_name(rows[i + 1])
-            if i + 2 < len(rows):
-                away = clean_team_name(rows[i + 2])
+            # Buscar equipos en las siguientes filas
+            for offset in range(1, 10):
+                if i + offset >= len(rows):
+                    break
+                next_row = rows[i + offset]
+                
+                # Saltar separadores y vacíos
+                if next_row == '-' or not next_row:
+                    continue
+                
+                # Si aún estamos en horas o fechas, continuar
+                if re.match(r'^\d{1,2}:\d{2}:\d{2}$', next_row):
+                    continue
+                if re.match(r'^\d{4}-\d{2}-\d{2}', next_row):
+                    continue
+                
+                # Primera ocurrencia de texto = equipo local
+                if not home and len(next_row) > 2:
+                    home = clean_team_name(next_row)
+                # Segunda ocurrencia de texto = equipo visitante
+                elif home and not away and len(next_row) > 2:
+                    # Verificar que no sea una abreviatura del local
+                    if home.lower() in next_row.lower() or next_row.lower() in home.lower():
+                        continue
+                    away = clean_team_name(next_row)
+                    break
             
-            if home and away and home != away:
+            if home and away and home != away and len(home) > 1 and len(away) > 1:
                 matches.append({
-                    'fecha': get_fecha(i),
+                    'fecha': fecha_del_dia,
                     'hora': hora,
                     'pais': current_pais,
                     'liga': current_liga,
@@ -287,7 +429,16 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
                     'equipo_visitante': away
                 })
             
-            i += 3  # Saltar hora + 2 equipos
+            i += 1
+            continue
+        
+        # Detectar fecha tipo "2026-07-25 00:00:00" - es un header de fecha
+        if re.match(r'^\d{4}-\d{2}-\d{2}', row):
+            # Solo actualizar si es fecha real (año >= 2025)
+            year = int(row[:4])
+            if year >= 2025:
+                fecha_del_dia = row[:10]
+            i += 1
             continue
         
         i += 1
