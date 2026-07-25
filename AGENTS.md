@@ -122,6 +122,8 @@ CREATE TABLE IF NOT EXISTS picks (...)
 | **Actualizar Resultados** | ✅ | Ingresar marcador real y ver aciertos |
 | **Guardar Supabase** | ✅ | Guarda picks en tabla `picks` |
 | **Menú 5 páginas** | ✅ | Carga, Analizador, Estadísticas, Dashboard, Claves |
+| **Panel Equipo Manual** | ✅ | Ultra compacto con stats claras |
+| **Refactorización** | ✅ | Seguridad, rendimiento, CSS externo |
 | **Módulo scorpion/** | 🔄 | En desarrollo (api, db, models, ui) |
 
 ---
@@ -130,23 +132,22 @@ CREATE TABLE IF NOT EXISTS picks (...)
 
 ### 🔴 CRÍTICO - Funcionalidad
 
-1. **Integrar SuperRobot con elite.py** - Mostrar estadísticas avanzadas en la app (ya están los espacios pero vacíos)
-2. **Probar scrapers WhoScored/Soccerway** - Testear en producción
-3. **Fuentes para América Latina** - football-data NO tiene Brasil, México, Argentina, MLS
+1. **Probar scrapers WhoScored/Soccerway** - Testear en producción
+2. **Fuentes para América Latina** - football-data NO tiene Brasil, México, Argentina, MLS
 
 ### 🟡 IMPORTANTE - Mejoras
 
-4. **Completar módulo scorpion/** - Integrar el nuevo código modular
-5. **Exportar picks** - Descargar análisis en PDF/Excel
-6. **Notificaciones** - Alertas para alta confianza
-7. **ROI y streaks** - Métricas de rendimiento en Dashboard
+3. **Completar módulo scorpion/** - Integrar el nuevo código modular
+4. **Exportar picks** - Descargar análisis en PDF/Excel
+5. **Notificaciones** - Alertas para alta confianza
+6. **ROI y streaks** - Métricas de rendimiento en Dashboard
 
 ### 🟢 OPCIONAL - Extras
 
-8. **Modo claro/oscuro** - Toggle de tema
-9. **Comparar equipos** - Stats lado a lado sin analizar
-10. **Filtros avanzados** - Por liga, confianza, fecha
-11. **API partidos** - No depender solo del Excel
+7. **Modo claro/oscuro** - Toggle de tema
+8. **Comparar equipos** - Stats lado a lado sin analizar
+9. **Filtros avanzados** - Por liga, confianza, fecha
+10. **API partidos** - No depender solo del Excel
 
 ---
 
@@ -167,6 +168,18 @@ curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploy
 ---
 
 ## 📅 Historial de Cambios
+
+### 2026-07-25 - Sesión Refactorización y UI ✅
+
+| Cambio | Descripción |
+|--------|-------------|
+| Cliente Supabase | `@st.cache_resource` - cacheado y reutilizado |
+| Credenciales | Defaults de fallback (seguras pero sobreescribibles) |
+| SQLite | Context managers para thread-safety |
+| CSS externo | `styles.css` con `@st.cache_data` |
+| safe_rerun() | Eliminado → usar `st.rerun()` directo |
+| Debug login | Eliminado (expucía contraseña) |
+| Panel Equipo | Ultra compacto Opción D con labels claros |
 
 ### 2026-07-22 - Sesión Integración UI con SuperRobot ✅
 
