@@ -1320,7 +1320,7 @@ else:
             with col_stats1[1]:
                 victorias = st.number_input("Ganados (G)", min_value=0, value=0, key="eq_v")
             with col_stats1[2]:
-                empates = st.number_input("Empate (E)", min_value=0, value=0, key="eq_e")
+                empates = st.number_input("E", min_value=0, value=0, key="eq_e")
             with col_stats1[3]:
                 derrotas = st.number_input("Perdido (P)", min_value=0, value=0, key="eq_d")
             with col_stats1[4]:
