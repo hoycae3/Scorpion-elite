@@ -691,54 +691,75 @@ else:
         # Variable para el partido seleccionado
         selected_match = None
         
-        # Mostrar partidos disponibles si hay
+        # Selector de Local y Visitante
         if partidos_data:
-            st.markdown("### 📋 Partidos en Base de Datos")
-            st.markdown(f"**Total:** {len(partidos_data)} partidos")
+            st.markdown("### 📋 Filtrar por equipos")
+            col_local, col_visita = st.columns(2)
+            
+            with col_local:
+                equipos_local = list(set([p.get('equipo_local', '') for p in partidos_data]))
+                equipos_local = sorted([e for e in equipos_local if e])
+                selected_local = st.selectbox("🏠 Filtrar Local", ["Todos"] + equipos_local)
+            
+            with col_visita:
+                equipos_visitante = list(set([p.get('equipo_visitante', '') for p in partidos_data]))
+                equipos_visitante = sorted([e for e in equipos_visitante if e])
+                selected_visitante = st.selectbox("✈️ Filtrar Visitante", ["Todos"] + equipos_visitante)
+            
+            # Filtrar partidos
+            filtered_partidos = partidos_data
+            if selected_local != "Todos":
+                filtered_partidos = [p for p in filtered_partidos if p.get('equipo_local') == selected_local]
+            if selected_visitante != "Todos":
+                filtered_partidos = [p for p in filtered_partidos if p.get('equipo_visitante') == selected_visitante]
+            
+            st.markdown("---")
+            st.markdown("### 📋 Partidos")
+            st.caption(f"Total: {len(filtered_partidos)} partidos")
             
             # Emoji por país
             pais_emoji = {'México': '🇲🇽', 'Colombia': '🇨🇴', 'Argentina': '🇦🇷', 'Brasil': '🇧🇷', 'Chile': '🇨🇱'}
             
-            # Cards horizontales
-            for p in partidos_data:
+            # Header de la tabla
+            cols_header = st.columns([1.5, 2, 2, 0.7, 1, 0.6])
+            with cols_header[0]:
+                st.markdown("**Fecha**")
+            with cols_header[1]:
+                st.markdown("**Local**")
+            with cols_header[2]:
+                st.markdown("**Visitante**")
+            with cols_header[3]:
+                st.markdown("**Hora**")
+            with cols_header[4]:
+                st.markdown("**País**")
+            with cols_header[5]:
+                st.markdown("**🎯**")
+            
+            st.markdown("---")
+            
+            # Filas de partidos
+            for p in filtered_partidos:
                 fecha = p.get('fecha', '')[:10] if p.get('fecha') else ''
                 hora = p.get('hora', '')[:5] if p.get('hora') else ''
                 local = p.get('equipo_local', '?')
                 visitante = p.get('equipo_visitante', '?')
                 pais = p.get('pais', '')
-                liga = p.get('liga', '')
                 emoji = pais_emoji.get(pais, '🌍')
                 
-                # Card horizontal
-                st.markdown(f"""
-                <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
-                border: 1px solid #00d4aa; border-radius: 10px; padding: 12px 15px; 
-                margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-                    <div style="flex: 0 0 80px;">
-                        <span style="background: #00d4aa; color: black; padding: 4px 8px; 
-                        border-radius: 15px; font-size: 11px; font-weight: bold;">
-                            {emoji} {pais[:5]}
-                        </span>
-                    </div>
-                    <div style="flex: 1; text-align: center;">
-                        <span style="color: #00d4aa; font-size: 14px; font-weight: bold;">
-                            {local}
-                        </span>
-                        <span style="color: #666; margin: 0 10px;">⚽ vs ⚽</span>
-                        <span style="color: #ff6b6b; font-size: 14px; font-weight: bold;">
-                            {visitante}
-                        </span>
-                    </div>
-                    <div style="flex: 0 0 100px; text-align: center;">
-                        <div style="color: #888; font-size: 12px;">⏰ {hora}</div>
-                        <div style="color: #666; font-size: 10px;">📅 {fecha[5:]}</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                cols_row = st.columns([1.5, 2, 2, 0.7, 1, 0.6])
                 
-                col_btn, col_space = st.columns([1, 4])
-                with col_btn:
-                    if st.button(f"🎯 Analizar", key=f"match_{p.get('id')}", help=f"Analizar {local} vs {visitante}"):
+                with cols_row[0]:
+                    st.caption(f"📅 {fecha}")
+                with cols_row[1]:
+                    st.caption(f"🏠 **{local}**")
+                with cols_row[2]:
+                    st.caption(f"✈️ **{visitante}**")
+                with cols_row[3]:
+                    st.caption(f"⏰ {hora}")
+                with cols_row[4]:
+                    st.caption(f"{emoji} {pais[:6]}")
+                with cols_row[5]:
+                    if st.button("🎯", key=f"match_{p.get('id')}", help=f"Analizar {local} vs {visitante}", use_container_width=True):
                         selected_match = p
                         st.session_state.selected_match_data = selected_match
         elif not equipos_disponibles:
