@@ -691,31 +691,10 @@ else:
         # Variable para el partido seleccionado
         selected_match = None
         
-        # Selector de Local y Visitante
+        # Mostrar partidos disponibles si hay
         if partidos_data:
-            st.markdown("### 📋 Filtrar por equipos")
-            col_local, col_visita = st.columns(2)
-            
-            with col_local:
-                equipos_local = list(set([p.get('equipo_local', '') for p in partidos_data]))
-                equipos_local = sorted([e for e in equipos_local if e])
-                selected_local = st.selectbox("🏠 Filtrar Local", ["Todos"] + equipos_local)
-            
-            with col_visita:
-                equipos_visitante = list(set([p.get('equipo_visitante', '') for p in partidos_data]))
-                equipos_visitante = sorted([e for e in equipos_visitante if e])
-                selected_visitante = st.selectbox("✈️ Filtrar Visitante", ["Todos"] + equipos_visitante)
-            
-            # Filtrar partidos
-            filtered_partidos = partidos_data
-            if selected_local != "Todos":
-                filtered_partidos = [p for p in filtered_partidos if p.get('equipo_local') == selected_local]
-            if selected_visitante != "Todos":
-                filtered_partidos = [p for p in filtered_partidos if p.get('equipo_visitante') == selected_visitante]
-            
-            st.markdown("---")
-            st.markdown("### 📋 Partidos")
-            st.caption(f"Total: {len(filtered_partidos)} partidos")
+            st.markdown("### 📋 Partidos en Base de Datos")
+            st.caption(f"Total: {len(partidos_data)} partidos")
             
             # Emoji por país
             pais_emoji = {'México': '🇲🇽', 'Colombia': '🇨🇴', 'Argentina': '🇦🇷', 'Brasil': '🇧🇷', 'Chile': '🇨🇱'}
@@ -738,7 +717,7 @@ else:
             st.markdown("---")
             
             # Filas de partidos
-            for p in filtered_partidos:
+            for p in partidos_data:
                 fecha = p.get('fecha', '')[:10] if p.get('fecha') else ''
                 hora = p.get('hora', '')[:5] if p.get('hora') else ''
                 local = p.get('equipo_local', '?')
