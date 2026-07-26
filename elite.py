@@ -281,52 +281,59 @@ def render_public_landing():
         st.metric("💰 Yield Promedio", f"{yield_pct:+.1f}%", "Rentabilidad real")
 
     
-    # --- DEMO DEL ANALIZADOR ---
-    st.markdown("### 🔍 Demo del Analizador")
-    st.markdown("*Selecciona un partido de ejemplo para ver cómo funciona*")
+    # --- PARTIDOS DEL DÍA ---
+    st.markdown("### 🏆 Partidos del Día")
     
-    demo_col1, demo_col2 = st.columns([1, 1])
-    
-    with demo_col1:
-        demo_partidos = [
-            "Barcelona vs Real Madrid",
-            "Man City vs Liverpool", 
-            "Bayern Munich vs Dortmund",
-            "PSG vs Marseille",
-            "Juventus vs Inter Milan"
-        ]
-        partido_seleccionado = st.selectbox("Partido de muestra", demo_partidos, key="demo_partido")
-    
-    with demo_col2:
-        st.markdown("**Pronóstico generado:**")
-        
-        # Pronósticos de demostración basados en el partido
-        pronosticos = {
-            "Barcelona vs Real Madrid": {"1X2": "1 (55%)", "O/U": "Over 2.5 (58%)", "BTTS": "Sí (52%)"},
-            "Man City vs Liverpool": {"1X2": "1 (48%)", "O/U": "Over 2.5 (62%)", "BTTS": "Sí (55%)"},
-            "Bayern Munich vs Dortmund": {"1X2": "1 (60%)", "O/U": "Over 3.5 (54%)", "BTTS": "Sí (58%)"},
-            "PSG vs Marseille": {"1X2": "1 (52%)", "O/U": "Over 2.5 (56%)", "BTTS": "Sí (50%)"},
-            "Juventus vs Inter Milan": {"1X2": "X (42%)", "O/U": "Under 2.5 (51%)", "BTTS": "No (48%)"},
-        }
-        
-        prono = pronosticos.get(partido_seleccionado, {})
-        
-        for mercado, prediccion in prono.items():
-            st.markdown(f"- **{mercado}:** {prediccion}")
-    
-    # Mostrar análisis visual
-    st.markdown("""
-    <div class="demo-analysis">
-        <h4>📊 Análisis Estadístico</h4>
-        <p>El sistema analiza más de 20+ métricas por equipo incluyendo:</p>
-        <ul>
-            <li>Rendimiento local vs visitante</li>
-            <li>Promedio de goles esperados (Poisson)</li>
-            <li>Forma reciente (últimos 5 partidos)</li>
-            <li>Modelos: Poisson, Dixon-Coles, Monte Carlo, Elo</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
+    # Obtener partidos reales de Supabase
+    try:
+        client = get_client()
+        if client:
+            response = client.table('partidos').select('*').execute()
+            partidos = response.data if response.data else []
+        else:
+            partidos = []
+    except:
+        partidos = []
+
+    if partidos:
+        for partido in partidos[:5]:
+            local = partido.get('equipo_local', 'Local')
+            visitante = partido.get('equipo_visitante', 'Visitante')
+            liga = partido.get('liga', '')
+            hora = partido.get('hora', '')
+            
+            col_match1, col_match2, col_match3 = st.columns([3, 1, 1])
+            with col_match1:
+                st.markdown(f"**{local} vs {visitante}**")
+                if liga:
+                    st.caption(f"🏆 {liga}")
+            with col_match2:
+                if hora:
+                    st.markdown(f"⏰ {hora}")
+            with col_match3:
+                if st.button("📊 Analizar", key=f"demo_{partido.get('id', local)}"):
+                    st.session_state.selected_partido = partido
+                    st.session_state.page = "analizador"
+                    st.rerun()
+        st.markdown("---")
+        st.caption(f"📋 Mostrando {min(len(partidos), 5)} de {len(partidos)} partidos")
+    else:
+        st.info("📭 No hay partidos cargados. Sube un archivo Excel desde la página **Carga** para ver partidos aquí.")
+
+    # --- CÓMO FUNCIONA ---
+    st.markdown("### 🔍 ¿Cómo Funciona?")
+    st.markdown("*El analizador usa 4 modelos matemáticos para predecir resultados*")
+
+    modelos_col1, modelos_col2 = st.columns(2)
+    with modelos_col1:
+        st.markdown("**📈 Modelos de Predicción:**")
+        st.markdown("- **Poisson:** Distribución de goles")
+        st.markdown("- **Dixon-Coles:** Efecto tiempo/partido")
+    with modelos_col2:
+        st.markdown("**🎯 Modelos Avanzados:**")
+        st.markdown("- **Monte Carlo:** Simulaciones")
+        st.markdown("- **Elo:** Rating de equipos")
+
     
     st.markdown("<hr>", unsafe_allow_html=True)
     
