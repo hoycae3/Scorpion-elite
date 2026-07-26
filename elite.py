@@ -206,11 +206,6 @@ def load_css():
 
 st.markdown(f"<style>{load_css()}</style>", unsafe_allow_html=True)
 
-# ══════════════════════════════════════════════════════════
-# INICIALIZAR SISTEMA DE LOGIN
-# ══════════════════════════════════════════════════════════
-render_login_form()
-
 
 # ══════════════════════════════════════════════════════════
 # LANDING PAGE PÚBLICA
@@ -378,6 +373,11 @@ def render_public_landing():
 # ══════════════════════════════════════════════════════════
 # SISTEMA DE LOGIN MEJORADO
 # ══════════════════════════════════════════════════════════
+
+# Llamar al sistema de login (esto reemplaza todo el código de autenticación)
+render_login_form()
+
+
 def render_login_form():
     """Renderiza el formulario de login"""
     
