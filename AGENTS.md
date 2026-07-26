@@ -12,6 +12,41 @@
 
 ---
 
+## 📅 Resumen Sesión Actual (2026-07-25)
+
+### ✅ Completado Esta Sesión
+
+1. **Login funciona correctamente**
+   - Botón "🔐 Iniciar Sesión" en landing page
+   - Al hacer clic, muestra formulario de login
+   - Solo 1 botón, flujo limpio
+
+2. **Métricas reales en landing page**
+   - Ya NO usa valores de demostración (1247 picks, 65% aciertos)
+   - Ahora consulta Supabase en tiempo real
+   - Muestra: Aciertos reales, Picks guardados, Yield real, Equipos analizados
+
+3. **Partidos reales en landing page**
+   - Consulta tabla `partidos` de Supabase
+   - Muestra hasta 5 partidos con botón "📊 Analizar"
+   - Si no hay partidos: mensaje para subir Excel desde página Carga
+
+4. **Análisis de partidos en landing page (GRATIS)**
+   - Al hacer clic en "Analizar", muestra preview del análisis
+   - Stats de ambos equipos (forma, V/E/D, GF/GC)
+   - Predicciones: 1X2, Over/Under, BTTS
+   - Botón "← Volver a partidos"
+   - **NO requiere login** - cualquiera puede ver el preview
+   - Caption invitando a iniciar sesión para análisis completo con 4 modelos
+
+### 🔧 Detalles Técnicos
+
+- `st.session_state.preview_partido` - Almacena partido seleccionado para análisis
+- `st.session_state.logged` - Estado de autenticación
+- `st.session_state.show_login` - Control de visibilidad del login
+
+---
+
 ## 📁 Estructura Actual del Proyecto
 
 ```
@@ -131,26 +166,52 @@ CREATE TABLE IF NOT EXISTS picks (...)
 
 ---
 
+## 📋 Flujo de Usuario (Landing Page)
+
+```
+1. Usuario entra a la página
+2. Ve landing page con botón "🔐 Iniciar Sesión"
+3. Ve métricas REALES (de Supabase)
+4. Ve partidos del día (de Supabase)
+5. Puede hacer clic en "📊 Analizar" de cualquier partido
+6. Ve PREVIEW del análisis (stats + predicciones básicas)
+7. Ve botón "← Volver a partidos"
+8. Puede iniciar sesión para acceso completo al Analizador
+```
+
+---
+
+## 🔑 Login del Analizador (Requiere Login)
+
+| Funcionalidad | Disponible |
+|---------------|------------|
+| Análisis con 4 modelos | ✅ Solo logueado |
+| Guardar picks en Supabase | ✅ Solo logueado |
+| Dashboard con métricas | ✅ Solo logueado |
+| Preview en landing | ✅ GRATIS (sin login) |
+
+---
+
 ## ⚠️ Pendiente por Hacer
 
 ### 🔴 CRÍTICO - Funcionalidad
 
-1. **Probar scrapers WhoScored/Soccerway** - Testear en producción
-2. **Fuentes para América Latina** - football-data NO tiene Brasil, México, Argentina, MLS
+1. **Probar análisis de partidos** - ¿Funciona el preview en producción?
+2. **Testar flujo completo login** - ¿El usuario puede guardar picks?
+3. **Fuentes para América Latina** - football-data NO tiene Brasil, México, Argentina, MLS
 
 ### 🟡 IMPORTANTE - Mejoras
 
-3. **Completar módulo scorpion/** - Integrar el nuevo código modular
-4. **Exportar picks** - Descargar análisis en PDF/Excel
-5. **Notificaciones** - Alertas para alta confianza
-6. **ROI y streaks** - Métricas de rendimiento en Dashboard
+4. **Mejorar UI del análisis preview** - Más visual, gráficos
+5. **Exportar picks** - Descargar análisis en PDF/Excel
+6. **Notificaciones** - Alertas para alta confianza
+7. **ROI y streaks** - Métricas de rendimiento en Dashboard
 
 ### 🟢 OPCIONAL - Extras
 
-7. **Modo claro/oscuro** - Toggle de tema
-8. **Comparar equipos** - Stats lado a lado sin analizar
-9. **Filtros avanzados** - Por liga, confianza, fecha
-10. **API partidos** - No depender solo del Excel
+8. **Modo claro/oscuro** - Toggle de tema
+9. **Comparar equipos** - Stats lado a lado sin analizar
+10. **Filtros avanzados** - Por liga, confianza, fecha
 
 ---
 
@@ -171,6 +232,15 @@ curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploy
 ---
 
 ## 📅 Historial de Cambios
+
+### 2026-07-25 - Sesión Preview Análisis ✅
+
+| Cambio | Descripción |
+|--------|-------------|
+| Login fijo | Un solo botón, flujo limpio |
+| Métricas reales | Sin valores de demostración |
+| Partidos reales | De Supabase, no hardcodeados |
+| Análisis preview | Gratis en landing, muestra stats y predicciones |
 
 ### 2026-07-25 - Sesión Landing Page Pública ✅
 
