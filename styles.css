@@ -395,3 +395,132 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
     padding: 8px !important;
     text-align: center !important;
 }
+
+/* LANDING PAGE PÚBLICA */
+.hero-section {
+    text-align: center;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%);
+    border-radius: 12px;
+    margin-bottom: 30px;
+    border: 1px solid #00CED1;
+}
+
+.hero-title {
+    font-size: 3.5rem !important;
+    color: #00CED1 !important;
+    margin-bottom: 10px !important;
+    text-shadow: 2px 2px 4px rgba(0, 206, 209, 0.3);
+}
+
+.hero-subtitle {
+    font-size: 1.5rem !important;
+    color: #e0e0e0 !important;
+    margin-bottom: 15px !important;
+}
+
+.hero-description {
+    font-size: 1.1rem !important;
+    color: #a0a0a0 !important;
+}
+
+/* KPI Cards */
+.stMetric {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    padding: 15px !important;
+}
+
+/* Demo Analysis */
+.demo-analysis {
+    background: var(--bg-card) !important;
+    border: 1px solid #FFD700 !important;
+    border-radius: 8px !important;
+    padding: 20px !important;
+    margin-top: 15px !important;
+}
+
+.demo-analysis h4 {
+    color: #FFD700 !important;
+    margin-bottom: 10px !important;
+}
+
+.demo-analysis ul {
+    color: var(--text-color) !important;
+    padding-left: 20px !important;
+}
+
+.demo-analysis li {
+    margin: 5px 0 !important;
+}
+
+/* Plan Cards */
+.plan-card {
+    background: var(--bg-card) !important;
+    border-radius: 12px !important;
+    padding: 25px !important;
+    text-align: left !important;
+}
+
+.plan-card h3 {
+    margin-bottom: 10px !important;
+}
+
+.plan-price {
+    font-size: 2rem !important;
+    font-weight: bold !important;
+    color: var(--accent) !important;
+    margin: 15px 0 !important;
+}
+
+.plan-price span {
+    font-size: 1rem !important;
+    color: var(--text-secondary) !important;
+    font-weight: normal !important;
+}
+
+.plan-card ul {
+    list-style: none !important;
+    padding: 0 !important;
+}
+
+.plan-card li {
+    padding: 8px 0 !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.plan-free {
+    border: 1px solid var(--border-color) !important;
+}
+
+.plan-vip {
+    border: 2px solid #FFD700 !important;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, var(--bg-card) 100%) !important;
+}
+
+.plan-cta {
+    text-align: center !important;
+    color: #FFD700 !important;
+    margin-top: 20px !important;
+    font-size: 1.1rem !important;
+}
+
+/* Footer */
+.footer {
+    text-align: center !important;
+    padding: 20px !important;
+    color: var(--text-secondary) !important;
+    font-size: 0.9rem !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.5rem !important;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.2rem !important;
+    }
+}
