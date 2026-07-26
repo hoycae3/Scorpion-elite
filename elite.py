@@ -229,48 +229,57 @@ def render_public_landing():
             st.session_state.show_login = True
             st.rerun()
 
-    st.markdown("<hr>", unsafe_allow_html=True)
-    
     # --- KPIs EN VIVO ---
     st.markdown("### 📊 Métricas del Sistema")
-    
-    # Obtener métricas reales o por defecto
+
+    # Obtener métricas REALES de Supabase
     try:
         client = get_client()
         if client:
-            # Intentar obtener picks de Supabase
+            # Obtener todos los picks
             response = client.table('picks').select('*').execute()
             total_picks = len(response.data) if response.data else 0
-            # Calcular aciertos (ejemplo)
-            aciertos = int(total_picks * 0.65) if total_picks > 0 else 0
-            yield_pct = 12.5 if total_picks > 0 else 0
+            
+            # Contar aciertos reales (donde resultado_real != null)
+            aciertos = 0
+            total_yield = 0
+            for pick in response.data if response.data else []:
+                if pick.get('resultado_real'):
+                    aciertos += 1
+                if pick.get('yield_real'):
+                    total_yield += pick.get('yield_real', 0)
+            
+            # Calcular porcentaje de aciertos
+            pct_aciertos = round(aciertos/total_picks*100, 1) if total_picks > 0 else 0
+            yield_pct = round(total_yield/aciertos, 1) if aciertos > 0 else 0
+            
+            # Obtener número de equipos con stats
+            equipos_response = client.table('equipos_stats').select('*').execute()
+            total_equipos = len(equipos_response.data) if equipos_response.data else 0
         else:
             total_picks = 0
             aciertos = 0
+            pct_aciertos = 0
             yield_pct = 0
-    except:
+            total_equipos = 0
+    except Exception as e:
         total_picks = 0
         aciertos = 0
+        pct_aciertos = 0
         yield_pct = 0
-    
-    # Si no hay datos, usar valores de demostración
-    if total_picks == 0:
-        total_picks = 1247
-        aciertos = 811
-        yield_pct = 14.2
-    
+        total_equipos = 0
+
     col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
-    
+
     with col_kpi1:
-        st.metric("📈 Aciertos Totales", f"{round(aciertos/total_picks*100, 1) if total_picks > 0 else 65}%", f"{aciertos} picks acertados")
-    
+        st.metric("📈 Aciertos Totales", f"{pct_aciertos}%", f"{aciertos} de {total_picks} picks")
+
     with col_kpi2:
-        st.metric("🎯 Picks Analizados", f"{total_picks:,}", "En nuestra base de datos")
-    
+        st.metric("🎯 Picks Guardados", f"{total_picks:,}", f"{total_equipos} equipos analizados")
+
     with col_kpi3:
-        st.metric("💰 Yield Promedio", f"+{yield_pct}%", "Rentabilidad mensual")
-    
-    st.markdown("<hr>", unsafe_allow_html=True)
+        st.metric("💰 Yield Promedio", f"{yield_pct:+.1f}%", "Rentabilidad real")
+
     
     # --- DEMO DEL ANALIZADOR ---
     st.markdown("### 🔍 Demo del Analizador")
