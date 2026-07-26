@@ -375,7 +375,6 @@ def render_public_landing():
 # ══════════════════════════════════════════════════════════
 
 # Llamar al sistema de login (esto reemplaza todo el código de autenticación)
-render_login_form()
 
 
 def render_login_form():
@@ -1985,3 +1984,8 @@ def render_login_form():
             
             Vuelve aquí para ver tu rendimiento.
             """)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# EJECUTAR EL SISTEMA DE LOGIN
+# ═══════════════════════════════════════════════════════════════════════════════
+render_login_form()
