@@ -225,7 +225,7 @@ def render_public_landing():
     # Botones de acción
     col_hero1, col_hero2, col_hero3 = st.columns([1, 1, 1])
     with col_hero2:
-        if st.button("🚀 Comenzar Ahora - Es Gratis", use_container_width=True, type="primary"):
+        if st.button("🔐 Iniciar Sesión", use_container_width=True, type="primary"):
             st.session_state.show_login = True
             st.rerun()
     
