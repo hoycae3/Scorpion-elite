@@ -60,21 +60,24 @@ Scorpion-elite/
 | Fuente | Datos Extraídos | Anti-Bloqueo | Cobertura |
 |--------|-----------------|--------------|-----------|
 | **football-data.co.uk** | Partidos, GF, GC, Victorias, Empates, Derrotas | Requests + redirects | 20+ ligas EUROPEAS |
+| **API-Football** | Stats completas | API oficial | MUNDIAL (88/mes) |
 | **Soccerway** | Resultados históricos, Marcadores, Liga | ✅ Cloudscraper | MUNDIAL |
 | **WhoScored** | Corners, Tarjetas, Posesión, Remates, Faltas | ✅ Cloudscraper | MUNDIAL |
 | **FBref** | Stats detalladas (posesión, remates, faltas) | ✅ Cloudscraper | 7 ligas TOP europeas |
 
-### Flujo del SuperRobot
+### Flujo del SuperRobot (5 PASOS)
 ```
-1. football-data → Goles, victorias (Europa)
-        ↓ (si no encuentra)
-2. Soccerway → Resultados históricos (Mundial)
-        ↓ (si no encuentra)
-3. WhoScored → Corners, tarjetas, posesión (Mundial)
-        ↓ (si no encuentra)
-4. FBref → Stats detalladas (Europa)
-        ↓
-5. Devuelve todo combinado
+PASO 1: football-data.co.uk → TODOS los equipos europeos (sin límite)
+         ↓ (si no encuentra)
+PASO 2: API-Football → Equipos no encontrados (máx 88)
+         ↓ (si se acaban los 88)
+PASO 3: Soccerway → Equipos no encontrados (mundial)
+         ↓ (si no encuentra)
+PASO 4: WhoScored → Equipos no encontrados (mundial)
+         ↓ (si no encuentra)
+PASO 5: FBref → Equipos no encontrados (europa +)
+         ↓
+✅ Devuelve todo combinado
 ```
 
 ### Clases Principales
@@ -168,6 +171,14 @@ curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploy
 ---
 
 ## 📅 Historial de Cambios
+
+### 2026-07-25 - Sesión Raspadores y Fallbacks ✅
+
+| Cambio | Descripción |
+|--------|-------------|
+| Flujo 5 pasos | Integrados: football-data → API-Football → Soccerway → WhoScored → FBref |
+| Fallbacks | Si API-Football se acaba (88), busca en Soccerway, WhoScored, FBref |
+| Cobertura mundial | Ahora busca equipos en TODO el mundo |
 
 ### 2026-07-25 - Sesión Refactorización y UI ✅
 
