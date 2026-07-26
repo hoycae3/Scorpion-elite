@@ -54,15 +54,10 @@ def get_client():
     return get_supabase_client()
 
 # ══════════════════════════════════════════════════════════
-# SISTEMA DE USUARIOS (SQLite local) - Thread-safe
+# SISTEMA DE USUARIOS (SQLite local) - Solo contraseña
 # ══════════════════════════════════════════════════════════
 def get_hoy():
     return str(date.today())
-
-def get_dias_hasta():
-    """Calcula fecha hasta basada en días"""
-    from datetime import datetime, timedelta
-    return (datetime.now() + timedelta(days=int(36500))).strftime('%Y-%m-%d')
 
 def init_db():
     """Inicializa la base de datos SQLite con context manager"""
@@ -70,17 +65,13 @@ def init_db():
         conn.executescript("""
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
+            password TEXT UNIQUE NOT NULL,
             nombre TEXT,
-            email TEXT,
             plan TEXT DEFAULT 'gratis',
             fecha_inicio TEXT,
-            fecha_hasta TEXT,
             dias INTEGER DEFAULT 36500,
             activo INTEGER DEFAULT 1,
             es_admin INTEGER DEFAULT 0,
-            ultimo_login TEXT,
             creado TEXT DEFAULT CURRENT_TIMESTAMP
         );
         CREATE TABLE IF NOT EXISTS picks (
@@ -94,20 +85,20 @@ def init_db():
         admin_exists = conn.execute("SELECT id FROM usuarios WHERE es_admin=1").fetchone()
         if not admin_exists:
             pwd_hash = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()
-            conn.execute("""INSERT INTO usuarios (username, password, nombre, plan, fecha_inicio, fecha_hasta, dias, activo, es_admin) 
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                        ("admin", pwd_hash, "Administrador", "admin", get_hoy(), get_dias_hasta(), 36500, 1, 1))
+            conn.execute("""INSERT INTO usuarios (password, nombre, plan, fecha_inicio, dias, activo, es_admin) 
+                          VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                        (pwd_hash, "Administrador", "admin", get_hoy(), 36500, 1, 1))
         conn.commit()
 
-def db_get_by_username(username):
-    """Obtiene usuario por username - usa context manager"""
+def db_get_by_password(pwd_hash):
+    """Obtiene usuario por password hash"""
     try:
         with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
             conn.row_factory = sqlite3.Row
-            r = conn.execute("SELECT * FROM usuarios WHERE username=?", (username,)).fetchone()
+            r = conn.execute("SELECT * FROM usuarios WHERE password=?", (pwd_hash,)).fetchone()
             return dict(r) if r else None
     except Exception as e:
-        logger.error(f"Error en db_get_by_username: {e}")
+        logger.error(f"Error en db_get_by_password: {e}")
         return None
 
 def db_get_by_id(user_id):
@@ -131,25 +122,21 @@ def db_todos():
         logger.error(f"Error en db_todos: {e}")
         return []
 
-def db_crear_usuario(username, password, nombre, plan, dias):
-    """Crea un nuevo usuario - usa context manager"""
+def db_crear_usuario(password, nombre, plan, dias):
+    """Crea un nuevo usuario con solo contraseña"""
     pwd_hash = hashlib.sha256(password.encode()).hexdigest()
-    from datetime import datetime, timedelta
-    fecha_hasta = (datetime.now() + timedelta(days=dias)).strftime('%Y-%m-%d')
     try:
         with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
-            conn.execute("""INSERT INTO usuarios (username, password, nombre, plan, fecha_inicio, fecha_hasta, dias, activo)
-                          VALUES (?, ?, ?, ?, ?, ?, ?, 1)""",
-                        (username, pwd_hash, nombre, plan, get_hoy(), fecha_hasta, dias))
+            conn.execute("""INSERT INTO usuarios (password, nombre, plan, fecha_inicio, dias, activo)
+                          VALUES (?, ?, ?, ?, ?, 1)""",
+                        (pwd_hash, nombre, plan, get_hoy(), dias))
             conn.commit()
-            return True, "Usuario creado exitosamente"
-    except sqlite3.IntegrityError as e:
-        if "username" in str(e):
-            return False, "El nombre de usuario ya existe"
-        return False, str(e)
+            return True
+    except sqlite3.IntegrityError:
+        return False
     except Exception as e:
         logger.error(f"Error en db_crear_usuario: {e}")
-        return False, str(e)
+        return False
 
 def db_actualizar_usuario(user_id, username, nombre, email, plan, dias):
     """Actualiza datos de usuario - usa context manager"""
@@ -203,16 +190,12 @@ def db_actualizar_plan(user_id, plan, dias):
         logger.error(f"Error en db_actualizar_plan: {e}")
         return False
 
-def db_login(username, password):
-    """Verifica username y password y retorna usuario"""
+def db_login(password):
+    """Verifica password y retorna usuario"""
     init_db()
     pwd_hash = hashlib.sha256(password.encode()).hexdigest()
-    result = db_get_by_username(username)
-    if result and result['password'] == pwd_hash and result['activo'] == 1:
-        # Actualizar último login
-        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
-            conn.execute("UPDATE usuarios SET ultimo_login=? WHERE id=?", (get_hoy(), result['id']))
-            conn.commit()
+    result = db_get_by_password(pwd_hash)
+    if result and result['activo'] == 1:
         return result
     return None
 
@@ -555,11 +538,11 @@ def render_public_landing():
 
 
 # ══════════════════════════════════════════════════════════
-# SISTEMA DE LOGIN MEJORADO
+# SISTEMA DE LOGIN - Solo contraseña
 # ══════════════════════════════════════════════════════════
 
 def render_login_form():
-    """Renderiza el formulario de login"""
+    """Renderiza el formulario de login con solo contraseña"""
     
     # Toggle para mostrar/ocultar login
     if "show_login" not in st.session_state:
@@ -577,29 +560,26 @@ def render_login_form():
         st.markdown("---")
         st.markdown("### 🔐 Iniciar Sesión")
 
-        # Username
-        username = st.text_input("Usuario", placeholder="Tu nombre de usuario", key="login_username").strip()
-        # Password
-        password = st.text_input("Password", type="password", placeholder="Tu contraseña", key="login_password")
+        password = st.text_input("Contraseña", type="password", placeholder="Ingresa tu contraseña", key="login_password")
 
         col_login, col_cancel = st.columns([1, 1])
         with col_login:
             if st.button("✅ Entrar", use_container_width=True, type="primary"):
-                if not username.strip() or not password.strip():
-                    st.error("⚠️ Ingresa usuario y password")
+                if not password.strip():
+                    st.error("⚠️ Ingresa la contraseña")
                 else:
-                    # Intentar login con la base de datos
                     init_db()
-                    user = db_login(username, password)
+                    user = db_login(password)
                     if user:
                         st.session_state.logged = True
                         st.session_state.is_admin = user.get('es_admin', 0) == 1
                         st.session_state.user_data = user
                         st.session_state.show_login = False
-                        st.success(f"¡Bienvenido, {user.get('nombre', username)}!")
+                        nombre = user.get('nombre', password[:20])
+                        st.success(f"¡Bienvenido!")
                         st.rerun()
                     else:
-                        st.error("❌ Usuario o password incorrectos")
+                        st.error("❌ Contraseña incorrecta")
 
         with col_cancel:
             if st.button("← Volver", use_container_width=True):
@@ -611,19 +591,11 @@ def render_login_form():
     # Sidebar con información del usuario
     with st.sidebar:
         st.markdown("## 🦂 Scorpion Elite")
-        user_name = st.session_state.user_data.get('nombre', 'Usuario') if st.session_state.user_data else 'Usuario'
         user_plan = st.session_state.user_data.get('plan', 'gratis') if st.session_state.user_data else 'gratis'
-        user_username = st.session_state.user_data.get('username', '') if st.session_state.user_data else ''
+        dias = st.session_state.user_data.get('dias', 0) if st.session_state.user_data else 0
         
-        st.markdown(f"**👤 {user_name}**")
-        if user_username:
-            st.caption(f"@{user_username}")
         st.markdown(f"**Plan:** {user_plan.upper()}")
-        
-        # Mostrar días restantes si no es admin
         if user_plan != 'admin':
-            dias = st.session_state.user_data.get('dias', 0) if st.session_state.user_data else 0
-            fecha_hasta = st.session_state.user_data.get('fecha_hasta', '') if st.session_state.user_data else ''
             st.caption(f"⏱️ {dias} días restantes")
         
         st.markdown("---")
@@ -1872,231 +1844,133 @@ def render_login_form():
 
     # Página: Gestión de Claves
     elif st.session_state.page == "Claves":
-        st.markdown("### 🔑 Gestión de Usuarios")
+        st.markdown("### 🔑 Gestión de Contraseñas")
         
-        # Tabs para crear vs gestionar
-        tab_crear, tab_gestionar = st.tabs(["➕ Crear Usuario", "📋 Gestionar Usuarios"])
+        # Tabs
+        tab_crear, tab_gestionar = st.tabs(["➕ Crear Contraseña", "📋 Ver Contraseñas"])
         
-        # ========== TAB: CREAR USUARIO ==========
+        # ========== TAB: CREAR ==========
         with tab_crear:
-            st.markdown("#### ➕ Crear Nuevo Usuario")
+            st.markdown("#### ➕ Crear Nueva Contraseña de Acceso")
             
-            with st.form("form_crear_usuario", clear_on_submit=True):
-                col_user, col_nombre = st.columns(2)
-                with col_user:
-                    username = st.text_input("👤 Username", placeholder="usuario1", help="Nombre único para login").strip()
-                with col_nombre:
-                    nombre = st.text_input("📝 Nombre Completo", placeholder="Juan Pérez").strip()
-                
-                col_email, col_plan = st.columns(2)
-                with col_email:
-                    email = st.text_input("📧 Email (opcional)", placeholder="juan@email.com").strip()
+            with st.form("form_crear_clave", clear_on_submit=True):
+                col_nom, col_plan = st.columns(2)
+                with col_nom:
+                    nombre = st.text_input("📝 Nombre / Cliente", placeholder="Ej: Juan, Carlos VIP").strip()
                 with col_plan:
-                    plan = st.selectbox("📦 Plan", ["gratis", "semana", "mes", "elite", "vip", "admin"])
+                    plan = st.selectbox("📦 Plan", ["gratis", "semana", "mes", "elite", "vip"])
                 
-                col_pass, col_dias = st.columns(2)
-                with col_pass:
-                    password = st.text_input("🔐 Password", type="password", placeholder="Contraseña segura").strip()
-                with col_dias:
-                    dias_opciones = {
-                        "gratis": 36500, 
-                        "semana": 7, 
-                        "mes": 30, 
-                        "elite": 90,
-                        "vip": 90,
-                        "admin": 36500
-                    }
-                    dias = dias_opciones.get(plan, 30)
-                    st.info(f"⏱️ Duración: {dias} días")
+                nueva_clave = st.text_input("🔐 Nueva Contraseña", placeholder="Escribe la contraseña única").strip()
                 
-                submitted = st.form_submit_button("✅ Crear Usuario", use_container_width=True, type="primary")
+                dias_opciones = {"gratis": 36500, "semana": 7, "mes": 30, "elite": 90, "vip": 90}
+                dias = dias_opciones.get(plan, 30)
+                
+                col_info, col_btn = st.columns([2, 1])
+                with col_info:
+                    plan_icon = {"gratis": "🆓", "semana": "📆", "mes": "👑", "elite": "🔥", "vip": "⭐"}
+                    st.info(f"{plan_icon.get(plan, '📦')} Plan: {plan.upper()} - {dias} días")
+                
+                submitted = st.form_submit_button("✅ Crear Contraseña", use_container_width=True, type="primary")
                 
                 if submitted:
-                    if not username:
-                        st.error("⚠️ El username es obligatorio")
-                    elif not password:
-                        st.error("⚠️ El password es obligatorio")
-                    elif len(password) < 4:
-                        st.error("⚠️ El password debe tener al menos 4 caracteres")
+                    if not nombre.strip():
+                        st.error("⚠️ Ingresa un nombre")
+                    elif not nueva_clave.strip():
+                        st.error("⚠️ Ingresa una contraseña")
+                    elif len(nueva_clave) < 4:
+                        st.error("⚠️ La contraseña debe tener al menos 4 caracteres")
                     else:
-                        # Asignar plan según selección
-                        plan_asignar = "gratis" if plan == "gratis" else "elite" if plan in ["elite", "vip"] else "admin" if plan == "admin" else plan
-                        success, msg = db_crear_usuario(username, password, nombre or username, plan_asignar, dias)
+                        plan_asignar = "gratis" if plan == "gratis" else "elite"
+                        success = db_crear_usuario(nueva_clave.strip(), nombre.strip(), plan_asignar, dias)
                         if success:
-                            st.success(f"✅ {msg}")
+                            st.success(f"✅ Contraseña '{nueva_clave}' creada para {nombre} - Plan {plan.upper()}")
                             st.balloons()
                         else:
-                            st.error(f"❌ {msg}")
+                            st.error("❌ Esta contraseña ya existe. Usa otra.")
             
             st.markdown("---")
-            st.markdown("##### 📋 Planes Disponibles")
-            
-            planes_col1, planes_col2, planes_col3 = st.columns(3)
-            with planes_col1:
-                st.markdown("""
-                **🆓 GRATIS**
-                - Sin acceso VIP
-                - Análisis básico
-                - 36500 días
-                """)
-            with planes_col2:
-                st.markdown("""
-                **📆 SEMANA**
-                - Acceso VIP por 7 días
-                - Dashboard completo
-                - 7 días
-                """)
-            with planes_col3:
-                st.markdown("""
-                **👑 MES**
-                - Acceso VIP por 30 días
-                - Dashboard completo
-                - 30 días
-                """)
-            
-            planes_col4, planes_col5, planes_col6 = st.columns(3)
-            with planes_col4:
-                st.markdown("""
-                **🔥 ELITE**
-                - Acceso VIP por 90 días
-                - Todo incluido
-                - 90 días
-                """)
-            with planes_col5:
-                st.markdown("""
-                **⭐ VIP**
-                - Alias de Elite
-                - 90 días
-                """)
-            with planes_col6:
-                st.markdown("""
-                **⚙️ ADMIN**
-                - Acceso total
-                - Gestionar usuarios
-                - 36500 días
-                """)
+            st.markdown("##### 📋 Planes")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.markdown("**🆓 GRATIS** - Sin VIP")
+            with col2:
+                st.markdown("**📆 SEMANA** - 7 días VIP")
+            with col3:
+                st.markdown("**👑 MES** - 30 días VIP")
+            col4, col5 = st.columns(2)
+            with col4:
+                st.markdown("**🔥 ELITE** - 90 días VIP")
+            with col5:
+                st.markdown("**⭐ VIP** - 90 días VIP")
         
-        # ========== TAB: GESTIONAR USUARIOS ==========
+        # ========== TAB: GESTIONAR ==========
         with tab_gestionar:
-            st.markdown("#### 📋 Lista de Usuarios")
+            st.markdown("#### 📋 Contraseñas Creadas")
             
             usuarios = db_todos()
             
-            # Métricas
             col_total, col_vip, col_admin = st.columns(3)
             with col_total:
-                st.metric("Total Usuarios", len(usuarios))
+                st.metric("Total", len(usuarios))
             with col_vip:
-                vip_count = sum(1 for u in usuarios if u.get('plan', '') in ['vip', 'elite', 'mes'])
-                st.metric("Usuarios VIP", vip_count)
+                vip_count = sum(1 for u in usuarios if u.get('plan', '') in ['vip', 'elite'])
+                st.metric("VIP/Elite", vip_count)
             with col_admin:
                 admin_count = sum(1 for u in usuarios if u.get('es_admin') == 1)
                 st.metric("Admins", admin_count)
             
             if usuarios:
                 for u in usuarios:
-                    user_id = u.get('id')
+                    clave_id = u.get('id')
                     es_admin = u.get('es_admin') == 1
-                    es_vip = u.get('plan', '') in ['vip', 'elite', 'mes']
-                    
-                    # Icono según estado
-                    if es_admin:
-                        icono = "⚙️"
-                        color_plan = "admin"
-                    elif es_vip:
-                        icono = "👑"
-                        color_plan = "vip"
-                    else:
-                        icono = "🆓"
-                        color_plan = "gratis"
-                    
-                    username = u.get('username', 'N/A')
-                    nombre = u.get('nombre', username)
+                    es_vip = u.get('plan', '') in ['vip', 'elite']
                     plan = u.get('plan', 'gratis')
                     dias = u.get('dias', 0)
-                    fecha_hasta = u.get('fecha_hasta', 'N/A')
-                    email = u.get('email', '')
-                    ultimo_login = u.get('ultimo_login', 'Nunca')
-                    creado = u.get('creado', 'N/A')
                     
-                    with st.expander(f"{icono} **{nombre}** (@{username}) - {plan.upper()}"):
-                        # Información del usuario
-                        col_info1, col_info2 = st.columns(2)
-                        with col_info1:
-                            st.markdown(f"""
-                            **ID:** {user_id}
-                            **Username:** @{username}
-                            **Nombre:** {nombre}
-                            **Email:** {email if email else 'No registrado'}
-                            """)
-                        with col_info2:
-                            st.markdown(f"""
-                            **Plan:** {plan.upper()}
-                            **Días restantes:** {dias}
-                            **Vence:** {fecha_hasta}
-                            **Último login:** {ultimo_login}
-                            """)
+                    if es_admin:
+                        icono = "⚙️"
+                        label = f"**ADMIN** (no editable)"
+                    elif es_vip:
+                        icono = "👑"
+                        label = f"VIP/ELITE - {dias} días"
+                    else:
+                        icono = "🆓"
+                        label = f"GRATIS - {dias} días"
+                    
+                    with st.expander(f"{icono} {u.get('nombre', 'Sin nombre')} - {label}"):
+                        st.write(f"**Contraseña:** `{u.get('password', '')}`")
+                        st.write(f"**Plan:** {plan.upper()}")
+                        st.write(f"**Días restantes:** {dias}")
+                        st.write(f"**Creado:** {u.get('creado', 'N/A')}")
                         
-                        st.markdown(f"**Creado:** {creado}")
-                        
-                        st.markdown("---")
-                        st.markdown("##### ✏️ Editar Usuario")
-                        
-                        # Formulario de edición
-                        with st.form(f"edit_user_{user_id}", clear_on_submit=True):
-                            col_e1, col_e2 = st.columns(2)
-                            with col_e1:
-                                edit_username = st.text_input("Username", value=username, key=f"eu_user_{user_id}")
-                                edit_nombre = st.text_input("Nombre", value=nombre, key=f"eu_nom_{user_id}")
-                                edit_email = st.text_input("Email", value=email if email else "", key=f"eu_email_{user_id}")
-                            with col_e2:
-                                edit_plan = st.selectbox("Plan", ["gratis", "semana", "mes", "elite", "vip", "admin"], 
-                                                        index=["gratis", "semana", "mes", "elite", "vip", "admin"].index(plan) if plan in ["gratis", "semana", "mes", "elite", "vip", "admin"] else 0,
-                                                        key=f"eu_plan_{user_id}")
-                                edit_dias = st.number_input("Días", value=dias, min_value=1, max_value=36500, key=f"eu_dias_{user_id}")
-                            
-                            col_btn_edit, col_btn_pass, col_btn_del = st.columns(3)
-                            with col_btn_edit:
-                                save_edit = st.form_submit_button("💾 Guardar Cambios", use_container_width=True)
-                            with col_btn_pass:
-                                new_pass = st.text_input("Nuevo Password", type="password", placeholder="Dejar vacío para no cambiar", key=f"eu_pass_{user_id}")
-                                change_pass = st.form_submit_button("🔐 Cambiar Pass", use_container_width=True)
-                            with col_btn_del:
-                                delete_user = st.form_submit_button("🗑️ Eliminar", use_container_width=True)
-                            
-                            # Procesar edición
-                            if save_edit:
-                                plan_final = "gratis" if edit_plan == "gratis" else "elite" if edit_plan in ["elite", "vip"] else "admin" if edit_plan == "admin" else edit_plan
-                                success, msg = db_actualizar_usuario(user_id, edit_username, edit_nombre, edit_email, plan_final, edit_dias)
-                                if success:
-                                    st.success(f"✅ {msg}")
+                        if not es_admin:
+                            col_a, col_b, col_c, col_d = st.columns(4)
+                            with col_a:
+                                if st.button(f"👑 VIP", key=f"vip_{clave_id}"):
+                                    db_actualizar_plan(clave_id, "elite", 90)
+                                    st.success("Plan actualizado a VIP/Elite")
                                     st.rerun()
-                                else:
-                                    st.error(f"❌ {msg}")
-                            
-                            # Procesar cambio de password
-                            if change_pass and new_pass:
-                                if len(new_pass) >= 4:
-                                    success, msg = db_cambiar_password(user_id, new_pass)
-                                    if success:
-                                        st.success(f"✅ {msg}")
+                            with col_b:
+                                if st.button(f"📆 Mes", key=f"mes_{clave_id}"):
+                                    db_actualizar_plan(clave_id, "mes", 30)
+                                    st.success("Plan actualizado a Mes")
+                                    st.rerun()
+                            with col_c:
+                                if st.button(f"📆 Semana", key=f"sem_{clave_id}"):
+                                    db_actualizar_plan(clave_id, "semana", 7)
+                                    st.success("Plan actualizado a Semana")
+                                    st.rerun()
+                            with col_d:
+                                if st.button(f"🗑️ Eliminar", key=f"del_{clave_id}"):
+                                    if db_eliminar_usuario(clave_id):
+                                        st.success("✅ Eliminada")
                                         st.rerun()
                                     else:
-                                        st.error(f"❌ {msg}")
-                                else:
-                                    st.error("El password debe tener al menos 4 caracteres")
-                            
-                            # Procesar eliminación
-                            if delete_user:
-                                if es_admin:
-                                    st.error("❌ No puedes eliminar al administrador")
-                                elif db_eliminar_usuario(user_id):
-                                    st.success("✅ Usuario eliminado")
-                                    st.rerun()
-                                else:
-                                    st.error("❌ No se pudo eliminar")
+                                        st.error("No se pudo eliminar")
+                        else:
+                            st.info("Esta es la contraseña del administrador")
             else:
-                st.info("📭 No hay usuarios registrados.")
+                st.info("📭 No hay contraseñas creadas.")
 
 
     # ══════════════════════════════════════════════════════════
