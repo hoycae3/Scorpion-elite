@@ -440,3 +440,170 @@ DROP TRIGGER IF EXISTS update_equipos_timestamp ON equipos_stats;
 CREATE TRIGGER update_equipos_timestamp 
     BEFORE UPDATE ON equipos_stats
     FOR EACH ROW EXECUTE FUNCTION update_equipos_timestamp();
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLAS VIP - Dashboard Elite para usuarios que pagan
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLA BANKROLL_HISTORY
+-- Seguimiento del bankroll del usuario a lo largo del tiempo
+-- ═══════════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS bankroll_history (
+    id BIGSERIAL PRIMARY KEY,
+    usuario_id VARCHAR(100) DEFAULT 'default',
+    fecha DATE NOT NULL,
+    bankroll_inicial DECIMAL(12,2) DEFAULT 1000.00,
+    stake DECIMAL(6,2) DEFAULT 0,
+    pick_id BIGINT,
+    cuota DECIMAL(5,2),
+    resultado VARCHAR(20),  -- 'win', 'loss', 'push'
+    ganancia DECIMAL(8,2) DEFAULT 0,
+    bankroll_final DECIMAL(12,2) DEFAULT 1000.00,
+    estrategia VARCHAR(50) DEFAULT 'flat',  -- 'flat', 'kelly', 'porcentaje'
+    creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_bankroll_fecha ON bankroll_history(fecha);
+CREATE INDEX IF NOT EXISTS idx_bankroll_usuario ON bankroll_history(usuario_id);
+
+ALTER TABLE bankroll_history ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "bankroll_all" ON bankroll_history FOR ALL USING (true) WITH CHECK (true);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLA USER_STATS
+-- Estadísticas acumuladas por usuario
+-- ═══════════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS user_stats (
+    id BIGSERIAL PRIMARY KEY,
+    usuario_id VARCHAR(100) UNIQUE NOT NULL,
+    nombre VARCHAR(100),
+    -- Contadores
+    total_picks INTEGER DEFAULT 0,
+    picks_ganados INTEGER DEFAULT 0,
+    picks_perdidos INTEGER DEFAULT 0,
+    picks_nulos INTEGER DEFAULT 0,
+    -- ROI por tipo de mercado
+    roi_1x2 DECIMAL(6,2) DEFAULT 0,
+    roi_over_under DECIMAL(6,2) DEFAULT 0,
+    roi_btts DECIMAL(6,2) DEFAULT 0,
+    roi_corners DECIMAL(6,2) DEFAULT 0,
+    roi_tarjetas DECIMAL(6,2) DEFAULT 0,
+    roi_remates DECIMAL(6,2) DEFAULT 0,
+    -- ROI general
+    roi_general DECIMAL(6,2) DEFAULT 0,
+    yield_general DECIMAL(6,2) DEFAULT 0,
+    -- ROI por modelo
+    roi_poisson DECIMAL(6,2) DEFAULT 0,
+    roi_dixon DECIMAL(6,2) DEFAULT 0,
+    roi_montecarlo DECIMAL(6,2) DEFAULT 0,
+    roi_elo DECIMAL(6,2) DEFAULT 0,
+    -- Rachas
+    racha_actual INTEGER DEFAULT 0,
+    racha_maxima INTEGER DEFAULT 0,
+    mejor_tipo_pick VARCHAR(50),  -- '1X2', 'Over/Under', etc.
+    peor_tipo_pick VARCHAR(50),
+    -- Bankroll
+    bankroll_actual DECIMAL(12,2) DEFAULT 1000.00,
+    bankroll_inicial DECIMAL(12,2) DEFAULT 1000.00,
+    -- Confianza
+    confianza_promedio DECIMAL(5,2) DEFAULT 0,
+    precision_alta_confianza DECIMAL(5,2) DEFAULT 0,  -- % acierto en picks >90%
+    -- Badges
+    badges TEXT[],  -- Array de badges ganados
+    streak_tipo VARCHAR(10) DEFAULT 'neutro',  -- 'ganando', 'perdiendo', 'neutro'
+    actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_userstats_usuario ON user_stats(usuario_id);
+
+ALTER TABLE user_stats ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "userstats_all" ON user_stats FOR ALL USING (true) WITH CHECK (true);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLA ALERTAS
+-- Alertas y notificaciones para el usuario VIP
+-- ═══════════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS alertas (
+    id BIGSERIAL PRIMARY KEY,
+    usuario_id VARCHAR(100) DEFAULT 'default',
+    tipo VARCHAR(50) NOT NULL,  -- 'alta_confianza', 'value_bet', 'streak', 'resultado'
+    titulo VARCHAR(255),
+    mensaje TEXT,
+    prioridad VARCHAR(20) DEFAULT 'media',  -- 'alta', 'media', 'baja'
+    leida BOOLEAN DEFAULT FALSE,
+    pick_id BIGINT,
+    liga VARCHAR(255),
+    fecha DATE,
+    creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_alertas_usuario ON alertas(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_alertas_tipo ON alertas(tipo);
+CREATE INDEX IF NOT EXISTS idx_alertas_leida ON alertas(leida);
+
+ALTER TABLE alertas ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "alertas_all" ON alertas FOR ALL USING (true) WITH CHECK (true);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLA VALUE_BETS
+-- Picks donde la probabilidad del modelo > cuota del mercado (VALUE)
+-- ═══════════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS value_bets (
+    id BIGSERIAL PRIMARY KEY,
+    usuario_id VARCHAR(100) DEFAULT 'default',
+    fixture_id BIGINT,
+    fecha DATE NOT NULL,
+    liga VARCHAR(255),
+    equipo_local VARCHAR(255),
+    equipo_visitante VARCHAR(255),
+    -- Probabilidades del modelo
+    prob_modelo DECIMAL(5,2) NOT NULL,
+    -- Cuota del mercado (ingresada por usuario o scrapeada)
+    cuota_mercado DECIMAL(5,2) NOT NULL,
+    -- Probabilidad implícita de la cuota
+    prob_implicita DECIMAL(5,2),
+    -- Value (prob_modelo - prob_implicita)
+    value DECIMAL(5,2),
+    -- Tipo de apuesta
+    tipo VARCHAR(50),  -- '1X2', 'Over/Under', 'BTTS', etc.
+    detalle VARCHAR(100),  -- 'Over 2.5', 'Local', etc.
+    -- Resultado
+    resultado VARCHAR(20),
+    ganancia DECIMAL(8,2),
+    -- Recomendación
+    recomendado BOOLEAN DEFAULT TRUE,
+    creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_valuebets_fecha ON value_bets(fecha);
+CREATE INDEX IF NOT EXISTS idx_valuebets_usuario ON value_bets(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_valuebets_value ON value_bets(value);
+
+ALTER TABLE value_bets ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "valuebets_all" ON value_bets FOR ALL USING (true) WITH CHECK (true);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLA RANKING
+-- Ranking mensual de usuarios por ROI
+-- ═══════════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS ranking (
+    id BIGSERIAL PRIMARY KEY,
+    usuario_id VARCHAR(100) NOT NULL,
+    nombre VARCHAR(100),
+    mes INTEGER NOT NULL,
+    ano INTEGER NOT NULL,
+    total_picks INTEGER DEFAULT 0,
+    roi DECIMAL(6,2) DEFAULT 0,
+    yield DECIMAL(6,2) DEFAULT 0,
+    posicion INTEGER,
+    badges TEXT[],
+    actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(usuario_id, mes, ano)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ranking_periodo ON ranking(ano, mes);
+CREATE INDEX IF NOT EXISTS idx_ranking_posicion ON ranking(posicion);
+
+ALTER TABLE ranking ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "ranking_all" ON ranking FOR ALL USING (true) WITH CHECK (true);

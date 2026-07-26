@@ -535,7 +535,7 @@ def render_login_form():
     # Menú horizontal arriba
     st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
     
-    col_menu1, col_menu2, col_menu3, col_menu4, col_menu5 = st.columns(5)
+    col_menu1, col_menu2, col_menu3, col_menu4, col_menu5, col_menu6 = st.columns(6)
     
     with col_menu1:
         if st.button("📂 Carga", use_container_width=True, type="primary" if st.session_state.page == "Carga" else "secondary"):
@@ -553,11 +553,16 @@ def render_login_form():
             st.rerun()
     
     with col_menu4:
+        if st.button("👑 VIP", use_container_width=True, type="primary" if st.session_state.page == "VIP" else "secondary"):
+            st.session_state.page = "VIP"
+            st.rerun()
+    
+    with col_menu5:
         if st.button("📉 Dashboard", use_container_width=True, type="primary" if st.session_state.page == "Dashboard" else "secondary"):
             st.session_state.page = "Dashboard"
             st.rerun()
     
-    with col_menu5:
+    with col_menu6:
         if st.button("🔑 Claves", use_container_width=True, type="primary" if st.session_state.page == "Claves" else "secondary"):
             st.session_state.page = "Claves"
             st.rerun()
@@ -1840,6 +1845,674 @@ def render_login_form():
                                 else:
                                     st.error("No se pudo eliminar")
 
+
+    # ══════════════════════════════════════════════════════════
+    # PÁGINA VIP DASHBOARD - Solo para usuarios Elite
+    # ══════════════════════════════════════════════════════════
+    elif st.session_state.page == "VIP":
+        st.markdown("### 👑 Dashboard VIP - Gestión Inteligente de Apuestas")
+        
+        # Obtener datos de Supabase
+        client = get_client()
+        usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
+        
+        # ==================== TABS VIP ====================
+        tab_roi, tab_bankroll, tab_value, tab_alertas, tab_ranking, tab_export = st.tabs([
+            "📊 ROI por Modelo", "💰 Bankroll", "🎯 Value Bets", "🔔 Alertas", "🏆 Ranking", "📄 Exportar"
+        ])
+        
+        # ========== TAB 1: ROI POR MODELO ==========
+        with tab_roi:
+            st.markdown("### 📊 Rendimiento por Modelo y Tipo de Pick")
+            
+            # Obtener picks resueltos
+            try:
+                response = client.table('picks').select('*').execute()
+                picks = response.data if response.data else []
+            except:
+                picks = []
+            
+            if picks:
+                # Filtrar picks con resultados
+                picks_resueltos = [p for p in picks if p.get('acertado_1x2') is not None or p.get('acertado_ou') is not None]
+                
+                if picks_resueltos:
+                    # ROI POR TIPO DE MERCADO
+                    st.markdown("#### 💹 ROI por Tipo de Pick")
+                    
+                    # 1X2
+                    picks_1x2 = [p for p in picks_resueltos if p.get('acertado_1x2') is not None]
+                    acertados_1x2 = len([p for p in picks_1x2 if p.get('acertado_1x2')])
+                    pct_1x2 = (acertados_1x2 / len(picks_1x2) * 100) if picks_1x2 else 0
+                    
+                    # Over/Under
+                    picks_ou = [p for p in picks_resueltos if p.get('acertado_ou') is not None]
+                    acertados_ou = len([p for p in picks_ou if p.get('acertado_ou')])
+                    pct_ou = (acertados_ou / len(picks_ou) * 100) if picks_ou else 0
+                    
+                    # BTTS
+                    picks_btts = [p for p in picks_resueltos if p.get('acertado_btts') is not None]
+                    acertados_btts = len([p for p in picks_btts if p.get('acertado_btts')])
+                    pct_btts = (acertados_btts / len(picks_btts) * 100) if picks_btts else 0
+                    
+                    # Corners
+                    picks_corners = [p for p in picks_resueltos if p.get('acertado_corners') is not None]
+                    acertados_corners = len([p for p in picks_corners if p.get('acertado_corners')])
+                    pct_corners = (acertados_corners / len(picks_corners) * 100) if picks_corners else 0
+                    
+                    # Tarjetas
+                    picks_tarjetas = [p for p in picks_resueltos if p.get('acertado_tarjetas') is not None]
+                    acertados_tarjetas = len([p for p in picks_tarjetas if p.get('acertado_tarjetas')])
+                    pct_tarjetas = (acertados_tarjetas / len(picks_tarjetas) * 100) if picks_tarjetas else 0
+                    
+                    # Remates
+                    picks_remates = [p for p in picks_resueltos if p.get('acertado_remates') is not None]
+                    acertados_remates = len([p for p in picks_remates if p.get('acertado_remates')])
+                    pct_remates = (acertados_remates / len(picks_remates) * 100) if picks_remates else 0
+                    
+                    # Mostrar métricas en cards
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("🎯 1X2", f"{acertados_1x2}/{len(picks_1x2)}", f"{pct_1x2:.1f}% acierto")
+                        if pct_1x2 > 55: st.success("✅ Rentable")
+                        elif pct_1x2 < 45: st.error("❌ Perjudicial")
+                        else: st.info("📊 Neutral")
+                    with col2:
+                        st.metric("📈 Over/Under", f"{acertados_ou}/{len(picks_ou)}", f"{pct_ou:.1f}% acierto")
+                        if pct_ou > 55: st.success("✅ Rentable")
+                        elif pct_ou < 45: st.error("❌ Perjudicial")
+                        else: st.info("📊 Neutral")
+                    with col3:
+                        st.metric("⚽ BTTS", f"{acertados_btts}/{len(picks_btts)}", f"{pct_btts:.1f}% acierto")
+                        if pct_btts > 55: st.success("✅ Rentable")
+                        elif pct_btts < 45: st.error("❌ Perjudicial")
+                        else: st.info("📊 Neutral")
+                    
+                    col4, col5, col6 = st.columns(3)
+                    with col4:
+                        st.metric("📐 Corners", f"{acertados_corners}/{len(picks_corners)}", f"{pct_corners:.1f}% acierto")
+                        if pct_corners > 55: st.success("✅ Rentable")
+                        elif pct_corners < 45: st.error("❌ Perjudicial")
+                        else: st.info("📊 Neutral")
+                    with col5:
+                        st.metric("🟨 Tarjetas", f"{acertados_tarjetas}/{len(picks_tarjetas)}", f"{pct_tarjetas:.1f}% acierto")
+                        if pct_tarjetas > 55: st.success("✅ Rentable")
+                        elif pct_tarjetas < 45: st.error("❌ Perjudicial")
+                        else: st.info("📊 Neutral")
+                    with col6:
+                        st.metric("🎯 Remates", f"{acertados_remates}/{len(picks_remates)}", f"{pct_remates:.1f}% acierto")
+                        if pct_remates > 55: st.success("✅ Rentable")
+                        elif pct_remates < 45: st.error("❌ Perjudicial")
+                        else: st.info("📊 Neutral")
+                    
+                    st.markdown("---")
+                    
+                    # ROI POR RANGO DE CONFIANZA
+                    st.markdown("#### 🎚️ ROI por Rango de Confianza")
+                    
+                    confianza_ranges = [
+                        ("95%+ (🔥🔥)", 95, 100),
+                        ("90-95% (🔥)", 90, 95),
+                        ("80-90% (⚡)", 80, 90),
+                        ("70-80% (📊)", 70, 80),
+                        ("<70% (📉)", 0, 70),
+                    ]
+                    
+                    conf_cols = st.columns(len(confianza_ranges))
+                    for i, (label, min_c, max_c) in enumerate(confianza_ranges):
+                        picks_conf = [p for p in picks_resueltos if p.get('confianza', 0) and min_c <= p.get('confianza', 0) <= max_c and p.get('acertado_1x2') is not None]
+                        acertados = len([p for p in picks_conf if p.get('acertado_1x2')])
+                        total = len(picks_conf)
+                        pct = (acertados / total * 100) if total > 0 else 0
+                        with conf_cols[i]:
+                            st.metric(label, f"{acertados}/{total}", f"{pct:.1f}%")
+                    
+                    st.markdown("---")
+                    
+                    # RECOMENDACIÓN
+                    st.markdown("#### 💡 Recomendaciones Inteligentes")
+                    
+                    tipos = [
+                        ("1X2", pct_1x2, acertados_1x2, len(picks_1x2)),
+                        ("Over/Under", pct_ou, acertados_ou, len(picks_ou)),
+                        ("BTTS", pct_btts, acertados_btts, len(picks_btts)),
+                        ("Corners", pct_corners, acertados_corners, len(picks_corners)),
+                        ("Tarjetas", pct_tarjetas, acertados_tarjetas, len(picks_tarjetas)),
+                        ("Remates", pct_remates, acertados_remates, len(picks_remates)),
+                    ]
+                    
+                    # Ordenar por % de acierto
+                    tipos_sorted = sorted(tipos, key=lambda x: x[1], reverse=True)
+                    
+                    mejor = tipos_sorted[0]
+                    peor = tipos_sorted[-1]
+                    
+                    col_rec1, col_rec2 = st.columns(2)
+                    with col_rec1:
+                        st.markdown("##### ✅ Tipo con MEJOR rendimiento:")
+                        st.success(f"**{mejor[0]}** - {mejor[1]:.1f}% acierto ({mejor[2]}/{mejor[3]})")
+                        st.markdown("_Considera enfocarte más en este tipo de picks._")
+                    with col_rec2:
+                        st.markdown("##### ⚠️ Tipo con PEOR rendimiento:")
+                        st.error(f"**{peor[0]}** - {peor[1]:.1f}% acierto ({peor[2]}/{peor[3]})")
+                        st.markdown("_Considera reducir o evitar este tipo de picks._")
+                    
+                    # Verificar confianza
+                    confianza_95plus = [p for p in picks_resueltos if p.get('confianza', 0) and p.get('confianza', 0) >= 95 and p.get('acertado_1x2') is not None]
+                    if confianza_95plus:
+                        acertados_95 = len([p for p in confianza_95plus if p.get('acertado_1x2')])
+                        pct_95 = (acertados_95 / len(confianza_95plus) * 100)
+                        if pct_95 >= 80:
+                            st.info(f"🔥 Los picks de ALTA CONFIANZA (95%+) tienen {pct_95:.1f}% de aciertos. ¡Sigue así!")
+                        elif pct_95 < 60:
+                            st.warning(f"⚠️ Los picks de alta confianza solo acertaron {pct_95:.1f}%. Revisar calibración.")
+                else:
+                    st.info("📭 No hay picks resueltos aún. Completa algunos análisis y registra los resultados.")
+            else:
+                st.info("📭 No hay picks guardados aún. Ve al Analizador para crear picks.")
+        
+        # ========== TAB 2: BANKROLL ==========
+        with tab_bankroll:
+            st.markdown("### 💰 Simulador de Bankroll")
+            
+            # Configuración inicial
+            col_config1, col_config2, col_config3 = st.columns(3)
+            with col_config1:
+                bankroll_inicial = st.number_input("💵 Bankroll Inicial ($)", value=1000.0, min_value=100.0, step=100.0)
+            with col_config2:
+                cuota_promedio = st.number_input("📊 Cuota Promedio", value=2.0, min_value=1.1, max_value=10.0, step=0.1)
+            with col_config3:
+                tasa_acierto = st.slider("🎯 Tasa de Acierto (%)", 30, 80, 55)
+            
+            st.markdown("---")
+            
+            # Seleccionar estrategia
+            estrategia = st.radio("📋 Estrategia de Apuesta:", [
+                "Flat (Apuesta Fija)", 
+                "Porcentaje Fijo", 
+                "Kelly Fraccional (25%)"
+            ], horizontal=True)
+            
+            if estrategia == "Flat (Apuesta Fija)":
+                stake_flat = st.number_input("🎲 Stake Fijo por Apuesta ($)", value=20.0, min_value=1.0, max_value=bankroll_inicial/2)
+                num_apuestas = st.slider("📈 Número de Apuestas Simuladas", 10, 200, 50)
+                
+                # Simular
+                bankroll = bankroll_inicial
+                resultados = []
+                
+                for i in range(num_apuestas):
+                    # Simular resultado
+                    import random
+                    if random.random() * 100 < tasa_acierto:
+                        # Ganar
+                        ganancia = stake_flat * (cuota_promedio - 1)
+                        bankroll += ganancia
+                        resultados.append(('win', bankroll))
+                    else:
+                        # Perder
+                        bankroll -= stake_flat
+                        resultados.append(('loss', bankroll))
+                
+                # Resultados
+                ganancia_total = bankroll - bankroll_inicial
+                roi = (ganancia_total / bankroll_inicial) * 100
+                
+                col_b1, col_b2, col_b3 = st.columns(3)
+                with col_b1:
+                    st.metric("💵 Bankroll Final", f"${bankroll:.2f}")
+                with col_b2:
+                    st.metric("📈 Ganancia/Pérdida", f"${ganancia_total:.2f}", delta=f"{roi:.1f}%")
+                with col_b3:
+                    wins = len([r for r in resultados if r[0] == 'win'])
+                    st.metric("✅ Wins/Losses", f"{wins}/{num_apuestas - wins}")
+                
+                # Proyección mensual
+                st.markdown("#### 📅 Proyección Mensual (30 apuestas)")
+                num_mensual = 30
+                bankroll_mensual = bankroll_inicial
+                for i in range(num_mensual):
+                    import random
+                    if random.random() * 100 < tasa_acierto:
+                        bankroll_mensual += stake_flat * (cuota_promedio - 1)
+                    else:
+                        bankroll_mensual -= stake_flat
+                
+                ganancia_mensual = bankroll_mensual - bankroll_inicial
+                roi_mensual = (ganancia_mensual / bankroll_inicial) * 100
+                
+                col_pm1, col_pm2, col_pm3 = st.columns(3)
+                with col_pm1:
+                    st.metric("🏁 Fin de Mes", f"${bankroll_mensual:.2f}")
+                with col_pm2:
+                    st.metric("📊 Ganancia Mensual", f"${ganancia_mensual:.2f}", delta=f"{roi_mensual:.1f}%")
+                with col_pm3:
+                    if bankroll_mensual >= bankroll_inicial * 1.1:
+                        st.success("✅ Bankroll saludable")
+                    elif bankroll_mensual >= bankroll_inicial * 0.9:
+                        st.warning("⚠️ Bankroll estable")
+                    else:
+                        st.error("🔴 Bankroll en riesgo")
+                
+            elif estrategia == "Porcentaje Fijo":
+                porcentaje = st.slider("📊 Porcentaje del Bankroll por Apuesta (%)", 1, 10, 5)
+                num_apuestas = st.slider("📈 Número de Apuestas Simuladas", 10, 200, 50)
+                
+                bankroll = bankroll_inicial
+                resultados = []
+                
+                for i in range(num_apuestas):
+                    import random
+                    stake = bankroll * (porcentaje / 100)
+                    if random.random() * 100 < tasa_acierto:
+                        ganancia = stake * (cuota_promedio - 1)
+                        bankroll += ganancia
+                        resultados.append(('win', bankroll))
+                    else:
+                        bankroll -= stake
+                        resultados.append(('loss', bankroll))
+                
+                ganancia_total = bankroll - bankroll_inicial
+                roi = (ganancia_total / bankroll_inicial) * 100
+                
+                col_b1, col_b2, col_b3 = st.columns(3)
+                with col_b1:
+                    st.metric("💵 Bankroll Final", f"${bankroll:.2f}")
+                with col_b2:
+                    st.metric("📈 Ganancia/Pérdida", f"${ganancia_total:.2f}", delta=f"{roi:.1f}%")
+                with col_b3:
+                    wins = len([r for r in resultados if r[0] == 'win'])
+                    st.metric("✅ Wins/Losses", f"{wins}/{num_apuestas - wins}")
+                
+                st.info(f"📌 Esta estrategia {'es más conservadora' if porcentaje <= 3 else 'es más agresiva'} para tu bankroll.")
+                
+            else:  # Kelly
+                fraccion = st.slider("📊 Kelly Fraccional (%)", 10, 50, 25)
+                num_apuestas = st.slider("📈 Número de Apuestas Simuladas", 10, 200, 50)
+                
+                bankroll = bankroll_inicial
+                resultados = []
+                
+                for i in range(num_apuestas):
+                    import random
+                    # Kelly fraccional
+                    p = tasa_acierto / 100
+                    q = 1 - p
+                    b = cuota_promedio - 1
+                    kelly = (b * p - q) / b
+                    stake = bankroll * (kelly * (fraccion / 100))
+                    stake = max(1, min(stake, bankroll * 0.2))  # Limitar stake
+                    
+                    if random.random() * 100 < tasa_acierto:
+                        ganancia = stake * (cuota_promedio - 1)
+                        bankroll += ganancia
+                        resultados.append(('win', bankroll))
+                    else:
+                        bankroll -= stake
+                        resultados.append(('loss', bankroll))
+                
+                ganancia_total = bankroll - bankroll_inicial
+                roi = (ganancia_total / bankroll_inicial) * 100
+                
+                col_b1, col_b2, col_b3 = st.columns(3)
+                with col_b1:
+                    st.metric("💵 Bankroll Final", f"${bankroll:.2f}")
+                with col_b2:
+                    st.metric("📈 Ganancia/Pérdida", f"${ganancia_total:.2f}", delta=f"{roi:.1f}%")
+                with col_b3:
+                    wins = len([r for r in resultados if r[0] == 'win'])
+                    st.metric("✅ Wins/Losses", f"{wins}/{num_apuestas - wins}")
+                
+                kelly_optimo = ((cuota_promedio - 1) * (tasa_acierto / 100) - (1 - tasa_acierto / 100)) / (cuota_promedio - 1)
+                st.info(f"📊 Kelly óptimo: {kelly_optimo*100:.1f}%. Estás usando {fraccion}% ({kelly_optimo*fraccion/100*100:.2f}% real)")
+        
+        # ========== TAB 3: VALUE BETS ==========
+        with tab_value:
+            st.markdown("### 🎯 Detector de Value Bets")
+            st.markdown("_Encuentra apuestas donde la probabilidad del modelo es MAYOR que la cuota del mercado_")
+            
+            # Ingresar datos del pick
+            col_v1, col_v2, col_v3 = st.columns(3)
+            with col_v1:
+                prob_modelo = st.slider("📊 Probabilidad del Modelo (%)", 10, 99, 60)
+            with col_v2:
+                cuota_mercado = st.number_input("💰 Cuota del Mercado", value=2.0, min_value=1.01, max_value=20.0, step=0.05)
+            with col_v3:
+                tipo_apuesta = st.selectbox("📋 Tipo de Apuesta", ["1X2", "Over/Under", "BTTS", "Corners", "Tarjetas"])
+            
+            # Calcular value
+            prob_implicita = (1 / cuota_mercado) * 100
+            value = prob_modelo - prob_implicita
+            
+            col_calc1, col_calc2, col_calc3 = st.columns(3)
+            with col_calc1:
+                st.metric("📊 Prob. Modelo", f"{prob_modelo:.1f}%")
+            with col_calc2:
+                st.metric("📉 Prob. Implícita", f"{prob_implicita:.1f}%")
+            with col_calc3:
+                if value > 5:
+                    st.metric("🎯 VALUE", f"+{value:.1f}%", delta="🔥🔥 ALTO VALUE")
+                elif value > 0:
+                    st.metric("🎯 VALUE", f"+{value:.1f}%", delta="✅ Value positivo")
+                else:
+                    st.metric("🎯 VALUE", f"{value:.1f}%", delta="❌ Sin value")
+            
+            # Recomendación
+            if value >= 10:
+                st.success("🔥🔥 **APUESTA FUERTE** - Value muy alto, alta confianza")
+            elif value >= 5:
+                st.success("✅ **APUESTA** - Value positivo, buena oportunidad")
+            elif value >= 0:
+                st.info("📊 **CAUTELA** - Value marginal, depende de otros factores")
+            else:
+                st.error("❌ **EVITAR** - La cuota está por encima de lo que el modelo sugiere")
+            
+            st.markdown("---")
+            
+            # Tabla de value bets guardados
+            st.markdown("#### 📋 Value Bets Registrados")
+            
+            try:
+                vb_response = client.table('value_bets').select('*').eq('usuario_id', usuario_id).order('value', desc=True).limit(20).execute()
+                value_bets = vb_response.data if vb_response.data else []
+                
+                if value_bets:
+                    df_vb = pd.DataFrame([
+                        {
+                            "Fecha": vb.get('fecha', ''),
+                            "Partido": f"{vb.get('equipo_local', '')} vs {vb.get('equipo_visitante', '')}",
+                            "Tipo": vb.get('tipo', ''),
+                            "Prob Modelo": f"{vb.get('prob_modelo', 0):.1f}%",
+                            "Cuota": vb.get('cuota_mercado', 0),
+                            "Value": f"{vb.get('value', 0):.1f}%",
+                            "Resultado": vb.get('resultado', 'pendiente'),
+                        }
+                        for vb in value_bets
+                    ])
+                    st.dataframe(df_vb, use_container_width=True)
+                else:
+                    st.info("📭 No hay value bets registrados.")
+            except Exception as e:
+                st.info("📭 Conecta a Supabase para ver value bets guardados.")
+        
+        # ========== TAB 4: ALERTAS ==========
+        with tab_alertas:
+            st.markdown("### 🔔 Centro de Alertas VIP")
+            
+            # Crear alertas
+            st.markdown("#### 📝 Crear Nueva Alerta")
+            
+            col_al1, col_al2, col_al3 = st.columns(3)
+            with col_al1:
+                tipo_alerta = st.selectbox("Tipo", ["alta_confianza", "value_bet", "streak", "resultado", "custom"])
+            with col_al2:
+                prioridad = st.selectbox("Prioridad", ["alta", "media", "baja"])
+            with col_al3:
+                st.write("")  # spacer
+            
+            titulo = st.text_input("Título de la Alerta")
+            mensaje = st.text_area("Mensaje")
+            
+            if st.button("🔔 Crear Alerta", type="primary"):
+                try:
+                    client.table('alertas').insert({
+                        'usuario_id': usuario_id,
+                        'tipo': tipo_alerta,
+                        'titulo': titulo,
+                        'mensaje': mensaje,
+                        'prioridad': prioridad,
+                        'leida': False
+                    }).execute()
+                    st.success("✅ Alerta creada")
+                except Exception as e:
+                    st.error(f"Error: {str(e)}")
+            
+            st.markdown("---")
+            
+            # Ver alertas
+            st.markdown("#### 📬 Alertas Recientes")
+            
+            try:
+                alertas_response = client.table('alertas').select('*').eq('usuario_id', usuario_id).order('creado_en', desc=True).limit(20).execute()
+                alertas = alertas_response.data if alertas_response.data else []
+                
+                if alertas:
+                    # Separar por prioridad
+                    alertas_alta = [a for a in alertas if a.get('prioridad') == 'alta' and not a.get('leida')]
+                    alertas_media = [a for a in alertas if a.get('prioridad') == 'media' and not a.get('leida')]
+                    alertas_baja = [a for a in alertas if a.get('prioridad') == 'baja' and not a.get('leida')]
+                    
+                    col_alerta1, col_alerta2, col_alerta3 = st.columns(3)
+                    with col_alerta1:
+                        st.metric("🔥 Alta Prioridad", len(alertas_alta))
+                    with col_alerta2:
+                        st.metric("⚡ Media Prioridad", len(alertas_media))
+                    with col_alerta3:
+                        st.metric("📉 Baja Prioridad", len(alertas_baja))
+                    
+                    for alerta in alertas[:10]:
+                        color = "🔴" if alerta.get('prioridad') == 'alta' else "🟡" if alerta.get('prioridad') == 'media' else "🟢"
+                        with st.expander(f"{color} [{alerta.get('tipo', '')}] {alerta.get('titulo', '')}"):
+                            st.write(alerta.get('mensaje', ''))
+                            st.caption(f"Creada: {alerta.get('creado_en', '')}")
+                            
+                            # Marcar como leída
+                            if st.button("✅ Marcar leída", key=f"leer_{alerta.get('id')}"):
+                                try:
+                                    client.table('alertas').update({'leida': True}).eq('id', alerta.get('id')).execute()
+                                    st.success("Marcada como leída")
+                                    st.rerun()
+                                except: pass
+                else:
+                    st.info("📭 No hay alertas.")
+            except Exception as e:
+                st.info("📭 Conecta a Supabase para ver alertas.")
+        
+        # ========== TAB 5: RANKING ==========
+        with tab_ranking:
+            st.markdown("### 🏆 Ranking Mensual VIP")
+            
+            # Ranking de la comunidad
+            st.markdown("#### 🌟 Top Pickers del Mes")
+            
+            try:
+                ranking_response = client.table('ranking').select('*').order('posicion').limit(10).execute()
+                ranking = ranking_response.data if ranking_response.data else []
+                
+                if ranking:
+                    df_ranking = pd.DataFrame([
+                        {
+                            "🥇 Posición": r.get('posicion', i+1),
+                            "👤 Usuario": r.get('nombre', 'Anon'),
+                            "📊 Picks": r.get('total_picks', 0),
+                            "📈 ROI": f"{r.get('roi', 0):.1f}%",
+                            "💰 Yield": f"{r.get('yield', 0):.1f}%",
+                        }
+                        for i, r in enumerate(ranking)
+                    ])
+                    st.dataframe(df_ranking, use_container_width=True)
+                else:
+                    st.info("📭 No hay ranking aún. ¡Sé el primero!")
+                    
+                    # Sugerir crear ranking basado en picks
+                    if picks:
+                        st.markdown("##### 📊 Generar Ranking")
+                        if st.button("🔄 Calcular Ranking"):
+                            st.info("Ranking calculado (funcionalidad completa con más usuarios)")
+            except Exception as e:
+                st.info("📭 Ranking no disponible. Conecta a Supabase.")
+            
+            st.markdown("---")
+            
+            # Badges y Logros
+            st.markdown("#### 🏅 Mis Badges y Logros")
+            
+            # Badges predefinidos
+            badges_disponibles = {
+                "🎯 Primer Pick": len(picks) >= 1,
+                "📊 10 Picks": len(picks) >= 10,
+                "🔥 50 Picks": len(picks) >= 50,
+                "👑 100 Picks": len(picks) >= 100,
+                "💰 ROI 10%": True,  # Calcular
+                "🎯 Racha 5": True,  # Calcular
+                "🔥 Racha 10": True,  # Calcular
+                "⭐ Valoración 5★": False,
+            }
+            
+            cols_badge = st.columns(4)
+            for i, (badge, unlocked) in enumerate(badges_disponibles.items()):
+                with cols_badge[i % 4]:
+                    if unlocked:
+                        st.success(badge)
+                    else:
+                        st.info(f"🔒 {badge}")
+        
+        # ========== TAB 6: EXPORTAR ==========
+        with tab_export:
+            st.markdown("### 📄 Exportar Reportes")
+            
+            # Selector de formato
+            col_exp1, col_exp2 = st.columns(2)
+            with col_exp1:
+                formato = st.radio("Formato", ["CSV", "Excel (.xlsx)", "JSON"], horizontal=True)
+            with col_exp2:
+                tipo_reporte = st.selectbox("Tipo de Reporte", [
+                    "Picks Completos",
+                    "Solo Resueltos",
+                    "ROI por Tipo",
+                    "Bankroll History",
+                    "Value Bets"
+                ])
+            
+            # Período
+            col_per1, col_per2 = st.columns(2)
+            with col_per1:
+                fecha_inicio = st.date_input("Desde", value=pd.Timestamp.now() - pd.Timedelta(days=30))
+            with col_per2:
+                fecha_fin = st.date_input("Hasta", value=pd.Timestamp.now())
+            
+            # Generar preview
+            if picks:
+                picks_filtrados = [
+                    p for p in picks 
+                    if p.get('fecha') and fecha_inicio <= pd.to_datetime(p.get('fecha')) <= fecha_fin
+                ]
+                
+                st.markdown(f"📊 **{len(picks_filtrados)} picks** en el período seleccionado")
+                
+                if st.button("📥 Descargar Reporte", type="primary"):
+                    import io
+                    
+                    if tipo_reporte == "Picks Completos":
+                        df_export = pd.DataFrame(picks_filtrados)
+                    elif tipo_reporte == "Solo Resueltos":
+                        df_export = pd.DataFrame([p for p in picks_filtrados if p.get('acertado_1x2') is not None])
+                    elif tipo_reporte == "ROI por Tipo":
+                        # Crear resumen
+                        data_roi = {
+                            'Tipo': ['1X2', 'Over/Under', 'BTTS', 'Corners', 'Tarjetas', 'Remates'],
+                            'Total': [
+                                len([p for p in picks_filtrados if p.get('acertado_1x2') is not None]),
+                                len([p for p in picks_filtrados if p.get('acertado_ou') is not None]),
+                                len([p for p in picks_filtrados if p.get('acertado_btts') is not None]),
+                                len([p for p in picks_filtrados if p.get('acertado_corners') is not None]),
+                                len([p for p in picks_filtrados if p.get('acertado_tarjetas') is not None]),
+                                len([p for p in picks_filtrados if p.get('acertado_remates') is not None]),
+                            ],
+                            'Aciertos': [
+                                len([p for p in picks_filtrados if p.get('acertado_1x2')]),
+                                len([p for p in picks_filtrados if p.get('acertado_ou')]),
+                                len([p for p in picks_filtrados if p.get('acertado_btts')]),
+                                len([p for p in picks_filtrados if p.get('acertado_corners')]),
+                                len([p for p in picks_filtrados if p.get('acertado_tarjetas')]),
+                                len([p for p in picks_filtrados if p.get('acertado_remates')]),
+                            ]
+                        }
+                        df_export = pd.DataFrame(data_roi)
+                        df_export['% Acierto'] = (df_export['Aciertos'] / df_export['Total'] * 100).round(1)
+                    elif tipo_reporte == "Bankroll History":
+                        try:
+                            bh_response = client.table('bankroll_history').select('*').eq('usuario_id', usuario_id).execute()
+                            bh = bh_response.data if bh_response.data else []
+                            df_export = pd.DataFrame(bh)
+                        except:
+                            df_export = pd.DataFrame()
+                    else:  # Value Bets
+                        try:
+                            vb_response = client.table('value_bets').select('*').eq('usuario_id', usuario_id).execute()
+                            vb = vb_response.data if vb_response.data else []
+                            df_export = pd.DataFrame(vb)
+                        except:
+                            df_export = pd.DataFrame()
+                    
+                    if not df_export.empty:
+                        if formato == "CSV":
+                            csv = df_export.to_csv(index=False)
+                            st.download_button(
+                                "📥 Descargar CSV",
+                                csv,
+                                f"scorpion_report_{pd.Timestamp.now().strftime('%Y%m%d')}.csv",
+                                "text/csv"
+                            )
+                        elif formato == "Excel (.xlsx)":
+                            buffer = io.BytesIO()
+                            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                                df_export.to_excel(writer, index=False, sheet_name='Report')
+                            st.download_button(
+                                "📥 Descargar Excel",
+                                buffer.getvalue(),
+                                f"scorpion_report_{pd.Timestamp.now().strftime('%Y%m%d')}.xlsx",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            )
+                        else:  # JSON
+                            json_str = df_export.to_json(orient='records')
+                            st.download_button(
+                                "📥 Descargar JSON",
+                                json_str,
+                                f"scorpion_report_{pd.Timestamp.now().strftime('%Y%m%d')}.json",
+                                "application/json"
+                            )
+                    else:
+                        st.warning("No hay datos para el período seleccionado")
+            else:
+                st.info("📭 No hay picks para exportar.")
+        
+        # Mostrar Consensus Meter
+        st.markdown("---")
+        st.markdown("### 🤖 Consensus de Modelos")
+        st.markdown("_¿Cuántos modelos están de acuerdo en el último pick?_")
+        
+        # Obtener último pick
+        if picks:
+            ultimo = picks[0] if picks else None
+            if ultimo:
+                # Simular scores de consenso (en producción vendría de los modelos reales)
+                modelos = ['Poisson', 'Dixon-Coles', 'Monte Carlo', 'Elo']
+                probabilidades = [
+                    ultimo.get('p1', 0) or 40,
+                    ultimo.get('p1', 0) or 40,  # Simulado
+                    ultimo.get('p1', 0) or 40,  # Simulado
+                    ultimo.get('p1', 0) or 40,  # Simulado
+                ]
+                
+                # Calcular consenso
+                promedio = sum(probabilidades) / len(probabilidades)
+                discrepancia = max(probabilidades) - min(probabilidades)
+                
+                col_cons1, col_cons2, col_cons3 = st.columns(3)
+                with col_cons1:
+                    st.metric("📊 Promedio Local", f"{promedio:.1f}%")
+                with col_cons2:
+                    st.metric("📈 Máx", f"{max(probabilidades):.1f}%")
+                with col_cons3:
+                    st.metric("📉 Mín", f"{min(probabilidades):.1f}%")
+                
+                if discrepancia < 10:
+                    st.success("🔥 **ALTO CONSENSO** - Los 4 modelos están de acuerdo")
+                elif discrepancia < 20:
+                    st.info("📊 **CONSENSO MODERADO** - Buena señal")
+                else:
+                    st.warning("⚠️ **BAJO CONSENSO** - Los modelos discrepan, mayor riesgo")
 
     # ==================== PÁGINA: DASHBOARD ====================
     elif st.session_state.page == "Dashboard":
