@@ -12,38 +12,58 @@
 
 ---
 
-## 📅 Resumen Sesión Actual (2026-07-25)
+## 📅 Resumen Sesión Actual (2026-07-26)
 
-### ✅ Completado Esta Sesión
+### ✅ Dashboard VIP Completo Implementado
 
-1. **Login funciona correctamente**
-   - Botón "🔐 Iniciar Sesión" en landing page
-   - Al hacer clic, muestra formulario de login
-   - Solo 1 botón, flujo limpio
+**Nueva página 👑 VIP** con 6 módulos:
 
-2. **Métricas reales en landing page**
-   - Ya NO usa valores de demostración (1247 picks, 65% aciertos)
-   - Ahora consulta Supabase en tiempo real
-   - Muestra: Aciertos reales, Picks guardados, Yield real, Equipos analizados
+| Módulo | Descripción |
+|--------|-------------|
+| 📊 **ROI por Modelo** | ROI por tipo de pick (1X2, O/U, BTTS, Corners, Tarjetas, Remates) y por rango de confianza |
+| 💰 **Bankroll** | Simulador con 3 estrategias: Flat, Porcentaje Fijo, Kelly Fraccional |
+| 🎯 **Value Bets** | Detector de value - compara prob. modelo vs cuota implícita |
+| 🔔 **Alertas** | Sistema de alertas VIP (alta confianza, streaks, resultados) |
+| 🏆 **Ranking** | Ranking mensual, badges y logros |
+| 📄 **Exportar** | Descargar reportes en CSV/Excel/JSON |
 
-3. **Partidos reales en landing page**
-   - Consulta tabla `partidos` de Supabase
-   - Muestra hasta 5 partidos con botón "📊 Analizar"
-   - Si no hay partidos: mensaje para subir Excel desde página Carga
+**Tablas Supabase nuevas:**
+- `bankroll_history` - Seguimiento de bankroll
+- `user_stats` - Estadísticas acumuladas por usuario
+- `alertas` - Centro de notificaciones
+- `value_bets` - Picks con value detectado
+- `ranking` - Ranking mensual de usuarios
 
-4. **Análisis de partidos en landing page (GRATIS)**
-   - Al hacer clic en "Analizar", muestra preview del análisis
-   - Stats de ambos equipos (forma, V/E/D, GF/GC)
-   - Predicciones: 1X2, Over/Under, BTTS
-   - Botón "← Volver a partidos"
-   - **NO requiere login** - cualquiera puede ver el preview
-   - Caption invitando a iniciar sesión para análisis completo con 4 modelos
+### 📊 Menú Actualizado (6 páginas)
 
-### 🔧 Detalles Técnicos
+```
+📂 Carga | 📊 Analizador | 📈 Estadísticas | 👑 VIP | 📉 Dashboard | 🔑 Claves
+```
+
+---
+
+## 📅 Resumen Sesión Anterior (2026-07-25)
+
+### ✅ Login funciona correctamente
+- Botón "🔐 Iniciar Sesión" en landing page
+- Solo 1 botón, flujo limpio
+
+### ✅ Métricas reales en landing page
+- Consulta Supabase en tiempo real
+- Muestra: Aciertos reales, Picks guardados, Yield real
+
+### ✅ Partidos reales en landing page
+- Consulta tabla `partidos` de Supabase
+- Análisis preview gratis sin login
+
+---
+
+## 🔧 Detalles Técnicos
 
 - `st.session_state.preview_partido` - Almacena partido seleccionado para análisis
 - `st.session_state.logged` - Estado de autenticación
 - `st.session_state.show_login` - Control de visibilidad del login
+- Página VIP usa `usuario_id` del session_state para aislamiento de datos
 
 ---
 
@@ -51,14 +71,14 @@
 
 ```
 Scorpion-elite/
-├── elite.py                 # ⭐ APP PRINCIPAL Streamlit (~1400 líneas)
-│                            # 5 páginas: Carga, Analizador, Estadísticas, Dashboard, Claves
+├── elite.py                 # ⭐ APP PRINCIPAL Streamlit (~2756 líneas)
+│                            # 6 páginas: Carga, Analizador, Estadísticas, VIP, Dashboard, Claves
 ├── robot_extractor.py      # ⭐ SUPERROBOT - Todos los scrapers (49KB)
 ├── data_loader.py          # Procesa Excel de Flashscore
 ├── analysis_models.py      # 4 modelos matemáticos (Poisson, Dixon-Coles, Monte Carlo, Elo)
 ├── calibration.py          # Sistema de calibración automática
 ├── model_optimizer.py     # Optimizador de pesos de modelos
-├── supabase_schema.sql     # Schema de la base de datos
+├── supabase_schema.sql     # Schema completo (incluye tablas VIP)
 ├── requirements.txt        # Dependencias
 ├── styles.css              # Estilos CSS
 ├── Dockerfile              # Docker para producción
