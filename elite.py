@@ -1847,9 +1847,51 @@ def render_login_form():
 
 
     # ══════════════════════════════════════════════════════════
-    # PÁGINA VIP DASHBOARD - Solo para usuarios Elite
+    # PÁGINA VIP DASHBOARD - Solo para usuarios Elite/Premium
     # ══════════════════════════════════════════════════════════
     elif st.session_state.page == "VIP":
+        
+        # Verificar si el usuario es VIP/Elite
+        user_plan = st.session_state.user_data.get('plan', 'gratis') if st.session_state.user_data else 'gratis'
+        es_vip = user_plan.lower() in ['vip', 'elite', 'admin', 'mes', 'premium']
+        
+        if not es_vip:
+            # Mostrar pantalla de upgrade
+            st.markdown("""
+            <div style="text-align: center; padding: 50px 20px;">
+                <h1>🔒 Contenido Exclusivo para Miembros VIP</h1>
+                <p style="font-size: 1.2em; color: #666; margin: 30px 0;">
+                    El Dashboard VIP está disponible solo para miembros con plan <strong>Elite VIP</strong>
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Plan card
+            st.markdown("""
+            <div class="plan-card plan-vip" style="max-width: 400px; margin: 0 auto; text-align: center;">
+                <h3>👑 Plan Elite VIP</h3>
+                <p class="plan-price">$29.99 <span>/mes</span></p>
+                <ul style="text-align: left;">
+                    <li>✅ Dashboard VIP completo</li>
+                    <li>✅ ROI por modelo y tipo de pick</li>
+                    <li>✅ Simulador de Bankroll</li>
+                    <li>✅ Detector de Value Bets</li>
+                    <li>✅ Alertas y notificaciones</li>
+                    <li>✅ Ranking mensual</li>
+                    <li>✅ Reportes exportables</li>
+                </ul>
+                <p style="margin-top: 20px;"><strong>🎁 7 días GRATIS - Sin tarjeta</strong></p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Mostrar plan actual
+            st.markdown("---")
+            st.info(f"📧 Tu plan actual: **{user_plan.upper()}**")
+            st.markdown("¿Quieres hacer upgrade? Contacta al administrador.")
+            
+            st.stop()
+        
+        # Usuario VIP - mostrar dashboard
         st.markdown("### 👑 Dashboard VIP - Gestión Inteligente de Apuestas")
         
         # Obtener datos de Supabase
