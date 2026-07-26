@@ -283,7 +283,11 @@ def render_public_landing():
     
     # --- PARTIDOS DEL DÍA ---
     st.markdown("### 🏆 Partidos del Día")
-    
+
+    # Estado para análisis preview
+    if "preview_partido" not in st.session_state:
+        st.session_state.preview_partido = None
+
     # Obtener partidos reales de Supabase
     try:
         client = get_client()
@@ -295,35 +299,110 @@ def render_public_landing():
     except:
         partidos = []
 
-    if partidos:
-        for partido in partidos[:5]:
-            local = partido.get('equipo_local', 'Local')
-            visitante = partido.get('equipo_visitante', 'Visitante')
-            liga = partido.get('liga', '')
-            hora = partido.get('hora', '')
-            
-            col_match1, col_match2, col_match3 = st.columns([3, 1, 1])
-            with col_match1:
-                st.markdown(f"**{local} vs {visitante}**")
-                if liga:
-                    st.caption(f"🏆 {liga}")
-            with col_match2:
-                if hora:
-                    st.markdown(f"⏰ {hora}")
-            with col_match3:
-                if st.session_state.logged:
-                    if st.button("📊 Analizar", key=f"demo_{partido.get('id', local)}"):
-                        st.session_state.selected_partido = partido
-                        st.session_state.page = "Analizador"
-                        st.rerun()
-                else:
-                    if st.button("🔒 Analizar", key=f"demo_{partido.get('id', local)}"):
-                        st.session_state.show_login = True
-                        st.rerun()
+    if st.session_state.preview_partido:
+        # MOSTRAR ANÁLISIS DEL PARTIDO SELECCIONADO
+        partido = st.session_state.preview_partido
+        local = partido.get('equipo_local', 'Local')
+        visitante = partido.get('equipo_visitante', 'Visitante')
+        liga = partido.get('liga', '')
+        
         st.markdown("---")
-        st.caption(f"📋 Mostrando {min(len(partidos), 5)} de {len(partidos)} partidos")
+        st.markdown(f"## 📊 Análisis: {local} vs {visitante}")
+        if liga:
+            st.caption(f"🏆 {liga}")
+        
+        # Botón para volver
+        if st.button("← Volver a partidos", key="volver_partidos"):
+            st.session_state.preview_partido = None
+            st.rerun()
+        
+        st.markdown("---")
+        
+        # Obtener stats de equipos
+        try:
+            client = get_client()
+            if client:
+                local_resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{local}%').execute()
+                visit_resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{visitante}%').execute()
+                
+                stats_local = local_resp.data[0] if local_resp.data else None
+                stats_visit = visit_resp.data[0] if visit_resp.data else None
+                
+                if stats_local and stats_visit:
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown(f"### {local}")
+                        st.write(f"**Forma:** {stats_local.get('forma', 'N/A')}")
+                        st.write(f"**V/E/D:** {stats_local.get('victorias', 0)}/{stats_local.get('empates', 0)}/{stats_local.get('derrotas', 0)}")
+                        st.write(f"**GF/GC:** {stats_local.get('goles_favor', 0)}/{stats_local.get('goles_contra', 0)}")
+                    with col2:
+                        st.markdown(f"### {visitante}")
+                        st.write(f"**Forma:** {stats_visit.get('forma', 'N/A')}")
+                        st.write(f"**V/E/D:** {stats_visit.get('victorias', 0)}/{stats_visit.get('empates', 0)}/{stats_visit.get('derrotas', 0)}")
+                        st.write(f"**GF/GC:** {stats_visit.get('goles_favor', 0)}/{stats_visit.get('goles_contra', 0)}")
+                    
+                    st.markdown("---")
+                    
+                    # Predicciones
+                    gf_l = float(stats_local.get('goles_favor', 0) or 0)
+                    gf_v = float(stats_visit.get('goles_favor', 0) or 0)
+                    gc_l = float(stats_local.get('goles_contra', 0) or 0)
+                    gc_v = float(stats_visit.get('goles_contra', 0) or 0)
+                    
+                    prom_l = (gf_l + gc_v) / 2
+                    prom_v = (gf_v + gc_l) / 2
+                    
+                    st.markdown("### 🎯 Predicciones")
+                    
+                    # 1X2
+                    if prom_l > prom_v * 1.2:
+                        st.success(f"**1X2:** 1 (Victoria local) - Alta confianza")
+                    elif prom_v > prom_l * 1.2:
+                        st.success(f"**1X2:** 2 (Victoria visitante) - Alta confianza")
+                    else:
+                        st.warning(f"**1X2:** X (Empate) - Confianza media")
+                    
+                    # Over/Under
+                    total = prom_l + prom_v
+                    ou = "Over 2.5" if total > 2.5 else "Under 2.5"
+                    st.info(f"**Over/Under:** {ou} ({total:.1f} goles esperados)")
+                    
+                    # BTTS
+                    btts = "Sí" if gf_l > 1 and gf_v > 1 else "No"
+                    st.info(f"**Ambos marcan:** {btts}")
+                    
+                    st.markdown("---")
+                    st.caption("📝 Inicia sesión para análisis completo con 4 modelos matemáticos.")
+                else:
+                    st.warning(f"No hay estadísticas para {local} o {visitante}")
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
     else:
-        st.info("📭 No hay partidos cargados. Sube un archivo Excel desde la página **Carga** para ver partidos aquí.")
+        # MOSTRAR LISTA DE PARTIDOS
+        if partidos:
+            for partido in partidos[:5]:
+                local = partido.get('equipo_local', 'Local')
+                visitante = partido.get('equipo_visitante', 'Visitante')
+                liga = partido.get('liga', '')
+                hora = partido.get('hora', '')
+                
+                c1, c2, c3 = st.columns([3, 1, 1])
+                with c1:
+                    st.markdown(f"**{local} vs {visitante}**")
+                    if liga:
+                        st.caption(f"🏆 {liga}")
+                with c2:
+                    if hora:
+                        st.markdown(f"⏰ {hora}")
+                with c3:
+                    if st.button("📊 Analizar", key=f"demo_{partido.get('id', local)}"):
+                        st.session_state.preview_partido = partido
+                        st.rerun()
+            st.markdown("---")
+            st.caption(f"Mostrando {min(len(partidos), 5)} de {len(partidos)} partidos")
+        else:
+            st.info("📭 No hay partidos cargados. Sube un Excel desde la página **Carga**.")
+
 
     # --- CÓMO FUNCIONA ---
     st.markdown("### 🔍 ¿Cómo Funciona?")
