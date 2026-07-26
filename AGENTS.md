@@ -172,6 +172,17 @@ curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploy
 
 ## 📅 Historial de Cambios
 
+### 2026-07-25 - Sesión Landing Page Pública ✅
+
+| Cambio | Descripción |
+|--------|-------------|
+| Landing Page | Nueva vista pública para usuarios no autenticados |
+| Hero Section | Título, subtítulo, CTA "Comenzar Ahora" |
+| KPIs en Vivo | Aciertos %, Picks Analizados, Yield % |
+| Demo Analizador | Seleccionar partido y ver pronóstico de ejemplo |
+| Tabla Planes | Plan Gratuito vs Elite VIP |
+| Login mejorado | Botón "Iniciar Sesión" en landing |
+
 ### 2026-07-25 - Sesión Raspadores y Fallbacks ✅
 
 | Cambio | Descripción |
