@@ -472,7 +472,7 @@ def render_login_form():
             st.rerun()
     
     st.markdown("---")
-    
+
     # Página: Carga
     if st.session_state.page == "Carga":
         st.markdown("### 📂 Cargar archivos")
