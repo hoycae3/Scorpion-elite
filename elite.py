@@ -313,7 +313,7 @@ def render_public_landing():
             with col_match3:
                 if st.button("📊 Analizar", key=f"demo_{partido.get('id', local)}"):
                     st.session_state.selected_partido = partido
-                    st.session_state.page = "analizador"
+                    st.session_state.page = "Analizador"
                     st.rerun()
         st.markdown("---")
         st.caption(f"📋 Mostrando {min(len(partidos), 5)} de {len(partidos)} partidos")
