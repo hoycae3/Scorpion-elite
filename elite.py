@@ -222,6 +222,13 @@ def render_public_landing():
     </div>
     """, unsafe_allow_html=True)
     
+    # Botón Iniciar Sesión arriba
+    col_btn1, col_btn2, col_btn3 = st.columns([2, 1, 2])
+    with col_btn2:
+        if st.button("🔐 Iniciar Sesión", use_container_width=True, type="primary"):
+            st.session_state.show_login = True
+            st.rerun()
+
     st.markdown("<hr>", unsafe_allow_html=True)
     
     # --- KPIs EN VIVO ---
@@ -386,10 +393,6 @@ def render_login_form():
         
         # Botón para mostrar login
         if not st.session_state.show_login:
-            st.markdown("---")
-            col_login_btn1, col_login_btn2, col_login_btn3 = st.columns([2, 1, 2])
-            with col_login_btn2:
-                if st.button("🔐 Iniciar Sesión", use_container_width=True, type="secondary"):
                     st.session_state.show_login = True
                     st.rerun()
         else:
