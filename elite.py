@@ -222,12 +222,10 @@ def render_public_landing():
     </div>
     """, unsafe_allow_html=True)
     
-    # Botones de acción
-    col_hero1, col_hero2, col_hero3 = st.columns([1, 1, 1])
-    with col_hero2:
-        if st.button("🔐 Iniciar Sesión", use_container_width=True, type="primary"):
-            st.session_state.show_login = True
-            st.rerun()
+    # Botón de acción arriba
+    if st.button("🔐 Iniciar Sesión", use_container_width=True, type="primary"):
+        st.session_state.show_login = True
+        st.rerun()
     
     st.markdown("<hr>", unsafe_allow_html=True)
     
@@ -361,6 +359,15 @@ def render_public_landing():
     
     st.markdown("<hr>", unsafe_allow_html=True)
     
+
+    # --- BOTÓN COMENZAR AL FINAL ---
+    st.markdown("### 🚀 ¿Listo para empezar?")
+    if st.button("🚀 Comenzar Ahora - Es Gratis", use_container_width=True, type="primary"):
+        st.session_state.show_login = True
+        st.rerun()
+
+    st.markdown("<hr>", unsafe_allow_html=True)
+
     # --- FOOTER ---
     st.markdown("""
     <div class="footer">
