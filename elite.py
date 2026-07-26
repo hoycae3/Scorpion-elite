@@ -385,46 +385,41 @@ def render_login_form():
     if "show_login" not in st.session_state:
         st.session_state.show_login = False
     
-    # Si no está logueado, mostrar landing page
+    # Si no está logueado
     if not st.session_state.logged:
         
-        # Landing page pública
-        render_public_landing()
-        
-        # Botón para mostrar login
+        # Si NO está mostrando login, mostrar landing page
         if not st.session_state.show_login:
-                    st.session_state.show_login = True
-                    st.rerun()
-        else:
-            # Formulario de login
-            st.markdown("---")
-            st.markdown("### 🔐 Iniciar Sesión")
-            
-            password = st.text_input("Password", type="password", placeholder="Ingresa tu clave de acceso", key="login_password")
-            
-            col_login, col_cancel = st.columns([1, 1])
-            with col_login:
-                if st.button("✅ Entrar", use_container_width=True, type="primary"):
-                    if not password.strip():
-                        st.error("⚠️ Ingresa la password")
-                    elif password.strip() == ADMIN_PASSWORD:
-                        st.session_state.logged = True
-                        st.session_state.is_admin = True
-                        st.session_state.user_data = {"nombre": "Admin", "plan": "admin", "es_admin": 1}
-                        st.session_state.show_login = False
-                        st.rerun()
-                    else:
-                        st.error("❌ Password incorrecta")
-            
-            with col_cancel:
-                if st.button("← Volver", use_container_width=True):
+            render_public_landing()
+            st.stop()
+        
+        # Si está mostrando login, mostrar SOLO el formulario
+        st.markdown("---")
+        st.markdown("### 🔐 Iniciar Sesión")
+
+        password = st.text_input("Password", type="password", placeholder="Ingresa tu clave de acceso", key="login_password")
+
+        col_login, col_cancel = st.columns([1, 1])
+        with col_login:
+            if st.button("✅ Entrar", use_container_width=True, type="primary"):
+                if not password.strip():
+                    st.error("⚠️ Ingresa la password")
+                elif password.strip() == ADMIN_PASSWORD:
+                    st.session_state.logged = True
+                    st.session_state.is_admin = True
+                    st.session_state.user_data = {"nombre": "Admin", "plan": "admin", "es_admin": 1}
                     st.session_state.show_login = False
                     st.rerun()
-        
+                else:
+                    st.error("❌ Password incorrecta")
+
+        with col_cancel:
+            if st.button("← Volver", use_container_width=True):
+                st.session_state.show_login = False
+                st.rerun()
+
         st.stop()
-    
-    # Si YA está logueado, continuar al dashboard
-    
+
     # Sidebar con información del usuario
     with st.sidebar:
         st.markdown("## 🦂 Scorpion Elite")
