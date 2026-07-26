@@ -311,10 +311,15 @@ def render_public_landing():
                 if hora:
                     st.markdown(f"⏰ {hora}")
             with col_match3:
-                if st.button("📊 Analizar", key=f"demo_{partido.get('id', local)}"):
-                    st.session_state.selected_partido = partido
-                    st.session_state.page = "Analizador"
-                    st.rerun()
+                if st.session_state.logged:
+                    if st.button("📊 Analizar", key=f"demo_{partido.get('id', local)}"):
+                        st.session_state.selected_partido = partido
+                        st.session_state.page = "Analizador"
+                        st.rerun()
+                else:
+                    if st.button("🔒 Analizar", key=f"demo_{partido.get('id', local)}"):
+                        st.session_state.show_login = True
+                        st.rerun()
         st.markdown("---")
         st.caption(f"📋 Mostrando {min(len(partidos), 5)} de {len(partidos)} partidos")
     else:
