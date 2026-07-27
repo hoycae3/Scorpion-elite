@@ -71,7 +71,7 @@ def init_db():
             password TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
             nombre TEXT,
-            plan TEXT DEFAULT 'gratis',
+            plan TEXT DEFAULT 'vip',
             fecha_inicio TEXT,
             dias INTEGER DEFAULT 36500,
             activo INTEGER DEFAULT 1,
@@ -86,7 +86,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             fecha TEXT, liga TEXT, local TEXT, visitante TEXT, hora TEXT,
             mercado TEXT, detalle TEXT, cuota REAL, edge REAL,
-            confianza REAL, rango TEXT, notas TEXT, plan_min TEXT DEFAULT 'gratis'
+            confianza REAL, rango TEXT, notas TEXT, plan_min TEXT DEFAULT 'vip'
         )
         """)
         
@@ -542,11 +542,11 @@ def render_login_form():
     # Sidebar con información del usuario
     with st.sidebar:
         st.markdown("## 🦂 Scorpion Elite")
-        user_plan = st.session_state.user_data.get('plan', 'gratis') if st.session_state.user_data else 'gratis'
+        user_plan = st.session_state.user_data.get('plan', 'vip') if st.session_state.user_data else 'vip'
         dias = st.session_state.user_data.get('dias', 0) if st.session_state.user_data else 0
         is_admin = st.session_state.user_data.get('es_admin', 0) == 1 if st.session_state.user_data else False
         
-        plan_icon = {"admin": "⚙️", "elite": "👑", "vip": "👑", "mes": "👑", "gratis": "🆓"}.get(user_plan, "📦")
+        plan_icon = {"admin": "⚙️", "elite": "👑", "vip": "👑", "mes": "👑", "vip": "🆓"}.get(user_plan, "📦")
         st.markdown(f"{plan_icon} **{user_plan.upper()}**")
         if not is_admin:
             st.caption(f"⏱️ {dias} días restantes")
@@ -1885,7 +1885,7 @@ def render_login_form():
                     clave_id = u.get('id')
                     es_admin = u.get('es_admin') == 1
                     es_vip = u.get('plan', '') in ['vip', 'elite', 'mes']
-                    plan = u.get('plan', 'gratis')
+                    plan = u.get('plan', 'vip')
                     dias = u.get('dias', 0)
                     password = u.get('password', 'N/A')
                     nombre = u.get('nombre', 'Sin nombre')
@@ -1953,7 +1953,7 @@ def render_login_form():
     elif st.session_state.page == "VIP":
         
         # Verificar si el usuario es VIP/Elite
-        user_plan = st.session_state.user_data.get('plan', 'gratis') if st.session_state.user_data else 'gratis'
+        user_plan = st.session_state.user_data.get('plan', 'vip') if st.session_state.user_data else 'vip'
         es_vip = user_plan.lower() in ['vip', 'elite', 'admin', 'mes', 'premium']
         
         if not es_vip:
