@@ -1810,16 +1810,16 @@ def render_login_form():
                 with col_nom:
                     nombre = st.text_input("📝 Nombre / Cliente", placeholder="Ej: Juan, Carlos VIP").strip()
                 with col_plan:
-                    plan = st.selectbox("📦 Plan", ["gratis", "semana", "mes", "elite", "vip"])
+                    plan = st.selectbox("📦 Plan", ["semana", "mes", "elite", "vip"])
                 
                 nueva_clave = st.text_input("🔐 Nueva Contraseña", placeholder="Escribe la contraseña única").strip()
                 
-                dias_opciones = {"gratis": 36500, "semana": 7, "mes": 30, "elite": 90, "vip": 90}
+                dias_opciones = {"semana": 7, "mes": 30, "elite": 90, "vip": 90}
                 dias = dias_opciones.get(plan, 30)
                 
                 col_info, col_btn = st.columns([2, 1])
                 with col_info:
-                    plan_icon = {"gratis": "🆓", "semana": "📆", "mes": "👑", "elite": "🔥", "vip": "⭐"}
+                    plan_icon = {"semana": "📆", "mes": "👑", "elite": "🔥", "vip": "⭐"}
                     st.info(f"{plan_icon.get(plan, '📦')} Plan: {plan.upper()} - {dias} días")
                 
                 submitted = st.form_submit_button("✅ Crear Contraseña", use_container_width=True, type="primary")
@@ -1832,7 +1832,8 @@ def render_login_form():
                     elif len(nueva_clave) < 4:
                         st.error("⚠️ La contraseña debe tener al menos 4 caracteres")
                     else:
-                        plan_asignar = "gratis" if plan == "gratis" else "elite"
+                        # Todos los planes son VIP (semana, mes, elite, vip)
+                        plan_asignar = "elite"
                         success = db_crear_usuario(nueva_clave.strip(), nombre.strip(), plan_asignar, dias)
                         if success:
                             st.success(f"✅ Contraseña '{nueva_clave}' creada para {nombre} - Plan {plan.upper()}")
@@ -1923,10 +1924,10 @@ def render_login_form():
                                         else:
                                             st.warning("Mínimo 4 caracteres")
                                 with col_b:
-                                    plan_nuevo = st.selectbox("Nuevo plan", ["gratis", "semana", "mes", "elite", "vip"], 
-                                                             index=["gratis", "semana", "mes", "elite", "vip"].index(plan) if plan in ["gratis", "semana", "mes", "elite", "vip"] else 0,
+                                    plan_nuevo = st.selectbox("Nuevo plan", ["semana", "mes", "elite", "vip"], 
+                                                             index=["semana", "mes", "elite", "vip"].index(plan) if plan in ["semana", "mes", "elite", "vip"] else 0,
                                                              key=f"plan_{clave_id}")
-                                    dias_nuevos = {"gratis": 36500, "semana": 7, "mes": 30, "elite": 90, "vip": 90}.get(plan_nuevo, 30)
+                                    dias_nuevos = {"semana": 7, "mes": 30, "elite": 90, "vip": 90}.get(plan_nuevo, 30)
                                     if st.button("📦 Cambiar Plan", key=f"btn_plan_{clave_id}"):
                                         if db_actualizar_plan(clave_id, plan_nuevo if plan_nuevo != "elite" else "elite", dias_nuevos):
                                             st.success(f"✅ Plan cambiado a {plan_nuevo.upper()}")
