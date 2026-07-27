@@ -32,7 +32,9 @@ st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "scorpion2026")
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://jjtifureeygvygxtpuku.supabase.co")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqdGlmdXJlZXlndnlneHRwdWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTI2NDcsImV4cCI6MjA5OTg4ODY0N30.6f8dgLmHx9x9W-5X2Ld31rPkeZ6HJGSeGgx3oq9XSRA")
-DB_PATH = os.getenv("DB_PATH", "/tmp/scorpion_users.db")
+# Base de datos persistente en el directorio de la aplicación
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(APP_DIR, "scorpion_users.db")
 
 # ══════════════════════════════════════════════════════════
 # CLIENTE SUPABASE UNIFICADO con @st.cache_resource
