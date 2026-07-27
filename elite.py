@@ -561,25 +561,24 @@ def render_login_form():
     # Menú horizontal arriba - 根据用户类型显示
     st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
     
-    # Determinar qué páginas puede ver el usuario
-    is_vip = user_plan in ['admin', 'elite', 'vip', 'mes']
-    
-    # Construir menú dinámicamente
-    menu_pages = [
-        ("📂 Carga", "Carga"),
-        ("📊 Analizador", "Analizador"),
-        ("📈 Estadísticas", "Estadisticas"),
-    ]
-    
-    if is_vip:
-        menu_pages.append(("👑 VIP", "VIP"))
-    
-    menu_pages.extend([
-        ("📉 Dashboard", "Dashboard"),
-    ])
-    
+    # Construir menú dinámicamente según tipo de usuario
     if is_admin:
-        menu_pages.append(("🔑 Claves", "Claves"))
+        # Admin: ve todo
+        menu_pages = [
+            ("📂 Carga", "Carga"),
+            ("📊 Analizador", "Analizador"),
+            ("📈 Estadísticas", "Estadisticas"),
+            ("👑 VIP", "VIP"),
+            ("📉 Dashboard", "Dashboard"),
+            ("🔑 Claves", "Claves"),
+        ]
+    else:
+        # VIP: solo Analizador, Estadísticas, VIP
+        menu_pages = [
+            ("📊 Analizador", "Analizador"),
+            ("📈 Estadísticas", "Estadisticas"),
+            ("👑 VIP", "VIP"),
+        ]
     
     # Crear columnas dinámicamente
     num_cols = len(menu_pages)
