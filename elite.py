@@ -544,9 +544,11 @@ def render_login_form():
         st.markdown("## 🦂 Scorpion Elite")
         user_plan = st.session_state.user_data.get('plan', 'gratis') if st.session_state.user_data else 'gratis'
         dias = st.session_state.user_data.get('dias', 0) if st.session_state.user_data else 0
+        is_admin = st.session_state.user_data.get('es_admin', 0) == 1 if st.session_state.user_data else False
         
-        st.markdown(f"**Plan:** {user_plan.upper()}")
-        if user_plan != 'admin':
+        plan_icon = {"admin": "⚙️", "elite": "👑", "vip": "👑", "mes": "👑", "gratis": "🆓"}.get(user_plan, "📦")
+        st.markdown(f"{plan_icon} **{user_plan.upper()}**")
+        if not is_admin:
             st.caption(f"⏱️ {dias} días restantes")
         
         st.markdown("---")
@@ -556,40 +558,39 @@ def render_login_form():
             st.session_state.is_admin = False
             st.rerun()
     
-    # Menú horizontal arriba
+    # Menú horizontal arriba - 根据用户类型显示
     st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
     
-    col_menu1, col_menu2, col_menu3, col_menu4, col_menu5, col_menu6 = st.columns(6)
+    # Determinar qué páginas puede ver el usuario
+    is_vip = user_plan in ['admin', 'elite', 'vip', 'mes']
     
-    with col_menu1:
-        if st.button("📂 Carga", use_container_width=True, type="primary" if st.session_state.page == "Carga" else "secondary"):
-            st.session_state.page = "Carga"
-            st.rerun()
+    # Construir menú dinámicamente
+    menu_pages = [
+        ("📂 Carga", "Carga"),
+        ("📊 Analizador", "Analizador"),
+        ("📈 Estadísticas", "Estadisticas"),
+    ]
     
-    with col_menu2:
-        if st.button("📊 Analizador", use_container_width=True, type="primary" if st.session_state.page == "Analizador" else "secondary"):
-            st.session_state.page = "Analizador"
-            st.rerun()
+    if is_vip:
+        menu_pages.append(("👑 VIP", "VIP"))
     
-    with col_menu3:
-        if st.button("📈 Estadísticas", use_container_width=True, type="primary" if st.session_state.page == "Estadisticas" else "secondary"):
-            st.session_state.page = "Estadisticas"
-            st.rerun()
+    menu_pages.extend([
+        ("📉 Dashboard", "Dashboard"),
+    ])
     
-    with col_menu4:
-        if st.button("👑 VIP", use_container_width=True, type="primary" if st.session_state.page == "VIP" else "secondary"):
-            st.session_state.page = "VIP"
-            st.rerun()
+    if is_admin:
+        menu_pages.append(("🔑 Claves", "Claves"))
     
-    with col_menu5:
-        if st.button("📉 Dashboard", use_container_width=True, type="primary" if st.session_state.page == "Dashboard" else "secondary"):
-            st.session_state.page = "Dashboard"
-            st.rerun()
+    # Crear columnas dinámicamente
+    num_cols = len(menu_pages)
+    cols = st.columns(num_cols)
     
-    with col_menu6:
-        if st.button("🔑 Claves", use_container_width=True, type="primary" if st.session_state.page == "Claves" else "secondary"):
-            st.session_state.page = "Claves"
-            st.rerun()
+    for i, (label, page) in enumerate(menu_pages):
+        with cols[i]:
+            is_active = st.session_state.page == page
+            if st.button(label, use_container_width=True, type="primary" if is_active else "secondary"):
+                st.session_state.page = page
+                st.rerun()
     
     st.markdown("---")
 
