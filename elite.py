@@ -2155,158 +2155,268 @@ def render_login_form():
         
         # ========== TAB 2: BANKROLL ==========
         with tab_bankroll:
-            st.markdown("### 💰 Simulador de Bankroll")
+            st.markdown("### 💰 Mi Bankroll Real")
             
-            # Configuración inicial
-            col_config1, col_config2, col_config3 = st.columns(3)
-            with col_config1:
-                bankroll_inicial = st.number_input("💵 Bankroll Inicial ($)", value=1000.0, min_value=100.0, step=100.0)
-            with col_config2:
-                cuota_promedio = st.number_input("📊 Cuota Promedio", value=2.0, min_value=1.1, max_value=10.0, step=0.1)
-            with col_config3:
-                tasa_acierto = st.slider("🎯 Tasa de Acierto (%)", 30, 80, 55)
+            usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
             
-            st.markdown("---")
+            # Obtener picks del usuario para agregar al bankroll
+            try:
+                response_picks = client.table('picks').select('*').eq('usuario', usuario_id).execute()
+                picks_disponibles = response_picks.data if response_picks.data else []
+            except:
+                picks_disponibles = []
             
-            # Seleccionar estrategia
-            estrategia = st.radio("📋 Estrategia de Apuesta:", [
-                "Flat (Apuesta Fija)", 
-                "Porcentaje Fijo", 
-                "Kelly Fraccional (25%)"
-            ], horizontal=True)
+            # Obtener apuestas guardadas del usuario
+            try:
+                response_apuestas = client.table('bankroll_apuestas').select('*').eq('usuario', usuario_id).order('fecha', desc=True).execute()
+                apuestas = response_apuestas.data if response_apuestas.data else []
+            except:
+                # Crear tabla si no existe
+                try:
+                    client.table('bankroll_apuestas').execute()
+                except:
+                    pass
+                apuestas = []
             
-            if estrategia == "Flat (Apuesta Fija)":
-                stake_flat = st.number_input("🎲 Stake Fijo por Apuesta ($)", value=20.0, min_value=1.0, max_value=bankroll_inicial/2)
-                num_apuestas = st.slider("📈 Número de Apuestas Simuladas", 10, 200, 50)
+            # ==================== SUBTABS ====================
+            sub_tab1, sub_tab2, sub_tab3 = st.tabs(["📊 Dashboard", "➕ Agregar Apuesta", "📋 Mis Apuestas"])
+            
+            # ========== SUBTAB 1: DASHBOARD ==========
+            with sub_tab1:
+                st.markdown("#### 📈 Resumen de Rendimiento")
                 
-                # Simular
-                bankroll = bankroll_inicial
-                resultados = []
-                
-                for i in range(num_apuestas):
-                    # Simular resultado
-                    import random
-                    if random.random() * 100 < tasa_acierto:
-                        # Ganar
-                        ganancia = stake_flat * (cuota_promedio - 1)
-                        bankroll += ganancia
-                        resultados.append(('win', bankroll))
-                    else:
-                        # Perder
-                        bankroll -= stake_flat
-                        resultados.append(('loss', bankroll))
-                
-                # Resultados
-                ganancia_total = bankroll - bankroll_inicial
-                roi = (ganancia_total / bankroll_inicial) * 100
-                
-                col_b1, col_b2, col_b3 = st.columns(3)
+                # Configurar bankroll
+                col_b1, col_b2 = st.columns(2)
                 with col_b1:
-                    st.metric("💵 Bankroll Final", f"${bankroll:.2f}")
+                    bankroll_inicial = st.number_input("💵 Bankroll Inicial ($)", value=1000.0, min_value=100.0, step=100.0, key="bankroll_inicial")
                 with col_b2:
-                    st.metric("📈 Ganancia/Pérdida", f"${ganancia_total:.2f}", delta=f"{roi:.1f}%")
-                with col_b3:
-                    wins = len([r for r in resultados if r[0] == 'win'])
-                    st.metric("✅ Wins/Losses", f"{wins}/{num_apuestas - wins}")
+                    st.markdown("##### Ajustes")
+                    col_reset, col_export = st.columns(2)
+                    with col_reset:
+                        if st.button("🔄 Reiniciar Bankroll"):
+                            # Eliminar todas las apuestas
+                            try:
+                                client.table('bankroll_apuestas').delete().eq('usuario', usuario_id).execute()
+                            except:
+                                pass
+                            st.success("Bankroll reiniciado")
+                            st.rerun()
                 
-                # Proyección mensual
-                st.markdown("#### 📅 Proyección Mensual (30 apuestas)")
-                num_mensual = 30
-                bankroll_mensual = bankroll_inicial
-                for i in range(num_mensual):
-                    import random
-                    if random.random() * 100 < tasa_acierto:
-                        bankroll_mensual += stake_flat * (cuota_promedio - 1)
-                    else:
-                        bankroll_mensual -= stake_flat
-                
-                ganancia_mensual = bankroll_mensual - bankroll_inicial
-                roi_mensual = (ganancia_mensual / bankroll_inicial) * 100
-                
-                col_pm1, col_pm2, col_pm3 = st.columns(3)
-                with col_pm1:
-                    st.metric("🏁 Fin de Mes", f"${bankroll_mensual:.2f}")
-                with col_pm2:
-                    st.metric("📊 Ganancia Mensual", f"${ganancia_mensual:.2f}", delta=f"{roi_mensual:.1f}%")
-                with col_pm3:
-                    if bankroll_mensual >= bankroll_inicial * 1.1:
-                        st.success("✅ Bankroll saludable")
-                    elif bankroll_mensual >= bankroll_inicial * 0.9:
-                        st.warning("⚠️ Bankroll estable")
-                    else:
-                        st.error("🔴 Bankroll en riesgo")
-                
-            elif estrategia == "Porcentaje Fijo":
-                porcentaje = st.slider("📊 Porcentaje del Bankroll por Apuesta (%)", 1, 10, 5)
-                num_apuestas = st.slider("📈 Número de Apuestas Simuladas", 10, 200, 50)
-                
-                bankroll = bankroll_inicial
-                resultados = []
-                
-                for i in range(num_apuestas):
-                    import random
-                    stake = bankroll * (porcentaje / 100)
-                    if random.random() * 100 < tasa_acierto:
-                        ganancia = stake * (cuota_promedio - 1)
-                        bankroll += ganancia
-                        resultados.append(('win', bankroll))
-                    else:
-                        bankroll -= stake
-                        resultados.append(('loss', bankroll))
-                
-                ganancia_total = bankroll - bankroll_inicial
-                roi = (ganancia_total / bankroll_inicial) * 100
-                
-                col_b1, col_b2, col_b3 = st.columns(3)
-                with col_b1:
-                    st.metric("💵 Bankroll Final", f"${bankroll:.2f}")
-                with col_b2:
-                    st.metric("📈 Ganancia/Pérdida", f"${ganancia_total:.2f}", delta=f"{roi:.1f}%")
-                with col_b3:
-                    wins = len([r for r in resultados if r[0] == 'win'])
-                    st.metric("✅ Wins/Losses", f"{wins}/{num_apuestas - wins}")
-                
-                st.info(f"📌 Esta estrategia {'es más conservadora' if porcentaje <= 3 else 'es más agresiva'} para tu bankroll.")
-                
-            else:  # Kelly
-                fraccion = st.slider("📊 Kelly Fraccional (%)", 10, 50, 25)
-                num_apuestas = st.slider("📈 Número de Apuestas Simuladas", 10, 200, 50)
-                
-                bankroll = bankroll_inicial
-                resultados = []
-                
-                for i in range(num_apuestas):
-                    import random
-                    # Kelly fraccional
-                    p = tasa_acierto / 100
-                    q = 1 - p
-                    b = cuota_promedio - 1
-                    kelly = (b * p - q) / b
-                    stake = bankroll * (kelly * (fraccion / 100))
-                    stake = max(1, min(stake, bankroll * 0.2))  # Limitar stake
+                if apuestas:
+                    # Calcular métricas reales
+                    total_apostado = sum(a.get('cantidad', 0) for a in apuestas)
+                    ganancias = sum(a.get('ganancia', 0) for a in apuestas)
+                    bankroll_actual = bankroll_inicial + ganancias
+                    roi = ((bankroll_actual - bankroll_inicial) / bankroll_inicial * 100) if bankroll_inicial > 0 else 0
                     
-                    if random.random() * 100 < tasa_acierto:
-                        ganancia = stake * (cuota_promedio - 1)
-                        bankroll += ganancia
-                        resultados.append(('win', bankroll))
+                    apuestas_ganadas = len([a for a in apuestas if a.get('ganancia', 0) > 0])
+                    apuestas_perdidas = len([a for a in apuestas if a.get('ganancia', 0) < 0])
+                    total_apuestas = len(apuestas)
+                    tasa_acierto_real = (apuestas_ganadas / total_apuestas * 100) if total_apuestas > 0 else 0
+                    
+                    # Mostrar métricas
+                    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+                    with col_m1:
+                        st.metric("💵 Bankroll Actual", f"${bankroll_actual:.2f}", delta=f"{ganancias:.2f}")
+                    with col_m2:
+                        st.metric("📊 ROI", f"{roi:.1f}%", delta=f"{'+' if roi >= 0 else ''}{roi:.1f}%")
+                    with col_m3:
+                        st.metric("🎯 Tasa Acierto", f"{tasa_acierto_real:.1f}%", delta=f"{apuestas_ganadas}/{total_apuestas}")
+                    with col_m4:
+                        st.metric("💰 Ganado/Perdido", f"${ganancias:.2f}")
+                    
+                    # Estado del bankroll
+                    col_estado = st.columns(1)[0]
+                    if bankroll_actual >= bankroll_inicial * 1.1:
+                        st.success(f"✅ Bankroll saludable: {((bankroll_actual/bankroll_inicial)-1)*100:.1f}% de ganancia")
+                    elif bankroll_actual >= bankroll_inicial * 0.9:
+                        st.warning(f"⚠️ Bankroll estable: {((bankroll_actual/bankroll_inicial)-1)*100:.1f}%")
                     else:
-                        bankroll -= stake
-                        resultados.append(('loss', bankroll))
+                        st.error(f"🔴 Bankroll en riesgo: {((bankroll_actual/bankroll_inicial)-1)*100:.1f}%")
+                    
+                    # Gráfico de evolución
+                    st.markdown("#### 📈 Evolución del Bankroll")
+                    import random
+                    if total_apuestas > 1:
+                        # Crear datos de evolución
+                        evolucion = []
+                        b = bankroll_inicial
+                        for a in sorted(apuestas, key=lambda x: x.get('fecha', '')):
+                            b += a.get('ganancia', 0)
+                            evolucion.append({'fecha': a.get('fecha', 'N/A'), 'bankroll': b})
+                        
+                        # Mostrar tabla de evolución
+                        df_evo = pd.DataFrame(evolucion)
+                        st.line_chart(df_evo.set_index('fecha'))
+                    else:
+                        st.info("Agrega más apuestas para ver la evolución")
+                    
+                    # Pronóstico
+                    if total_apuestas >= 10:
+                        st.markdown("#### 🔮 Pronóstico")
+                        media_ganancia = ganancias / total_apuestas
+                        proy_mensual = media_ganancia * 30
+                        proy_anual = media_ganancia * 365
+                        
+                        col_p1, col_p2 = st.columns(2)
+                        with col_p1:
+                            st.metric("📅 Proyección Mensual", f"${proy_mensual:.2f}")
+                        with col_p2:
+                            st.metric("📅 Proyección Anual", f"${proy_anual:.2f}")
+                else:
+                    st.info("📭 No tienes apuestas aún. Ve a 'Agregar Apuesta' para empezar.")
+            
+            # ========== SUBTAB 2: AGREGAR APUESTA ==========
+            with sub_tab2:
+                st.markdown("#### ➕ Agregar Nueva Apuesta")
                 
-                ganancia_total = bankroll - bankroll_inicial
-                roi = (ganancia_total / bankroll_inicial) * 100
+                tab_origen1, tab_origen2 = st.tabs(["📋 Desde Picks", "✏️ Manual"])
                 
-                col_b1, col_b2, col_b3 = st.columns(3)
-                with col_b1:
-                    st.metric("💵 Bankroll Final", f"${bankroll:.2f}")
-                with col_b2:
-                    st.metric("📈 Ganancia/Pérdida", f"${ganancia_total:.2f}", delta=f"{roi:.1f}%")
-                with col_b3:
-                    wins = len([r for r in resultados if r[0] == 'win'])
-                    st.metric("✅ Wins/Losses", f"{wins}/{num_apuestas - wins}")
+                with tab_origen1:
+                    if picks_disponibles:
+                        st.markdown("##### Selecciona un Pick")
+                        
+                        # Filtrar picks sin resultado
+                        picks_sin_resultado = [p for p in picks_disponibles if p.get('acertado_1x2') is None and p.get('resultado') is None]
+                        
+                        if picks_sin_resultado:
+                            # Selector de pick
+                            opciones_pick = [f"{p.get('local', '?')} vs {p.get('visitante', '?')} - {p.get('mercado', '?')} @ {p.get('cuota', '?')}" 
+                                          for p in picks_sin_resultado]
+                            pick_seleccionado = st.selectbox("Pick", options=range(len(opciones_pick)), format_func=lambda x: opciones_pick[x])
+                            
+                            pick = picks_sin_resultado[pick_seleccionado]
+                            
+                            col_p1, col_p2 = st.columns(2)
+                            with col_p1:
+                                st.write(f"**📅 Fecha:** {pick.get('fecha', 'N/A')}")
+                                st.write(f"**📊 Mercado:** {pick.get('mercado', 'N/A')}")
+                                st.write(f"**📈 Detalle:** {pick.get('detalle', 'N/A')}")
+                            with col_p2:
+                                st.write(f"**💰 Cuota:** {pick.get('cuota', 'N/A')}")
+                                st.write(f"**🎯 Confianza:** {pick.get('confianza', 'N/A')}%")
+                        else:
+                            st.info("Todos tus picks ya tienen resultado")
+                    else:
+                        st.info("No tienes picks disponibles. Ve al Analizador para generar picks.")
                 
-                kelly_optimo = ((cuota_promedio - 1) * (tasa_acierto / 100) - (1 - tasa_acierto / 100)) / (cuota_promedio - 1)
-                st.info(f"📊 Kelly óptimo: {kelly_optimo*100:.1f}%. Estás usando {fraccion}% ({kelly_optimo*fraccion/100*100:.2f}% real)")
+                with tab_origen2:
+                    st.markdown("##### Datos de la Apuesta")
+                    
+                    col_d1, col_d2, col_d3 = st.columns(3)
+                    with col_d1:
+                        equipo = st.text_input("🏆 Equipo/Partido", placeholder="Ej: Barcelona vs Real Madrid")
+                    with col_d2:
+                        cuota = st.number_input("💰 Cuota", value=2.0, min_value=1.01, max_value=100.0, step=0.1)
+                    with col_d3:
+                        cantidad = st.number_input("💵 Cantidad Apostada ($)", value=20.0, min_value=1.0, step=5.0)
+                    
+                    col_d4, col_d5 = st.columns(2)
+                    with col_d4:
+                        mercado = st.selectbox("📊 Mercado", ["1X2", "Over/Under", "BTTS", "Corners", "Tarjetas", "Otro"])
+                    with col_d5:
+                        fecha = st.date_input("📅 Fecha", value=date.today())
+                    
+                    # Resultado (para apuestas ya resueltas)
+                    with st.expander("✅ Marcar Resultado (opcional)"):
+                        resultado = st.radio("Resultado:", ["Pendiente", "Ganada", "Perdida"], horizontal=True)
+                        if resultado != "Pendiente":
+                            ganancia = cantidad * (cuota - 1) if resultado == "Ganada" else -cantidad
+                            st.write(f"**Ganancia/Pérdida:** ${ganancia:.2f}")
+                    
+                    if st.button("➕ Agregar Apuesta", type="primary", use_container_width=True):
+                        resultado_val = None
+                        ganancia_val = 0
+                        if resultado == "Ganada":
+                            resultado_val = True
+                            ganancia_val = cantidad * (cuota - 1)
+                        elif resultado == "Perdida":
+                            resultado_val = False
+                            ganancia_val = -cantidad
+                        
+                        # Guardar en Supabase
+                        try:
+                            client.table('bankroll_apuestas').insert({
+                                'usuario': usuario_id,
+                                'fecha': str(fecha),
+                                'equipo': equipo,
+                                'cuota': cuota,
+                                'cantidad': cantidad,
+                                'mercado': mercado,
+                                'ganancia': ganancia_val,
+                                'resultado': resultado_val
+                            }).execute()
+                            st.success("✅ Apuesta agregada")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error: {e}")
+            
+            # ========== SUBTAB 3: MIS APUESTAS ==========
+            with sub_tab3:
+                st.markdown("#### 📋 Historial de Apuestas")
+                
+                if apuestas:
+                    # Filtros
+                    col_f1, col_f2 = st.columns(2)
+                    with col_f1:
+                        filtro_estado = st.multiselect("Filtrar por estado", ["Ganada", "Perdida", "Pendiente"], default=["Ganada", "Perdida", "Pendiente"])
+                    with col_f2:
+                        filtro_mercado = st.multiselect("Filtrar por mercado", list(set(a.get('mercado', '') for a in apuestas)), default=list(set(a.get('mercado', '') for a in apuestas)))
+                    
+                    # Aplicar filtros
+                    apuestas_filtradas = [a for a in apuestas 
+                                        if (a.get('resultado') == True and "Ganada" in filtro_estado)
+                                        or (a.get('resultado') == False and "Perdida" in filtro_estado)
+                                        or (a.get('resultado') is None and "Pendiente" in filtro_estado)]
+                    
+                    if filtro_mercado:
+                        apuestas_filtradas = [a for a in apuestas_filtradas if a.get('mercado', '') in filtro_mercado]
+                    
+                    # Mostrar tabla
+                    st.write(f"**Total: {len(apuestas_filtradas)} apuestas**")
+                    
+                    for i, a in enumerate(apuestas_filtradas):
+                        col_a1, col_a2 = st.columns([4, 1])
+                        with col_a1:
+                            estado_icon = "✅" if a.get('resultado') == True else ("❌" if a.get('resultado') == False else "⏳")
+                            ganancia = a.get('ganancia', 0)
+                            color_gan = "green" if ganancia > 0 else ("red" if ganancia < 0 else "gray")
+                            
+                            st.markdown(f"{estado_icon} **{a.get('equipo', 'N/A')}** - {a.get('fecha', 'N/A')}")
+                            st.caption(f"💰 ${a.get('cantidad', 0):.2f} @ {a.get('cuota', 'N/A')} | {a.get('mercado', 'N/A')} → **Ganancia: ${ganancia:.2f}**")
+                        
+                        with col_a2:
+                            # Actualizar resultado
+                            nuevo_resultado = st.selectbox("Resultado", ["Pendiente", "Ganada", "Perdida"], 
+                                                          index=0 if a.get('resultado') is None else (1 if a.get('resultado') else 2),
+                                                          key=f"res_{i}_{a.get('id', i)}")
+                            
+                            if st.button("💾 Guardar", key=f"btn_res_{i}_{a.get('id', i)}"):
+                                cantidad = a.get('cantidad', 0)
+                                cuota = a.get('cuota', 2.0)
+                                resultado_new = None
+                                ganancia_new = 0
+                                
+                                if nuevo_resultado == "Ganada":
+                                    resultado_new = True
+                                    ganancia_new = cantidad * (cuota - 1)
+                                elif nuevo_resultado == "Perdida":
+                                    resultado_new = False
+                                    ganancia_new = -cantidad
+                                
+                                try:
+                                    client.table('bankroll_apuestas').update({
+                                        'resultado': resultado_new,
+                                        'ganancia': ganancia_new
+                                    }).eq('id', a.get('id')).execute()
+                                    st.success("Actualizado")
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Error: {e}")
+                        
+                        st.markdown("---")
+                else:
+                    st.info("No tienes apuestas registradas")
         
         # ========== TAB 3: VALUE BETS ==========
         with tab_value:
