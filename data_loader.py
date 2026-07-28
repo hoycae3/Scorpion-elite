@@ -198,12 +198,47 @@ def get_pais_normalizado(pais: str) -> str:
     # Quitar los dos puntos del final
     pais_lower = pais_lower.rstrip(':').strip()
     
+    # Ignorar "sudamérica" o "america del sur"
+    if 'sudam' in pais_lower or 'am' in pais_lower.replace(' ', '')[:5]:
+        return ""  # No es un país, retornar vacío para buscar en los equipos
+    
     for key, value in PAIS_MAP.items():
         if key in pais_lower:
             return value
     
     # Capitalizar primera letra
     return pais_lower.capitalize()
+
+
+def extract_pais_from_team(team_name: str) -> str:
+    """Extrae el país de la abreviatura del equipo (Bra, Bol, Ven, Col, Chi, Arg, etc.)"""
+    if not team_name:
+        return ""
+    
+    pais_abbrev = {
+        'bra': 'Brasil',
+        'bol': 'Bolivia', 
+        'ven': 'Venezuela',
+        'col': 'Colombia',
+        'chi': 'Chile',
+        'arg': 'Argentina',
+        'uru': 'Uruguay',
+        'par': 'Paraguay',
+        'ecu': 'Ecuador',
+        'per': 'Perú',
+        'mex': 'México',
+        'usa': 'Estados Unidos',
+        'eu': 'Estados Unidos',
+    }
+    
+    # Buscar patrón (XXX)
+    import re
+    match = re.search(r'\(([a-zA-Z]{2,4})\)', team_name)
+    if match:
+        abbrev = match.group(1).lower()
+        return pais_abbrev.get(abbrev, "")
+    
+    return ""
 
 
 def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
@@ -351,7 +386,10 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
                 continue
             # Detectar país con : (ej: "COLOMBIA:", "ARGENTINA:")
             if prev.endswith(':') and '(' not in prev:
-                return get_pais_normalizado(prev)
+                pais = get_pais_normalizado(prev)
+                # Ignorar "SUDAMÉRICA:" y similares
+                if pais and pais != "":  # Solo retornar si es un país válido
+                    return pais
         
         # Si no encontró, buscar país duplicado
         for back in range(1, 25):
@@ -439,6 +477,16 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
                     break
             
             if home and away and home != away and len(home) > 1 and len(away) > 1:
+                # Si no hay país válido, intentar extraerlo de los equipos
+                if not current_pais or current_pais == "":
+                    pais_from_home = extract_pais_from_team(home)
+                    pais_from_away = extract_pais_from_team(away)
+                    # Preferir el país del visitante (generalmente es más específico)
+                    if pais_from_away:
+                        current_pais = pais_from_away
+                    elif pais_from_home:
+                        current_pais = pais_from_home
+                
                 matches.append({
                     'fecha': fecha_del_dia,
                     'hora': hora,
