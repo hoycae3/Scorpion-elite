@@ -2159,6 +2159,24 @@ def render_login_form():
             
             usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
             
+            # Definir monedas disponibles
+            MONEDAS = {
+                "USD": {"simbolo": "$", "nombre": "Dólar Americano", "codigo": "US$"},
+                "EUR": {"simbolo": "€", "nombre": "Euro", "codigo": "€"},
+                "MXN": {"simbolo": "$", "nombre": "Peso Mexicano", "codigo": "MX$"},
+                "COP": {"simbolo": "$", "nombre": "Peso Colombiano", "codigo": "COP$"},
+                "PEN": {"simbolo": "S/", "nombre": "Sol Peruano", "codigo": "S/"},
+                "CLP": {"simbolo": "$", "nombre": "Peso Chileno", "codigo": "CLP$"},
+                "ARS": {"simbolo": "$", "nombre": "Peso Argentino", "codigo": "ARS$"},
+                "BRL": {"simbolo": "R$", "nombre": "Real Brasileño", "codigo": "R$"},
+                "GBP": {"simbolo": "£", "nombre": "Libra Esterlina", "codigo": "£"},
+            }
+            
+            # Función para formatear moneda
+            def format_money(valor, simbolo):
+                """Formatea valor con separadores de miles"""
+                return f"{simbolo}{valor:,.2f}"
+            
             # Obtener picks del usuario para agregar al bankroll
             try:
                 response_picks = client.table('picks').select('*').eq('usuario', usuario_id).execute()
@@ -2185,22 +2203,28 @@ def render_login_form():
             with sub_tab1:
                 st.markdown("#### 📈 Resumen de Rendimiento")
                 
-                # Configurar bankroll
-                col_b1, col_b2 = st.columns(2)
-                with col_b1:
-                    bankroll_inicial = st.number_input("💵 Bankroll Inicial ($)", value=1000.0, min_value=100.0, step=100.0, key="bankroll_inicial")
-                with col_b2:
-                    st.markdown("##### Ajustes")
-                    col_reset, col_export = st.columns(2)
-                    with col_reset:
-                        if st.button("🔄 Reiniciar Bankroll"):
-                            # Eliminar todas las apuestas
-                            try:
-                                client.table('bankroll_apuestas').delete().eq('usuario', usuario_id).execute()
-                            except:
-                                pass
-                            st.success("Bankroll reiniciado")
-                            st.rerun()
+                # Selector de moneda y banco inicial
+                col_money1, col_money2 = st.columns([1, 2])
+                with col_money1:
+                    moneda_select = st.selectbox("💱 Moneda", options=list(MONEDAS.keys()), 
+                                               format_func=lambda x: f"{MONEDAS[x]['simbolo']} {MONEDAS[x]['nombre']}",
+                                               index=0)
+                    simbolo = MONEDAS[moneda_select]["simbolo"]
+                
+                with col_money2:
+                    bankroll_inicial = st.number_input(f"💵 Bankroll Inicial", value=1000.0, min_value=100.0, step=100.0, key="bankroll_inicial")
+                
+                # Reset bankroll
+                col_reset = st.columns(1)[0]
+                if st.button("🔄 Reiniciar Bankroll", use_container_width=True):
+                    try:
+                        client.table('bankroll_apuestas').delete().eq('usuario', usuario_id).execute()
+                    except:
+                        pass
+                    st.success("Bankroll reiniciado")
+                    st.rerun()
+                
+                st.markdown("---")
                 
                 if apuestas:
                     # Calcular métricas reales
@@ -2210,23 +2234,22 @@ def render_login_form():
                     roi = ((bankroll_actual - bankroll_inicial) / bankroll_inicial * 100) if bankroll_inicial > 0 else 0
                     
                     apuestas_ganadas = len([a for a in apuestas if a.get('ganancia', 0) > 0])
-                    apuestas_perdidas = len([a for a in apuestas if a.get('ganancia', 0) < 0])
                     total_apuestas = len(apuestas)
                     tasa_acierto_real = (apuestas_ganadas / total_apuestas * 100) if total_apuestas > 0 else 0
                     
-                    # Mostrar métricas
+                    # Mostrar métricas con formato de miles
                     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
                     with col_m1:
-                        st.metric("💵 Bankroll Actual", f"${bankroll_actual:.2f}", delta=f"{ganancias:.2f}")
+                        delta_gan = f"{'+' if ganancias >= 0 else ''}{format_money(ganancias, simbolo)}"
+                        st.metric("💵 Bankroll Actual", format_money(bankroll_actual, simbolo), delta=delta_gan)
                     with col_m2:
                         st.metric("📊 ROI", f"{roi:.1f}%", delta=f"{'+' if roi >= 0 else ''}{roi:.1f}%")
                     with col_m3:
                         st.metric("🎯 Tasa Acierto", f"{tasa_acierto_real:.1f}%", delta=f"{apuestas_ganadas}/{total_apuestas}")
                     with col_m4:
-                        st.metric("💰 Ganado/Perdido", f"${ganancias:.2f}")
+                        st.metric("💰 Ganado/Perdido", format_money(ganancias, simbolo))
                     
                     # Estado del bankroll
-                    col_estado = st.columns(1)[0]
                     if bankroll_actual >= bankroll_inicial * 1.1:
                         st.success(f"✅ Bankroll saludable: {((bankroll_actual/bankroll_inicial)-1)*100:.1f}% de ganancia")
                     elif bankroll_actual >= bankroll_inicial * 0.9:
@@ -2260,9 +2283,9 @@ def render_login_form():
                         
                         col_p1, col_p2 = st.columns(2)
                         with col_p1:
-                            st.metric("📅 Proyección Mensual", f"${proy_mensual:.2f}")
+                            st.metric("📅 Proyección Mensual", format_money(proy_mensual, simbolo))
                         with col_p2:
-                            st.metric("📅 Proyección Anual", f"${proy_anual:.2f}")
+                            st.metric("📅 Proyección Anual", format_money(proy_anual, simbolo))
                 else:
                     st.info("📭 No tienes apuestas aún. Ve a 'Agregar Apuesta' para empezar.")
             
@@ -2309,7 +2332,7 @@ def render_login_form():
                     with col_d2:
                         cuota = st.number_input("💰 Cuota", value=2.0, min_value=1.01, max_value=100.0, step=0.1)
                     with col_d3:
-                        cantidad = st.number_input("💵 Cantidad Apostada ($)", value=20.0, min_value=1.0, step=5.0)
+                        cantidad = st.number_input(f"💵 Cantidad ({simbolo})", value=20.0, min_value=1.0, step=5.0)
                     
                     col_d4, col_d5 = st.columns(2)
                     with col_d4:
@@ -2322,7 +2345,7 @@ def render_login_form():
                         resultado = st.radio("Resultado:", ["Pendiente", "Ganada", "Perdida"], horizontal=True)
                         if resultado != "Pendiente":
                             ganancia = cantidad * (cuota - 1) if resultado == "Ganada" else -cantidad
-                            st.write(f"**Ganancia/Pérdida:** ${ganancia:.2f}")
+                            st.write(f"**Ganancia/Pérdida:** {format_money(ganancia, simbolo)}")
                     
                     if st.button("➕ Agregar Apuesta", type="primary", use_container_width=True):
                         resultado_val = None
@@ -2380,10 +2403,11 @@ def render_login_form():
                         with col_a1:
                             estado_icon = "✅" if a.get('resultado') == True else ("❌" if a.get('resultado') == False else "⏳")
                             ganancia = a.get('ganancia', 0)
-                            color_gan = "green" if ganancia > 0 else ("red" if ganancia < 0 else "gray")
+                            ganancia_fmt = format_money(ganancia, simbolo)
+                            cantidad_fmt = format_money(a.get('cantidad', 0), simbolo)
                             
                             st.markdown(f"{estado_icon} **{a.get('equipo', 'N/A')}** - {a.get('fecha', 'N/A')}")
-                            st.caption(f"💰 ${a.get('cantidad', 0):.2f} @ {a.get('cuota', 'N/A')} | {a.get('mercado', 'N/A')} → **Ganancia: ${ganancia:.2f}**")
+                            st.caption(f"💰 {cantidad_fmt} @ {a.get('cuota', 'N/A')} | {a.get('mercado', 'N/A')} → **Ganancia: {ganancia_fmt}**")
                         
                         with col_a2:
                             # Actualizar resultado
