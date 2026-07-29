@@ -664,15 +664,16 @@ def render_login_form():
                     requests_usados = 0
                     
                     # ═══════════════════════════════════════════════════
-                    # PASO 1: Consultar PARTIDOS de los próximos 7 días
+                    # PASO 1: Consultar PARTIDOS de los próximos 7 días (solo fechas nuevas)
                     # ═══════════════════════════════════════════════════
                     st.info("📅 PASO 1: Consultando partidos de los próximos 7 días...")
                     
                     for liga in LIGAS:
+                        # Solo consultar las fechas que NO están en Supabase
                         for i in range(7):
                             fecha = (hoy + timedelta(days=i)).strftime('%Y-%m-%d')
                             
-                            # Verificar si ya existe
+                            # Verificar si ya existe esta fecha+liga
                             try:
                                 existe = client.table('partidos').select('fixture_id').eq('fecha', fecha).eq('liga', liga['name']).execute()
                                 if existe.data:
@@ -690,6 +691,7 @@ def render_login_form():
                                 
                                 if response.status_code == 200:
                                     data = response.json()
+                                    partidos_guardados = 0
                                     for match in data.get('response', []):
                                         fixture = match.get('fixture', {})
                                         teams = match.get('teams', {})
@@ -708,10 +710,11 @@ def render_login_form():
                                                 'equipo_visitante_id': teams.get('away', {}).get('id'),
                                             }
                                             client.table('partidos').upsert(data_partido, on_conflict='fixture_id').execute()
+                                            partidos_guardados += 1
                                         except:
                                             pass
-                                
-                                st.info(f"✅ {liga['name']} - {fecha}")
+                                    
+                                    st.info(f"✅ {liga['name']} - {fecha}: {partidos_guardados} partidos")
                                 
                             except Exception as e:
                                 st.error(f"❌ Error: {e}")
@@ -719,23 +722,23 @@ def render_login_form():
                             time.sleep(1)  # Delay para no bloquear
                     
                     # ═══════════════════════════════════════════════════
-                    # PASO 2: Consultar ESTADÍSTICAS de equipos que juegan en 2-3 días
+                    # PASO 2: Consultar ESTADÍSTICAS de equipos que juegan HOY y MAÑANA
                     # ═══════════════════════════════════════════════════
-                    st.info("📊 PASO 2: Consultando estadísticas de equipos que juegan en 2-3 días...")
+                    st.info("📊 PASO 2: Consultando estadísticas de equipos que juegan HOY y MAÑANA...")
                     
-                    # Obtener partidos de mañana y pasado mañana
-                    manana = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
-                    pasado_manana = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
+                    # Equipos que juegan HOY y MAÑANA
+                    fecha_hoy = hoy.strftime('%Y-%m-%d')
+                    fecha_manana = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
                     
                     try:
-                        response = client.table('partidos').select('*').in_('fecha', [manana, pasado_manana]).execute()
-                        proximos_partidos = response.data if response.data else []
+                        response = client.table('partidos').select('*').in_('fecha', [fecha_hoy, fecha_manana]).execute()
+                        partidos_hoy_manana = response.data if response.data else []
                     except:
-                        proximos_partidos = []
+                        partidos_hoy_manana = []
                     
                     # Extraer equipos únicos
                     equipos_ids = set()
-                    for p in proximos_partidos:
+                    for p in partidos_hoy_manana:
                         if p.get('equipo_local_id'):
                             equipos_ids.add((p['equipo_local_id'], p['equipo_local'], p['liga']))
                         if p.get('equipo_visitante_id'):
@@ -749,6 +752,7 @@ def render_login_form():
                         try:
                             existe = client.table('equipos_stats').select('equipo').eq('equipo', team_name).execute()
                             if existe.data:
+                                st.info(f"⏭️ {team_name} - ya existe")
                                 continue  # Ya existe
                         except:
                             pass
@@ -800,7 +804,7 @@ def render_login_form():
                                 }
                                 
                                 client.table('equipos_stats').upsert(data_stats, on_conflict='equipo').execute()
-                                st.info(f"✅ {team_name}")
+                                st.success(f"✅ {team_name}")
                                 
                         except Exception as e:
                             st.error(f"❌ Error {team_name}: {e}")
