@@ -23,10 +23,12 @@ EXPOSE 8501
 ENV STREAMLIT_SERVER_FILE_WATCHER_TYPE=none
 ENV STREAMLIT_SERVER_HEADLESS=true
 
-# Cargar variables de entorno desde .env si existe
-# (En producción estas variables vienen de Render Dashboard)
-RUN if [ -f /app/.env ]; then \
-    grep -v '^#' /app/.env | grep -v '^$' | sed 's/^/export /' >> /etc/bash.bashrc; \
+# Crear .env desde variables de entorno (Render las provee)
+# Si no están configuradas, usar valores por defecto (para desarrollo local)
+RUN if [ -n "$ADMIN_PASSWORD" ]; then \
+    echo "ADMIN_PASSWORD=$ADMIN_PASSWORD" > /app/.env; \
+    echo "SUPABASE_URL=$SUPABASE_URL" >> /app/.env; \
+    echo "SUPABASE_KEY=$SUPABASE_KEY" >> /app/.env; \
     fi
 
 # Comando - elite.py
