@@ -2605,7 +2605,7 @@ def render_login_form():
             if picks:
                 picks_filtrados = [
                     p for p in picks 
-                    if p.get('fecha') and fecha_inicio <= pd.to_datetime(p.get('fecha')) <= fecha_fin
+                    if p.get('fecha') and pd.Timestamp(fecha_inicio) <= pd.to_datetime(p.get('fecha')) <= pd.Timestamp(fecha_fin)
                 ]
                 
                 st.markdown(f"📊 **{len(picks_filtrados)} picks** en el período seleccionado")
