@@ -737,23 +737,23 @@ def render_login_form():
                             time.sleep(1)
                     
                     # ═══════════════════════════════════════════════════
-                    # PASO 2: Consultar ESTADÍSTICAS de equipos que juegan HOY y MAÑANA
+                    # PASO 2: Consultar ESTADÍSTICAS de equipos que juegan MAÑANA y PASADO MAÑANA
                     # ═══════════════════════════════════════════════════
-                    st.info("📊 PASO 2: Consultando estadísticas de equipos que juegan HOY y MAÑANA...")
+                    st.info("📊 PASO 2: Consultando estadísticas de equipos que juegan MAÑANA y PASADO MAÑANA...")
                     
-                    # Equipos que juegan HOY y MAÑANA
-                    fecha_hoy = hoy.strftime('%Y-%m-%d')
+                    # Equipos que juegan MAÑANA y PASADO MAÑANA
                     fecha_manana = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
+                    fecha_pasado = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
                     
                     try:
-                        response = client.table('partidos').select('*').in_('fecha', [fecha_hoy, fecha_manana]).execute()
-                        partidos_hoy_manana = response.data if response.data else []
+                        response = client.table('partidos').select('*').in_('fecha', [fecha_manana, fecha_pasado]).execute()
+                        partidos_proximos = response.data if response.data else []
                     except:
-                        partidos_hoy_manana = []
+                        partidos_proximos = []
                     
                     # Extraer equipos únicos
                     equipos_ids = set()
-                    for p in partidos_hoy_manana:
+                    for p in partidos_proximos:
                         if p.get('equipo_local_id'):
                             equipos_ids.add((p['equipo_local_id'], p['equipo_local'], p['liga']))
                         if p.get('equipo_visitante_id'):
