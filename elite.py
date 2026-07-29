@@ -595,7 +595,7 @@ def render_login_form():
     if is_admin:
         # Admin: ve todo
         menu_pages = [
-            ("📂 Carga", "Carga"),
+            ("🏠 Partidos", "Partidos"),
             ("📊 Analizador", "Analizador"),
             ("📈 Estadísticas", "Estadisticas"),
             ("👑 VIP", "VIP"),
@@ -603,8 +603,9 @@ def render_login_form():
             ("🔑 Claves", "Claves"),
         ]
     else:
-        # VIP: solo Analizador, Estadísticas, VIP
+        # VIP: solo Partidos, Analizador, Estadísticas, VIP
         menu_pages = [
+            ("🏠 Partidos", "Partidos"),
             ("📊 Analizador", "Analizador"),
             ("📈 Estadísticas", "Estadisticas"),
             ("👑 VIP", "VIP"),
@@ -623,171 +624,106 @@ def render_login_form():
     
     st.markdown("---")
 
-    # Página: Carga
-    if st.session_state.page == "Carga":
-        st.markdown("### 📂 Cargar archivos")
+    # Página: Partidos (NUEVA)
+    if st.session_state.page == "Partidos":
+        from partidos_manager import get_partidos_demo, get_stats_equipo
+        from analysis_models import calculate_poisson_probabilities
         
-        uploaded_file = st.file_uploader("", type=['xlsx', 'xls', 'csv'])
+        st.markdown("### 🏠 Partidos de los Próximos 7 Días")
         
-        if uploaded_file:
-            try:
-                # Leer archivo
-                if uploaded_file.name.endswith('.csv'):
-                    df_raw = pd.read_csv(uploaded_file, header=None)
-                else:
-                    df_raw = pd.read_excel(uploaded_file, header=None)
+        # Mostrar fecha actual
+        from datetime import date
+        hoy = date.today()
+        st.info(f"📅 Fecha actual: {hoy.strftime('%d/%m/%Y')} | Partidos: {len(get_partidos_demo())}")
+        
+        # Obtener partidos demo
+        partidos = get_partidos_demo()
+        
+        # Filtros
+        col_f1, col_f2 = st.columns(2)
+        with col_f1:
+            filtro_liga = st.selectbox("🏆 Filtrar por liga", ["Todas"] + list(set([p["liga"] for p in partidos])))
+        with col_f2:
+            filtro_fecha = st.selectbox("📅 Filtrar por fecha", ["Todas"] + list(set([p["fecha"] for p in partidos])))
+        
+        # Filtrar partidos
+        partidos_filtrados = partidos
+        if filtro_liga != "Todas":
+            partidos_filtrados = [p for p in partidos_filtrados if p["liga"] == filtro_liga]
+        if filtro_fecha != "Todas":
+            partidos_filtrados = [p for p in partidos_filtrados if p["fecha"] == filtro_fecha]
+        
+        st.markdown(f"**📊 {len(partidos_filtrados)} partidos encontrados**")
+        
+        # Mostrar cada partido
+        for partido in partidos_filtrados:
+            with st.container():
+                st.markdown("---")
                 
-                st.success(f"Archivo cargado: {uploaded_file.name} ({len(df_raw)} filas)")
+                # Header del partido
+                col_h1, col_h2, col_h3 = st.columns([2, 1, 2])
+                with col_h1:
+                    st.markdown(f"### ⚽ {partido['equipo_local']}")
+                with col_h2:
+                    st.markdown(f"### VS")
+                    st.markdown(f"⏰ {partido['hora']}")
+                with col_h3:
+                    st.markdown(f"### {partido['equipo_visitante']} ⚽")
                 
-                # Parsear datos
-                with st.spinner("Procesando datos..."):
-                    df_partidos = parse_flashscore_excel(df_raw)
+                # Info del partido
+                col_i1, col_i2, col_i3 = st.columns(3)
+                with col_i1:
+                    st.markdown(f"🏆 **{partido['liga']}**")
+                with col_i2:
+                    st.markdown(f"📅 {partido['fecha']}")
+                with col_i3:
+                    st.markdown(f"🌍 {partido['pais']}")
                 
-                if not df_partidos.empty:
-                    st.session_state.df_partidos = df_partidos
-                    
-                    # Guardar equipos del Excel actual para buscarlos después
-                    equipos_excel = set()
-                    for _, row in df_partidos.iterrows():
-                        if pd.notna(row.get('equipo_local')):
-                            equipos_excel.add(row['equipo_local'])
-                        if pd.notna(row.get('equipo_visitante')):
-                            equipos_excel.add(row['equipo_visitante'])
-                    st.session_state.equipos_excel_actual = sorted(list(equipos_excel))
-                    st.info(f"📋 {len(equipos_excel)} equipos guardados para búsqueda: {', '.join(sorted(equipos_excel)[:10])}{'...' if len(equipos_excel) > 10 else ''}")
-                    
-                    # Mostrar errores de validación
-                    df_validated, errors = validate_matches(df_partidos)
-                    
-                    if errors:
-                        with st.expander("⚠️ Errores detectados"):
-                            for err in errors[:10]:
-                                st.warning(err)
-                    
-                    # Previsualización
-                    st.markdown(f"### 📋 Previsualización ({len(df_partidos)} partidos)")
-                    
-                    # Mostrar dataframe
-                    st.dataframe(
-                        df_partidos[['fecha', 'hora', 'pais', 'liga', 'equipo_local', 'equipo_visitante']],
-                        use_container_width=True,
-                        height=400
+                # Stats de ambos equipos
+                col_s1, col_s2 = st.columns(2)
+                
+                with col_s1:
+                    st.markdown(f"#### 📊 {partido['equipo_local']}")
+                    stats_l = partido['stats_local']
+                    st.markdown(f"- **PJ:** {stats_l['partidos_jugados']} | **V:** {stats_l['victorias']} | **E:** {stats_l['empates']} | **D:** {stats_l['derrotas']}")
+                    st.markdown(f"- **GF:** {stats_l['goles_favor']} | **GC:** {stats_l['goles_contra']}")
+                    st.markdown(f"- **λ Local:** {stats_l['lambda_local']} | **λ Visitante:** {stats_l['lambda_visitante']}")
+                    st.markdown(f"- **Corners:** {stats_l['corners_promedio']}/part | **Tarjetas:** {stats_l['tarjetas_promedio']}/part")
+                    st.markdown(f"- **Forma:** {' '.join([f'`{r}`' for r in stats_l['forma']])}")
+                
+                with col_s2:
+                    st.markdown(f"#### 📊 {partido['equipo_visitante']}")
+                    stats_v = partido['stats_visitante']
+                    st.markdown(f"- **PJ:** {stats_v['partidos_jugados']} | **V:** {stats_v['victorias']} | **E:** {stats_v['empates']} | **D:** {stats_v['derrotas']}")
+                    st.markdown(f"- **GF:** {stats_v['goles_favor']} | **GC:** {stats_v['goles_contra']}")
+                    st.markdown(f"- **λ Local:** {stats_v['lambda_local']} | **λ Visitante:** {stats_v['lambda_visitante']}")
+                    st.markdown(f"- **Corners:** {stats_v['corners_promedio']}/part | **Tarjetas:** {stats_v['tarjetas_promedio']}/part")
+                    st.markdown(f"- **Forma:** {' '.join([f'`{r}`' for r in stats_v['forma']])}")
+                
+                # Análisis rápido con Poisson
+                try:
+                    probs = calculate_poisson_probabilities(
+                        stats_l['lambda_local'], 
+                        stats_v['lambda_visitante']
                     )
                     
-                    # Botones de Supabase
-                    col_guardar, col_borrar = st.columns(2)
-                    with col_guardar:
-                        if st.button("✅ Guardar en Supabase", type="primary", use_container_width=True):
-                            with st.spinner("Guardando..."):
-                                try:
-                                    client = get_client()
-                                    
-                                    guardados = 0
-                                    errores = 0
-                                    for _, row in df_partidos.iterrows():
-                                        # Incluir fecha en el fixture_id para que sea único
-                                        fecha_str = str(row['fecha']) if pd.notna(row['fecha']) else ''
-                                        data = {
-                                            'fixture_id': int(hashlib.md5(f"{fecha_str}{row['equipo_local']}{row['equipo_visitante']}".encode()).hexdigest(), 16) % (10**10),
-                                            'fecha': row['fecha'],
-                                            'hora': row['hora'],
-                                            'liga': row['liga'],
-                                            'pais': row['pais'],
-                                            'equipo_local': row['equipo_local'],
-                                            'equipo_visitante': row['equipo_visitante']
-                                        }
-                                        try:
-                                            result = client.table('partidos').upsert(data, on_conflict='fixture_id').execute()
-                                            guardados += 1
-                                        except Exception as e:
-                                            errores += 1
-                                            st.warning(f"Error en {row['equipo_local']}: {str(e)[:50]}")
-                                    
-                                    if guardados > 0:
-                                        st.success(f"✅ {guardados} partidos guardados")
-                                    if errores > 0:
-                                        st.warning(f"⚠️ {errores} errores")
-                                    
-                                    st.session_state.df_partidos = None
-                                    
-                                except Exception as e:
-                                    st.error(f"Error de conexión: {str(e)[:100]}")
-                    with col_borrar:
-                        if st.button("🗑️ Borrar todos", type="secondary", use_container_width=True):
-                            client = get_client()
-                            client.table('partidos').delete().neq('id', 0).execute()
-                            st.session_state.partidos_deleted = True
-                            st.rerun()
-                    
-                    # ==================== OPCIONES DE BORRADO AVANZADO ====================
-                    with st.expander("🗑️ Opciones de Borrado"):
-                        col_del1, col_del2 = st.columns(2)
-                        
-                        with col_del1:
-                            st.markdown("##### 📅 Borrar por Fecha")
-                            try:
-                                client = get_client()
-                                response = client.table('partidos').select('fecha').execute()
-                                if response.data:
-                                    fechas_unicas = sorted(set([p['fecha'] for p in response.data]))
-                                    fecha_seleccionada = st.selectbox("Seleccionar fecha", options=[""] + fechas_unicas, key="fecha_borrar")
-                                    if fecha_seleccionada and st.button("🗑️ Borrar fecha", key="btn_borrar_fecha"):
-                                        try:
-                                            client.table('partidos').delete().eq('fecha', fecha_seleccionada).execute()
-                                            st.success(f"✅ Partidos del {fecha_seleccionada} eliminados")
-                                            st.rerun()
-                                        except Exception as e:
-                                            st.error(f"Error: {e}")
-                            except Exception as e:
-                                st.error(f"No se pudo cargar fechas: {e}")
-                        
-                        with col_del2:
-                            st.markdown("##### 🏆 Borrar por Liga")
-                            try:
-                                response = client.table('partidos').select('liga').execute()
-                                if response.data:
-                                    ligas_unicas = sorted(set([p['liga'] for p in response.data if p.get('liga')]))
-                                    liga_seleccionada = st.selectbox("Seleccionar liga", options=[""] + ligas_unicas, key="liga_borrar")
-                                    if liga_seleccionada and st.button("🗑️ Borrar liga", key="btn_borrar_liga"):
-                                        try:
-                                            client.table('partidos').delete().eq('liga', liga_seleccionada).execute()
-                                            st.success(f"✅ Partidos de {liga_seleccionada} eliminados")
-                                            st.rerun()
-                                        except Exception as e:
-                                            st.error(f"Error: {e}")
-                            except Exception as e:
-                                st.error(f"No se pudo cargar ligas: {e}")
-                        
-                        # Borrar partido individual (en la previsualización)
-                        st.markdown("##### ❌ Borrar Partidos Individuales")
-                        st.caption("Selecciona los partidos que quieres eliminar de la previsualización antes de guardar")
-                        
-                        # Crear lista de partidos seleccionados para borrar
-                        if 'partidos_para_borrar' not in st.session_state:
-                            st.session_state.partidos_para_borrar = set()
-                        
-                        partidos_list = []
-                        for idx, row in df_partidos.iterrows():
-                            key = f"del_{idx}"
-                            checkbox_val = st.checkbox(
-                                f"❌ {row['fecha']} | {row['equipo_local']} vs {row['equipo_visitante']}", 
-                                key=key
-                            )
-                            if checkbox_val:
-                                partidos_list.append(idx)
-                        
-                        if st.button("🗑️ Eliminar seleccionados", type="secondary"):
-                            df_partidos_filtrado = df_partidos.drop(partidos_list)
-                            if len(df_partidos_filtrado) < len(df_partidos):
-                                st.session_state.df_partidos = df_partidos_filtrado
-                                st.success(f"✅ {len(partidos_list)} partido(s) eliminado(s)")
-                                st.rerun()
-                else:
-                    st.warning("No se encontraron partidos en el archivo")
-                    
-            except Exception as e:
-                st.error(f"Error al leer archivo: {str(e)}")
-    
+                    col_a1, col_a2, col_a3 = st.columns(3)
+                    with col_a1:
+                        st.markdown(f"### 🥇 {partido['equipo_local']}")
+                        st.markdown(f"**{probs['local_win']*100:.1f}%**")
+                    with col_a2:
+                        st.markdown(f"### 🤝 Empate")
+                        st.markdown(f"**{probs['draw']*100:.1f}%**")
+                    with col_a3:
+                        st.markdown(f"### {partido['equipo_visitante']} 🥇")
+                        st.markdown(f"**{probs['away_win']*100:.1f}%**")
+                except:
+                    pass
+        
+        # Nota sobre datos demo
+        st.markdown("---")
+        st.info("📌 **NOTA:** Estos son partidos de demostración. La integración con API real se implementará pronto.")
+        
     # Página: Analizador
     elif st.session_state.page == "Analizador":
         pass  # Sin título
