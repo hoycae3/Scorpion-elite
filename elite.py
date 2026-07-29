@@ -688,6 +688,70 @@ def render_login_form():
                             client.table('partidos').delete().neq('id', 0).execute()
                             st.session_state.partidos_deleted = True
                             st.rerun()
+                    
+                    # ==================== OPCIONES DE BORRADO AVANZADO ====================
+                    with st.expander("🗑️ Opciones de Borrado"):
+                        col_del1, col_del2 = st.columns(2)
+                        
+                        with col_del1:
+                            st.markdown("##### 📅 Borrar por Fecha")
+                            try:
+                                client = get_client()
+                                response = client.table('partidos').select('fecha').execute()
+                                if response.data:
+                                    fechas_unicas = sorted(set([p['fecha'] for p in response.data]))
+                                    fecha_seleccionada = st.selectbox("Seleccionar fecha", options=[""] + fechas_unicas, key="fecha_borrar")
+                                    if fecha_seleccionada and st.button("🗑️ Borrar fecha", key="btn_borrar_fecha"):
+                                        try:
+                                            client.table('partidos').delete().eq('fecha', fecha_seleccionada).execute()
+                                            st.success(f"✅ Partidos del {fecha_seleccionada} eliminados")
+                                            st.rerun()
+                                        except Exception as e:
+                                            st.error(f"Error: {e}")
+                            except Exception as e:
+                                st.error(f"No se pudo cargar fechas: {e}")
+                        
+                        with col_del2:
+                            st.markdown("##### 🏆 Borrar por Liga")
+                            try:
+                                response = client.table('partidos').select('liga').execute()
+                                if response.data:
+                                    ligas_unicas = sorted(set([p['liga'] for p in response.data if p.get('liga')]))
+                                    liga_seleccionada = st.selectbox("Seleccionar liga", options=[""] + ligas_unicas, key="liga_borrar")
+                                    if liga_seleccionada and st.button("🗑️ Borrar liga", key="btn_borrar_liga"):
+                                        try:
+                                            client.table('partidos').delete().eq('liga', liga_seleccionada).execute()
+                                            st.success(f"✅ Partidos de {liga_seleccionada} eliminados")
+                                            st.rerun()
+                                        except Exception as e:
+                                            st.error(f"Error: {e}")
+                            except Exception as e:
+                                st.error(f"No se pudo cargar ligas: {e}")
+                        
+                        # Borrar partido individual (en la previsualización)
+                        st.markdown("##### ❌ Borrar Partidos Individuales")
+                        st.caption("Selecciona los partidos que quieres eliminar de la previsualización antes de guardar")
+                        
+                        # Crear lista de partidos seleccionados para borrar
+                        if 'partidos_para_borrar' not in st.session_state:
+                            st.session_state.partidos_para_borrar = set()
+                        
+                        partidos_list = []
+                        for idx, row in df_partidos.iterrows():
+                            key = f"del_{idx}"
+                            checkbox_val = st.checkbox(
+                                f"❌ {row['fecha']} | {row['equipo_local']} vs {row['equipo_visitante']}", 
+                                key=key
+                            )
+                            if checkbox_val:
+                                partidos_list.append(idx)
+                        
+                        if st.button("🗑️ Eliminar seleccionados", type="secondary"):
+                            df_partidos_filtrado = df_partidos.drop(partidos_list)
+                            if len(df_partidos_filtrado) < len(df_partidos):
+                                st.session_state.df_partidos = df_partidos_filtrado
+                                st.success(f"✅ {len(partidos_list)} partido(s) eliminado(s)")
+                                st.rerun()
                 else:
                     st.warning("No se encontraron partidos en el archivo")
                     
