@@ -1949,24 +1949,47 @@ def render_login_form():
         # Mostrar equipos del Excel actual
         equipos_excel = st.session_state.get('equipos_excel_actual', [])
         if equipos_excel:
-            st.info(f"📋 Equipos del Excel actual: {len(equipos_excel)} - {', '.join(equipos_excel[:15])}{'...' if len(equipos_excel) > 15 else ''}")
+            st.info(f"📋 Equipos del Excel actual: {len(equipos_excel)} - {', '.join(equipos_excel[:10])}{'...' if len(equipos_excel) > 10 else ''}")
         else:
             st.warning("⚠️ No hay equipos del Excel actual. Sube un Excel en la pestaña 'Carga' primero.")
         
-        if st.button("🔄 Buscar Equipos del Excel", type="primary", use_container_width=True, disabled=not equipos_excel):
-            with st.spinner("Buscando equipos..."):
-                try:
-                    # Usar equipos del Excel actual (guardados en session_state)
-                    equipos = equipos_excel
+        # Limitar a máximo 10 equipos para evitar timeout
+        MAX_EQUIPOS_POR_BUSQUEDA = 10
+        
+        col_buscar1, col_buscar2 = st.columns([3, 1])
+        with col_buscar1:
+            if equipos_excel and len(equipos_excel) > MAX_EQUIPOS_POR_BUSQUEDA:
+                st.warning(f"⚠️ Limitado a {MAX_EQUIPOS_POR_BUSQUEDA} de {len(equipos_excel)} equipos")
+        
+        with col_buscar2:
+            if st.button("🔄 Buscar", type="primary", disabled=not equipos_excel, help=f"Busca hasta {MAX_EQUIPOS_POR_BUSQUEDA} equipos"):
+                with st.spinner("Buscando equipos..."):
+                    # Limitar equipos a buscar
+                    equipos = equipos_excel[:MAX_EQUIPOS_POR_BUSQUEDA]
                     
                     if not equipos:
-                        st.warning("⚠️ No hay equipos para buscar. Sube un Excel primero.")
+                        st.warning("⚠️ No hay equipos para buscar.")
                     else:
-                        st.info(f"📊 {len(equipos)} equipos a buscar: {', '.join(equipos)}")
+                        st.info(f"📊 Buscando {len(equipos)} equipos...")
                         
-                        # Buscar todos con el robot
-                        with st.spinner("🤖 Buscando en football-data y Soccerway..."):
+                        # Buscar con timeout de 60 segundos
+                        import signal
+                        def timeout_handler(signum, frame):
+                            raise TimeoutError("Tiempo agotado")
+                        
+                        signal.signal(signal.SIGALRM, timeout_handler)
+                        signal.alarm(60)
+                        
+                        try:
                             results = run_robot_batch(equipos)
+                            signal.alarm(0)
+                        except TimeoutError:
+                            st.error("⏱️ La búsqueda tardó demasiado. Intenta de nuevo.")
+                            results = []
+                        except Exception as e:
+                            signal.alarm(0)
+                            logger.error(f"Error en búsqueda: {e}")
+                            results = []
                         
                         # Clasificar resultados
                         con_stats = [r for r in results if r.get('encontrado') and not r.get('sin_estadisticas')]
@@ -1974,105 +1997,57 @@ def render_login_form():
                         no_encontrados = [r for r in results if not r.get('encontrado')]
                         
                         # Resumen
-                        st.success(f"✅ **Resumen:** {len(con_stats)} con stats | {len(sin_stats)} sin stats | {len(no_encontrados)} no encontrados")
+                        st.success(f"✅ **{len(con_stats)}** con stats | **{len(no_encontrados)}** no encontrados")
                         
-                        # Mostrar equipos ENCONTRADOS con estadísticas
+                        # Mostrar equipos ENCONTRADOS
                         if con_stats:
-                            st.markdown("### 📊 Equipos con estadísticas reales")
+                            st.markdown("#### 📊 Equipos con estadísticas")
                             for r in con_stats:
                                 fuente = r.get('fuentes_probadas', ['?'])[-1]
-                                fuente_icono = "🌐" if 'football' in fuente.lower() else ("🔷" if 'api' in fuente.lower() else ("📊" if 'WhoScored' in fuente else "📈"))
+                                fuente_icono = "🌐" if 'football' in fuente.lower() else ("📈" if 'soccerway' in fuente.lower() else "🔷")
                                 st.markdown(f"- **{r.get('equipo_real', r['equipo'])}** ({r.get('liga', 'N/A')}) {fuente_icono}")
-                                st.markdown(f"  `λL={r.get('lambda_local', 0):.2f} | λV={r.get('lambda_visitante', 0):.2f} | PJ={r.get('partidos_jugados', 0)}`")
                         
-                        # Mostrar equipos SIN estadísticas (NO encontrados)
+                        # Mostrar equipos NO encontrados
                         if no_encontrados:
-                            st.warning(f"❌ **{len(no_encontrados)} equipos NO encontrados en ninguna fuente:**")
-                            for r in no_encontrados:
-                                st.markdown(f"- {r['equipo']}")
-                            st.info("💡 Estos equipos no están en football-data ni en API-Football")
+                            with st.expander(f"❌ {len(no_encontrados)} equipos no encontrados"):
+                                for r in no_encontrados:
+                                    st.markdown(f"- {r['equipo']}")
                         
-                        # Guardar estadísticas en Supabase
+                        # Guardar en Supabase
                         if con_stats:
-                            st.info("💾 Guardando estadísticas en Supabase...")
-                            guardados = 0
-                            errores = 0
-                            for r in con_stats:
-                                try:
-                                    equipo_nombre = r.get('equipo_real', r['equipo'])
-                                    fuente = r.get('fuentes_probadas', ['football-data.co.uk'])[-1]
-                                    
-                                    # Determinar fuente de datos
-                                    if 'football-data' in fuente:
-                                        source_fbdata = True
-                                        source_whoscored = False
-                                        source_fbref = False
-                                    elif 'WhoScored' in fuente:
-                                        source_fbdata = False
-                                        source_whoscored = True
-                                        source_fbref = False
-                                    elif 'FBref' in fuente:
-                                        source_fbdata = False
-                                        source_whoscored = False
-                                        source_fbref = True
-                                    else:
-                                        source_fbdata = True
-                                        source_whoscored = False
-                                        source_fbref = False
-                                    
-                                    data = {
-                                        'equipo': equipo_nombre,
-                                        'liga': r.get('liga', 'Desconocida'),
-                                        'temporada': '2024-25',
-                                        'partidos_jugados': r.get('partidos_jugados', 0) or 0,
-                                        'victorias': r.get('victorias', 0) or 0,
-                                        'empates': r.get('empates', 0) or 0,
-                                        'derrotas': r.get('derrotas', 0) or 0,
-                                        'goles_favor': r.get('goles_favor', 0) or 0,
-                                        'goles_contra': r.get('goles_contra', 0) or 0,
-                                        'lambda_local': float(r.get('lambda_local', 1.3)) or 1.3,
-                                        'lambda_visitante': float(r.get('lambda_visitante', 1.1)) or 1.1,
-                                        # Stats avanzados
-                                        'promedio_tiros': float(r.get('tiros_promedio', 12)) or 12,
-                                        'promedio_tiros_arco': float(r.get('tiros_arco_promedio', 4)) or 4,
-                                        'promedio_corners_total': float(r.get('corners_promedio', 10)) or 10,
-                                        'promedio_amarillas': float(r.get('tarjetas_promedio', 3)) or 3,
-                                        # Fuentes de datos
-                                        'source_fbdata': source_fbdata,
-                                        'source_whoscored': source_whoscored,
-                                        'source_fbref': source_fbref,
-                                        # Últimos 5 partidos (temporalmente omitido para evitar errores)
-                                        # 'ultimos_5_partidos': r.get('ultimos_5_partidos', []),
-                                    }
-                                    
-                                    # Primero verificar si existe y actualizar, o crear nuevo
+                            with st.spinner("💾 Guardando en Supabase..."):
+                                client = get_client()
+                                guardados = 0
+                                for r in con_stats:
                                     try:
-                                        # Intentar insertar (si existe con mismo equipo, fallará)
-                                        client.table('equipos_stats').insert(data).execute()
-                                    except Exception as insert_error:
-                                        # Si falla (ya existe), intentar actualizar
+                                        equipo_nombre = r.get('equipo_real', r['equipo'])
+                                        data = {
+                                            'equipo': equipo_nombre,
+                                            'liga': r.get('liga', 'Desconocida'),
+                                            'temporada': '2024-25',
+                                            'partidos_jugados': r.get('partidos_jugados', 0) or 0,
+                                            'victorias': r.get('victorias', 0) or 0,
+                                            'empates': r.get('empates', 0) or 0,
+                                            'derrotas': r.get('derrotas', 0) or 0,
+                                            'goles_favor': r.get('goles_favor', 0) or 0,
+                                            'goles_contra': r.get('goles_contra', 0) or 0,
+                                            'lambda_local': float(r.get('lambda_local', 1.3)) or 1.3,
+                                            'lambda_visitante': float(r.get('lambda_visitante', 1.1)) or 1.1,
+                                            'promedio_tiros': float(r.get('tiros_promedio', 12)) or 12,
+                                            'promedio_tiros_arco': float(r.get('tiros_arco_promedio', 4)) or 4,
+                                            'promedio_corners_total': float(r.get('corners_promedio', 10)) or 10,
+                                            'promedio_amarillas': float(r.get('tarjetas_promedio', 3)) or 3,
+                                        }
                                         try:
+                                            client.table('equipos_stats').insert(data).execute()
+                                        except:
                                             client.table('equipos_stats').update(data).eq('equipo', equipo_nombre).execute()
-                                        except Exception as update_error:
-                                            errores += 1
-                                            continue
-                                    
-                                    guardados += 1
-                                except Exception as e:
-                                    errores += 1
-                                    logger.error(f"Error guardando {r.get('equipo')}: {e}")
-                            
-                            if guardados > 0:
-                                st.success(f"✅ {guardados} estadísticas guardadas/actualizadas en Supabase")
-                            if errores > 0:
-                                st.warning(f"⚠️ {errores} equipos no se pudieron guardar")
-                            if guardados == 0 and errores == 0:
-                                st.info("ℹ️ No se encontraron estadísticas para guardar")
+                                        guardados += 1
+                                    except Exception as e:
+                                        logger.error(f"Error guardando {r.get('equipo')}: {e}")
                                 
-                except Exception as e:
-                    st.error(f"Error: {str(e)}")
-                    import traceback
-                    st.code(traceback.format_exc())
+                            if guardados > 0:
+                                st.success(f"✅ {guardados} estadísticas guardadas")
         
         st.markdown("---")
         st.markdown("### 📋 Equipos Guardados")
