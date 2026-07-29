@@ -597,7 +597,7 @@ def render_login_form():
         menu_pages = [
             ("🏠 Partidos", "Partidos"),
             ("📊 Analizador", "Analizador"),
-            ("👑 VIP", "VIP"),
+            ("💰 Picks", "VIP"),
             ("📉 Dashboard", "Dashboard"),
             ("🔑 Claves", "Claves"),
         ]
@@ -606,7 +606,7 @@ def render_login_form():
         menu_pages = [
             ("🏠 Partidos", "Partidos"),
             ("📊 Analizador", "Analizador"),
-            ("👑 VIP", "VIP"),
+            ("💰 Picks", "VIP"),
         ]
     
     # Crear columnas dinámicamente
