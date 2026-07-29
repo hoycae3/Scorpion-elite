@@ -477,25 +477,24 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
                     break
             
             if home and away and home != away and len(home) > 1 and len(away) > 1:
-                # Verificar si la liga es un torneo internacional
-                liga_lower = current_liga.lower() if current_liga else ""
-                internacional = any(palabra in liga_lower for palabra in [
-                    'copa colombia', 'copa libertadores', 'copa sudamericana', 
-                    'copa america', 'champions league', 'uefa', 'conmebol',
-                    'euro', 'mundial', 'libertadores', 'sudamericana'
-                ])
+                # Verificar países de los equipos
+                pais_home = extract_pais_from_team(home)
+                pais_away = extract_pais_from_team(away)
                 
-                if internacional:
-                    # Torneos internacionales: país vacío
+                # Si los equipos son de diferentes países → es torneo internacional
+                es_internacional = False
+                if pais_home and pais_away and pais_home != pais_away:
+                    es_internacional = True
+                    current_liga = "Copa Sudamericana"
                     current_pais = ""
-                elif not current_pais or current_pais == "":
-                    # Torneos locales - extraer país de los equipos
-                    pais_from_home = extract_pais_from_team(home)
-                    pais_from_away = extract_pais_from_team(away)
-                    if pais_from_away:
-                        current_pais = pais_from_away
-                    elif pais_from_home:
-                        current_pais = pais_from_home
+                
+                if not es_internacional:
+                    # Torneos locales - mantener país
+                    if not current_pais or current_pais == "":
+                        if pais_away:
+                            current_pais = pais_away
+                        elif pais_home:
+                            current_pais = pais_home
                 
                 matches.append({
                     'fecha': fecha_del_dia,
