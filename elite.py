@@ -1047,6 +1047,10 @@ def render_login_form():
                     
                     st.session_state.remates_over_prob = min(90, max(10, 50 + (remates_total - 24) * 2))
                     st.session_state.tarjetas_over_prob = min(90, max(10, 50 + (tarjetas_total - 6) * 5))
+            else:
+                st.warning(f"⚠️ No se encontraron estadísticas para {local_nombre} o {visitante_nombre}")
+                st.info("💡 Ve a 'Estadísticas' para buscar los equipos primero.")
+                st.stop()  # No continuar
         
         
         
