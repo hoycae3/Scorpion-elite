@@ -1548,7 +1548,357 @@ def render_login_form():
     elif st.session_state.page == "Estadisticas":
         st.markdown("### 📈 Estadísticas")
         
-        # Sección: Robot automático
+        # ==================== BUSCADOR DE EQUIPOS ====================
+        st.markdown("### 🔍 Buscar Equipo con Robot")
+        
+        # Lista de equipos por liga
+        EQUIPOS_POR_LIGA = {
+            "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra - Premier League": [
+                "Arsenal", "Aston Villa", "Bournemouth", "Brentford", "Brighton",
+                "Burnley", "Chelsea", "Crystal Palace", "Everton", "Fulham",
+                "Liverpool", "Luton Town", "Manchester City", "Manchester United", "Newcastle United",
+                "Nottingham Forest", "Sheffield United", "Tottenham", "West Ham", "Wolverhampton"
+            ],
+            "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra - Championship": [
+                "Birmingham City", "Blackburn Rovers", "Blackpool", "Bristol City", "Cardiff City",
+                "Coventry City", "Huddersfield Town", "Hull City", "Leicester City", "Leeds United",
+                "Middlesbrough", "Millwall", "Norwich City", "Plymouth Argyle", "Preston North End",
+                "Queens Park Rangers", "Rotherham United", "Sheffield Wednesday", "Southampton", "Stoke City",
+                "Sunderland", "Swansea City", "Watford", "West Bromwich Albion"
+            ],
+            "🇪🇸 España - La Liga": [
+                "Alavés", "Almería", "Athletic Bilbao", "Atlético Madrid", "Barcelona",
+                "Cádiz", "Celta Vigo", "Getafe", "Girona", "Granada",
+                "Las Palmas", "Mallorca", "Osasuna", "Rayo Vallecano", "Real Betis",
+                "Real Madrid", "Real Sociedad", "Sevilla", "Valencia", "Villarreal"
+            ],
+            "🇪🇸 España - Segunda División": [
+                "Albacete", "Alcorcón", "Amorebieta", "Burgos", "Cartagena",
+                "Córdoba", "Deportivo La Coruña", "Eibar", "Elche", "Espanyol",
+                "Huesca", "Ibiza", "Levante", "Lugo", "Mirandés",
+                "Oviedo", "Racing Santander", "Racing Ferrol", "Real Valladolid", "Sporting Gijón",
+                "Tenerife", "Zaragoza"
+            ],
+            "🇮🇹 Italia - Serie A": [
+                "Atalanta", "Bologna", "Cagliari", "Empoli", "Fiorentina",
+                "Frosinone", "Genoa", "Inter Milan", "Juventus", "Lazio",
+                "Lecce", "Milan", "Monza", "Napoli", "Roma",
+                "Salernitana", "Sassuolo", "Torino", "Udinese", "Verona"
+            ],
+            "🇮🇹 Italia - Serie B": [
+                "Ascoli", "Brescia", "Cittadella", "Cosenza", "Cremonese",
+                "FeralpiSalò", "Frosinone", "Genoa", "Modena", "Parma",
+                "Pisa", "Pordenone", "Reggina", "Sampdoria", "Spezia",
+                "Südtirol", "Ternana", "Tobar", "Venezia", "Vicenza"
+            ],
+            "🇩🇪 Alemania - Bundesliga": [
+                "Augsburg", "Bayern Munich", "Bochum", "Dortmund", "Eintracht Frankfurt",
+                "Freiburg", "Heidenheim", "Hertha Berlin", "Hoffenheim", "Köln",
+                "Leverkusen", "Mönchengladbach", "RB Leipzig", "Schalke", "Stuttgart",
+                "Union Berlin", "Werder Bremen", "Wolfsburg"
+            ],
+            "🇩🇪 Alemania - 2. Bundesliga": [
+                "Braunschweig", "Düsseldorf", "Elversberg", "Erzgebirge Aue", "Greuther Fürth",
+                "Hamburger SV", "Hannover", "Hans Lüneburg", "Heidenheim", "Holstein Kiel",
+                "Kaiserslautern", "Karlsruher", "Magdeburg", "Nürnberg", "Osnabrück",
+                "Paderborn", "Rostock", "Schalke", "Wehen Wiesbaden", "Magdeburg"
+            ],
+            "🇫🇷 Francia - Ligue 1": [
+                "Brest", "Clermont", "Le Havre", "Lille", "Lorient",
+                "Lyon", "Marseille", "Metz", " Monaco", "Montpellier",
+                "Nantes", "Nice", "Paris Saint-Germain", "Reims", "Rennes",
+                "Strasbourg", "Toulouse", "Lens"
+            ],
+            "🇫🇷 Francia - Ligue 2": [
+                "Amiens", "Annecy", "Auxerre", "Bordeaux", "Caen",
+                "Concarneau", "Dijon", "Grenoble", "Guingamp", "Laval",
+                "Le Havre", "Lorient", "Martigues", "Nancy", "Niort",
+                "Paris FC", "Rodez", "Saint-Étienne", "Sochaux", "Troyes"
+            ],
+            "🇵🇹 Portugal - Primeira Liga": [
+                "Arouca", "Benfica", "Boavista", "Braga", "Casa Pia",
+                "Chaves", "Estrela da Amadora", "Famalicao", "Gil Vicente", "Moreirense",
+                "Porto", "Rio Ave", "Santa Clara", "Sporting CP", "Vizela",
+                "Vitoria Guimaraes", "Vitoria Setubal"
+            ],
+            "🇳🇱 Países Bajos - Eredivisie": [
+                "Ajax", "AZ Alkmaar", "Excelsior", "Feyenoord", "Fortuna Sittard",
+                "Go Ahead Eagles", "Groningen", "Heerenveen", "NEC Nijmegen", "PSV Eindhoven",
+                "RKC Waalwijk", "Sparta Rotterdam", "Twente", "Utrecht", "Vitesse",
+                "Volendam", "Zwolle"
+            ],
+            "🇧🇪 Bélgica - Pro League": [
+                "Anderlecht", "Antwerp", "Beerschot", "Cercle Brugge", "Charleroi",
+                "Club Brugge", "Eupen", "Gent", "Genk", "Kortrijk",
+                "Leuven", "Lierse", "Lokeren", "Mechelen", "Oostende",
+                "Royal Antwerp", "Sint-Truiden", "Standard Liège", "Westerlo", "Zulte Waregem"
+            ],
+            "🇧🇷 Brasil - Brasileirão": [
+                "Athletico-PR", "Atlético Mineiro", "Bahia", "Botafogo", "Bragantino",
+                "Corinthians", "Coritiba", "Cruzeiro", "Cuiabá", "Flamengo",
+                "Fluminense", "Fortaleza", "Goiás", "Grêmio", "Internacional",
+                "Palmeiras", "Santos", "São Paulo", "Sport Recife", "Vasco da Gama"
+            ],
+            "🇦🇷 Argentina - Liga Profesional": [
+                "Argentinos Juniors", "Armando", "Atlético Tucumán", "Banfield", "Barracas Central",
+                "Boca Juniors", "Central Córdoba", "Club Atlético Lanús", "Defensa y Justicia", "Estudiantes",
+                "Godoy Cruz", "Huracán", "Independiente", "Independiente Rivadavia", "Instituto",
+                "Newell's Old Boys", "Platense", "Racing Club", "River Plate", "Rosario Central",
+                "San Lorenzo", "Sarmiento", "Talleres", "Tigre", "Unión Santa Fe",
+                "Vélez Sarsfield"
+            ],
+            "🇺🇾 Uruguay - Primera División": [
+                "Boston River", "Cerro Largo", "Cerro", "Club Atlético Peñarol", "Danubio",
+                "Defensor Sporting", "Deportivo Maldonado", "Fénix", "Liverpool Montevideo", "Nacional",
+                "Plaza Colonia", "Progreso", "Racing Club Montevideo", "Rentistas", "River Plate Montevideo",
+                "Sportivo Luqueño", "Torque", "Villa Española", "Wanderers"
+            ],
+            "🇨🇱 Chile - Primera División": [
+                "Audax Italiano", "Cobresal", "Colo-Colo", "Coquimbo Unido", "Curicó Unido",
+                "Deportes Iquique", "Deportes Santa Cruz", "Deportivo Antofagasta", "Deportivo Maipú", "Everton",
+                "Huachipato", "La Calera", "Magallanes", "Nublense", "O'Higgins",
+                "Palestino", "Puerto Montt", "San Luis", "Santiago Morning", "Unión Española",
+                "Unión La Calera", "Universidad Católica", "Universidad de Chile", "Universidad de Concepción", "Vallenar"
+            ],
+            "🇲🇽 México - Liga MX": [
+                "América", "Atlas", "Cruz Azul", "Chivas", "FC Juárez",
+                "León", "Mazatlán", "Monterrey", "Necaxa", "Pachuca",
+                "Puebla", "Querétaro", "San Luis", "Santos Laguna", "Tigres UANL",
+                "Toluca", "Torreón", "Universidad Nacional", "Xolos"
+            ],
+            "🇺🇸 Estados Unidos - MLS": [
+                "Atlanta United", "Austin FC", "Charlotte FC", "Chicago Fire", "FC Cincinnati",
+                "Colorado Rapids", "Columbus Crew", "D.C. United", "Dallas", "Houston Dynamo",
+                "Inter Miami", "LA Galaxy", "Los Angeles FC", "Louisville City", "Minnesota United",
+                "Montreal Impact", "Nashville SC", "New England Revolution", "New York City FC", "New York Red Bulls",
+                "Orlando City", "Philadelphia Union", "Portland Timbers", "Real Salt Lake", "San Jose Earthquakes",
+                "Seattle Sounders", "Sporting Kansas City", "St. Louis City", "Toronto FC", "Vancouver Whitecaps"
+            ],
+            "🇹🇷 Turquía - Süper Lig": [
+                "Adana Demirspor", "Alanyaspor", "Ankaragücü", "Antalyaspor", "Beşiktaş",
+                "Bodrumspor", "Fenerbahçe", "Galatasaray", "Gaziantep", "Hatayspor",
+                "İstanbul Başakşehir", "Kasımpaşa", "Kayserispor", "Konyaspor", "MKE Ankaragücü",
+                "Pendikspor", "Rizespor", "Samsunspor", "Sivasspor", "Trabzonspor"
+            ],
+            "🇬🇷 Grecia - Super League": [
+                "AEK Athens", "Aris Thessaloniki", "Asteras Tripolis", "Atromitos", "OFI Crete",
+                "Olympiacos", "Panathinaikos", "Panetolikos", "PAOK Thessaloniki", "Lamia",
+                "Laris", "Volos"
+            ],
+            "🇷🇴 Rusia - Premier League": [
+                "CSKA Moscow", "Dinamo Moscow", "Krasnodar", "Lokomotiv Moscow", "Orenburg",
+                "Rostov", "Sochi", "Spartak Moscow", "Torpedo Moscow", "Ural",
+                "Zenit St. Petersburg"
+            ],
+            "🇺🇦 Ucrania - Premier League": [
+                "Desna Chernihiv", "Dinamo Kyiv", "Dnipro-1", "Kryvbas", "Lviv",
+                "Metalist Kharkiv", "Minai", "Oleksandriya", "Polissya", "Rukh Lviv",
+                "Shakhtar Donetsk", "Veres Rivne", "Vorskla Poltava", "Zorya Luhansk"
+            ],
+            "🇷🇸 Serbia - SuperLiga": [
+                "Čukarički", "FK IMT", "FK Novi Pazar", "Mladost Lučani", "Napredak Kruševac",
+                "Partizan Belgrade", "Proleter Novi Sad", "Radnički 1923", "Radnički Niš", "Red Star Belgrade",
+                "Spartak Subotica", "Voždovac", "Vojvodina"
+            ],
+            "🇭🇷 Croacia - HNL": [
+                "Dinamo Zagreb", "Gorica", "Hajduk Split", "Istra 1961", "Lokomotiva",
+                "Osijek", "Rijeka", "Slaven Belupo", "Šibenik", "Varazdin"
+            ],
+            "🇩🇰 Dinamarca - Superligaen": [
+                "AaB", "AGF", "Brøndby", "Copenhagen", "Esbjerg",
+                "Lyngby", "Midtjylland", "Nordsjælland", "Odense", "Randers",
+                "Silkeborg", "SønderjyskE", "Vejle", "Viborg"
+            ],
+            "🇸🇪 Suecia - Allsvenskan": [
+                "AIK", "Brommapojkarna", "Djurgårdens IF", "Elfsborg", "Göteborg",
+                "Hacken", "Halmstad", "Hammarby", "IFK Norrköping", "IFK Värnamo",
+                "Kalmar", "Malmö FF", "Mjällby", "Sirius", "Varberg",
+                "Örebro SK", "Östersund"
+            ],
+            "🇳🇴 Noruega - Eliteserien": [
+                "Aalesund", "Bodø/Glimt", "Brann", "Haugesund", "KFUM Oslo",
+                "Lillestrøm", "Molde", "Odd", "Rosenborg", "Sandefjord",
+                "Sarpsborg 08", "Stabæk", "Strømsgodset", "Tromsø", "Trondheim",
+                "Vålerenga", "Viking"
+            ],
+            "🇫🇮 Finlandia - Veikkausliiga": [
+                "FC Honka", "FC Inter", "HJK Helsinki", "IFK Mariehamn", "Ilves",
+                "KuPS", "Lahti", "Oulu", "SJK", "VPS",
+                "Haka", "AC Oulu"
+            ],
+            "🇨🇿 República Checa - First League": [
+                "Baník Ostrava", "Bohemians 1905", "České Budějovice", "Dynama České Budějovice", "Fastav Zlín",
+                "Hradec Králové", "Jablonec", "Karviná", "Liberec", "Mladá Boleslav",
+                "Olomouc", "Pardubice", "Plzeň", "Sigma Olomouc", "Slavia Prague",
+                "Sparta Prague", "Teplice", "Zlín"
+            ],
+            "🇦🇹 Austria - Bundesliga": [
+                "Austria Klagenfurt", "Austria Lustenau", "Austria Vienna", "Blau-Weiß Linz", "Hartberg",
+                "LASK", "Rapid Vienna", "Red Bull Salzburg", "Ried", "Sturm Graz",
+                "TSV Hartberg", "Wattens", "Wolfsberger AC"
+            ],
+            "🇨🇭 Suiza - Super League": [
+                "Basel", "Bellinzona", "Grasshopper", "Lausanne", "Lugano",
+                "Servette", "St. Gallen", "Winterthur", "Young Boys", "Zürich"
+            ],
+            "🇵🇱 Polonia - Ekstraklasa": [
+                "Cracovia", "Górnik Zabrze", "Jagiellonia Białystok", "Koroncz", "Lech Poznań",
+                "Lechia Gdańsk", "Legia Warsaw", "ŁKS Łódź", "Piast Gliwice", "Pogoń Szczecin",
+                "Polonia Warsaw", "Radomiak Radom", "Raków Częstochowa", "Śląsk Wrocław", "Widzew Łódź",
+                "Wisła Kraków", "Wisła Płock", "Zagłębie Lubin"
+            ],
+            "🇭🇺 Hungría - NB I": [
+                "Budapest Honvéd", "Debrecen", "Ferencváros", "Kecskemét", "Kisvárda",
+                "Mezőkövesd", "MTK Budapest", "Paksi SE", "Puskás Akadémia", "Újpest",
+                "Vasas", "Zalaegerszeg"
+            ],
+            "🇷🇴 Rumania - Liga I": [
+                "Academica Clinceni", "Argeș Pitești", "Botoșani", "CFR Cluj", "Constanța",
+                "Craiova", "Dinamo Bucharest", "FCSB", "FCSB (Steaua)", "Flora",
+                "Gaz Metan", "Chindia Târgoviște", "Mioveni", "Otelul Galați", "Politehnica Iași",
+                "Sepsi OSK", "Sibiu", "Universitatea Craiova", "UTA Arad", "Voluntari"
+            ],
+            "🇧🇬 Bulgaria - First League": [
+                "Arda Kardzhali", "Botev Plovdiv", "Botev Vratsa", "CSKA Sofia", "Cherno More",
+                "Etar", "Levski Sofia", "Lokomotiv Sofia", "Lokomotiv Plovdiv", "Ludogorec Razgrad",
+                "Pirin Blagoevgrad", "Plovdiv", "Slavia Sofia", "Spartak Varna", "Tsarsko Selo",
+                "Vitosha Bistritsa"
+            ],
+            "🇬🇪 Georgia - Erovnuli Liga": [
+                "Dinamo Batumi", "Dinamo Tbilisi", "Dila Gori", "Football Union", "Gagra",
+                " Iberia", "Kobuleti", "Locomotive Tbilisi", "Saburtalo Tbilisi", "Samgurali",
+                "Shukura", "Telavi", "Tbilisi"
+            ],
+            "🇿🇦 Sudáfrica - Premier Division": [
+                "AmaZulu", " Orlando Pirates", "Bidvest Wits", "Black Leopards", "Bloemfontein Celtic",
+                "Cape Town Spurs", "Chippa United", "Golden Arrows", "Kaizer Chiefs", "Mamelodi Sundowns",
+                "Maritzburg United", "Moroka Swallows", "Richards Bay", "Royal AM", "SuperSport United",
+                "TS Galaxy"
+            ],
+            "🇯🇵 Japón - J1 League": [
+                "Albirex Niigata", "Avispa Fukuoka", "Cerezo Osaka", "Consadole Sapporo", "FC Tokyo",
+                "Gamba Osaka", "Hokkaido Consadole Sapporo", "JEF United", "Kashima Antlers", "Kawasaki Frontale",
+                "Kashima", "Kashiwa Reysol", "Kawasaki", "Kyoto Sanga", "Nagoya Grampus",
+                "Omiya Ardija", "Oita Trinita", "Sagan Tosu", "Sanfrecce Hiroshima", "Shimizu S-Pulse",
+                "Shonan Bellmare", "Tokyo", "Urawa Red Diamonds", "Vissel Kobe", "Yokohama F. Marinos"
+            ],
+            "🇰🇷 Corea del Sur - K League 1": [
+                "Daegu FC", "Daejeon", "Gangwon", "Gimcheon Sangmu", "Incheon United",
+                "Jeju United", "Jeonbuk Hyundai", "Pohang Steelers", "Seongnam Ilhwa", "Seoul E-Land",
+                "Suwon FC", "Suwon Samsung Bluewings", "Ulsan Hyundai"
+            ],
+            "🇦🇺 Australia - A-League": [
+                "Adelaide United", "Brisbane Roar", "Western Sydney", "Western United", "Wellington Phoenix",
+                "Melbourne City", "Melbourne Victory", "Newcastle Jets", "Perth Glory", "Sydney FC"
+            ],
+            "🇳🇿 Nueva Zelanda - A-League": [
+                "Auckland City", "Eastern Suburbs", "Hamilton Wanderers", "Team Wellington", "Wellington Phoenix Res."
+            ],
+            "🇮🇳 India - ISL": [
+                "ATK Mohun Bagan", "Bengaluru FC", "Chennaiyin FC", "Delhi Dynamos", "Goa",
+                "Hyderabad FC", "Jamshedpur FC", "Kolkata", "Kerala Blasters", "Mumbai City",
+                "NorthEast United", "Odisha FC", "Punjab", "SC East Bengal"
+            ],
+            "🇸🇦 Arabia Saudita - Pro League": [
+                "Al Ahly", "Al Ettifaq", "Al Fateh", "Al Hazm", "Al Hilal",
+                "Al Ittihad", "Al Nassr", "Al Quadisiya", "Al Raed", "Al Shabab",
+                "Al Ta'ee", "Al Tai", "Dhamk", "Haz", "Khalid"
+            ],
+            "🇦🇪 Emiratos Árabes - UAE Pro League": [
+                "Al Ain", "Al Dhafra", "Al Wasl", "Bani Yas", "Jazira",
+                "Khor Fakkan", "Nasr", "Palm", "Sharjah", "Shabab"
+            ],
+            "🇶🇦 Catar - Stars League": [
+                "Al Ahly Doha", "Al Arabi", "Al Bidaya", "Duhail", "Al Gharafa",
+                "Al Markhiya", "Al Rayyan", "Al Sailiya", "Al Wakrah", "Lekhwiya",
+                "Muaither", "Qatar SC", "Umm Salal"
+            ]
+        }
+        
+        # Crear lista plana de equipos para el selectbox
+        equipos_lista = []
+        for liga, equipos in EQUIPOS_POR_LIGA.items():
+            for eq in equipos:
+                equipos_lista.append(f"{eq} | {liga}")
+        equipos_lista = sorted(equipos_lista)
+        
+        # Selectbox con búsqueda
+        col_buscar1, col_buscar2 = st.columns([3, 1])
+        with col_buscar1:
+            equipo_seleccionado = st.selectbox(
+                "🔍 Buscar equipo (escribe para filtrar)",
+                options=[""] + equipos_lista,
+                index=0,
+                help="Selecciona un equipo para buscar sus estadísticas"
+            )
+        with col_buscar2:
+            st.markdown("")  # Espaciador
+            if st.button("🤖 Buscar", type="primary", use_container_width=True, disabled=not equipo_seleccionado):
+                if equipo_seleccionado:
+                    nombre_equipo = equipo_seleccionado.split(" | ")[0]
+                    liga_equipo = equipo_seleccionado.split(" | ")[1] if " | " in equipo_seleccionado else ""
+                    
+                    with st.spinner(f"Buscando {nombre_equipo}..."):
+                        try:
+                            # Buscar con el robot
+                            result = run_robot_batch([nombre_equipo])
+                            
+                            if result and result[0].get('encontrado'):
+                                r = result[0]
+                                st.success(f"✅ **{r.get('equipo_real', nombre_equipo)}** encontrado en **{r.get('liga', 'N/A')}**")
+                                
+                                # Guardar en Supabase
+                                try:
+                                    client = get_client()
+                                    lambda_local = float(r.get('lambda_local', 1.3)) or 1.3
+                                    lambda_visitante = float(r.get('lambda_visitante', 1.1)) or 1.1
+                                    
+                                    data = {
+                                        'equipo': r.get('equipo_real', nombre_equipo),
+                                        'liga': r.get('liga', liga_equipo.split(' - ')[-1] if ' - ' in liga_equipo else liga_equipo),
+                                        'temporada': '2024-25',
+                                        'partidos_jugados': r.get('partidos_jugados', 0) or 0,
+                                        'victorias': r.get('victorias', 0) or 0,
+                                        'empates': r.get('empates', 0) or 0,
+                                        'derrotas': r.get('derrotas', 0) or 0,
+                                        'goles_favor': r.get('goles_favor', 0) or 0,
+                                        'goles_contra': r.get('goles_contra', 0) or 0,
+                                        'lambda_local': lambda_local,
+                                        'lambda_visitante': lambda_visitante,
+                                        'promedio_tiros': float(r.get('tiros_promedio', 12)) or 12,
+                                        'promedio_tiros_arco': float(r.get('tiros_arco_promedio', 4)) or 4,
+                                        'promedio_corners_total': float(r.get('corners_promedio', 10)) or 10,
+                                        'promedio_amarillas': float(r.get('tarjetas_promedio', 3)) or 3,
+                                        'source_fbdata': 'football' in str(r.get('fuentes_probadas', [])).lower()
+                                    }
+                                    
+                                    try:
+                                        client.table('equipos_stats').insert(data).execute()
+                                        st.info("💾 Guardado en Supabase")
+                                    except:
+                                        client.table('equipos_stats').update(data).eq('equipo', r.get('equipo_real', nombre_equipo)).execute()
+                                        st.info("💾 Actualizado en Supabase")
+                                    
+                                except Exception as e:
+                                    st.warning(f"No se pudo guardar: {str(e)[:50]}")
+                                
+                                # Mostrar stats
+                                with st.expander("📊 Ver estadísticas"):
+                                    st.write(f"**Liga:** {r.get('liga', 'N/A')}")
+                                    st.write(f"**Partidos:** {r.get('partidos_jugados', 0)}")
+                                    st.write(f"**V/D/E:** {r.get('victorias', 0)}/{r.get('derrotas', 0)}/{r.get('empates', 0)}")
+                                    st.write(f"**GF/GC:** {r.get('goles_favor', 0)}/{r.get('goles_contra', 0)}")
+                                    st.write(f"**λ Local:** {lambda_local:.2f}")
+                                    st.write(f"**λ Visitante:** {lambda_visitante:.2f}")
+                            else:
+                                st.error(f"❌ **{nombre_equipo}** no encontrado")
+                                st.info("💡 El equipo puede no estar en football-data.co.uk")
+                        except Exception as e:
+                            st.error(f"Error: {str(e)[:100]}")
+        
+        st.markdown("---")
+        
+        # Sección: Robot automático - Excel
         st.markdown("### 🤖 Buscar Equipos del Excel Actual")
         
         # Mostrar equipos del Excel actual
