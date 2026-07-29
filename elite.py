@@ -882,12 +882,17 @@ def render_login_form():
                 for i, partido in enumerate(partidos_liga):
                     equipo_local = partido.get('equipo_local', '')
                     equipo_visitante = partido.get('equipo_visitante', '')
+                    hora = partido.get('hora', '00:00')[:5]
                     
-                    if st.button(f"⚽ **{equipo_local}** vs **{equipo_visitante}**", key=f"match_{liga}_{i}", use_container_width=True):
-                        st.session_state.selected_local = equipo_local
-                        st.session_state.selected_away = equipo_visitante
-                        st.session_state.page = "Analizador"
-                        st.rerun()
+                    col_hora, col_match = st.columns([1, 4])
+                    with col_hora:
+                        st.markdown(f"**{hora}**")
+                    with col_match:
+                        if st.button(f"⚽ {equipo_local} vs {equipo_visitante}", key=f"match_{liga}_{i}", use_container_width=True):
+                            st.session_state.selected_local = equipo_local
+                            st.session_state.selected_away = equipo_visitante
+                            st.session_state.page = "Analizador"
+                            st.rerun()
         
     # Página: Analizador
     elif st.session_state.page == "Analizador":
