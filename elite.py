@@ -2057,6 +2057,29 @@ def render_login_form():
                             acertado_corners = p.get('prediccion_corners') is not None
                             acertado_tarjetas = p.get('prediccion_tarjetas') is not None
                             acertado_remates = p.get('prediccion_remates') is not None
+
+                            # RECALIBRACIÓN AUTOMÁTICA
+                            try:
+                                registrar_resultado(
+                                    equipo_local=local,
+                                    equipo_visitante=visitante,
+                                    lambda_local_predicha=p.get('lambda_local', 1.5),
+                                    lambda_visitante_predicha=p.get('lambda_visitante', 1.3),
+                                    goles_local_real=gl,
+                                    goles_visitante_real=gv,
+                                    predicciones={
+                                        '1x2': {'pick': p.get('prediccion_1x2', ''), 'prob': p.get('p1', 50)},
+                                        'over_under': {'pick': p.get('prediccion_ou', ''), 'prob': p.get('over_25', 50)},
+                                        'btts': {'pick': p.get('prediccion_btts', ''), 'prob': p.get('btts_yes', 50)},
+                                    },
+                                    resultado_real=resultado_1x2,
+                                    marcador=f"{gl}-{gv}",
+                                    confianza=p.get('confianza', 70),
+                                    rango=p.get('rango', 'B')
+                                )
+                            except Exception as cal_e:
+                                logger.warning(f"Calibración no actualizada: {cal_e}")
+
                             
                             try:
                                 client.table('picks').update({
