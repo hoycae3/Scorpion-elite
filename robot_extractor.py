@@ -1636,32 +1636,67 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
     Función de compatibilidad para stats_robot.run_robot_batch
     Procesa una lista de equipos y retorna estadísticas en formato compatible con elite.py.
     
-    FLUJO:
-    1. football-data.co.uk → Busca TODOS los equipos (sin límite)
-    2. API-Football → Busca SOLO equipos sin datos (máximo 88)
-    
-    En cuanto una fuente encuentra datos → USA ESOS y PARA.
+    FLUJO DIRECTO (sin descargas masivas):
+    1. API-Football → Rápido, cobertura MUNDIAL (incluye Colombia, Brasil, etc.)
+    2. Si falla → football-data (solo Europa, con caché)
     """
-    MAX_API_FOOTBALL = 88  # Límite de API-Football
     
     results = []
     logger.info(f"🔍 Procesando {len(team_names)} equipos...")
-    
-    # Preparar football-data (cargar en cache)
-    logger.info("📥 Preparando football-data.co.uk...")
-    fd_stats = get_football_data_stats()
-    logger.info(f"   ✅ {len(fd_stats)} equipos en cache")
-    
-    # PASO 1: Buscar TODOS los equipos en football-data (sin límite)
-    logger.info("="*50)
-    logger.info("📊 PASO 1: Buscando en football-data.co.uk (TODOS los equipos)")
-    logger.info("="*50)
     
     for i, team_name in enumerate(team_names):
         logger.info(f"[{i+1}/{len(team_names)}] 🔍 {team_name}...")
         
         try:
+            # PASO 1: Buscar en API-Football PRIMERO (más rápido, mundial)
+            logger.info(f"   📡 Buscando en API-Football...")
+            api_data = search_team_api_football(team_name)
+            
+            if api_data:
+                # Encontrado en API-Football
+                p = api_data.get('partidos_jugados', 0)
+                gf = api_data.get('goles_favor', 0)
+                gc = api_data.get('goles_contra', 0)
+                
+                lambda_local = calculate_team_lambda(gf, gc, p, is_home=True)
+                lambda_visitante = calculate_team_lambda(gf, gc, p, is_home=False)
+                
+                # Calcular promedios
+                avg_corners = round(api_data.get('corners_promedio', 10), 1)
+                avg_tarjetas = round(api_data.get('tarjetas_promedio', 3), 1)
+                avg_tiros = round(api_data.get('tiros_promedio', 12), 1)
+                avg_tiros_arco = round(api_data.get('tiros_arco_promedio', 4), 1)
+                
+                result = {
+                    'equipo': team_name,
+                    'encontrado': True,
+                    'exito': True,
+                    'sin_estadisticas': False,
+                    'equipo_real': api_data.get('equipo', team_name),
+                    'liga': api_data.get('liga', 'Desconocida'),
+                    'lambda_local': round(lambda_local, 2),
+                    'lambda_visitante': round(lambda_visitante, 2),
+                    'goles_favor': gf,
+                    'goles_contra': gc,
+                    'partidos_jugados': p,
+                    'victorias': api_data.get('victorias', 0),
+                    'empates': api_data.get('empates', 0),
+                    'derrotas': api_data.get('derrotas', 0),
+                    'corners_promedio': avg_corners,
+                    'tarjetas_promedio': avg_tarjetas,
+                    'tiros_promedio': avg_tiros,
+                    'tiros_arco_promedio': avg_tiros_arco,
+                    'ultimos_5_partidos': api_data.get('ultimos_5_partidos', []),
+                    'fuentes_probadas': ['API-Football'],
+                }
+                logger.info(f"   ✅ ENCONTRADO: λL={result['lambda_local']}, λV={result['lambda_visitante']}")
+                results.append(result)
+                continue
+            
+            # PASO 2: Si NO encontrado en API → football-data (fallback rápido)
+            logger.info(f"   🌐 No encontrado → Probando football-data...")
             fd_data = get_team_stats_from_football_data(team_name)
+            
             if fd_data:
                 gf = fd_data.get('goles_favor', 0)
                 gc = fd_data.get('goles_contra', 0)
@@ -1669,17 +1704,10 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                 lambda_local = calculate_team_lambda(gf, gc, p, is_home=True)
                 lambda_visitante = calculate_team_lambda(gf, gc, p, is_home=False)
                 
-                # Calcular promedios de los nuevos stats
-                corners_favor = fd_data.get('corners_favor', 0)
-                corners_contra = fd_data.get('corners_contra', 0)
-                tarjetas = fd_data.get('tarjetas_amarillas', 0) + fd_data.get('tarjetas_rojas', 0)
-                tiros = fd_data.get('tiros', 0)
-                tiros_arco = fd_data.get('tiros_al_arco', 0)
-                
-                avg_corners = round((corners_favor + corners_contra) / p / 2, 1) if p > 0 else 0
-                avg_tarjetas = round(tarjetas / p, 1) if p > 0 else 0
-                avg_tiros = round(tiros / p, 1) if p > 0 else 0
-                avg_tiros_arco = round(tiros_arco / p, 1) if p > 0 else 0
+                avg_corners = round((fd_data.get('corners_favor', 0) + fd_data.get('corners_contra', 0)) / p / 2, 1) if p > 0 else 0
+                avg_tarjetas = round((fd_data.get('tarjetas_amarillas', 0) + fd_data.get('tarjetas_rojas', 0)) / p, 1) if p > 0 else 0
+                avg_tiros = round(fd_data.get('tiros', 0) / p, 1) if p > 0 else 0
+                avg_tiros_arco = round(fd_data.get('tiros_al_arco', 0) / p, 1) if p > 0 else 0
                 
                 result = {
                     'equipo': team_name,
@@ -1696,7 +1724,6 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                     'victorias': fd_data.get('victorias', 0),
                     'empates': fd_data.get('empates', 0),
                     'derrotas': fd_data.get('derrotas', 0),
-                    # Nuevos stats
                     'corners_promedio': avg_corners,
                     'tarjetas_promedio': avg_tarjetas,
                     'tiros_promedio': avg_tiros,
@@ -1704,34 +1731,35 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                     'ultimos_5_partidos': fd_data.get('ultimos_5_partidos', []),
                     'fuentes_probadas': ['football-data.co.uk'],
                 }
-                logger.info(f"   ✅ ENCONTRADO: λL={result['lambda_local']}, λV={result['lambda_visitante']}, Corners={avg_corners}/part")
+                logger.info(f"   ✅ ENCONTRADO en football-data")
                 results.append(result)
-            else:
-                # NO encontrado en football-data → marcar para buscar en API
-                results.append({
-                    'equipo': team_name,
-                    'encontrado': False,
-                    'exito': True,
-                    'sin_estadisticas': True,
-                    'equipo_real': team_name,
-                    'liga': 'PENDIENTE',
-                    'lambda_local': 0,
-                    'lambda_visitante': 0,
-                    'goles_favor': 0,
-                    'goles_contra': 0,
-                    'partidos_jugados': 0,
-                    'victorias': 0,
-                    'empates': 0,
-                    'derrotas': 0,
-                    # Nuevos stats
-                    'corners_promedio': 0,
-                    'tarjetas_promedio': 0,
-                    'tiros_promedio': 0,
-                    'tiros_arco_promedio': 0,
-                    'ultimos_5_partidos': [],
-                    'fuentes_probadas': ['NINGUNA'],
-                })
-                logger.info(f"   ❌ NO encontrado → Pendiente para API")
+                continue
+            
+            # NO encontrado en ninguna fuente
+            logger.info(f"   ❌ NO encontrado")
+            results.append({
+                'equipo': team_name,
+                'encontrado': False,
+                'exito': True,
+                'sin_estadisticas': True,
+                'equipo_real': team_name,
+                'liga': 'No disponible',
+                'lambda_local': 0,
+                'lambda_visitante': 0,
+                'goles_favor': 0,
+                'goles_contra': 0,
+                'partidos_jugados': 0,
+                'victorias': 0,
+                'empates': 0,
+                'derrotas': 0,
+                'corners_promedio': 0,
+                'tarjetas_promedio': 0,
+                'tiros_promedio': 0,
+                'tiros_arco_promedio': 0,
+                'ultimos_5_partidos': [],
+                'fuentes_probadas': ['API-Football', 'football-data'],
+            })
+            
         except Exception as e:
             logger.warning(f"   ⚠️ Error: {e}")
             results.append({
@@ -1757,160 +1785,11 @@ def run_robot_batch(team_names: List[str]) -> List[Dict]:
                 'fuentes_probadas': ['ERROR'],
             })
     
-    # PASO 2: Buscar equipos NO encontrados en API-Football
-    pendientes = [r for r in results if r.get('encontrado') == False]
-    
-    if pendientes:
-        # Limitar a 88 equipos máximo para API-Football
-        if len(pendientes) > MAX_API_FOOTBALL:
-            logger.warning(f"⚠️ Limitando a {MAX_API_FOOTBALL} equipos para API-Football (hay {len(pendientes)} pendientes)")
-            pendientes = pendientes[:MAX_API_FOOTBALL]
-        
-        logger.info("="*50)
-        logger.info(f"📊 PASO 2: Buscando {len(pendientes)} equipos en API-Football (máx. {MAX_API_FOOTBALL})")
-        logger.info("⚠️ Rate limit: 10 solicitudes/minuto - Delay de 7s entre equipos")
-        logger.info("="*50)
-        
-        for i, result in enumerate(results):
-            if result.get('encontrado') == True:
-                continue
-            
-            team_name = result['equipo']
-            logger.info(f"[{i+1}/{len(results)}] 🔍 {team_name}...")
-            
-            try:
-                api_data = search_team_api_football(team_name)
-                
-                if api_data:
-                    result['encontrado'] = True
-                    result['exito'] = True
-                    result['sin_estadisticas'] = False
-                    result['equipo_real'] = api_data.get('equipo', team_name)
-                    result['liga'] = api_data.get('liga', 'Desconocida')
-                    result['lambda_local'] = api_data.get('lambda_local', 0)
-                    result['lambda_visitante'] = api_data.get('lambda_visitante', 0)
-                    result['goles_favor'] = api_data.get('goles_favor', 0)
-                    result['goles_contra'] = api_data.get('goles_contra', 0)
-                    result['partidos_jugados'] = api_data.get('partidos', 0)
-                    result['victorias'] = api_data.get('victorias', 0)
-                    result['empates'] = api_data.get('empates', 0)
-                    result['derrotas'] = api_data.get('derrotas', 0)
-                    # Nuevos stats
-                    result['corners_promedio'] = api_data.get('corners_promedio', 0)
-                    result['tarjetas_promedio'] = api_data.get('tarjetas_promedio', 0)
-                    result['tiros_promedio'] = api_data.get('tiros_promedio', 0)
-                    result['tiros_arco_promedio'] = api_data.get('tiros_arco_promedio', 0)
-                    result['ultimos_5_partidos'] = api_data.get('ultimos_5_partidos', [])
-                    result['fuentes_probadas'] = ['api-football.com']
-                    
-                    logger.info(f"   ✅ ENCONTRADO: λL={result['lambda_local']}, λV={result['lambda_visitante']}, Corners={result['corners_promedio']}/part")
-                else:
-                    result['liga'] = 'NO ENCONTRADO'
-                    logger.info(f"   ❌ NO encontrado")
-            except Exception as e:
-                logger.warning(f"   ⚠️ API Error: {e}")
-                result['liga'] = 'ERROR'
-            
-            # Delay para evitar rate limit (7 segundos entre equipos)
-            if i < len(results) - 1:
-                logger.info("   ⏳ Esperando 7s para evitar rate limit...")
-                time.sleep(7)
-    
-    # PASO 3: Soccerway para equipos no encontrados
-    pendientes = [r for r in results if r.get('encontrado') == False]
-    if pendientes:
-        logger.info("="*50)
-        logger.info(f"📊 PASO 3: Buscando {len(pendientes)} equipos en Soccerway")
-        logger.info("="*50)
-        
-        soccerway = SoccerwayScraper()
-        for result in pendientes:
-            team_name = result['equipo']
-            logger.info(f"🔍 {team_name}...")
-            
-            try:
-                team_url = soccerway.search_team(team_name)
-                if team_url:
-                    stats = soccerway.get_team_stats_summary(team_url)
-                    if stats:
-                        result['encontrado'] = True
-                        result['sin_estadisticas'] = False
-                        result['equipo_real'] = team_name
-                        result['liga'] = stats.get('liga', 'Soccerway')
-                        result['partidos_jugados'] = stats.get('partidos', 0)
-                        result['victorias'] = stats.get('victorias', 0)
-                        result['empates'] = stats.get('empates', 0)
-                        result['derrotas'] = stats.get('derrotas', 0)
-                        result['goles_favor'] = stats.get('goles_favor', 0)
-                        result['goles_contra'] = stats.get('goles_contra', 0)
-                        result['fuentes_probadas'].append('soccerway')
-                        logger.info(f"   ✅ Encontrado en Soccerway")
-            except Exception as e:
-                logger.debug(f"   ⚠️ Soccerway error: {e}")
-
-    # PASO 4: WhoScored para equipos no encontrados
-    pendientes = [r for r in results if r.get('encontrado') == False]
-    if pendientes:
-        logger.info("="*50)
-        logger.info(f"📊 PASO 4: Buscando {len(pendientes)} equipos en WhoScored")
-        logger.info("="*50)
-        
-        whoscored = WhoScoredScraper()
-        for result in pendientes:
-            team_name = result['equipo']
-            logger.info(f"🔍 {team_name}...")
-            
-            try:
-                team_url = whoscored.search_team(team_name)
-                if team_url:
-                    stats = whoscored.get_team_stats(team_url)
-                    if stats:
-                        result['encontrado'] = True
-                        result['sin_estadisticas'] = False
-                        result['fuentes_probadas'].append('whoscored')
-                        if not result.get('partidos_jugados'):
-                            result['partidos_jugados'] = stats.get('partidos', 20)
-                        logger.info(f"   ✅ Encontrado en WhoScored")
-            except Exception as e:
-                logger.debug(f"   ⚠️ WhoScored error: {e}")
-
-    # PASO 5: FBref para equipos no encontrados
-    pendientes = [r for r in results if r.get('encontrado') == False]
-    if pendientes:
-        logger.info("="*50)
-        logger.info(f"📊 PASO 5: Buscando {len(pendientes)} equipos en FBref")
-        logger.info("="*50)
-        
-        fbref = FBrefAdvancedScraper()
-        for result in pendientes:
-            team_name = result['equipo']
-            logger.info(f"🔍 {team_name}...")
-            
-            try:
-                team_info = fbref.find_team(team_name)
-                if team_info:
-                    stats = fbref.get_team_stats(team_info['url'])
-                    if stats:
-                        result['encontrado'] = True
-                        result['sin_estadisticas'] = False
-                        result['equipo_real'] = team_info['name']
-                        result['liga'] = team_info.get('league', 'FBref')
-                        result['fuentes_probadas'].append('fbref')
-                        if not result.get('partidos_jugados'):
-                            result['partidos_jugados'] = stats.get('partidos', 20)
-                        logger.info(f"   ✅ Encontrado en FBref")
-            except Exception as e:
-                logger.debug(f"   ⚠️ FBref error: {e}")
-
     # Resumen
     encontrados = sum(1 for r in results if r.get('encontrado') == True)
     no_encontrados = sum(1 for r in results if r.get('encontrado') == False)
     
-    logger.info("="*50)
-    logger.info(f"✅ SUPERROBOT COMPLETADO")
-    logger.info(f"   Encontrados: {encontrados}")
-    logger.info(f"   No encontrados: {no_encontrados}")
-    logger.info("="*50)
+    logger.info(f"✅ Búsqueda completada: {encontrados} encontrados, {no_encontrados} no encontrados")
     
     return results
 
