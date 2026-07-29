@@ -4,6 +4,8 @@ import os
 import sqlite3
 import hashlib
 import logging
+import html
+import bcrypt
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -27,11 +29,21 @@ from calibration import (
 st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
 
 # ══════════════════════════════════════════════════════════
-# CONFIGURACION - Variables de entorno con defaults de fallback
+# CONFIGURACION - Variables de entorno OBLIGATORIAS
 # ══════════════════════════════════════════════════════════
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "scorpion2026")
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://jjtifureeygvygxtpuku.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqdGlmdXJlZXlndnlneHRwdWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTI2NDcsImV4cCI6MjA5OTg4ODY0N30.6f8dgLmHx9x9W-5X2Ld31rPkeZ6HJGSeGgx3oq9XSRA")
+# SEGURIDAD: No hay valores por defecto - la app falla si no están configuradas
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+# Validar que todas las variables requeridas estén configuradas
+if not ADMIN_PASSWORD:
+    raise RuntimeError("Falta ADMIN_PASSWORD en el entorno. Configura la variable de entorno.")
+if not SUPABASE_URL:
+    raise RuntimeError("Falta SUPABASE_URL en el entorno. Configura la variable de entorno.")
+if not SUPABASE_KEY:
+    raise RuntimeError("Falta SUPABASE_KEY en el entorno. Configura la variable de entorno.")
+
 # Base de datos persistente en el directorio de la aplicación
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(APP_DIR, "scorpion_users.db")
@@ -56,19 +68,30 @@ def get_client():
     return get_supabase_client()
 
 # ══════════════════════════════════════════════════════════
-# SISTEMA DE USUARIOS (SQLite local) - Solo contraseña
+# SISTEMA DE USUARIOS (SQLite local) - Solo hash bcrypt
 # ══════════════════════════════════════════════════════════
+
+def hash_password(password: str) -> str:
+    """Genera hash bcrypt con salt automático"""
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+def verify_password(password: str, hashed: str) -> bool:
+    """Verifica password contra hash bcrypt"""
+    try:
+        return bcrypt.checkpw(password.encode(), hashed.encode())
+    except Exception:
+        return False
+
 def get_hoy():
     return str(date.today())
 
 def init_db():
     """Inicializa la base de datos SQLite con context manager"""
     with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
-        # Crear tabla con todas las columnas necesarias
+        # Crear tabla SIN columna password (texto plano) - solo password_hash con bcrypt
         conn.execute("""
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            password TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
             nombre TEXT,
             plan TEXT DEFAULT 'vip',
@@ -90,25 +113,14 @@ def init_db():
         )
         """)
         
-        # Crear admin si no existe
+        # Crear admin si no existe (usando bcrypt)
         admin_exists = conn.execute("SELECT id FROM usuarios WHERE es_admin=1").fetchone()
         if not admin_exists:
-            pwd_hash = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()
-            conn.execute("""INSERT INTO usuarios (password, password_hash, nombre, plan, fecha_inicio, dias, activo, es_admin) 
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                        (ADMIN_PASSWORD, pwd_hash, "Administrador", "admin", get_hoy(), 36500, 1, 1))
+            pwd_hash = hash_password(ADMIN_PASSWORD)
+            conn.execute("""INSERT INTO usuarios (password_hash, nombre, plan, fecha_inicio, dias, activo, es_admin) 
+                          VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                        (pwd_hash, "Administrador", "admin", get_hoy(), 36500, 1, 1))
         conn.commit()
-
-def db_get_by_password_hash(pwd_hash):
-    """Obtiene usuario por password hash"""
-    try:
-        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
-            conn.row_factory = sqlite3.Row
-            r = conn.execute("SELECT * FROM usuarios WHERE password_hash=?", (pwd_hash,)).fetchone()
-            return dict(r) if r else None
-    except Exception as e:
-        logger.error(f"Error en db_get_by_password_hash: {e}")
-        return None
 
 def db_get_by_id(user_id):
     """Obtiene usuario por ID"""
@@ -122,24 +134,24 @@ def db_get_by_id(user_id):
         return None
 
 def db_todos():
-    """Obtiene todos los usuarios"""
+    """Obtiene todos los usuarios (sin password_hash para seguridad)"""
     try:
         with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
             conn.row_factory = sqlite3.Row
-            r = conn.execute("SELECT id, password, nombre, plan, dias, activo, es_admin, creado FROM usuarios ORDER BY id ASC").fetchall()
+            r = conn.execute("SELECT id, nombre, plan, dias, activo, es_admin, creado FROM usuarios ORDER BY id ASC").fetchall()
             return [dict(x) for x in r]
     except Exception as e:
         logger.error(f"Error en db_todos: {e}")
         return []
 
 def db_crear_usuario(password, nombre, plan, dias):
-    """Crea un nuevo usuario con solo contraseña"""
-    pwd_hash = hashlib.sha256(password.encode()).hexdigest()
+    """Crea un nuevo usuario con password hasheado (bcrypt)"""
+    pwd_hash = hash_password(password)
     try:
         with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
-            conn.execute("""INSERT INTO usuarios (password, password_hash, nombre, plan, fecha_inicio, dias, activo)
-                          VALUES (?, ?, ?, ?, ?, ?, 1)""",
-                        (password, pwd_hash, nombre, plan, get_hoy(), dias))
+            conn.execute("""INSERT INTO usuarios (password_hash, nombre, plan, fecha_inicio, dias, activo)
+                          VALUES (?, ?, ?, ?, ?, 1)""",
+                        (pwd_hash, nombre, plan, get_hoy(), dias))
             conn.commit()
             return True
     except sqlite3.IntegrityError:
@@ -149,11 +161,11 @@ def db_crear_usuario(password, nombre, plan, dias):
         return False
 
 def db_cambiar_password(user_id, password):
-    """Cambia password de usuario"""
-    pwd_hash = hashlib.sha256(password.encode()).hexdigest()
+    """Cambia password de usuario (bcrypt)"""
+    pwd_hash = hash_password(password)
     try:
         with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
-            conn.execute("UPDATE usuarios SET password=?, password_hash=? WHERE id=?", (password, pwd_hash, user_id))
+            conn.execute("UPDATE usuarios SET password_hash=? WHERE id=?", (pwd_hash, user_id))
             conn.commit()
             return True
     except Exception as e:
@@ -184,13 +196,20 @@ def db_actualizar_plan(user_id, plan, dias):
         return False
 
 def db_login(password):
-    """Verifica password y retorna usuario"""
+    """Verifica password con bcrypt y retorna usuario"""
     init_db()
-    pwd_hash = hashlib.sha256(password.encode()).hexdigest()
-    result = db_get_by_password_hash(pwd_hash)
-    if result and result['activo'] == 1:
-        return result
-    return None
+    try:
+        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
+            conn.row_factory = sqlite3.Row
+            # Obtener todos los usuarios activos y verificar con bcrypt
+            usuarios = conn.execute("SELECT * FROM usuarios WHERE activo=1").fetchall()
+            for usuario in usuarios:
+                if verify_password(password, usuario['password_hash']):
+                    return dict(usuario)
+            return None
+    except Exception as e:
+        logger.error(f"Error en db_login: {e}")
+        return None
 
 # ══════════════════════════════════════════════════════════
 # SESSION STATE
@@ -313,7 +332,8 @@ def render_public_landing():
             partidos = response.data if response.data else []
         else:
             partidos = []
-    except:
+    except Exception as e:
+        logger.error(f"Error obteniendo partidos: {e}")
         partidos = []
 
     if st.session_state.preview_partido:
@@ -546,7 +566,7 @@ def render_login_form():
         dias = st.session_state.user_data.get('dias', 0) if st.session_state.user_data else 0
         is_admin = st.session_state.user_data.get('es_admin', 0) == 1 if st.session_state.user_data else False
         
-        plan_icon = {"admin": "⚙️", "elite": "👑", "vip": "👑", "mes": "👑", "vip": "🆓"}.get(user_plan, "📦")
+        plan_icon = {"admin": "⚙️", "elite": "👑", "vip": "👑", "mes": "👑", "free": "🆓"}.get(user_plan, "📦")
         st.markdown(f"{plan_icon} **{user_plan.upper()}**")
         if not is_admin:
             st.caption(f"⏱️ {dias} días restantes")
@@ -658,7 +678,7 @@ def render_login_form():
                                         # Incluir fecha en el fixture_id para que sea único
                                         fecha_str = str(row['fecha']) if pd.notna(row['fecha']) else ''
                                         data = {
-                                            'fixture_id': abs(hash(f"{fecha_str}{row['equipo_local']}{row['equipo_visitante']}")) % (10**10),
+                                            'fixture_id': int(hashlib.md5(f"{fecha_str}{row['equipo_local']}{row['equipo_visitante']}".encode()).hexdigest(), 16) % (10**10),
                                             'fecha': row['fecha'],
                                             'hora': row['hora'],
                                             'liga': row['liga'],
@@ -772,14 +792,16 @@ def render_login_form():
             response_equipos = client.table('equipos_stats').select('equipo, liga').execute()
             equipos_disponibles = [e['equipo'].title() for e in response_equipos.data] if response_equipos.data else []
             equipos_disponibles = sorted(set(equipos_disponibles))
-        except:
+        except Exception as e:
+            logger.error(f"Error obteniendo equipos: {e}")
             equipos_disponibles = []
         
         # Obtener partidos de Supabase
         try:
             response_partidos = client.table('partidos').select('*').order('fecha', desc=True).order('hora', desc=True).execute()
             partidos_data = response_partidos.data if response_partidos.data else []
-        except:
+        except Exception as e:
+            logger.error(f"Error obteniendo partidos: {e}")
             partidos_data = []
         
         # Variable para el partido seleccionado
@@ -822,15 +844,15 @@ def render_login_form():
                 cols_row = st.columns([1.5, 2, 2, 0.7, 1, 0.6])
                 
                 with cols_row[0]:
-                    st.markdown(f"<span style='color:#ffffff; font-size:13px'>📅 {fecha}</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span style='color:#ffffff; font-size:13px'>📅 {html.escape(str(fecha))}</span>", unsafe_allow_html=True)
                 with cols_row[1]:
-                    st.markdown(f"<span style='color:#00ff88; font-size:13px'>🏠 **{local}**</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span style='color:#00ff88; font-size:13px'>🏠 **{html.escape(str(local))}**</span>", unsafe_allow_html=True)
                 with cols_row[2]:
-                    st.markdown(f"<span style='color:#ff6b6b; font-size:13px'>✈️ **{visitante}**</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span style='color:#ff6b6b; font-size:13px'>✈️ **{html.escape(str(visitante))}**</span>", unsafe_allow_html=True)
                 with cols_row[3]:
-                    st.markdown(f"<span style='color:#ffd700; font-size:13px'>⏰ {hora}</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span style='color:#ffd700; font-size:13px'>⏰ {html.escape(str(hora))}</span>", unsafe_allow_html=True)
                 with cols_row[4]:
-                    st.markdown(f"<span style='color:#00d4aa; font-size:13px'>{emoji} {pais[:6]}</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span style='color:#00d4aa; font-size:13px'>{emoji} {html.escape(str(pais[:6]))}</span>", unsafe_allow_html=True)
                 with cols_row[5]:
                     if st.button("🎯", key=f"match_{p.get('id')}", help=f"Analizar {local} vs {visitante}", use_container_width=True):
                         selected_match = p
@@ -1179,7 +1201,7 @@ def render_login_form():
                 sp1, col_local, col_visita, sp2 = st.columns([1, 1, 1, 1])
                 
                 with col_local:
-                    st.markdown(f"<h4 style='color: #00ff88; text-align: center;'>🏠 {home}</h4>", unsafe_allow_html=True)
+                    st.markdown(f"<h4 style='color: #00ff88; text-align: center;'>🏠 {html.escape(str(home))}</h4>", unsafe_allow_html=True)
                     # Lista local
                     stats_list_l = [
                         ("📅 PJ", pj_l, "#fff"),
@@ -1200,7 +1222,7 @@ def render_login_form():
                         st.markdown(f"<div style='display:flex; justify-content:space-between; padding:4px 10px; border-bottom:1px solid #333; font-size:14px;'><span>{label}</span><span style='color:{color}'>{val}</span></div>", unsafe_allow_html=True)
                 
                 with col_visita:
-                    st.markdown(f"<h4 style='color: #ff6b6b; text-align: center;'>✈️ {away}</h4>", unsafe_allow_html=True)
+                    st.markdown(f"<h4 style='color: #ff6b6b; text-align: center;'>✈️ {html.escape(str(away))}</h4>", unsafe_allow_html=True)
                     # Lista visita
                     stats_list_v = [
                         ("📅 PJ", pj_v, "#fff"),
@@ -2313,7 +2335,8 @@ def render_login_form():
             try:
                 response = client.table('picks').select('*').execute()
                 picks = response.data if response.data else []
-            except:
+            except Exception as e:
+                logger.error(f"Error obteniendo picks: {e}")
                 picks = []
             
             if picks:
@@ -2483,18 +2506,22 @@ def render_login_form():
             try:
                 response_picks = client.table('picks').select('*').eq('usuario', usuario_id).execute()
                 picks_disponibles = response_picks.data if response_picks.data else []
-            except:
+            except Exception as e:
+                logger.error(f"Error obteniendo picks para bankroll: {e}")
                 picks_disponibles = []
             
             # Obtener apuestas guardadas del usuario
             try:
                 response_apuestas = client.table('bankroll_apuestas').select('*').eq('usuario', usuario_id).order('fecha', desc=True).execute()
                 apuestas = response_apuestas.data if response_apuestas.data else []
-            except:
+            except Exception as e:
+                logger.error(f"Error obteniendo apuestas: {e}")
                 # Crear tabla si no existe
                 try:
                     client.table('bankroll_apuestas').execute()
-                except:
+                except Exception as e2:
+                    logger.error(f"Error creando tabla bankroll_apuestas: {e2}")
+                    apuestas = []
                     pass
                 apuestas = []
             
