@@ -482,12 +482,12 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
                 internacional = any(palabra in liga_lower for palabra in [
                     'copa colombia', 'copa libertadores', 'copa sudamericana', 
                     'copa america', 'champions league', 'uefa', 'conmebol',
-                    'euro', 'mundial'
+                    'euro', 'mundial', 'libertadores', 'sudamericana'
                 ])
                 
                 if internacional:
-                    # Torneos internacionales siempre son "Sudamérica" (o región correspondiente)
-                    current_pais = "Sudamérica"
+                    # Torneos internacionales: país vacío
+                    current_pais = ""
                 elif not current_pais or current_pais == "":
                     # Torneos locales - extraer país de los equipos
                     pais_from_home = extract_pais_from_team(home)
