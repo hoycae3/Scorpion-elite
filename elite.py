@@ -1963,91 +1963,77 @@ def render_login_form():
         
         with col_buscar2:
             if st.button("🔄 Buscar", type="primary", disabled=not equipos_excel, help=f"Busca hasta {MAX_EQUIPOS_POR_BUSQUEDA} equipos"):
-                with st.spinner("Buscando equipos..."):
-                    # Limitar equipos a buscar
-                    equipos = equipos_excel[:MAX_EQUIPOS_POR_BUSQUEDA]
+                # Limitar equipos a buscar
+                equipos = equipos_excel[:MAX_EQUIPOS_POR_BUSQUEDA]
+                
+                if not equipos:
+                    st.warning("⚠️ No hay equipos para buscar.")
+                else:
+                    st.info(f"📊 Buscando {len(equipos)} equipos...")
                     
-                    if not equipos:
-                        st.warning("⚠️ No hay equipos para buscar.")
-                    else:
-                        st.info(f"📊 Buscando {len(equipos)} equipos...")
-                        
-                        # Buscar con timeout de 60 segundos
-                        import signal
-                        def timeout_handler(signum, frame):
-                            raise TimeoutError("Tiempo agotado")
-                        
-                        signal.signal(signal.SIGALRM, timeout_handler)
-                        signal.alarm(60)
-                        
-                        try:
-                            results = run_robot_batch(equipos)
-                            signal.alarm(0)
-                        except TimeoutError:
-                            st.error("⏱️ La búsqueda tardó demasiado. Intenta de nuevo.")
-                            results = []
-                        except Exception as e:
-                            signal.alarm(0)
-                            logger.error(f"Error en búsqueda: {e}")
-                            results = []
+                    try:
+                        # Buscar equipos
+                        results = run_robot_batch(equipos)
                         
                         # Clasificar resultados
                         con_stats = [r for r in results if r.get('encontrado') and not r.get('sin_estadisticas')]
-                        sin_stats = [r for r in results if r.get('encontrado') and r.get('sin_estadisticas')]
                         no_encontrados = [r for r in results if not r.get('encontrado')]
                         
                         # Resumen
-                        st.success(f"✅ **{len(con_stats)}** con stats | **{len(no_encontrados)}** no encontrados")
+                        st.success(f"✅ **{len(con_stats)}** encontrados | **{len(no_encontrados)}** no encontrados")
                         
                         # Mostrar equipos ENCONTRADOS
                         if con_stats:
-                            st.markdown("#### 📊 Equipos con estadísticas")
+                            st.markdown("#### 📊 Equipos encontrados:")
                             for r in con_stats:
                                 fuente = r.get('fuentes_probadas', ['?'])[-1]
-                                fuente_icono = "🌐" if 'football' in fuente.lower() else ("📈" if 'soccerway' in fuente.lower() else "🔷")
+                                fuente_icono = "🌐" if 'football' in fuente.lower() else "📈"
                                 st.markdown(f"- **{r.get('equipo_real', r['equipo'])}** ({r.get('liga', 'N/A')}) {fuente_icono}")
                         
                         # Mostrar equipos NO encontrados
                         if no_encontrados:
-                            with st.expander(f"❌ {len(no_encontrados)} equipos no encontrados"):
+                            with st.expander(f"❌ {len(no_encontrados)} no encontrados"):
                                 for r in no_encontrados:
                                     st.markdown(f"- {r['equipo']}")
                         
                         # Guardar en Supabase
                         if con_stats:
-                            with st.spinner("💾 Guardando en Supabase..."):
-                                client = get_client()
-                                guardados = 0
-                                for r in con_stats:
+                            client = get_client()
+                            guardados = 0
+                            for r in con_stats:
+                                try:
+                                    equipo_nombre = r.get('equipo_real', r['equipo'])
+                                    data = {
+                                        'equipo': equipo_nombre,
+                                        'liga': r.get('liga', 'Desconocida'),
+                                        'temporada': '2024-25',
+                                        'partidos_jugados': r.get('partidos_jugados', 0) or 0,
+                                        'victorias': r.get('victorias', 0) or 0,
+                                        'empates': r.get('empates', 0) or 0,
+                                        'derrotas': r.get('derrotas', 0) or 0,
+                                        'goles_favor': r.get('goles_favor', 0) or 0,
+                                        'goles_contra': r.get('goles_contra', 0) or 0,
+                                        'lambda_local': float(r.get('lambda_local', 1.3)) or 1.3,
+                                        'lambda_visitante': float(r.get('lambda_visitante', 1.1)) or 1.1,
+                                        'promedio_tiros': float(r.get('tiros_promedio', 12)) or 12,
+                                        'promedio_tiros_arco': float(r.get('tiros_arco_promedio', 4)) or 4,
+                                        'promedio_corners_total': float(r.get('corners_promedio', 10)) or 10,
+                                        'promedio_amarillas': float(r.get('tarjetas_promedio', 3)) or 3,
+                                    }
                                     try:
-                                        equipo_nombre = r.get('equipo_real', r['equipo'])
-                                        data = {
-                                            'equipo': equipo_nombre,
-                                            'liga': r.get('liga', 'Desconocida'),
-                                            'temporada': '2024-25',
-                                            'partidos_jugados': r.get('partidos_jugados', 0) or 0,
-                                            'victorias': r.get('victorias', 0) or 0,
-                                            'empates': r.get('empates', 0) or 0,
-                                            'derrotas': r.get('derrotas', 0) or 0,
-                                            'goles_favor': r.get('goles_favor', 0) or 0,
-                                            'goles_contra': r.get('goles_contra', 0) or 0,
-                                            'lambda_local': float(r.get('lambda_local', 1.3)) or 1.3,
-                                            'lambda_visitante': float(r.get('lambda_visitante', 1.1)) or 1.1,
-                                            'promedio_tiros': float(r.get('tiros_promedio', 12)) or 12,
-                                            'promedio_tiros_arco': float(r.get('tiros_arco_promedio', 4)) or 4,
-                                            'promedio_corners_total': float(r.get('corners_promedio', 10)) or 10,
-                                            'promedio_amarillas': float(r.get('tarjetas_promedio', 3)) or 3,
-                                        }
-                                        try:
-                                            client.table('equipos_stats').insert(data).execute()
-                                        except:
-                                            client.table('equipos_stats').update(data).eq('equipo', equipo_nombre).execute()
-                                        guardados += 1
-                                    except Exception as e:
-                                        logger.error(f"Error guardando {r.get('equipo')}: {e}")
-                                
+                                        client.table('equipos_stats').insert(data).execute()
+                                    except:
+                                        client.table('equipos_stats').update(data).eq('equipo', equipo_nombre).execute()
+                                    guardados += 1
+                                except Exception as e:
+                                    logger.error(f"Error: {e}")
+                            
                             if guardados > 0:
-                                st.success(f"✅ {guardados} estadísticas guardadas")
+                                st.success(f"✅ {guardados} guardados en Supabase")
+                    
+                    except Exception as e:
+                        logger.error(f"Error en búsqueda: {e}")
+                        st.error(f"❌ Error: {str(e)[:100]}")
         
         st.markdown("---")
         st.markdown("### 📋 Equipos Guardados")
