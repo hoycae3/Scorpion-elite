@@ -626,16 +626,106 @@ def render_login_form():
 
     # Página: Partidos (NUEVA)
     if st.session_state.page == "Partidos":
-        from partidos_manager import get_partidos_demo, get_stats_equipo
+        from partidos_manager import get_partidos_demo
         from analysis_models import calculate_poisson_probabilities
+        import requests
         
         st.markdown("### 🏠 Partidos de los Próximos 7 Días")
         
-        # Mostrar fecha actual
-        from datetime import date
+        # API-Football config
+        API_KEY = "e3926f829cd848f4b2b54d722ca29701"
+        API_URL = "https://v3.football.api-sports.io"
+        
+        # Líneas que sigue (máximo 3 para caber en 90 requests)
+        LIGAS = [
+            {"id": 2, "name": "Champions League"},
+            {"id": 71, "name": "La Liga"},
+            {"id": 24, "name": "Brasileirão"},
+        ]
+        
+        # Contador de requests en session_state
+        if 'api_requests_today' not in st.session_state:
+            st.session_state.api_requests_today = 0
+        
+        # Info del día
+        from datetime import date, timedelta
         hoy = date.today()
         
-        # Intentar obtener partidos de Supabase
+        # Botón para actualizar
+        col_btn, col_info = st.columns([1, 3])
+        with col_btn:
+            if st.button("🔄 Actualizar Partidos", type="primary", use_container_width=True):
+                with st.spinner("Consultando partidos..."):
+                    client = get_client()
+                    requests_usados = 0
+                    partidos_nuevos = 0
+                    
+                    # Consultar cada liga para los próximos 7 días
+                    for liga in LIGAS:
+                        for i in range(7):
+                            fecha = (hoy + timedelta(days=i)).strftime('%Y-%m-%d')
+                            
+                            # Verificar si ya existe esta fecha en Supabase
+                            try:
+                                existe = client.table('partidos').select('fixture_id').eq('fecha', fecha).eq('liga', liga['name']).execute()
+                                if existe.data:
+                                    st.info(f"ℹ️ {liga['name']} - {fecha} ya existe")
+                                    continue
+                            except:
+                                pass
+                            
+                            # Consultar API
+                            try:
+                                headers = {'x-apisports-key': API_KEY}
+                                params = {
+                                    'league': liga['id'],
+                                    'season': 2024,
+                                    'date': fecha
+                                }
+                                response = requests.get(f"{API_URL}/fixtures", headers=headers, params=params, timeout=15)
+                                requests_usados += 1
+                                st.session_state.api_requests_today += 1
+                                
+                                if response.status_code == 200:
+                                    data = response.json()
+                                    for match in data.get('response', []):
+                                        fixture = match.get('fixture', {})
+                                        teams = match.get('teams', {})
+                                        league = match.get('league', {})
+                                        
+                                        try:
+                                            data_partido = {
+                                                'fixture_id': fixture.get('id'),
+                                                'fecha': fixture.get('date', '')[:10],
+                                                'hora': fixture.get('date', '')[11:16],
+                                                'liga': league.get('name', ''),
+                                                'liga_id': league.get('id'),
+                                                'equipo_local': teams.get('home', {}).get('name', ''),
+                                                'equipo_local_id': teams.get('home', {}).get('id'),
+                                                'equipo_visitante': teams.get('away', {}).get('name', ''),
+                                                'equipo_visitante_id': teams.get('away', {}).get('id'),
+                                            }
+                                            client.table('partidos').upsert(data_partido, on_conflict='fixture_id').execute()
+                                            partidos_nuevos += 1
+                                        except Exception as e:
+                                            logger.error(f"Error guardando: {e}")
+                                
+                                st.info(f"✅ {liga['name']} - {fecha}: {partidos_nuevos} partidos")
+                                
+                            except Exception as e:
+                                st.error(f"❌ Error: {e}")
+                            
+                            # Delay para no bloquear
+                            import time
+                            time.sleep(1)
+                    
+                    st.success(f"✅ Actualización completada: {partidos_nuevos} partidos, {requests_usados} requests usados")
+                    st.rerun()
+        
+        with col_info:
+            st.info(f"📅 {hoy.strftime('%d/%m/%Y')} | 📡 Requests hoy: {st.session_state.api_requests_today}/90 | ⚠️ Máximo 90 requests/día")
+        
+        # Obtener partidos de Supabase
         try:
             client = get_client()
             response = client.table('partidos').select('*').execute()
@@ -645,9 +735,9 @@ def render_login_form():
         
         # Si hay partidos en Supabase, usarlos; si no, usar demo
         if partidos_db:
-            st.info(f"📅 Fecha actual: {hoy.strftime('%d/%m/%Y')} | 📊 {len(partidos_db)} partidos cargados de Supabase")
+            st.success(f"✅ {len(partidos_db)} partidos de Supabase")
             
-            # Convertir formato Supabase a formato interno
+            # Convertir a formato interno
             partidos = []
             for p in partidos_db:
                 partido = {
@@ -658,60 +748,13 @@ def render_login_form():
                     "equipo_local": p.get('equipo_local', ''),
                     "equipo_visitante": p.get('equipo_visitante', ''),
                     "pais": "Global",
-                    "source": "Supabase"
                 }
-                # Obtener stats de equipos desde Supabase
-                try:
-                    stats_local = client.table('equipos_stats').select('*').eq('equipo', partido['equipo_local']).execute()
-                    if stats_local.data:
-                        s = stats_local.data[0]
-                        partido['stats_local'] = {
-                            "partidos_jugados": s.get('partidos_jugados', 0),
-                            "victorias": s.get('victorias', 0),
-                            "empates": s.get('empates', 0),
-                            "derrotas": s.get('derrotas', 0),
-                            "goles_favor": s.get('goles_favor', 0),
-                            "goles_contra": s.get('goles_contra', 0),
-                            "lambda_local": s.get('lambda_local', 1.3),
-                            "lambda_visitante": s.get('lambda_visitante', 0.9),
-                            "corners_promedio": s.get('promedio_corners_total', 5.0),
-                            "tarjetas_promedio": s.get('promedio_tarjetas', 2.0),
-                            "forma": ["?", "?", "?", "?", "?"]
-                        }
-                    else:
-                        raise Exception("No stats")
-                        
-                    stats_visitante = client.table('equipos_stats').select('*').eq('equipo', partido['equipo_visitante']).execute()
-                    if stats_visitante.data:
-                        s = stats_visitante.data[0]
-                        partido['stats_visitante'] = {
-                            "partidos_jugados": s.get('partidos_jugados', 0),
-                            "victorias": s.get('victorias', 0),
-                            "empates": s.get('empates', 0),
-                            "derrotas": s.get('derrotas', 0),
-                            "goles_favor": s.get('goles_favor', 0),
-                            "goles_contra": s.get('goles_contra', 0),
-                            "lambda_local": s.get('lambda_local', 1.3),
-                            "lambda_visitante": s.get('lambda_visitante', 0.9),
-                            "corners_promedio": s.get('promedio_corners_total', 5.0),
-                            "tarjetas_promedio": s.get('promedio_tarjetas', 2.0),
-                            "forma": ["?", "?", "?", "?", "?"]
-                        }
-                except:
-                    # Stats por defecto si no hay en Supabase
-                    partido['stats_local'] = {
-                        "partidos_jugados": 20, "victorias": 10, "empates": 5, "derrotas": 5,
-                        "goles_favor": 30, "goles_contra": 20, "lambda_local": 1.5, "lambda_visitante": 1.0,
-                        "corners_promedio": 5.5, "tarjetas_promedio": 2.0, "forma": ["?", "?", "?", "?", "?"]
-                    }
-                    partido['stats_visitante'] = {
-                        "partidos_jugados": 20, "victorias": 10, "empates": 5, "derrotas": 5,
-                        "goles_favor": 30, "goles_contra": 20, "lambda_local": 1.5, "lambda_visitante": 1.0,
-                        "corners_promedio": 5.5, "tarjetas_promedio": 2.0, "forma": ["?", "?", "?", "?", "?"]
-                    }
+                # Stats por defecto (sin stats en Supabase por ahora)
+                partido['stats_local'] = {"partidos_jugados": 20, "victorias": 10, "empates": 5, "derrotas": 5, "goles_favor": 30, "goles_contra": 20, "lambda_local": 1.5, "lambda_visitante": 1.0, "corners_promedio": 5.5, "tarjetas_promedio": 2.0, "forma": ["?", "?", "?", "?", "?"]}
+                partido['stats_visitante'] = {"partidos_jugados": 20, "victorias": 10, "empates": 5, "derrotas": 5, "goles_favor": 30, "goles_contra": 20, "lambda_local": 1.5, "lambda_visitante": 1.0, "corners_promedio": 5.5, "tarjetas_promedio": 2.0, "forma": ["?", "?", "?", "?", "?"]}
                 partidos.append(partido)
         else:
-            st.info(f"📅 Fecha actual: {hoy.strftime('%d/%m/%Y')} | 📊 {len(get_partidos_demo())} partidos de demostración")
+            st.info(f"📊 Mostrando {len(get_partidos_demo())} partidos de demostración")
             partidos = get_partidos_demo()
         
         # Filtros
@@ -724,89 +767,61 @@ def render_login_form():
         with col_f2:
             filtro_fecha = st.selectbox("📅 Filtrar por fecha", ["Todas"] + sorted(fechas_disponibles))
         
-        # Filtrar partidos
+        # Filtrar
         partidos_filtrados = partidos
         if filtro_liga != "Todas":
             partidos_filtrados = [p for p in partidos_filtrados if p["liga"] == filtro_liga]
         if filtro_fecha != "Todas":
             partidos_filtrados = [p for p in partidos_filtrados if p["fecha"] == filtro_fecha]
         
-        st.markdown(f"**📊 {len(partidos_filtrados)} partidos encontrados**")
+        st.markdown(f"**📊 {len(partidos_filtrados)} partidos**")
         
-        # Mostrar cada partido
+        # Mostrar partidos
         for partido in partidos_filtrados:
             with st.container():
                 st.markdown("---")
                 
-                # Header del partido
                 col_h1, col_h2, col_h3 = st.columns([2, 1, 2])
                 with col_h1:
                     st.markdown(f"### ⚽ {partido['equipo_local']}")
                 with col_h2:
-                    st.markdown(f"### VS")
-                    st.markdown(f"⏰ {partido.get('hora', '00:00')}")
+                    st.markdown(f"### VS\n⏰ {partido.get('hora', '00:00')}")
                 with col_h3:
                     st.markdown(f"### {partido['equipo_visitante']} ⚽")
                 
-                # Info del partido
-                col_i1, col_i2, col_i3 = st.columns(3)
-                with col_i1:
-                    st.markdown(f"🏆 **{partido['liga']}**")
-                with col_i2:
-                    st.markdown(f"📅 {partido['fecha']}")
-                with col_i3:
-                    st.markdown(f"🌍 {partido.get('pais', 'Global')}")
+                st.markdown(f"🏆 **{partido['liga']}** | 📅 {partido['fecha']}")
                 
-                # Stats de ambos equipos
+                # Stats
                 stats_l = partido.get('stats_local', {})
                 stats_v = partido.get('stats_visitante', {})
                 
                 col_s1, col_s2 = st.columns(2)
-                
                 with col_s1:
-                    st.markdown(f"#### 📊 {partido['equipo_local']}")
-                    st.markdown(f"- **PJ:** {stats_l.get('partidos_jugados', 0)} | **V:** {stats_l.get('victorias', 0)} | **E:** {stats_l.get('empates', 0)} | **D:** {stats_l.get('derrotas', 0)}")
-                    st.markdown(f"- **GF:** {stats_l.get('goles_favor', 0)} | **GC:** {stats_l.get('goles_contra', 0)}")
-                    st.markdown(f"- **λ Local:** {stats_l.get('lambda_local', 0)} | **λ Visitante:** {stats_l.get('lambda_visitante', 0)}")
-                    st.markdown(f"- **Corners:** {stats_l.get('corners_promedio', 0)}/part | **Tarjetas:** {stats_l.get('tarjetas_promedio', 0)}/part")
-                    forma = stats_l.get('forma', [])
-                    st.markdown(f"- **Forma:** {' '.join([f'`{r}`' for r in forma])}")
-                
+                    st.markdown(f"**{partido['equipo_local']}**")
+                    st.markdown(f"PJ: {stats_l.get('partidos_jugados', 0)} | V: {stats_l.get('victorias', 0)} | E: {stats_l.get('empates', 0)} | D: {stats_l.get('derrotas', 0)}")
+                    st.markdown(f"GF: {stats_l.get('goles_favor', 0)} | GC: {stats_l.get('goles_contra', 0)}")
+                    st.markdown(f"λL: {stats_l.get('lambda_local', 0)} | λV: {stats_l.get('lambda_visitante', 0)}")
                 with col_s2:
-                    st.markdown(f"#### 📊 {partido['equipo_visitante']}")
-                    st.markdown(f"- **PJ:** {stats_v.get('partidos_jugados', 0)} | **V:** {stats_v.get('victorias', 0)} | **E:** {stats_v.get('empates', 0)} | **D:** {stats_v.get('derrotas', 0)}")
-                    st.markdown(f"- **GF:** {stats_v.get('goles_favor', 0)} | **GC:** {stats_v.get('goles_contra', 0)}")
-                    st.markdown(f"- **λ Local:** {stats_v.get('lambda_local', 0)} | **λ Visitante:** {stats_v.get('lambda_visitante', 0)}")
-                    st.markdown(f"- **Corners:** {stats_v.get('corners_promedio', 0)}/part | **Tarjetas:** {stats_v.get('tarjetas_promedio', 0)}/part")
-                    forma = stats_v.get('forma', [])
-                    st.markdown(f"- **Forma:** {' '.join([f'`{r}`' for r in forma])}")
+                    st.markdown(f"**{partido['equipo_visitante']}**")
+                    st.markdown(f"PJ: {stats_v.get('partidos_jugados', 0)} | V: {stats_v.get('victorias', 0)} | E: {stats_v.get('empates', 0)} | D: {stats_v.get('derrotas', 0)}")
+                    st.markdown(f"GF: {stats_v.get('goles_favor', 0)} | GC: {stats_v.get('goles_contra', 0)}")
+                    st.markdown(f"λL: {stats_v.get('lambda_local', 0)} | λV: {stats_v.get('lambda_visitante', 0)}")
                 
-                # Análisis rápido con Poisson
+                # Análisis Poisson
                 try:
                     probs = calculate_poisson_probabilities(
                         stats_l.get('lambda_local', 1.5), 
                         stats_v.get('lambda_visitante', 1.0)
                     )
-                    
                     col_a1, col_a2, col_a3 = st.columns(3)
                     with col_a1:
-                        st.markdown(f"### 🥇 {partido['equipo_local']}")
-                        st.markdown(f"**{probs['local_win']*100:.1f}%**")
+                        st.markdown(f"**{partido['equipo_local']}**\n**{probs['local_win']*100:.1f}%**")
                     with col_a2:
-                        st.markdown(f"### 🤝 Empate")
-                        st.markdown(f"**{probs['draw']*100:.1f}%**")
+                        st.markdown(f"**Empate**\n**{probs['draw']*100:.1f}%**")
                     with col_a3:
-                        st.markdown(f"### {partido['equipo_visitante']} 🥇")
-                        st.markdown(f"**{probs['away_win']*100:.1f}%**")
+                        st.markdown(f"**{partido['equipo_visitante']}**\n**{probs['away_win']*100:.1f}%**")
                 except:
                     pass
-        
-        # Info sobre datos
-        st.markdown("---")
-        if partidos_db:
-            st.success("✅ Mostrando partidos de Supabase (datos reales)")
-        else:
-            st.info("📌 **NOTA:** Mostrando partidos de demostración. Configura el scheduler para datos reales.")
         
     # Página: Analizador
     elif st.session_state.page == "Analizador":
