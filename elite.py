@@ -647,9 +647,6 @@ def render_login_form():
         if 'api_requests_today' not in st.session_state:
             st.session_state.api_requests_today = 0
         
-        from datetime import date, timedelta
-        hoy = date.today()
-        
         # ═══════════════════════════════════════════════════════════════
         # BOTÓN ACTUALIZAR
         # ═══════════════════════════════════════════════════════════════
@@ -819,7 +816,7 @@ def render_login_form():
                     st.rerun()
         
         with col_info:
-            st.info(f"📅 {hoy.strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/90")
+            st.info(f"📅 {date.today().strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/90")
         
         # ═══════════════════════════════════════════════════════════════
         # MOSTRAR PARTIDOS (AGRUPADOS POR LIGA)
@@ -845,7 +842,7 @@ def render_login_form():
         
         # Filtrar según opción
         if filtro_opcion == "Hoy":
-            partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] == hoy.strftime('%Y-%m-%d')]
+            partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] == date.today().strftime('%Y-%m-%d')]
         elif filtro_opcion == "Mañana":
             partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] == (hoy + timedelta(days=1)).strftime('%Y-%m-%d')]
         elif filtro_opcion == "Esta semana":
