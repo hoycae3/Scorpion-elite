@@ -824,7 +824,7 @@ def render_login_form():
             st.info(f"📅 {hoy.strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/90")
         
         # ═══════════════════════════════════════════════════════════════
-        # MOSTRAR PARTIDOS (SOLO LISTA, SIN ANÁLISIS)
+        # MOSTRAR PARTIDOS (AGRUPADOS POR LIGA)
         # ═══════════════════════════════════════════════════════════════
         try:
             client = get_client()
@@ -840,55 +840,64 @@ def render_login_form():
             st.info(f"📊 Mostrando {len(get_partidos_demo())} partidos de demostración")
             partidos = get_partidos_demo()
         
-        # Filtros
-        ligas_disponibles = list(set([p.get("liga", p.get('liga', '')) for p in partidos]))
+        # Filtro por fecha
         fechas_disponibles = list(set([str(p.get('fecha', ''))[:10] for p in partidos]))
+        filtro_fecha = st.selectbox("📅 Filtrar por fecha", ["Todas"] + sorted(fechas_disponibles))
         
-        col_f1, col_f2 = st.columns(2)
-        with col_f1:
-            filtro_liga = st.selectbox("🏆 Filtrar por liga", ["Todas"] + sorted(ligas_disponibles))
-        with col_f2:
-            filtro_fecha = st.selectbox("📅 Filtrar por fecha", ["Todas"] + sorted(fechas_disponibles))
-        
-        # Filtrar
-        partidos_filtrados = partidos
-        if filtro_liga != "Todas":
-            partidos_filtrados = [p for p in partidos_filtrados if p.get('liga', '') == filtro_liga]
+        # Filtrar por fecha
         if filtro_fecha != "Todas":
-            partidos_filtrados = [p for p in partidos_filtrados if str(p.get('fecha', ''))[:10] == filtro_fecha]
+            partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] == filtro_fecha]
         
-        st.markdown(f"**📊 {len(partidos_filtrados)} partidos**")
+        # Agrupar por liga
+        ligas_partidos = {}
+        for p in partidos:
+            liga = p.get('liga', 'Sin Liga')
+            if liga not in ligas_partidos:
+                ligas_partidos[liga] = []
+            ligas_partidos[liga].append(p)
         
-        # Mostrar partidos con botón para analizar
-        for i, partido in enumerate(partidos_filtrados):
-            equipo_local = partido.get('equipo_local', '')
-            equipo_visitante = partido.get('equipo_visitante', '')
-            liga = partido.get('liga', '')
-            fecha = str(partido.get('fecha', ''))[:10]
-            hora = partido.get('hora', '00:00')
+        # Emoji por liga
+        liga_emoji = {
+            'Champions League': '🏆',
+            'Copa Sudamericana': '🌎',
+            'La Liga': '🇪🇸',
+            'Bundesliga': '🇩🇪',
+            'Brasileirão': '🇧🇷',
+        }
+        
+        # Mostrar cada liga como un expander
+        for liga, partidos_liga in sorted(ligas_partidos.items()):
+            emoji = liga_emoji.get(liga, '⚽')
             
-            with st.container():
-                st.markdown("---")
+            with st.expander(f"{emoji} **{liga}** ({len(partidos_liga)} partidos)", expanded=True):
+                # Ordenar partidos por fecha y hora
+                partidos_liga.sort(key=lambda x: (str(x.get('fecha', '')), str(x.get('hora', ''))))
                 
-                col_l, col_v, col_btn = st.columns([2, 2, 1])
-                with col_l:
-                    st.markdown(f"### ⚽ {equipo_local}")
-                with col_v:
-                    st.markdown(f"### ⚽ {equipo_visitante}")
-                with col_btn:
-                    st.markdown(f"**{hora}**")
-                
-                st.markdown(f"🏆 {liga} | 📅 {fecha}")
-                
-                # Botón para analizar este partido
-                if st.button(f"🔍 Analizar", key=f"btn_analizar_{i}"):
-                    # Guardar equipos en session_state
-                    st.session_state.selected_local = equipo_local
-                    st.session_state.selected_away = equipo_visitante
-                    st.session_state.page = "Analizador"
-                    st.rerun()
-        
-        st.info("💡 Haz click en 'Analizar' para ver el análisis completo del partido")
+                for i, partido in enumerate(partidos_liga):
+                    equipo_local = partido.get('equipo_local', '')
+                    equipo_visitante = partido.get('equipo_visitante', '')
+                    fecha = str(partido.get('fecha', ''))[:10]
+                    hora = partido.get('hora', '00:00')
+                    
+                    col_l, col_v, col_btn = st.columns([2, 2, 1])
+                    with col_l:
+                        st.markdown(f"⚽ **{equipo_local}**")
+                    with col_v:
+                        st.markdown(f"**{equipo_visitante}** ⚽")
+                    with col_btn:
+                        st.markdown(f"🕐 {hora}")
+                    
+                    col_fecha, col_btn2 = st.columns([2, 1])
+                    with col_fecha:
+                        st.caption(f"📅 {fecha}")
+                    with col_btn2:
+                        if st.button(f"🔍 Analizar", key=f"btn_{liga}_{i}"):
+                            st.session_state.selected_local = equipo_local
+                            st.session_state.selected_away = equipo_visitante
+                            st.session_state.page = "Analizador"
+                            st.rerun()
+                    
+                    st.markdown("---")
         
     # Página: Analizador
     elif st.session_state.page == "Analizador":
