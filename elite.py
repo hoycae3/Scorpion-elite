@@ -1838,8 +1838,8 @@ def render_login_form():
         usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
         
         # ==================== TABS VIP ====================
-        tab_roi, tab_bankroll, tab_value, tab_alertas, tab_ranking, tab_export = st.tabs([
-            "📊 ROI por Modelo", "💰 Bankroll", "🎯 Value Bets", "🔔 Alertas", "🏆 Ranking", "📄 Exportar"
+        tab_roi, tab_resultados, tab_bankroll, tab_value, tab_alertas, tab_ranking, tab_export = st.tabs([
+            "📊 ROI", "📝 Resultados", "💰 Bankroll", "🎯 Value Bets", "🔔 Alertas", "🏆 Ranking", "📄 Exportar"
         ])
         
         # ========== TAB 1: ROI POR MODELO ==========
@@ -1993,7 +1993,100 @@ def render_login_form():
             else:
                 st.info("📭 No hay picks guardados aún. Ve al Analizador para crear picks.")
         
-        # ========== TAB 2: BANKROLL ==========
+        # ========== TAB 2: INGRESAR RESULTADOS ==========
+        with tab_resultados:
+            st.markdown("### 📝 Ingresar Resultados")
+            st.info("💡 Completa el marcador de los partidos para calibrar las predicciones")
+            
+            # Obtener picks sin resultado
+            try:
+                response = client.table('picks').select('*').order('fecha', desc=True).execute()
+                picks = response.data if response.data else []
+            except Exception as e:
+                picks = []
+                st.error(f"Error: {str(e)[:50]}")
+            
+            # Filtrar picks sin resultado
+            picks_sin_resultado = [p for p in picks if not p.get('marcador') or p.get('marcador') == '?']
+            
+            if picks_sin_resultado:
+                st.markdown(f"#### 📋 {len(picks_sin_resultado)} picks pendientes de resultado")
+                
+                for p in picks_sin_resultado:
+                    pick_id = p.get('id')
+                    local = p.get('equipo_local', '?')
+                    visitante = p.get('equipo_visitante', '?')
+                    fecha = p.get('fecha', '')[:10]
+                    
+                    with st.expander(f"⚽ {local} vs {visitante} ({fecha})"):
+                        st.markdown(f"**Predicciones:** 1X2: {p.get('prediccion_1x2')} | O/U: {p.get('prediccion_ou')} | BTTS: {p.get('prediccion_btts')}")
+                        
+                        col1, col2, col3, col4 = st.columns([1,1,1,1])
+                        with col1:
+                            gl = st.number_input("GF Local", min_value=0, max_value=15, value=0, key=f"gf_l_{pick_id}")
+                        with col2:
+                            gv = st.number_input("GF Visit", min_value=0, max_value=15, value=0, key=f"gf_v_{pick_id}")
+                        with col3:
+                            corners = st.number_input("Corners", min_value=0, max_value=50, value=0, key=f"cor_{pick_id}")
+                        with col4:
+                            tarjetas = st.number_input("Tarjetas", min_value=0, max_value=30, value=0, key=f"tar_{pick_id}")
+                        
+                        col5, col6 = st.columns([1,1])
+                        with col5:
+                            remates = st.number_input("Remates", min_value=0, max_value=50, value=0, key=f"rem_{pick_id}")
+                        with col6:
+                            pass
+                        
+                        if st.button("💾 Guardar Resultado", key=f"btn_res_{pick_id}"):
+                            # Calcular resultado 1X2
+                            if gl > gv:
+                                resultado_1x2 = "1"
+                            elif gl < gv:
+                                resultado_1x2 = "2"
+                            else:
+                                resultado_1x2 = "X"
+                            
+                            # Over/Under
+                            total_goles = gl + gv
+                            resultado_ou = "Over 2.5" if total_goles > 2.5 else "Under 2.5"
+                            
+                            # BTTS
+                            ambos_marcan = "Si" if gl > 0 and gv > 0 else "No"
+                            
+                            # Verificar aciertos
+                            acertado_1x2 = p.get('prediccion_1x2') == resultado_1x2
+                            acertado_ou = p.get('prediccion_ou') == resultado_ou
+                            acertado_btts = p.get('prediccion_btts') == ambos_marcan
+                            acertado_corners = p.get('prediccion_corners') is not None
+                            acertado_tarjetas = p.get('prediccion_tarjetas') is not None
+                            acertado_remates = p.get('prediccion_remates') is not None
+                            
+                            try:
+                                client.table('picks').update({
+                                    'marcador': f"{gl}-{gv}",
+                                    'resultado_1x2': resultado_1x2,
+                                    'resultado_ou': resultado_ou,
+                                    'resultado_btts': ambos_marcan,
+                                    'resultado_corners': str(corners),
+                                    'resultado_tarjetas': str(tarjetas),
+                                    'resultado_remates': str(remates),
+                                    'acertado_1x2': acertado_1x2,
+                                    'acertado_ou': acertado_ou,
+                                    'acertado_btts': acertado_btts,
+                                    'acertado_corners': acertado_corners,
+                                    'acertado_tarjetas': acertado_tarjetas,
+                                    'acertado_remates': acertado_remates,
+                                }).eq('id', pick_id).execute()
+                                st.success("✅ Resultado guardado! La calibración se actualiza automáticamente.")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error: {str(e)[:50]}")
+            else:
+                st.success("🎉 ¡Todos los picks tienen resultado!")
+                st.info("Los resultados ayudan a calibrar las próximas predicciones.")
+
+
+        # ========== TAB 3: BANKROLL ==========
         with tab_bankroll:
             st.markdown("### 💰 Mi Bankroll Real")
             
@@ -2286,7 +2379,7 @@ def render_login_form():
                 else:
                     st.info("No tienes apuestas registradas")
         
-        # ========== TAB 3: VALUE BETS ==========
+        # ========== TAB 4: VALUE BETS ==========
         with tab_value:
             st.markdown("### 🎯 Detector de Value Bets")
             st.markdown("_Encuentra apuestas donde la probabilidad del modelo es MAYOR que la cuota del mercado_")
@@ -2355,7 +2448,7 @@ def render_login_form():
             except Exception as e:
                 st.info("📭 Conecta a Supabase para ver value bets guardados.")
         
-        # ========== TAB 4: ALERTAS ==========
+        # ========== TAB 5: ALERTAS ==========
         with tab_alertas:
             st.markdown("### 🔔 Centro de Alertas VIP")
             
@@ -2428,7 +2521,7 @@ def render_login_form():
             except Exception as e:
                 st.info("📭 Conecta a Supabase para ver alertas.")
         
-        # ========== TAB 5: RANKING ==========
+        # ========== TAB 6: RANKING ==========
         with tab_ranking:
             st.markdown("### 🏆 Ranking Mensual VIP")
             
@@ -2487,7 +2580,7 @@ def render_login_form():
                     else:
                         st.info(f"🔒 {badge}")
         
-        # ========== TAB 6: EXPORTAR ==========
+        # ========== TAB 7: EXPORTAR ==========
         with tab_export:
             st.markdown("### 📄 Exportar Reportes")
             
