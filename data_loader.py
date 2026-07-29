@@ -477,11 +477,21 @@ def parse_flashscore_excel(df: pd.DataFrame) -> pd.DataFrame:
                     break
             
             if home and away and home != away and len(home) > 1 and len(away) > 1:
-                # Si no hay país válido, intentar extraerlo de los equipos
-                if not current_pais or current_pais == "":
+                # Verificar si la liga es un torneo internacional
+                liga_lower = current_liga.lower() if current_liga else ""
+                internacional = any(palabra in liga_lower for palabra in [
+                    'copa colombia', 'copa libertadores', 'copa sudamericana', 
+                    'copa america', 'champions league', 'uefa', 'conmebol',
+                    'euro', 'mundial'
+                ])
+                
+                if internacional:
+                    # Torneos internacionales siempre son "Sudamérica" (o región correspondiente)
+                    current_pais = "Sudamérica"
+                elif not current_pais or current_pais == "":
+                    # Torneos locales - extraer país de los equipos
                     pais_from_home = extract_pais_from_team(home)
                     pais_from_away = extract_pais_from_team(away)
-                    # Preferir el país del visitante (generalmente es más específico)
                     if pais_from_away:
                         current_pais = pais_from_away
                     elif pais_from_home:
