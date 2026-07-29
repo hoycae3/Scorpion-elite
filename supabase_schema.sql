@@ -607,3 +607,42 @@ CREATE INDEX IF NOT EXISTS idx_ranking_posicion ON ranking(posicion);
 
 ALTER TABLE ranking ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "ranking_all" ON ranking FOR ALL USING (true) WITH CHECK (true);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLA CUOTAS_CACHE
+-- Guarda cuotas de partidos para revisión posterior
+-- ═══════════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS cuotas_cache (
+    id BIGSERIAL PRIMARY KEY,
+    fixture_id BIGINT,
+    fecha DATE NOT NULL,
+    liga VARCHAR(255),
+    equipo_local VARCHAR(255),
+    equipo_visitante VARCHAR(255),
+    -- Cuotas 1X2
+    cuota_1 DECIMAL(5,2),
+    cuota_X DECIMAL(5,2),
+    cuota_2 DECIMAL(5,2),
+    -- Cuotas Over/Under
+    cuota_over_25 DECIMAL(5,2),
+    cuota_under_25 DECIMAL(5,2),
+    cuota_over_35 DECIMAL(5,2),
+    cuota_under_35 DECIMAL(5,2),
+    -- Cuotas BTTS
+    cuota_btts_yes DECIMAL(5,2),
+    cuota_btts_no DECIMAL(5,2),
+    -- Cuotas Corners
+    cuota_corners_over_95 DECIMAL(5,2),
+    cuota_corners_under_95 DECIMAL(5,2),
+    -- Casa de apuestas
+    casa_apuestas VARCHAR(100),
+    -- Metadatos
+    buscado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_cuotas_fixture ON cuotas_cache(fixture_id);
+CREATE INDEX IF NOT EXISTS idx_cuotas_fecha ON cuotas_cache(fecha);
+
+ALTER TABLE cuotas_cache ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "cuotas_all" ON cuotas_cache FOR ALL USING (true) WITH CHECK (true);
