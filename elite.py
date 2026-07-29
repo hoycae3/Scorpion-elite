@@ -664,20 +664,35 @@ def render_login_form():
                     requests_usados = 0
                     
                     # ═══════════════════════════════════════════════════
-                    # PASO 1: Consultar PARTIDOS de los próximos 7 días (solo fechas nuevas)
+                    # PASO 1: Consultar PARTIDOS
                     # ═══════════════════════════════════════════════════
-                    st.info("📅 PASO 1: Consultando partidos de los próximos 7 días...")
                     
-                    for liga in LIGAS:
-                        # Solo consultar las fechas que NO están en Supabase
-                        for i in range(7):
-                            fecha = (hoy + timedelta(days=i)).strftime('%Y-%m-%d')
-                            
+                    # Verificar si ya hay partidos en Supabase
+                    try:
+                        response = client.table('partidos').select('fixture_id', count='exact').limit(1).execute()
+                        hay_partidos = response.count and response.count > 0
+                    except:
+                        hay_partidos = False
+                    
+                    if not hay_partidos:
+                        # PRIMERA VEZ: Buscar 7 días (29/07 al 04/08)
+                        st.info("📅 PRIMERA VEZ: Buscando partidos de los próximos 7 días...")
+                        dias_totales = 7
+                    else:
+                        # Ya hay datos: buscar solo 1 día nuevo (el día 8)
+                        st.info("📅 Buscando solo 1 día nuevo...")
+                        dias_totales = 1
+                    
+                    # Consultar cada día
+                    for d in range(dias_totales):
+                        fecha = (hoy + timedelta(days=d)).strftime('%Y-%m-%d')
+                        
+                        for liga in LIGAS:
                             # Verificar si ya existe esta fecha+liga
                             try:
                                 existe = client.table('partidos').select('fixture_id').eq('fecha', fecha).eq('liga', liga['name']).execute()
                                 if existe.data:
-                                    continue  # Ya existe, no consultar
+                                    continue  # Ya existe
                             except:
                                 pass
                             
@@ -719,7 +734,7 @@ def render_login_form():
                             except Exception as e:
                                 st.error(f"❌ Error: {e}")
                             
-                            time.sleep(1)  # Delay para no bloquear
+                            time.sleep(1)
                     
                     # ═══════════════════════════════════════════════════
                     # PASO 2: Consultar ESTADÍSTICAS de equipos que juegan HOY y MAÑANA
