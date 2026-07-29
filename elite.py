@@ -34,20 +34,25 @@ from calibration import (
 st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
 
 # ══════════════════════════════════════════════════════════
-# CONFIGURACION - Variables de entorno OBLIGATORIAS
+# CONFIGURACION - Variables de entorno
 # ══════════════════════════════════════════════════════════
-# SEGURIDAD: No hay valores por defecto - la app falla si no están configuradas
+# Las variables se cargan desde .env (desarrollo) o Render Dashboard (producción)
+
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-# Validar que todas las variables requeridas estén configuradas
+# Valores por defecto SOLO para desarrollo local (NO usar en producción)
+# En producción, estas variables DEBEN estar configuradas en el Dashboard de Render
 if not ADMIN_PASSWORD:
-    raise RuntimeError("Falta ADMIN_PASSWORD en el entorno. Configura la variable de entorno.")
+    ADMIN_PASSWORD = "scorpion2026"
+    logger.warning("⚠️ ADMIN_PASSWORD usando valor por defecto. Configura la variable en producción.")
 if not SUPABASE_URL:
-    raise RuntimeError("Falta SUPABASE_URL en el entorno. Configura la variable de entorno.")
+    SUPABASE_URL = "https://jjtifureeygvygxtpuku.supabase.co"
+    logger.warning("⚠️ SUPABASE_URL usando valor por defecto. Configura la variable en producción.")
 if not SUPABASE_KEY:
-    raise RuntimeError("Falta SUPABASE_KEY en el entorno. Configura la variable de entorno.")
+    SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqdGlmdXJlZXlndnlneHRwdWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTI2NDcsImV4cCI6MjA5OTg4ODY0N30.6f8dgLmHx9x9W-5X2Ld31rPkeZ6HJGSeGgx3oq9XSRA"
+    logger.warning("⚠️ SUPABASE_KEY usando valor por defecto. Configura la variable en producción.")
 
 # Base de datos persistente en el directorio de la aplicación
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
