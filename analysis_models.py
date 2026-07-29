@@ -29,6 +29,43 @@ def pp(lmbda: float, k: int) -> float:
     return (lmbda ** k) * math.exp(-lmbda) / math.factorial(k)
 
 
+def calculate_poisson_probabilities(lambda_local: float, lambda_visitante: float) -> Dict:
+    """
+    Calcula probabilidades 1X2 usando Poisson.
+    
+    Args:
+        lambda_local: Lambda del equipo local
+        lambda_visitante: Lambda del equipo visitante
+    
+    Returns:
+        Dict con 'local_win', 'draw', 'away_win'
+    """
+    import math
+    
+    p1 = px = p2 = 0.0
+    
+    # Calcular probabilidades para todos los marcadores posibles
+    for gl in range(8):  # Goles local 0-7
+        for gv in range(8):  # Goles visitante 0-7
+            # Probabilidad de Poisson para cada equipo
+            prob_gl = (lambda_local ** gl) * math.exp(-lambda_local) / math.factorial(gl)
+            prob_gv = (lambda_visitante ** gv) * math.exp(-lambda_visitante) / math.factorial(gv)
+            prob_marcador = prob_gl * prob_gv
+            
+            if gl > gv:
+                p1 += prob_marcador  # Victoria local
+            elif gl == gv:
+                px += prob_marcador  # Empate
+            else:
+                p2 += prob_marcador  # Victoria visitante
+    
+    return {
+        'local_win': p1,
+        'draw': px,
+        'away_win': p2
+    }
+
+
 def poisson_1x2(xl: float, xv: float) -> tuple:
     """Modelo Poisson básico para 1X2"""
     p1 = px = p2 = 0.0
