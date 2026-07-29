@@ -8,6 +8,11 @@ import html
 import bcrypt
 from datetime import date, timedelta
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde .env si existe
+# En producción (Render) las variables vienen del Dashboard
+load_dotenv()
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)

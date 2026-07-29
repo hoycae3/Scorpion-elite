@@ -23,5 +23,11 @@ EXPOSE 8501
 ENV STREAMLIT_SERVER_FILE_WATCHER_TYPE=none
 ENV STREAMLIT_SERVER_HEADLESS=true
 
+# Cargar variables de entorno desde .env si existe
+# (En producción estas variables vienen de Render Dashboard)
+RUN if [ -f /app/.env ]; then \
+    grep -v '^#' /app/.env | grep -v '^$' | sed 's/^/export /' >> /etc/bash.bashrc; \
+    fi
+
 # Comando - elite.py
 CMD ["streamlit", "run", "elite.py", "--server.port=8501", "--server.address=0.0.0.0"]
