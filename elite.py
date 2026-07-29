@@ -1650,37 +1650,34 @@ def render_login_form():
                                         # 'ultimos_5_partidos': r.get('ultimos_5_partidos', []),
                                     }
                                     
-                                    # Intentar upsert con on_conflict para UNIQUE(equipo, temporada)
+                                    # Primero verificar si existe y actualizar, o crear nuevo
                                     try:
-                                        client.table('equipos_stats').upsert(
-                                            data, 
-                                            on_conflict='equipo,temporada'
-                                        ).execute()
-                                    except Exception as upsert_error:
-                                        # Si falla, intentar con solo 'equipo' como clave única
+                                        # Intentar insertar (si existe con mismo equipo, fallará)
+                                        client.table('equipos_stats').insert(data).execute()
+                                    except Exception as insert_error:
+                                        # Si falla (ya existe), intentar actualizar
                                         try:
-                                            client.table('equipos_stats').upsert(
-                                                data, 
-                                                on_conflict='equipo'
-                                            ).execute()
-                                        except Exception as e2:
+                                            client.table('equipos_stats').update(data).eq('equipo', equipo_nombre).execute()
+                                        except Exception as update_error:
                                             errores += 1
-                                            logger.error(f"Error guardando {equipo_nombre}: {e2}")
                                             continue
                                     
                                     guardados += 1
-                                    st.info(f"✅ {equipo_nombre}")
                                 except Exception as e:
                                     errores += 1
                                     logger.error(f"Error guardando {r.get('equipo')}: {e}")
                             
                             if guardados > 0:
-                                st.success(f"✅ {guardados} estadísticas guardadas en Supabase")
+                                st.success(f"✅ {guardados} estadísticas guardadas/actualizadas en Supabase")
                             if errores > 0:
                                 st.warning(f"⚠️ {errores} equipos no se pudieron guardar")
+                            if guardados == 0 and errores == 0:
+                                st.info("ℹ️ No se encontraron estadísticas para guardar")
                                 
                 except Exception as e:
-                    st.error(f"Error: {str(e)[:100]}")
+                    st.error(f"Error: {str(e)}")
+                    import traceback
+                    st.code(traceback.format_exc())
         
         st.markdown("---")
         st.markdown("### ➕ Agregar / Actualizar Equipo (Manual)")
