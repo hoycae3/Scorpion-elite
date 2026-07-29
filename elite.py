@@ -1581,7 +1581,7 @@ def render_login_form():
         st.markdown("### 📈 Estadísticas")
         
         # ==================== BUSCADOR DE EQUIPOS ====================
-        st.markdown("### 🔍 Buscar Equipo con Robot")
+        st.markdown("### 🔍 Buscar Equipo")
         
         # Lista de equipos por liga
         EQUIPOS_POR_LIGA = {
@@ -1691,6 +1691,19 @@ def render_login_form():
                 "Huachipato", "La Calera", "Magallanes", "Nublense", "O'Higgins",
                 "Palestino", "Puerto Montt", "San Luis", "Santiago Morning", "Unión Española",
                 "Unión La Calera", "Universidad Católica", "Universidad de Chile", "Universidad de Concepción", "Vallenar"
+            ],
+            "🇨🇴 Colombia - Categoría Primera A": [
+                "Águilas Doradas", "Alianza Petrolera", "Atlético Bucaramanga", "Atlético Nacional", "Boyacá Chicó",
+                "Cagliari", "CD Pasto", "Deportes Tolima", "Deportivo Cali", "Deportivo Pereira",
+                "Deportivo Pasto", "Envigado", "Equidad", "Fortaleza CEIF", " Independiente Medellín",
+                "Independiente Santa Fe", "Jaguares de Córdoba", "Junior", "La Equidad", "Llaneros",
+                "Millonarios", "Once Caldas", "Patriotas", "Rionegro Águilas", "Santa Fe",
+                "Sportivo", "Unión Magdalena", "Vehine", "Xerez"
+            ],
+            "🇨🇴 Colombia - Categoría Primera B": [
+                "Atlético Huila", "Barranquilla FC", "Bogotá FC", "Córdoba FC", "Cortuluá",
+                "Deportes Quindío", "Leones", "Orlando Pirates", "Quindío", "Real Cartagena",
+                "Real Santander", "River Plate", "Tolima", "Unión Barranquilla", "Valledupar"
             ],
             "🇲🇽 México - Liga MX": [
                 "América", "Atlas", "Cruz Azul", "Chivas", "FC Juárez",
