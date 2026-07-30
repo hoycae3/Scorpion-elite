@@ -698,11 +698,11 @@ def render_login_form():
             st.session_state.api_requests_today = 0
         
         # ═══════════════════════════════════════════════════════════════
-        # BOTÓN ACTUALIZAR
+        # BOTÓN BUSCAR
         # ═══════════════════════════════════════════════════════════════
         col_btn, col_info = st.columns([1, 3])
         with col_btn:
-            if st.button("🔄 Actualizar Todo", type="primary", use_container_width=True):
+            if st.button("🔄 Buscar", type="primary", use_container_width=True):
                 with st.spinner("Consultando..."):
                     client = get_client()
                     requests_usados = 0
@@ -711,8 +711,8 @@ def render_login_form():
                     # PASO 1: Consultar PARTIDOS
                     # ═══════════════════════════════════════════════════
                     
-                    # Siempre mantener 7 días hacia adelante desde manana
-                    st.info("📅 Buscando partidos para tener siempre 7 días hacia adelante...")
+                    # Siempre mantener 7 días hacia adelante desde mañana
+                    st.info("📅 Buscando partidos...")
                     dias_totales = 7
                     
                     hoy = date.today()
@@ -734,9 +734,9 @@ def render_login_form():
                             dias_a_buscar.append(fecha)
                     
                     if not dias_a_buscar:
-                        st.success("🎉 Ya tienes todos los partidos de los próximos 7 días!")
+                        st.success("🎉 Todo actualizado!")
                     else:
-                        st.info(f"📅 Días a buscar: {dias_a_buscar}")
+                        st.info(f"📅 Buscando {len(dias_a_buscar)} días...")
                     
                     for fecha in dias_a_buscar:
                         api_funciona = False
