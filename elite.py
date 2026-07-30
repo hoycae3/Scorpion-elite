@@ -711,38 +711,32 @@ def render_login_form():
                     # PASO 1: Consultar PARTIDOS
                     # ═══════════════════════════════════════════════════
                     
-                    # Siempre buscar para tener 7 días hacia adelante desde HOY
+                    # Siempre mantener 7 días hacia adelante desde manana
                     st.info("📅 Buscando partidos para tener siempre 7 días hacia adelante...")
                     dias_totales = 7
                     
                     hoy = date.today()
                     
-                    # Encontrar el ÚLTIMO día que tiene datos en los próximos 7 días
-                    ultimo_dia_con_datos = None
-                    for d in range(dias_totales):
+                    # Siempre trabajamos con el rango: mañana hasta 6 días después (7 días)
+                    dias_a_buscar = []
+                    
+                    # Verificar cada día del rango mañana a +6 días
+                    for d in range(1, dias_totales + 1):  # d = 1,2,3,4,5,6,7 (mañana a +6 días)
                         fecha = (hoy + timedelta(days=d)).strftime('%Y-%m-%d')
                         try:
                             existe = client.table('partidos').select('fixture_id').eq('fecha', fecha).execute()
                             if existe.data:
-                                ultimo_dia_con_datos = d
+                                st.info(f"⏭️ {fecha}: ya hay {len(existe.data)} partidos guardados")
+                            else:
+                                dias_a_buscar.append(fecha)
+                                st.info(f"✅ {fecha}: se buscara")
                         except:
-                            pass
+                            dias_a_buscar.append(fecha)
                     
-                    # Si no hay ningún día con datos, buscar los primeros 7 días
-                    if ultimo_dia_con_datos is None:
-                        dias_a_buscar = [(hoy + timedelta(days=d)).strftime('%Y-%m-%d') for d in range(dias_totales)]
-                        st.info("📅 PRIMERA VEZ: Buscando partidos de los próximos 7 días...")
+                    if not dias_a_buscar:
+                        st.success("🎉 Ya tienes todos los partidos de los próximos 7 días!")
                     else:
-                        # Calcular cuántos días faltan para tener 7 días hacia adelante
-                        dias_faltan = dias_totales - 1 - ultimo_dia_con_datos
-                        
-                        if dias_faltan <= 0:
-                            st.success("🎉 Ya tienes todos los partidos de los próximos 7 días!")
-                            dias_a_buscar = []
-                        else:
-                            # Buscar solo los días que faltan
-                            dias_a_buscar = [(hoy + timedelta(days=ultimo_dia_con_datos + 1 + d)).strftime('%Y-%m-%d') for d in range(dias_faltan)]
-                            st.info(f"📅 Buscando {dias_faltan} días nuevos para completar 7 días...")
+                        st.info(f"📅 Días a buscar: {dias_a_buscar}")
                     
                     for fecha in dias_a_buscar:
                         api_funciona = False
