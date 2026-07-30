@@ -6,11 +6,28 @@ Funciona para: 1X2, Over/Under, BTTS, Corners
 """
 
 import json
+import logging
 import os
+import unicodedata
 from typing import Dict, List, Optional
 from datetime import datetime
 
+logger = logging.getLogger(__name__)
+
 CALIBRATION_FILE = "/tmp/scorpion_calibration.json"
+
+
+def normalizar_equipo(nombre: str) -> str:
+    """Normaliza nombre de equipo: lowercase, sin acentos, sin espacios extra."""
+    if not nombre:
+        return ""
+    # Normalizar Unicode (quitar acentos)
+    nombre = unicodedata.normalize('NFKD', nombre).encode('ASCII', 'ignore').decode('ASCII')
+    # Lowercase y strip
+    nombre = nombre.lower().strip()
+    # Quitar espacios múltiples
+    nombre = ' '.join(nombre.split())
+    return nombre
 
 
 def cargar_calibracion() -> Dict:
@@ -18,8 +35,8 @@ def cargar_calibracion() -> Dict:
         try:
             with open(CALIBRATION_FILE, 'r') as f:
                 return json.load(f)
-        except:
-            pass
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning(f"Error cargando calibración, reseteando: {e}")
     return {"equipos": {}, "historico": []}
 
 
@@ -42,7 +59,9 @@ def registrar_resultado(
     resultado_real: Optional[str] = None,  # Resultado 1X2
     marcador: Optional[str] = None,  # Marcador "2-1"
     confianza: int = 0,
-    rango: str = "D"
+    rango: str = "D",
+    corners_local_real: Optional[int] = None,  # Fix #8
+    corners_visitante_real: Optional[int] = None
 ):
     """
     Registra el resultado completo de un analisis.
@@ -55,8 +74,8 @@ def registrar_resultado(
     }
     """
     data = cargar_calibracion()
-    equipo_local_norm = equipo_local.lower().strip()
-    equipo_visitante_norm = equipo_visitante.lower().strip()
+    equipo_local_norm = normalizar_equipo(equipo_local)
+    equipo_visitante_norm = normalizar_equipo(equipo_visitante)
     
     # Calcular errores de goles
     error_local = goles_local_real - lambda_local_predicha
@@ -93,12 +112,28 @@ def registrar_resultado(
                     ('No' in predicciones.get('btts', {}).get('pick', '') and not ambos_marcan)
     }
     
-    # Corners (estimado - necesita mas datos)
-    resultados_evaluados['corners'] = {
-        'prediccion': predicciones.get('corners', {}).get('pick', ''),
-        'resultado_real': marcador if marcador else str(goles_local_real + goles_visitante_real),
-        'acertado': None  # Se determina despues si hay datos de corners
-    }
+    # Corners - Fix #8: evaluar si hay datos reales
+    if corners_local_real is not None and corners_visitante_real is not None:
+        total_corners_real = corners_local_real + corners_visitante_real
+        pick_corners = predicciones.get('corners', {}).get('pick', '')
+        # Verificar si el pick es Over o Under 9.5
+        if 'Over' in pick_corners:
+            acertado_corners = total_corners_real > 9.5
+        elif 'Under' in pick_corners:
+            acertado_corners = total_corners_real <= 9.5
+        else:
+            acertado_corners = None
+        resultados_evaluados['corners'] = {
+            'prediccion': pick_corners,
+            'resultado_real': total_corners_real,
+            'acertado': acertado_corners
+        }
+    else:
+        resultados_evaluados['corners'] = {
+            'prediccion': predicciones.get('corners', {}).get('pick', ''),
+            'resultado_real': str(goles_local_real + goles_visitante_real),
+            'acertado': None
+        }
     
     registro = {
         "fecha": datetime.now().isoformat(),
@@ -183,7 +218,7 @@ def _actualizar_factor_equipo(data: Dict, equipo: str, error: float, es_local: b
 
 def obtener_factor_correccion(equipo: str, como_local: bool) -> float:
     data = cargar_calibracion()
-    equipo_norm = equipo.lower().strip()
+    equipo_norm = normalizar_equipo(equipo)
     
     if equipo_norm in data["equipos"]:
         equipo_data = data["equipos"][equipo_norm]
