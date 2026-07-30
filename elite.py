@@ -24,6 +24,7 @@ from analysis_models import calcular
 from stats_extractor import calculate_team_lambda
 from stats_robot import run_robot_batch
 from scrapers_fallback import scrape_team_fallback
+from partidos_manager import scrape_flashscore_partidos
 from calibration import (
     get_lambda_ajustada,
     registrar_resultado,
@@ -681,32 +682,56 @@ def render_login_form():
                     for d in range(dias_totales):
                         fecha = (hoy + timedelta(days=d)).strftime('%Y-%m-%d')
                         
-                        for liga in LIGAS:
-                            try:
-                                existe = client.table('partidos').select('fixture_id').eq('fecha', fecha).eq('liga', liga['name']).execute()
-                                if existe.data:
-                                    continue
-                            except:
-                                pass
+                        # Verificar si ya hay partidos para esta fecha
+                        try:
+                            existe = client.table('partidos').select('fixture_id').eq('fecha', fecha).execute()
+                            if existe.data:
+                                st.info(f"⏭️ {fecha}: ya hay {len(existe.data)} partidos guardados")
+                                continue
+                        except:
+                            pass
+                        
+                        # Intentar primero con API-Football - buscar TODOS los partidos del día
+                        api_funciona = False
+                        try:
+                            # Llamada SIN filtrar por liga - obtiene todos los partidos del día
+                            headers = {'x-apisports-key': API_KEY}
+                            params = {'date': fecha}  # Sin league ni season
+                            response = requests.get(f"{API_URL}/fixtures", headers=headers, params=params, timeout=30)
+                            requests_usados += 1
+                            st.session_state.api_requests_today += 1
                             
-                            try:
-                                headers = {'x-apisports-key': API_KEY}
-                                params = {'league': liga['id'], 'season': 2024, 'date': fecha}
-                                response = requests.get(f"{API_URL}/fixtures", headers=headers, params=params, timeout=15)
-                                requests_usados += 1
-                                st.session_state.api_requests_today += 1
-                                
-                                if response.status_code == 200:
-                                    data = response.json()
+                            if response.status_code == 200:
+                                data = response.json()
+                                # Verificar si hay errores de API
+                                if data.get('errors', {}).get('token', ''):
+                                    logger.warning(f"API-Football suspendida: {data['errors']['token']}")
+                                    st.warning(f"⚠️ API-Football suspendida, usando Flashscore...")
+                                elif data.get('response'):
+                                    api_funciona = True
+                                    all_matches = data.get('response', [])
+                                    
+                                    # Nombres de las 5 ligas que nos interesan
+                                    ligas_interes = [l['name'] for l in LIGAS]
+                                    
+                                    # Filtrar solo los de las ligas que nos interesan
+                                    partidos_filtrados = []
+                                    for match in all_matches:
+                                        league = match.get('league', {})
+                                        league_name = league.get('name', '')
+                                        if league_name in ligas_interes:
+                                            partidos_filtrados.append(match)
+                                    
+                                    # Guardar solo los partidos de las ligas que nos interesan
                                     partidos_guardados = 0
-                                    for match in data.get('response', []):
+                                    for match in partidos_filtrados:
                                         fixture = match.get('fixture', {})
                                         teams = match.get('teams', {})
                                         league = match.get('league', {})
                                         
                                         try:
                                             data_partido = {
-                                                'fixture_id': fixture.get('id'),
+                                                'fixture_id': str(fixture.get('id')),
                                                 'fecha': fixture.get('date', '')[:10],
                                                 'hora': fixture.get('date', '')[11:16],
                                                 'liga': league.get('name', ''),
@@ -715,18 +740,40 @@ def render_login_form():
                                                 'equipo_local_id': teams.get('home', {}).get('id'),
                                                 'equipo_visitante': teams.get('away', {}).get('name', ''),
                                                 'equipo_visitante_id': teams.get('away', {}).get('id'),
+                                                'source': 'api-football'
                                             }
                                             client.table('partidos').upsert(data_partido, on_conflict='fixture_id').execute()
                                             partidos_guardados += 1
                                         except:
                                             pass
                                     
-                                    st.info(f"✅ {liga['name']} - {fecha}: {partidos_guardados} partidos")
+                                    total_partidos_dia = len(all_matches)
+                                    st.success(f"✅ {fecha}: {partidos_guardados} partidos ({total_partidos_dia} totales, filtrados por tus 5 ligas)")
+                        except Exception as e:
+                            logger.warning(f"Error API-Football {fecha}: {e}")
+                        
+                        # Si API-Football no funcionó, usar Flashscore
+                        if not api_funciona:
+                            try:
+                                st.info(f"🔄 Buscando en Flashscore...")
+                                partidos_fs = scrape_flashscore_partidos(fecha)
                                 
+                                if partidos_fs:
+                                    partidos_guardados = 0
+                                    for data_partido in partidos_fs:
+                                        try:
+                                            client.table('partidos').upsert(data_partido, on_conflict='fixture_id').execute()
+                                            partidos_guardados += 1
+                                        except:
+                                            pass
+                                    st.success(f"✅ {fecha}: {partidos_guardados} partidos (Flashscore)")
+                                else:
+                                    st.info(f"📭 {fecha}: sin partidos en Flashscore")
                             except Exception as e:
-                                st.error(f"❌ Error: {e}")
-                            
-                            time.sleep(1)
+                                st.error(f"❌ Error Flashscore: {e}")
+                                logger.error(f"Error Flashscore: {e}")
+                        
+                        time.sleep(1)
                     
                     # ═══════════════════════════════════════════════════
                     # PASO 2: Consultar ESTADÍSTICAS
