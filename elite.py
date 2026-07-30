@@ -782,11 +782,12 @@ def render_login_form():
                                         bookmakers = match.get('bookmakers', [])
                                         
                                         fixture_id = str(fixture.get('id'))
+                                        fixture_id_int = int(fixture.get('id'))
                                         
                                         try:
-                                            # Guardar partido
+                                            # Guardar partido (fixture_id como BIGINT)
                                             data_partido = {
-                                                'fixture_id': fixture_id,
+                                                'fixture_id': fixture_id_int,
                                                 'fecha': fixture.get('date', '')[:10],
                                                 'hora': fixture.get('date', '')[11:16],
                                                 'liga': league.get('name', ''),
@@ -814,12 +815,13 @@ def render_login_form():
                                                         values = bet.get('values', [])
                                                         for val in values:
                                                             cuota = {
-                                                                'fixture_id': fixture_id,
-                                                                'bookmaker': bm_name,
+                                                                'fixture_id': fixture_id_int,
+                                                                'fecha': fixture.get('date', '')[:10],
+                                                                'liga': league.get('name', ''),
                                                                 'tipo_apuesta': bet_name,
                                                                 'opcion': val.get('value', ''),
                                                                 'cuota': val.get('odd', ''),
-                                                                'actualizado': date.today().isoformat()
+                                                                'bookmaker': bm_name,
                                                             }
                                                             try:
                                                                 client.table('cuotas').upsert(cuota, on_conflict='fixture_id,bookmaker,tipo_apuesta,opcion').execute()
