@@ -717,19 +717,38 @@ def render_login_form():
                     
                     # Consultar cada día
                     hoy = date.today()
+                    ultimo_dia_con_datos = None
+                    
+                    # Primero: encontrar hasta qué día YA tenemos datos
                     for d in range(dias_totales):
                         fecha = (hoy + timedelta(days=d)).strftime('%Y-%m-%d')
-                        
-                        # Verificar si ya hay partidos para esta fecha
+                        try:
+                            existe = client.table('partidos').select('fixture_id').eq('fecha', fecha).execute()
+                            if existe.data:
+                                ultimo_dia_con_datos = d
+                            elif ultimo_dia_con_datos is not None:
+                                # Encontramos un día sin datos después de uno con datos
+                                break
+                        except:
+                            pass
+                    
+                    # Segundo: ahora sí, solo buscar los días que FALTAN
+                    dias_a_buscar = []
+                    for d in range(dias_totales):
+                        fecha = (hoy + timedelta(days=d)).strftime('%Y-%m-%d')
                         try:
                             existe = client.table('partidos').select('fixture_id').eq('fecha', fecha).execute()
                             if existe.data:
                                 st.info(f"⏭️ {fecha}: ya hay {len(existe.data)} partidos guardados")
-                                continue
+                            else:
+                                dias_a_buscar.append(fecha)
                         except:
-                            pass
-                        
-                        # Intentar primero con API-Football - buscar TODOS los partidos del día
+                            dias_a_buscar.append(fecha)
+                    
+                    if not dias_a_buscar:
+                        st.success("🎉 Ya tienes todos los partidos de los próximos 7 días!")
+                    
+                    for fecha in dias_a_buscar:
                         api_funciona = False
                         try:
                             # Llamada SIN filtrar por liga - obtiene todos los partidos del día
