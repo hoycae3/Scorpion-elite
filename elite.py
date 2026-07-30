@@ -993,7 +993,75 @@ def render_login_form():
                             st.error(f"❌ Error API-Football: {e}")
                         
                         time.sleep(1)
-                    
+
+                    # ═══════════════════════════════════════════════════
+                    # OBTENER CUOTAS con endpoint /odds
+                    # ═══════════════════════════════════════════════════
+                    if api_funciona:
+                        try:
+                            st.info(f"💰 Obteniendo cuotas de {fecha}...")
+                            headers_odds = {'x-apisports-key': API_KEY}
+                            params_odds = {'date': fecha}
+                            response_odds = requests.get(f"{API_URL}/odds", headers=headers_odds, params=params_odds, timeout=30)
+                            requests_usados += 1
+                            st.session_state.api_requests_today += 1
+                            
+                            if response_odds.status_code == 200:
+                                data_odds = response_odds.json()
+                                if isinstance(data_odds, dict):
+                                    odds_data = data_odds.get('response', [])
+                                    if isinstance(odds_data, list):
+                                        cuotas_nuevas = 0
+                                        for odds_match in odds_data:
+                                            if not isinstance(odds_match, dict):
+                                                continue
+                                            fixture_odds = odds_match.get('fixture', {})
+                                            if not isinstance(fixture_odds, dict):
+                                                continue
+                                            fixture_id_odds = fixture_odds.get('id')
+                                            if not fixture_id_odds:
+                                                continue
+                                            bookmakers = odds_match.get('bookmakers', [])
+                                            if not isinstance(bookmakers, list):
+                                                continue
+                                            for bm in bookmakers:
+                                                if not isinstance(bm, dict):
+                                                    continue
+                                                bm_name = bm.get('name', '')
+                                                bets = bm.get('bets', [])
+                                                if not isinstance(bets, list):
+                                                    continue
+                                                for bet in bets:
+                                                    if not isinstance(bet, dict):
+                                                        continue
+                                                    bet_name = bet.get('name', '')
+                                                    if bet_name in ['Match Winner', 'Both Teams To Score', 'Over/Under', 'Half Time', 'Correct Score']:
+                                                        values = bet.get('values', [])
+                                                        if isinstance(values, list):
+                                                            for val in values:
+                                                                if not isinstance(val, dict):
+                                                                    continue
+                                                                try:
+                                                                    cuota_data = {
+                                                                        'fixture_id': fixture_id_odds,
+                                                                        'fecha': fecha,
+                                                                        'liga': odds_match.get('league', {}).get('name', '') if isinstance(odds_match.get('league'), dict) else '',
+                                                                        'tipo_apuesta': bet_name,
+                                                                        'opcion': val.get('value', ''),
+                                                                        'cuota': float(val.get('odd', 0)) if val.get('odd') else 0,
+                                                                        'bookmaker': bm_name,
+                                                                    }
+                                                                    client.table('cuotas').upsert(cuota_data, on_conflict='fixture_id,bookmaker,tipo_apuesta,opcion').execute()
+                                                                    cuotas_nuevas += 1
+                                                                except:
+                                                                    pass
+                                        if cuotas_nuevas > 0:
+                                            st.info(f"💰 Cuotas guardadas: {cuotas_nuevas}")
+                                        else:
+                                            st.info(f"💰 Sin cuotas para {fecha}")
+                        except Exception as e:
+                            logger.warning(f"Error cuotas: {e}")
+
                     # ═══════════════════════════════════════════════════
                     # PASO 2: Consultar ESTADÍSTICAS
                     # ═══════════════════════════════════════════════════
