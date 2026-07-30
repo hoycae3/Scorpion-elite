@@ -24,7 +24,6 @@ from analysis_models import calcular
 from stats_extractor import calculate_team_lambda
 from stats_robot import run_robot_batch
 from scrapers_fallback import scrape_team_fallback
-from partidos_manager import scrape_flashscore_partidos
 from calibration import (
     get_lambda_ajustada,
     registrar_resultado,
@@ -777,8 +776,8 @@ def render_login_form():
                                 data = response.json()
                                 # Verificar si hay errores de API
                                 if data.get('errors', {}).get('token', ''):
-                                    logger.warning(f"API-Football suspendida: {data['errors']['token']}")
-                                    st.warning(f"⚠️ API-Football suspendida, usando Flashscore...")
+                                    logger.warning(f"API-Football error: {data['errors']['token']}")
+                                    st.error(f"❌ Error API-Football: {data['errors']['token']}")
                                 elif data.get('response'):
                                     api_funciona = True
                                     all_matches = data.get('response', [])
@@ -850,27 +849,7 @@ def render_login_form():
                                         st.info(f"💰 Cuotas guardadas: {cuotas_guardadas}")
                         except Exception as e:
                             logger.warning(f"Error API-Football {fecha}: {e}")
-                        
-                        # Si API-Football no funcionó, usar Flashscore
-                        if not api_funciona:
-                            try:
-                                st.info(f"🔄 Buscando en Flashscore...")
-                                partidos_fs = scrape_flashscore_partidos(fecha)
-                                
-                                if partidos_fs:
-                                    partidos_guardados = 0
-                                    for data_partido in partidos_fs:
-                                        try:
-                                            client.table('partidos').upsert(data_partido, on_conflict='fixture_id').execute()
-                                            partidos_guardados += 1
-                                        except:
-                                            pass
-                                    st.success(f"✅ {fecha}: {partidos_guardados} partidos (Flashscore)")
-                                else:
-                                    st.info(f"📭 {fecha}: sin partidos en Flashscore")
-                            except Exception as e:
-                                st.error(f"❌ Error Flashscore: {e}")
-                                logger.error(f"Error Flashscore: {e}")
+                            st.error(f"❌ Error API-Football: {e}")
                         
                         time.sleep(1)
                     
