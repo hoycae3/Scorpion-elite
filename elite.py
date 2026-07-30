@@ -844,8 +844,67 @@ def render_login_form():
                                     
                                     total_partidos_dia = len(all_matches)
                                     st.success(f"✅ {fecha}: {partidos_guardados} partidos ({total_partidos_dia} totales)")
-                                    if cuotas_guardadas > 0:
-                                        st.info(f"💰 Cuotas guardadas: {cuotas_guardadas}")
+                                    
+                                    # ═══════════════════════════════════════════════════
+                                    # OBTENER CUOTAS con endpoint /odds
+                                    # ═══════════════════════════════════════════════════
+                                    try:
+                                        st.info(f"💰 Obteniendo cuotas de {fecha}...")
+                                        headers_odds = {'x-apisports-key': API_KEY}
+                                        params_odds = {'date': fecha}
+                                        response_odds = requests.get(f"{API_URL}/odds", headers=headers_odds, params=params_odds, timeout=30)
+                                        requests_usados += 1
+                                        st.session_state.api_requests_today += 1
+                                        
+                                        if response_odds.status_code == 200:
+                                            data_odds = response_odds.json()
+                                            odds_data = data_odds.get('response', [])
+                                            
+                                            cuotas_nuevas = 0
+                                            for odds_match in odds_data:
+                                                fixture_odds = odds_match.get('fixture', {})
+                                                fixture_id_odds = fixture_odds.get('id')
+                                                
+                                                if not fixture_id_odds:
+                                                    continue
+                                                
+                                                league_odds = odds_match.get('league', {})
+                                                bookmakers = odds_match.get('bookmakers', [])
+                                                
+                                                for bm in bookmakers:
+                                                    bm_name = bm.get('name', '')
+                                                    bets = bm.get('bets', [])
+                                                    
+                                                    for bet in bets:
+                                                        bet_name = bet.get('name', '')
+                                                        # Solo guardar 1X2, Over/Under, BTTS
+                                                        if bet_name in ['Match Winner', 'Both Teams To Score', 'Over/Under', 'Half Time', 'Correct Score']:
+                                                            values = bet.get('values', [])
+                                                            for val in values:
+                                                                cuota_data = {
+                                                                    'fixture_id': fixture_id_odds,
+                                                                    'fecha': fixture_odds.get('date', '')[:10] if fixture_odds.get('date') else fecha,
+                                                                    'liga': league_odds.get('name', ''),
+                                                                    'tipo_apuesta': bet_name,
+                                                                    'opcion': val.get('value', ''),
+                                                                    'cuota': float(val.get('odd', 0)) if val.get('odd') else 0,
+                                                                    'bookmaker': bm_name,
+                                                                }
+                                                                try:
+                                                                    client.table('cuotas').upsert(cuota_data, on_conflict='fixture_id,bookmaker,tipo_apuesta,opcion').execute()
+                                                                    cuotas_nuevas += 1
+                                                                except:
+                                                                    pass
+                                            
+                                            if cuotas_nuevas > 0:
+                                                st.info(f"💰 Cuotas guardadas: {cuotas_nuevas}")
+                                            else:
+                                                st.info(f"💰 Sin cuotas disponibles para {fecha}")
+                                        else:
+                                            logger.warning(f"Error obtieniendo cuotas: {response_odds.status_code}")
+                                    except Exception as e:
+                                        logger.warning(f"Error cuotas {fecha}: {e}")
+                                    
                         except Exception as e:
                             logger.warning(f"Error API-Football {fecha}: {e}")
                             st.error(f"❌ Error API-Football: {e}")
@@ -1162,6 +1221,10 @@ def render_login_form():
                         ultimos_5_local=[],
                         ultimos_5_visitante=[],
                     )
+                    
+                    # Agregar fixture_id si existe en el partido seleccionado
+                    if selected_match and selected_match.get('fixture_id'):
+                        result['fixture_id'] = selected_match.get('fixture_id')
                     
                     st.session_state.analysis_result = result
                     st.session_state.home = local_nombre
@@ -1766,6 +1829,62 @@ def render_login_form():
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
+            
+            # ========================
+            # CUOTAS DEL PARTIDO (de Supabase)
+            # ========================
+            fixture_id_partido = r.get('fixture_id')
+            if fixture_id_partido:
+                try:
+                    client = get_client()
+                    cuotas_resp = client.table('cuotas').select('*').eq('fixture_id', fixture_id_partido).execute()
+                    
+                    if cuotas_resp.data:
+                        st.markdown("##### 💰 Cuotas del Mercado")
+                        
+                        # Agrupar por tipo de apuesta
+                        cuotas_1x2 = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Match Winner']
+                        cuotas_btts = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Both Teams To Score']
+                        cuotas_ou = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Over/Under']
+                        
+                        # Mostrar 1X2
+                        if cuotas_1x2:
+                            col_c1, col_c2, col_c3 = st.columns(3)
+                            for i, cuota in enumerate(cuotas_1x2[:3]):
+                                opcion = cuota.get('opcion', '')
+                                valor = cuota.get('cuota', 0)
+                                bookie = cuota.get('bookmaker', '')
+                                col = [col_c1, col_c2, col_c3][i] if i < 3 else None
+                                if col:
+                                    with col:
+                                        if 'Home' in opcion or '1' in opcion:
+                                            st.metric(f"🏠 Local ({bookie})", f"@ {valor:.2f}")
+                                        elif 'Draw' in opcion or 'X' in opcion:
+                                            st.metric(f"🤝 Empate ({bookie})", f"@ {valor:.2f}")
+                                        elif 'Away' in opcion or '2' in opcion:
+                                            st.metric(f"✈️ Visita ({bookie})", f"@ {valor:.2f}")
+                        
+                        # Mostrar BTTS
+                        if cuotas_btts:
+                            with st.expander("⚽ Ambos Marcan (BTTS)"):
+                                for cuota in cuotas_btts[:5]:
+                                    opcion = cuota.get('opcion', '')
+                                    valor = cuota.get('cuota', 0)
+                                    bookie = cuota.get('bookmaker', '')
+                                    st.write(f"{opcion}: **{valor:.2f}** ({bookie})")
+                        
+                        # Mostrar Over/Under
+                        if cuotas_ou:
+                            with st.expander("📈 Over/Under"):
+                                for cuota in cuotas_ou[:10]:
+                                    opcion = cuota.get('opcion', '')
+                                    valor = cuota.get('cuota', 0)
+                                    bookie = cuota.get('bookmaker', '')
+                                    st.write(f"{opcion}: **{valor:.2f}** ({bookie})")
+                    else:
+                        st.info("💡 Sin cuotas guardadas para este partido. Actualiza los partidos desde Carga.")
+                except Exception as e:
+                    logger.warning(f"Error consultando cuotas: {e}")
     
     # Página: Estadísticas
     elif st.session_state.page == "Claves":
