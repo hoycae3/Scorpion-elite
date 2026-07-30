@@ -3,18 +3,31 @@ Scorpion Elite - Sistema de Calibracion Constante
 =================================================
 Ajusta lambdas y predicciones segun resultados reales.
 Funciona para: 1X2, Over/Under, BTTS, Corners
+
+Usa Supabase como backend para persistencia.
 """
 
-import json
 import logging
-import os
 import unicodedata
 from typing import Dict, List, Optional
 from datetime import datetime
 
-logger = logging.getLogger(__name__)
+try:
+    from supabase import create_client
+    SUPABASE_URL = "https://jjtifureeygvygxtpuku.supabase.co"
+    SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqdGlmdXJleWV5Z3Z5Z3RwdWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyMjg2NjYsImV4cCI6MjA2NjgwNDY2Nn0.W_Xr6q7NNd9P3BkQqA1q5YXr2t6Q9L0z0xL8mZP3k7Y"
+    
+    _client = None
+    
+    def _get_client():
+        global _client
+        if _client is None:
+            _client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        return _client
+except ImportError:
+    _get_client = None
 
-CALIBRATION_FILE = "/tmp/scorpion_calibration.json"
+logger = logging.getLogger(__name__)
 
 
 def normalizar_equipo(nombre: str) -> str:
@@ -30,22 +43,101 @@ def normalizar_equipo(nombre: str) -> str:
     return nombre
 
 
-def cargar_calibracion() -> Dict:
-    if os.path.exists(CALIBRATION_FILE):
-        try:
-            with open(CALIBRATION_FILE, 'r') as f:
-                return json.load(f)
-        except (json.JSONDecodeError, OSError) as e:
-            logger.warning(f"Error cargando calibración, reseteando: {e}")
-    return {"equipos": {}, "historico": []}
-
-
-def guardar_calibracion(data: Dict):
+def obtener_factor_correccion(equipo: str, como_local: bool) -> float:
+    """Obtiene el factor de corrección para un equipo desde Supabase."""
     try:
-        with open(CALIBRATION_FILE, 'w') as f:
-            json.dump(data, f, indent=2)
+        client = _get_client()
+        equipo_norm = normalizar_equipo(equipo)
+        
+        resp = client.table('calibracion_equipos').select('*').eq('equipo_norm', equipo_norm).execute()
+        
+        if resp.data and len(resp.data) > 0:
+            equipo_data = resp.data[0]
+            if como_local:
+                return float(equipo_data.get("factor_local", 1.0))
+            else:
+                return float(equipo_data.get("factor_visitante", 1.0))
     except Exception as e:
-        print(f"Error guardando calibracion: {e}")
+        logger.warning(f"Error obteniendo factor de corrección: {e}")
+    
+    return 1.0
+
+
+def _actualizar_factor_equipo(equipo: str, error: float, es_local: bool, nombre_original: str = None):
+    """Actualiza el factor de corrección para un equipo en Supabase."""
+    try:
+        client = _get_client()
+        equipo_norm = normalizar_equipo(equipo)
+        
+        # Obtener datos actuales
+        resp = client.table('calibracion_equipos').select('*').eq('equipo_norm', equipo_norm).execute()
+        
+        if resp.data and len(resp.data) > 0:
+            equipo_data = resp.data[0]
+            errores_local = equipo_data.get('errores_local', [])
+            errores_visitante = equipo_data.get('errores_visitante', [])
+            factor_local = float(equipo_data.get('factor_local', 1.0))
+            factor_visitante = float(equipo_data.get('factor_visitante', 1.0))
+            partidos_local = int(equipo_data.get('partidos_local', 0))
+            partidos_visitante = int(equipo_data.get('partidos_visitante', 0))
+        else:
+            # Crear nuevo
+            errores_local = []
+            errores_visitante = []
+            factor_local = 1.0
+            factor_visitante = 1.0
+            partidos_local = 0
+            partidos_visitante = 0
+        
+        # Actualizar errores y factores
+        if es_local:
+            errores_local.append(error)
+            if len(errores_local) > 10:
+                errores_local = errores_local[-10:]
+            partidos_local += 1
+            errores = errores_local
+            factor = factor_local
+        else:
+            errores_visitante.append(error)
+            if len(errores_visitante) > 10:
+                errores_visitante = errores_visitante[-10:]
+            partidos_visitante += 1
+            errores = errores_visitante
+            factor = factor_visitante
+        
+        # Calcular error ponderado
+        peso = 1.0
+        error_ponderado = 0
+        suma_pesos = 0
+        for err in reversed(errores):
+            error_ponderado += err * peso
+            suma_pesos += peso
+            peso *= 0.85
+        
+        error_promedio = error_ponderado / suma_pesos if suma_pesos > 0 else 0
+        cambio_max = 0.1
+        ajuste = max(-cambio_max, min(cambio_max, error_promedio * 0.3))
+        nuevo_factor = factor + ajuste
+        nuevo_factor = max(0.7, min(1.5, nuevo_factor))
+        
+        # Guardar
+        data = {
+            'equipo_norm': equipo_norm,
+            'nombre_original': nombre_original or equipo,
+            'factor_local': nuevo_factor if es_local else factor_local,
+            'factor_visitante': nuevo_factor if not es_local else factor_visitante,
+            'factor_over': 1.0,
+            'factor_btts': 1.0,
+            'partidos_local': partidos_local,
+            'partidos_visitante': partidos_visitante,
+            'errores_local': errores_local,
+            'errores_visitante': errores_visitante,
+            'actualizado_en': datetime.now().isoformat()
+        }
+        
+        client.table('calibracion_equipos').upsert(data, on_conflict='equipo_norm').execute()
+    except Exception as e:
+        logger.error(f"Error actualizando factor de equipo: {e}")
 
 
 def registrar_resultado(
@@ -55,179 +147,111 @@ def registrar_resultado(
     lambda_visitante_predicha: float,
     goles_local_real: int,
     goles_visitante_real: int,
-    predicciones: Dict,  # Todas las predicciones del analisis
-    resultado_real: Optional[str] = None,  # Resultado 1X2
-    marcador: Optional[str] = None,  # Marcador "2-1"
+    predicciones: Dict,
+    resultado_real: Optional[str] = None,
+    marcador: Optional[str] = None,
     confianza: int = 0,
     rango: str = "D",
-    corners_local_real: Optional[int] = None,  # Fix #8
+    corners_local_real: Optional[int] = None,
     corners_visitante_real: Optional[int] = None
 ):
     """
-    Registra el resultado completo de un analisis.
-    
-    predicciones = {
-        '1x2': {'pick': '1', 'prob': 55.0},
-        'over_under': {'pick': 'Over 2.5', 'prob': 60.0},
-        'btts': {'pick': 'Si', 'prob': 50.0},
-        'corners': {'pick': 'Over 10.5', 'prob': 55.0}
-    }
+    Registra el resultado completo de un analisis en Supabase.
     """
-    data = cargar_calibracion()
-    equipo_local_norm = normalizar_equipo(equipo_local)
-    equipo_visitante_norm = normalizar_equipo(equipo_visitante)
-    
-    # Calcular errores de goles
-    error_local = goles_local_real - lambda_local_predicha
-    error_visitante = goles_visitante_real - lambda_visitante_predicha
-    
-    # Determinar resultados reales
-    total_goles = goles_local_real + goles_visitante_real
-    ambos_marcan = goles_local_real > 0 and goles_visitante_real > 0
-    
-    # Evaluar cada prediccion
-    resultados_evaluados = {}
-    
-    # 1X2
-    if resultado_real:
-        resultados_evaluados['1x2'] = {
-            'prediccion': predicciones.get('1x2', {}).get('pick', ''),
-            'resultado_real': resultado_real,
-            'acertado': predicciones.get('1x2', {}).get('pick', '') == resultado_real
+    try:
+        client = _get_client()
+        
+        # Calcular errores
+        error_local = goles_local_real - lambda_local_predicha
+        error_visitante = goles_visitante_real - lambda_visitante_predicha
+        
+        # Determinar resultados reales
+        total_goles = goles_local_real + goles_visitante_real
+        ambos_marcan = goles_local_real > 0 and goles_visitante_real > 0
+        
+        # Evaluar predicciones
+        resultados_evaluados = {}
+        
+        # 1X2
+        if resultado_real:
+            resultados_evaluados['1x2'] = {
+                'prediccion': predicciones.get('1x2', {}).get('pick', ''),
+                'resultado_real': resultado_real,
+                'acertado': predicciones.get('1x2', {}).get('pick', '') == resultado_real
+            }
+        
+        # Over/Under 2.5
+        resultados_evaluados['ou25'] = {
+            'prediccion': predicciones.get('over_under', {}).get('pick', ''),
+            'resultado_real': f"{'Over' if total_goles > 2.5 else 'Under'} 2.5",
+            'acertado': ('Over' in predicciones.get('over_under', {}).get('pick', '') and total_goles > 2.5) or
+                        ('Under' in predicciones.get('over_under', {}).get('pick', '') and total_goles <= 2.5)
         }
-    
-    # Over/Under 2.5
-    resultados_evaluados['ou25'] = {
-        'prediccion': predicciones.get('over_under', {}).get('pick', ''),
-        'resultado_real': f"{'Over' if total_goles > 2.5 else 'Under'} 2.5",
-        'acertado': ('Over' in predicciones.get('over_under', {}).get('pick', '') and total_goles > 2.5) or
-                    ('Under' in predicciones.get('over_under', {}).get('pick', '') and total_goles <= 2.5)
-    }
-    
-    # BTTS
-    resultados_evaluados['btts'] = {
-        'prediccion': predicciones.get('btts', {}).get('pick', ''),
-        'resultado_real': 'Si' if ambos_marcan else 'No',
-        'acertado': ('Si' in predicciones.get('btts', {}).get('pick', '') and ambos_marcan) or
-                    ('No' in predicciones.get('btts', {}).get('pick', '') and not ambos_marcan)
-    }
-    
-    # Corners - Fix #8: evaluar si hay datos reales
-    if corners_local_real is not None and corners_visitante_real is not None:
-        total_corners_real = corners_local_real + corners_visitante_real
-        pick_corners = predicciones.get('corners', {}).get('pick', '')
-        # Verificar si el pick es Over o Under 9.5
-        if 'Over' in pick_corners:
-            acertado_corners = total_corners_real > 9.5
-        elif 'Under' in pick_corners:
-            acertado_corners = total_corners_real <= 9.5
+        
+        # BTTS
+        resultados_evaluados['btts'] = {
+            'prediccion': predicciones.get('btts', {}).get('pick', ''),
+            'resultado_real': 'Si' if ambos_marcan else 'No',
+            'acertado': ('Si' in predicciones.get('btts', {}).get('pick', '') and ambos_marcan) or
+                        ('No' in predicciones.get('btts', {}).get('pick', '') and not ambos_marcan)
+        }
+        
+        # Corners
+        if corners_local_real is not None and corners_visitante_real is not None:
+            total_corners_real = corners_local_real + corners_visitante_real
+            pick_corners = predicciones.get('corners', {}).get('pick', '')
+            if 'Over' in pick_corners:
+                acertado_corners = total_corners_real > 9.5
+            elif 'Under' in pick_corners:
+                acertado_corners = total_corners_real <= 9.5
+            else:
+                acertado_corners = None
+            resultados_evaluados['corners'] = {
+                'prediccion': pick_corners,
+                'resultado_real': total_corners_real,
+                'acertado': acertado_corners
+            }
         else:
-            acertado_corners = None
-        resultados_evaluados['corners'] = {
-            'prediccion': pick_corners,
-            'resultado_real': total_corners_real,
-            'acertado': acertado_corners
+            resultados_evaluados['corners'] = {
+                'prediccion': predicciones.get('corners', {}).get('pick', ''),
+                'resultado_real': str(total_goles),
+                'acertado': None
+            }
+        
+        # Guardar histórico
+        historico_data = {
+            'fecha': datetime.now().isoformat(),
+            'equipo_local': equipo_local,
+            'equipo_visitante': equipo_visitante,
+            'lambda_local_predicha': lambda_local_predicha,
+            'lambda_visitante_predicha': lambda_visitante_predicha,
+            'goles_local_real': goles_local_real,
+            'goles_visitante_real': goles_visitante_real,
+            'resultados': resultados_evaluados,
+            'acertado_1x2': resultados_evaluados.get('1x2', {}).get('acertado'),
+            'acertado_ou25': resultados_evaluados.get('ou25', {}).get('acertado'),
+            'acertado_btts': resultados_evaluados.get('btts', {}).get('acertado'),
+            'confianza': confianza,
+            'rango': rango
         }
-    else:
-        resultados_evaluados['corners'] = {
-            'prediccion': predicciones.get('corners', {}).get('pick', ''),
-            'resultado_real': str(goles_local_real + goles_visitante_real),
-            'acertado': None
+        client.table('calibracion_historico').insert(historico_data).execute()
+        
+        # Actualizar factores de equipos
+        _actualizar_factor_equipo(equipo_local, error_local, es_local=True, nombre_original=equipo_local)
+        _actualizar_factor_equipo(equipo_visitante, error_visitante, es_local=False, nombre_original=equipo_visitante)
+        
+        return {
+            "error_local": error_local,
+            "error_visitante": error_visitante,
+            "resultados_evaluados": resultados_evaluados
         }
-    
-    registro = {
-        "fecha": datetime.now().isoformat(),
-        "equipo_local": equipo_local,
-        "equipo_visitante": equipo_visitante,
-        "lambda_local_predicha": lambda_local_predicha,
-        "lambda_visitante_predicha": lambda_visitante_predicha,
-        "goles_local_real": goles_local_real,
-        "goles_visitante_real": goles_visitante_real,
-        "error_local": error_local,
-        "error_visitante": error_visitante,
-        "marcador": marcador,
-        "confianza": confianza,
-        "rango": rango,
-        "resultados": resultados_evaluados,
-        "acertado_1x2": resultados_evaluados.get('1x2', {}).get('acertado'),
-        "acertado_ou25": resultados_evaluados.get('ou25', {}).get('acertado'),
-        "acertado_btts": resultados_evaluados.get('btts', {}).get('acertado')
-    }
-    
-    data["historico"].append(registro)
-    
-    if len(data["historico"]) > 200:
-        data["historico"] = data["historico"][-200:]
-    
-    # Actualizar factores de correccion
-    _actualizar_factor_equipo(data, equipo_local_norm, error_local, es_local=True)
-    _actualizar_factor_equipo(data, equipo_visitante_norm, error_visitante, es_local=False)
-    
-    guardar_calibracion(data)
-    
-    return {
-        "error_local": error_local,
-        "error_visitante": error_visitante,
-        "resultados_evaluados": resultados_evaluados
-    }
-
-
-def _actualizar_factor_equipo(data: Dict, equipo: str, error: float, es_local: bool):
-    if equipo not in data["equipos"]:
-        data["equipos"][equipo] = {
-            "nombre_original": equipo,
-            "factor_local": 1.0,
-            "factor_visitante": 1.0,
-            "factor_over": 1.0,
-            "factor_btts": 1.0,
-            "partidos_local": 0,
-            "partidos_visitante": 0,
-            "errores_local": [],
-            "errores_visitante": [],
-            "over_real": [],
-            "over_predicho": []
+    except Exception as e:
+        logger.error(f"Error registrando resultado: {e}")
+        return {
+            "error_local": error_local if 'error_local' in dir() else 0,
+            "error_visitante": error_visitante if 'error_visitante' in dir() else 0,
+            "resultados_evaluados": {}
         }
-    
-    equipo_data = data["equipos"][equipo]
-    clave_error = "errores_local" if es_local else "errores_visitante"
-    clave_factor = "factor_local" if es_local else "factor_visitante"
-    clave_partidos = "partidos_local" if es_local else "partidos_visitante"
-    
-    equipo_data[clave_error].append(error)
-    equipo_data[clave_partidos] += 1
-    
-    if len(equipo_data[clave_error]) > 10:
-        equipo_data[clave_error] = equipo_data[clave_error][-10:]
-    
-    errores = equipo_data[clave_error]
-    peso = 1.0
-    error_ponderado = 0
-    suma_pesos = 0
-    
-    for err in reversed(errores):
-        error_ponderado += err * peso
-        suma_pesos += peso
-        peso *= 0.85
-    
-    error_promedio = error_ponderado / suma_pesos if suma_pesos > 0 else 0
-    cambio_max = 0.1
-    ajuste = max(-cambio_max, min(cambio_max, error_promedio * 0.3))
-    nuevo_factor = equipo_data[clave_factor] + ajuste
-    equipo_data[clave_factor] = max(0.7, min(1.5, nuevo_factor))
-
-
-def obtener_factor_correccion(equipo: str, como_local: bool) -> float:
-    data = cargar_calibracion()
-    equipo_norm = normalizar_equipo(equipo)
-    
-    if equipo_norm in data["equipos"]:
-        equipo_data = data["equipos"][equipo_norm]
-        if como_local:
-            return equipo_data.get("factor_local", 1.0)
-        else:
-            return equipo_data.get("factor_visitante", 1.0)
-    
-    return 1.0
 
 
 def ajustar_lambda(lambda_original: float, factor: float) -> float:
@@ -249,10 +273,53 @@ def get_lambda_ajustada(equipo: str, lambda_original: float, como_local: bool) -
 
 
 def obtener_estadisticas_calibracion() -> Dict:
-    data = cargar_calibracion()
-    total_picks = len(data["historico"])
-    
-    if total_picks == 0:
+    """Obtiene estadísticas de calibración desde Supabase."""
+    try:
+        client = _get_client()
+        
+        # Obtener histórico (últimos 200 registros)
+        resp_historico = client.table('calibracion_historico').select('*').order('fecha', desc=True).limit(200).execute()
+        historico = resp_historico.data if resp_historico.data else []
+        
+        # Obtener equipos calibrados
+        resp_equipos = client.table('calibracion_equipos').select('equipo_norm').execute()
+        equipos_calibrados = len(resp_equipos.data) if resp_equipos.data else 0
+        
+        total_picks = len(historico)
+        
+        if total_picks == 0:
+            return {
+                "total_picks": 0,
+                "aciertos_1x2": 0,
+                "aciertos_ou25": 0,
+                "aciertos_btts": 0,
+                "porcentaje_1x2": 0,
+                "porcentaje_ou25": 0,
+                "porcentaje_btts": 0,
+                "equipos_calibrados": 0,
+                "mensaje": "No hay datos aun"
+            }
+        
+        # Contar aciertos
+        aciertos_1x2 = sum(1 for h in historico if h.get("acertado_1x2") == True)
+        aciertos_ou25 = sum(1 for h in historico if h.get("acertado_ou25") == True)
+        aciertos_btts = sum(1 for h in historico if h.get("acertado_btts") == True)
+        
+        total_1x2 = sum(1 for h in historico if h.get("acertado_1x2") is not None)
+        
+        return {
+            "total_picks": total_picks,
+            "aciertos_1x2": aciertos_1x2,
+            "aciertos_ou25": aciertos_ou25,
+            "aciertos_btts": aciertos_btts,
+            "porcentaje_1x2": round(aciertos_1x2 / total_1x2 * 100, 1) if total_1x2 > 0 else 0,
+            "porcentaje_ou25": round(aciertos_ou25 / total_picks * 100, 1) if total_picks > 0 else 0,
+            "porcentaje_btts": round(aciertos_btts / total_picks * 100, 1) if total_picks > 0 else 0,
+            "equipos_calibrados": equipos_calibrados,
+            "historico": historico[:30]
+        }
+    except Exception as e:
+        logger.error(f"Error obteniendo estadísticas de calibración: {e}")
         return {
             "total_picks": 0,
             "aciertos_1x2": 0,
@@ -262,36 +329,20 @@ def obtener_estadisticas_calibracion() -> Dict:
             "porcentaje_ou25": 0,
             "porcentaje_btts": 0,
             "equipos_calibrados": 0,
-            "mensaje": "No hay datos aun"
+            "mensaje": f"Error: {e}"
         }
-    
-    # Contar aciertos por tipo
-    aciertos_1x2 = sum(1 for h in data["historico"] if h.get("acertado_1x2") == True)
-    aciertos_ou25 = sum(1 for h in data["historico"] if h.get("acertado_ou25") == True)
-    aciertos_btts = sum(1 for h in data["historico"] if h.get("acertado_btts") == True)
-    
-    # Contar total evaluados
-    total_1x2 = sum(1 for h in data["historico"] if h.get("acertado_1x2") is not None)
-    total_ou25 = total_picks  # Siempre se evalua
-    total_btts = total_picks  # Siempre se evalua
-    
-    return {
-        "total_picks": total_picks,
-        "aciertos_1x2": aciertos_1x2,
-        "aciertos_ou25": aciertos_ou25,
-        "aciertos_btts": aciertos_btts,
-        "porcentaje_1x2": round(aciertos_1x2 / total_1x2 * 100, 1) if total_1x2 > 0 else 0,
-        "porcentaje_ou25": round(aciertos_ou25 / total_ou25 * 100, 1) if total_ou25 > 0 else 0,
-        "porcentaje_btts": round(aciertos_btts / total_btts * 100, 1) if total_btts > 0 else 0,
-        "equipos_calibrados": len(data["equipos"]),
-        "historico": data["historico"][-30:]
-    }
 
 
 def resetear_calibracion():
-    if os.path.exists(CALIBRATION_FILE):
-        os.remove(CALIBRATION_FILE)
-    return {"status": "ok", "mensaje": "Calibracion reseteada"}
+    """Borra todos los datos de calibración en Supabase."""
+    try:
+        client = _get_client()
+        client.table('calibracion_equipos').delete().neq('id', 0).execute()
+        client.table('calibracion_historico').delete().neq('id', 0).execute()
+        return {"status": "ok", "mensaje": "Calibración reseteada en Supabase"}
+    except Exception as e:
+        logger.error(f"Error reseteando calibración: {e}")
+        return {"status": "error", "mensaje": str(e)}
 
 
 def get_predicciones_calibradas(
@@ -301,32 +352,22 @@ def get_predicciones_calibradas(
     equipo_local: str,
     equipo_visitante: str
 ) -> Dict:
-    """
-    Ajusta todas las predicciones basandose en la calibracion.
-    """
-    # Obtener factores de correccion
+    """Ajusta predicciones basándose en la calibración."""
     factor_local = obtener_factor_correccion(equipo_local, como_local=True)
     factor_visitante = obtener_factor_correccion(equipo_visitante, como_local=False)
     
-    # Calcular lambda ajustada
     lambda_local_ajustada = lambda_local * factor_local
     lambda_visitante_ajustada = lambda_visitante * factor_visitante
     
-    # Ajustar total de goles esperados
     goles_esperados_original = lambda_local + lambda_visitante
     goles_esperados_ajustados = lambda_local_ajustada + lambda_visitante_ajustada
     
-    # Recalcular Over/Under basado en nueva expectativa
     ou_ajustado = {}
     if goles_esperados_original > 0:
         ratio_ajuste = goles_esperados_ajustados / goles_esperados_original
-        
-        # Ajustar probabilidades de Over/Under
         ou_base = predicciones_base.get('over_under', {})
         over_prob = ou_base.get('over_25', 50)
-        
-        # Si esperamos mas goles, Over es mas probable
-        ajuste_over = (ratio_ajuste - 1) * 50  # Maximo +-50%
+        ajuste_over = (ratio_ajuste - 1) * 50
         over_prob_ajustado = min(95, max(5, over_prob + ajuste_over))
         
         ou_ajustado = {
