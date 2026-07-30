@@ -772,78 +772,122 @@ def render_login_form():
                             st.session_state.api_requests_today += 1
                             
                             if response.status_code == 200:
-                                data = response.json()
-                                # Verificar si hay errores de API
-                                if data.get('errors', {}).get('token', ''):
-                                    logger.warning(f"API-Football error: {data['errors']['token']}")
-                                    st.error(f"❌ Error API-Football: {data['errors']['token']}")
-                                elif data.get('response'):
-                                    api_funciona = True
-                                    all_matches = data.get('response', [])
+                                try:
+                                    data = response.json()
                                     
-                                    # Guardar TODOS los partidos (sin filtro de liga)
-                                    # así el usuario tiene datos de cualquier liga
-                                    partidos_filtrados = all_matches
-                                    
-                                    # Guardar partidos y cuotas
-                                    partidos_guardados = 0
-                                    cuotas_guardadas = 0
-                                    
-                                    for match in partidos_filtrados:
-                                        fixture = match.get('fixture', {})
-                                        teams = match.get('teams', {})
-                                        league = match.get('league', {})
-                                        odds = match.get('odds', {})
-                                        bookmakers = match.get('bookmakers', [])
-                                        
-                                        fixture_id = str(fixture.get('id'))
-                                        fixture_id_int = int(fixture.get('id'))
-                                        
-                                        try:
-                                            # Guardar partido (fixture_id como BIGINT)
-                                            data_partido = {
-                                                'fixture_id': fixture_id_int,
-                                                'fecha': fixture.get('date', '')[:10],
-                                                'hora': fixture.get('date', '')[11:16],
-                                                'liga': league.get('name', ''),
-                                                'equipo_local': teams.get('home', {}).get('name', ''),
-                                                'equipo_visitante': teams.get('away', {}).get('name', '')
-                                            }
-                                            client.table('partidos').upsert(data_partido, on_conflict='fixture_id').execute()
-                                            partidos_guardados += 1
+                                    # Verificar si la respuesta es un dict
+                                    if not isinstance(data, dict):
+                                        logger.warning(f"Response no es dict: {type(data)}")
+                                        st.error("❌ Error API-Football: Respuesta inesperada")
+                                    else:
+                                        # Verificar si hay errores de API
+                                        errors = data.get('errors', {})
+                                        if isinstance(errors, dict) and errors.get('token', ''):
+                                            logger.warning(f"API-Football error: {errors['token']}")
+                                            st.error(f"❌ Error API-Football: {errors['token']}")
+                                        else:
+                                            resp = data.get('response', [])
                                             
-                                            # Guardar cuotas (buscar las del partido)
-                                            # Las cuotas vienen en match.odds o hay que pedirlas por separado
-                                            # Guardar cuotas principales del 1X2 si existen
-                                            for bm in bookmakers:
-                                                bm_name = bm.get('name', '')
-                                                bets = bm.get('bets', [])
+                                            # Verificar que response sea una lista
+                                            if not isinstance(resp, list):
+                                                logger.warning(f"Response no es lista: {type(resp)}")
+                                                st.error("❌ Error API-Football: Sin partidos disponibles")
+                                            elif len(resp) == 0:
+                                                st.info(f"ℹ️ Sin partidos para {fecha}")
+                                            else:
+                                                api_funciona = True
+                                                all_matches = resp
                                                 
-                                                for bet in bets:
-                                                    bet_name = bet.get('name', '')
-                                                    # Solo guardar 1X2, Over/Under, BTTS
-                                                    if bet_name in ['Match Winner', 'Both Teams To Score', 'Over/Under']:
-                                                        values = bet.get('values', [])
-                                                        for val in values:
-                                                            cuota = {
-                                                                'fixture_id': fixture_id_int,
-                                                                'fecha': fixture.get('date', '')[:10],
-                                                                'liga': league.get('name', ''),
-                                                                'tipo_apuesta': bet_name,
-                                                                'opcion': val.get('value', ''),
-                                                                'cuota': val.get('odd', ''),
-                                                                'bookmaker': bm_name,
-                                                            }
-                                                            try:
-                                                                client.table('cuotas').upsert(cuota, on_conflict='fixture_id,bookmaker,tipo_apuesta,opcion').execute()
-                                                                cuotas_guardadas += 1
-                                                            except:
-                                                                pass
-                                        except:
-                                            pass
-                                    
-                                    total_partidos_dia = len(all_matches)
-                                    st.success(f"✅ {fecha}: {partidos_guardados} partidos ({total_partidos_dia} totales)")
+                                                # Guardar TODOS los partidos
+                                                partidos_guardados = 0
+                                                cuotas_guardadas = 0
+                                                
+                                                for match in all_matches:
+                                                    if not isinstance(match, dict):
+                                                        continue
+                                                    
+                                                    fixture = match.get('fixture', {})
+                                                    teams = match.get('teams', {})
+                                                    league = match.get('league', {})
+                                                    bookmakers = match.get('bookmakers', [])
+                                                    
+                                                    if not isinstance(fixture, dict) or not isinstance(teams, dict):
+                                                        continue
+                                                    
+                                                    fixture_id_val = fixture.get('id')
+                                                    if not fixture_id_val:
+                                                        continue
+                                                    
+                                                    try:
+                                                        fixture_id_int = int(fixture_id_val)
+                                                        fecha_str = str(fixture.get('date', ''))[:10]
+                                                        hora_str = str(fixture.get('date', ''))[11:16]
+                                                        liga_str = league.get('name', '') if isinstance(league, dict) else ''
+                                                        local_str = teams.get('home', {}).get('name', '') if isinstance(teams.get('home'), dict) else ''
+                                                        visita_str = teams.get('away', {}).get('name', '') if isinstance(teams.get('away'), dict) else ''
+                                                        
+                                                        # Guardar partido
+                                                        data_partido = {
+                                                            'fixture_id': fixture_id_int,
+                                                            'fecha': fecha_str,
+                                                            'hora': hora_str,
+                                                            'liga': liga_str,
+                                                            'equipo_local': local_str,
+                                                            'equipo_visitante': visita_str
+                                                        }
+                                                        client.table('partidos').upsert(data_partido, on_conflict='fixture_id').execute()
+                                                        partidos_guardados += 1
+                                                        
+                                                        # Guardar cuotas si existen
+                                                        if isinstance(bookmakers, list):
+                                                            for bm in bookmakers:
+                                                                if not isinstance(bm, dict):
+                                                                    continue
+                                                                
+                                                                bm_name = bm.get('name', '')
+                                                                bets = bm.get('bets', [])
+                                                                
+                                                                if not isinstance(bets, list):
+                                                                    continue
+                                                                
+                                                                for bet in bets:
+                                                                    if not isinstance(bet, dict):
+                                                                        continue
+                                                                    
+                                                                    bet_name = bet.get('name', '')
+                                                                    if bet_name in ['Match Winner', 'Both Teams To Score', 'Over/Under']:
+                                                                        values = bet.get('values', [])
+                                                                        if not isinstance(values, list):
+                                                                            continue
+                                                                        
+                                                                        for val in values:
+                                                                            if not isinstance(val, dict):
+                                                                                continue
+                                                                            
+                                                                            cuota = {
+                                                                                'fixture_id': fixture_id_int,
+                                                                                'fecha': fecha_str,
+                                                                                'liga': liga_str,
+                                                                                'tipo_apuesta': bet_name,
+                                                                                'opcion': val.get('value', ''),
+                                                                                'cuota': float(val.get('odd', 0)) if val.get('odd') else 0,
+                                                                                'bookmaker': bm_name,
+                                                                            }
+                                                                            try:
+                                                                                client.table('cuotas').upsert(cuota, on_conflict='fixture_id,bookmaker,tipo_apuesta,opcion').execute()
+                                                                                cuotas_guardadas += 1
+                                                                            except:
+                                                                                pass
+                                                    except Exception as e:
+                                                        logger.warning(f"Error guardando: {e}")
+                                                        continue
+                                                
+                                                total_partidos_dia = len(all_matches)
+                                                st.success(f"✅ {fecha}: {partidos_guardados} partidos ({total_partidos_dia} totales)")
+                                                
+                                except Exception as e:
+                                    logger.warning(f"Error procesando: {e}")
+                                    st.error(f"❌ Error API-Football: {str(e)[:50]}")
                                     
                                     # ═══════════════════════════════════════════════════
                                     # OBTENER CUOTAS con endpoint /odds
