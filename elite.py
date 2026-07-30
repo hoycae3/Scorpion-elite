@@ -1174,10 +1174,16 @@ def render_login_form():
                 lambda_local = stats_local.get('lambda_local', 0)
                 lambda_visitante = stats_visitante.get('lambda_visitante', 0)
                 
+                # Aplicar calibración (Fix #1 - usar lambdas ajustadas)
+                lambda_local_adj = get_lambda_ajustada(local_nombre, lambda_local, como_local=True)
+                lambda_visitante_adj = get_lambda_ajustada(visitante_nombre, lambda_visitante, como_local=False)
+                lambda_local_cal = lambda_local_adj['lambda_ajustada']
+                lambda_visitante_cal = lambda_visitante_adj['lambda_ajustada']
+                
                 with st.spinner("Analizando..."):
                     result = calcular(
-                        lambda_local=lambda_local,
-                        lambda_visitante=lambda_visitante,
+                        lambda_local=lambda_local_cal,
+                        lambda_visitante=lambda_visitante_cal,
                         corners_local=float(stats_local.get('promedio_corners_total', 10)),
                         corners_visitante=float(stats_visitante.get('promedio_corners_total', 10)),
                         tarjetas_local=float(stats_local.get('promedio_tarjetas', 3)),
@@ -1287,10 +1293,16 @@ def render_login_form():
             try:
                 if home_team and away_team and lambda_local and lambda_visitante and stats_local and stats_visitante:
                     with st.spinner("Analizando..."):
+                        # Aplicar calibración (Fix #1 - usar lambdas ajustadas)
+                        lambda_local_adj = get_lambda_ajustada(home_team, lambda_local, como_local=True)
+                        lambda_visitante_adj = get_lambda_ajustada(away_team, lambda_visitante, como_local=False)
+                        lambda_local_cal = lambda_local_adj['lambda_ajustada']
+                        lambda_visitante_cal = lambda_visitante_adj['lambda_ajustada']
+                        
                         # Llamar al modelo con TODOS los datos
                         result = calcular(
-                            lambda_local=lambda_local,
-                            lambda_visitante=lambda_visitante,
+                            lambda_local=lambda_local_cal,
+                            lambda_visitante=lambda_visitante_cal,
                             corners_local=float(stats_local.get('promedio_corners_total', 10)),
                             corners_visitante=float(stats_visitante.get('promedio_corners_total', 10)),
                             tarjetas_local=float(stats_local.get('promedio_amarillas', 3)),

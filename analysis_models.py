@@ -16,6 +16,7 @@ DATOS ADICIONALES:
 - ultimos_5_partidos: Lista de últimos 5 partidos con resultados
 """
 
+import math
 import random
 from typing import Dict, List, Optional
 
@@ -24,9 +25,18 @@ def pp(lmbda: float, k: int) -> float:
     """Función de masa de probabilidad de Poisson P(X=k)"""
     if lmbda <= 0 or k < 0:
         return 0.0
-    # Usar factorial para mayor precisión
-    import math
     return (lmbda ** k) * math.exp(-lmbda) / math.factorial(k)
+
+
+def _sample_poisson(lmbda: float) -> int:
+    """Muestrea de Poisson usando transformada inversa correcta (CDF acumulada)."""
+    u = random.random()
+    cdf = 0.0
+    for k in range(15):
+        cdf += pp(lmbda, k)
+        if u <= cdf:
+            return k
+    return 14  # fallback si la cola > k=14 (improbable pero por completitud)
 
 
 def calculate_poisson_probabilities(lambda_local: float, lambda_visitante: float) -> Dict:
@@ -137,27 +147,19 @@ def dc_1x2(xl: float, xv: float, rho: float = -0.1) -> tuple:
     return round(p1 * 100, 1), round(px * 100, 1), round(p2 * 100, 1)
 
 
-def monte_carlo(xl: float, xv: float, n: int = 3000) -> Dict:
-    """Simulación Monte Carlo"""
+def monte_carlo(xl: float, xv: float, n: int = 3000, seed: Optional[int] = None) -> Dict:
+    """Simulación Monte Carlo con ensamble de modelos."""
     v1 = vx = v2 = 0
     goals_total = []
     score_map = {}
     
-    random.seed(42)
+    if seed is not None:
+        random.seed(seed)
     
     for _ in range(n):
-        gl = gv = 0
-        u = random.random()
-        for k in range(15):
-            if u <= pp(xl, k):
-                gl = k
-                break
-        
-        u = random.random()
-        for k in range(15):
-            if u <= pp(xv, k):
-                gv = k
-                break
+        # Usar transformada inversa correcta para muestreo de Poisson
+        gl = _sample_poisson(xl)
+        gv = _sample_poisson(xv)
         
         if gl > gv:
             v1 += 1
@@ -369,27 +371,60 @@ def calcular(
     ultimos_5_local = ultimos_5_local or []
     ultimos_5_visitante = ultimos_5_visitante or []
     
-    # MODELOS DE GOLES
+    # MODELOS DE GOLES - Calcular todos para el ensamble
     p1_po, px_po, p2_po = poisson_1x2(xl, xv)
     p1_dc, px_dc, p2_dc = dc_1x2(xl, xv)
     
     mc = monte_carlo(xl, xv)
     p1_mc, px_mc, p2_mc = mc["p1"], mc["px"], mc["p2"]
     
-    # Usar Poisson como modelo principal (más simple y directo)
-    p1 = round(p1_po, 1)
-    px = round(px_po, 1)
-    p2 = round(max(0, 100 - p1 - px), 1)
-    
-    # ANÁLISIS DE FORMA RECIENTE (para ajustar confianza, no predicción)
+    # ANÁLISIS DE FORMA RECIENTE - se usa en el ensamble
     forma_local = analizar_forma_reciente(ultimos_5_local) if ultimos_5_local else {'forma_puntos': 50}
     forma_visitante = analizar_forma_reciente(ultimos_5_visitante) if ultimos_5_visitante else {'forma_puntos': 50}
     
-    # Ajuste MÍNIMO por forma (solo 2% máximo)
-    ajuste_forma = (forma_local['forma_puntos'] - forma_visitante['forma_puntos']) / 100 * 2
-    p1_ajustado = max(0, min(100, p1 + ajuste_forma))
-    p2_ajustado = max(0, min(100, p2 - ajuste_forma))
-    px_ajustado = max(0, min(100, 100 - p1_ajustado - p2_ajustado))
+    # Forma como porcentaje para el ensamble (15% del peso total)
+    forma_local_pct = forma_local['forma_puntos']
+    forma_visitante_pct = forma_visitante['forma_puntos']
+    # Convertir a 1X2: si local tiene más forma, más probabilidad de ganar
+    p1_forma = 33.3 + (forma_local_pct - forma_visitante_pct) / 100 * 20
+    p2_forma = 33.3 - (forma_local_pct - forma_visitante_pct) / 100 * 20
+    px_forma = 33.3
+    # Normalizar
+    total_forma = p1_forma + px_forma + p2_forma
+    p1_forma = p1_forma / total_forma * 100
+    px_forma = px_forma / total_forma * 100
+    p2_forma = p2_forma / total_forma * 100
+    
+    # ESTILO DE JUEGO - se usa en el ensamble (10% del peso)
+    estilo_local = analizar_estilo_juego(corners_local, tarjetas_local, tiros_local, tiros_arco_local)
+    estilo_visitante = analizar_estilo_juego(corners_visitante, tarjetas_visitante, tiros_visitante, tiros_arco_visitante)
+    # Estilo ofensivo mejora probabilidad de victoria
+    estilo_diff = estilo_local['estilo_ofensivo'] - estilo_visitante['estilo_ofensivo']
+    p1_estilo = 33.3 + estilo_diff * 0.2
+    p2_estilo = 33.3 - estilo_diff * 0.2
+    px_estilo = 33.3
+    # Normalizar
+    total_estilo = p1_estilo + px_estilo + p2_estilo
+    p1_estilo = p1_estilo / total_estilo * 100
+    px_estilo = px_estilo / total_estilo * 100
+    p2_estilo = p2_estilo / total_estilo * 100
+    
+    # ENSAMBLE DE 5 MODELOS con pesos documentados:
+    # Poisson (30%) + Dixon-Coles (25%) + Monte Carlo (20%) + Forma Reciente (15%) + Estilo (10%)
+    p1 = p1_po * 0.30 + p1_dc * 0.25 + p1_mc * 0.20 + p1_forma * 0.15 + p1_estilo * 0.10
+    px = px_po * 0.30 + px_dc * 0.25 + px_mc * 0.20 + px_forma * 0.15 + px_estilo * 0.10
+    p2 = p2_po * 0.30 + p2_dc * 0.25 + p2_mc * 0.20 + p2_forma * 0.15 + p2_estilo * 0.10
+    
+    # Normalizar para que sumen 100%
+    total = p1 + px + p2
+    p1 = round(p1 / total * 100, 1)
+    px = round(px / total * 100, 1)
+    p2 = round(max(0, 100 - p1 - px), 1)
+    
+    # Versiones ajustadas (para picks) - mismas que las base por ahora
+    p1_ajustado = p1
+    p2_ajustado = p2
+    px_ajustado = px
     
     # OVER/UNDER
     ou = poisson_over_under(xl, xv)
@@ -398,11 +433,7 @@ def calcular(
     p_btts_yes = round((1 - pp(xl, 0)) * (1 - pp(xv, 0)) * 100, 1)
     p_btts_no = round(100 - p_btts_yes, 1)
     
-    # ESTILO DE JUEGO
-    estilo_local = analizar_estilo_juego(corners_local, tarjetas_local, tiros_local, tiros_arco_local)
-    estilo_visitante = analizar_estilo_juego(corners_visitante, tarjetas_visitante, tiros_visitante, tiros_arco_visitante)
-    
-    # PREDICCIÓN DE CORNERS
+    # PREDICCIÓN DE CORNERS (estilo_local y estilo_visitante ya calculados arriba)
     prediccion_corners = predecir_corners(
         corners_local, corners_visitante,
         estilo_local, estilo_visitante
@@ -424,13 +455,13 @@ def calcular(
     else:
         rango = "D"
     
-    # PICK 1X2
-    if p1_ajustado > px and p1_ajustado > p2:
+    # PICK 1X2 - usar siempre versiones ajustadas
+    if p1_ajustado > px_ajustado and p1_ajustado > p2_ajustado:
         pick_1x2 = "1"
         prob_pick = p1_ajustado
-    elif p2 > px and p2 > p1_ajustado:
+    elif p2_ajustado > px_ajustado and p2_ajustado > p1_ajustado:
         pick_1x2 = "2"
-        prob_pick = p2
+        prob_pick = p2_ajustado
     else:
         pick_1x2 = "X"
         prob_pick = px_ajustado
@@ -439,8 +470,8 @@ def calcular(
     pick_ou = "Over 2.5" if ou["over_25"] > 50 else "Under 2.5"
     prob_ou = max(ou["over_25"], ou["under_25"])
     
-    # Pick Corners
-    pick_corners = f"Over {prediccion_corners['total_estimado']:.0f}" if prediccion_corners['over_95'] > 50 else f"Under {prediccion_corners['total_estimado']:.0f}"
+    # Pick Corners - usar línea fija 9.5 para consistencia
+    pick_corners = "Over 9.5" if prediccion_corners['over_95'] > 50 else "Under 9.5"
     
     # Marcador predicho (basado en lambdas de Poisson)
     marcador_predicho = f"{xl:.1f}-{xv:.1f}"
