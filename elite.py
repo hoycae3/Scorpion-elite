@@ -783,16 +783,9 @@ def render_login_form():
                                     api_funciona = True
                                     all_matches = data.get('response', [])
                                     
-                                    # Nombres de las 43 ligas que nos interesan
-                                    ligas_interes = [l['name'] for l in LIGAS]
-                                    
-                                    # Filtrar solo los de las ligas que nos interesan
-                                    partidos_filtrados = []
-                                    for match in all_matches:
-                                        league = match.get('league', {})
-                                        league_name = league.get('name', '')
-                                        if league_name in ligas_interes:
-                                            partidos_filtrados.append(match)
+                                    # Guardar TODOS los partidos (sin filtro de liga)
+                                    # así el usuario tiene datos de cualquier liga
+                                    partidos_filtrados = all_matches
                                     
                                     # Guardar partidos y cuotas
                                     partidos_guardados = 0
