@@ -678,3 +678,56 @@ CREATE INDEX IF NOT EXISTS idx_cuotas_cache_fecha ON cuotas_cache(fecha);
 
 ALTER TABLE cuotas_cache ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "cuotas_cache_all" ON cuotas_cache FOR ALL USING (true) WITH CHECK (true);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLAS DE CALIBRACIÓN (Fix #4 - migrar de /tmp a Supabase)
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- TABLA CALIBRACION_EQUIPOS
+-- Guarda factores de corrección por equipo
+CREATE TABLE IF NOT EXISTS calibracion_equipos (
+    id BIGSERIAL PRIMARY KEY,
+    equipo_norm TEXT PRIMARY KEY,  -- nombre normalizado (lowercase, sin acentos)
+    nombre_original TEXT,
+    factor_local NUMERIC DEFAULT 1.0,
+    factor_visitante NUMERIC DEFAULT 1.0,
+    factor_over NUMERIC DEFAULT 1.0,
+    factor_btts NUMERIC DEFAULT 1.0,
+    partidos_local INT DEFAULT 0,
+    partidos_visitante INT DEFAULT 0,
+    errores_local JSONB DEFAULT '[]',
+    errores_visitante JSONB DEFAULT '[]',
+    over_real JSONB DEFAULT '[]',
+    over_predicho JSONB DEFAULT '[]',
+    actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_calibracion_equipos_nombre ON calibracion_equipos(equipo_norm);
+
+ALTER TABLE calibracion_equipos ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "calibracion_equipos_all" ON calibracion_equipos FOR ALL USING (true) WITH CHECK (true);
+
+-- TABLA CALIBRACION_HISTORICO
+-- Guarda histórico de picks para análisis
+CREATE TABLE IF NOT EXISTS calibracion_historico (
+    id BIGSERIAL PRIMARY KEY,
+    fecha TIMESTAMPTZ DEFAULT NOW(),
+    equipo_local TEXT,
+    equipo_visitante TEXT,
+    lambda_local_predicha NUMERIC,
+    lambda_visitante_predicha NUMERIC,
+    goles_local_real INT,
+    goles_visitante_real INT,
+    resultados JSONB,
+    acertado_1x2 BOOLEAN,
+    acertado_ou25 BOOLEAN,
+    acertado_btts BOOLEAN,
+    confianza INT,
+    rango VARCHAR(5)
+);
+
+CREATE INDEX IF NOT EXISTS idx_calibracion_historico_fecha ON calibracion_historico(fecha);
+CREATE INDEX IF NOT EXISTS idx_calibracion_historico_local ON calibracion_historico(equipo_local);
+
+ALTER TABLE calibracion_historico ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "calibracion_historico_all" ON calibracion_historico FOR ALL USING (true) WITH CHECK (true);
