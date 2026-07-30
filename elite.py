@@ -1075,30 +1075,56 @@ def render_login_form():
                             logger.warning(f"Error cuotas: {e}")
 
                     # ═══════════════════════════════════════════════════
-                    # PASO 2: Consultar ESTADÍSTICAS
+                    # PASO 2: Consultar ESTADÍSTICAS de días SIN procesar
                     # ═══════════════════════════════════════════════════
-                    st.info("📊 PASO 2: Consultando estadísticas de equipos...")
-                    
+                    st.info("📊 PASO 2: Buscando estadísticas de equipos nuevos...")
+
                     hoy = date.today()
-                    fecha_hoy = hoy.strftime('%Y-%m-%d')
-                    fecha_manana = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
-                    fecha_pasado = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
-                    
+                    fecha_7 = (hoy + timedelta(days=7)).strftime('%Y-%m-%d')
+
+                    # Obtener todos los partidos de los próximos 7 días
                     try:
-                        response = client.table('partidos').select('*').in_('fecha', [fecha_hoy, fecha_manana, fecha_pasado]).execute()
-                        partidos_proximos = response.data if response.data else []
+                        response = client.table('partidos').select('*').gte('fecha', hoy.strftime('%Y-%m-%d')).lte('fecha', fecha_7).execute()
+                        todos_partidos = response.data if response.data else []
                     except:
-                        partidos_proximos = []
-                    
-                    # Extraer equipos únicos por nombre
+                        todos_partidos = []
+
+                    # Extraer fechas únicas de partidos
+                    fechas_partidos = set()
+                    for p in todos_partidos:
+                        if p.get('fecha'):
+                            fechas_partidos.add(p['fecha'][:10])
+
+                    # Ver qué días YA se procesaron
+                    try:
+                        resp_proc = client.table('dias_procesados').select('fecha').execute()
+                        dias_procesados = {d['fecha'][:10] for d in resp_proc.data} if resp_proc.data else set()
+                    except:
+                        dias_procesados = set()
+
+                    # Días que FALTAN por procesar
+                    dias_pendientes = fechas_partidos - dias_procesados
+
+                    if not dias_pendientes:
+                        st.success("✅ Todos los días ya tienen estadísticas")
+                    else:
+                        st.info(f"📅 Días pendientes: {sorted(dias_pendientes)}")
+
+                    # Extraer equipos únicos de partidos de días pendientes
                     equipos_nombres = set()
-                    for p in partidos_proximos:
-                        if p.get('equipo_local'):
-                            equipos_nombres.add((p['equipo_local'], p.get('liga', '')))
-                        if p.get('equipo_visitante'):
-                            equipos_nombres.add((p['equipo_visitante'], p.get('liga', '')))
-                    
-                    st.info(f"📊 {len(equipos_nombres)} equipos a consultar...")
+                    for p in todos_partidos:
+                        fecha_p = p.get('fecha', '')[:10]
+                        if fecha_p in dias_pendientes:
+                            if p.get('equipo_local'):
+                                equipos_nombres.add((p['equipo_local'], p.get('liga', '')))
+                            if p.get('equipo_visitante'):
+                                equipos_nombres.add((p['equipo_visitante'], p.get('liga', '')))
+
+                    st.info(f"📊 {len(equipos_nombres)} equipos a consultar de días pendientes...")
+
+                    # Lista de días procesados en esta ejecución
+                    dias_procesados_lista = []
+
                     
                     for team_name, league in equipos_nombres:
                         try:
@@ -1185,6 +1211,18 @@ def render_login_form():
                         time.sleep(1)
                     
                     st.success(f"✅ Actualización completada: {requests_usados} requests usados")
+
+                    # Marcar días como procesados
+                    if dias_pendientes:
+                        for dia in dias_pendientes:
+                            try:
+                                client.table('dias_procesados').upsert({
+                                    'fecha': dia,
+                                    'equipos_procesados': len(equipos_nombres)
+                                }, on_conflict='fecha').execute()
+                            except:
+                                pass
+                        st.info(f"📅 Días marcados como procesados: {sorted(dias_pendientes)}")
                     st.rerun()
         
         with col_info:

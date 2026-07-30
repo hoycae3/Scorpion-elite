@@ -731,3 +731,15 @@ CREATE INDEX IF NOT EXISTS idx_calibracion_historico_local ON calibracion_histor
 
 ALTER TABLE calibracion_historico ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "calibracion_historico_all" ON calibracion_historico FOR ALL USING (true) WITH CHECK (true);
+-- Tabla para trackear qué días se procesaron las estadísticas
+CREATE TABLE IF NOT EXISTS dias_procesados (
+    fecha DATE PRIMARY KEY,
+    equipos_procesados INTEGER DEFAULT 0,
+    fecha_procesamiento TIMESTAMP DEFAULT NOW()
+);
+
+-- Permitir upsert
+ALTER TABLE dias_procesados ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all" ON dias_procesados FOR ALL USING (true) WITH CHECK (true);
+
