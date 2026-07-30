@@ -19,7 +19,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 from supabase import create_client
-from data_loader import parse_flashscore_excel, validate_matches
 from analysis_models import calcular
 from stats_extractor import calculate_team_lambda
 from stats_robot import run_robot_batch
