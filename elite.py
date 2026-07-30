@@ -705,16 +705,26 @@ def render_login_form():
         
         with col_btn1:
             if st.button("🗑️ Limpiar", type="secondary", use_container_width=True):
-                with st.spinner("Limpiando..."):
-                    client = get_client()
-                    try:
-                        client.table('partidos').delete().neq('fixture_id', 0).execute()
-                        client.table('cuotas').delete().neq('fixture_id', 0).execute()
-                        st.session_state.api_requests_today = 0
-                        st.success("✅ Base de datos limpiada!")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"❌ Error: {e}")
+                client = get_client()
+                try:
+                    # Contar antes de borrar
+                    resp_p = client.table('partidos').select('fixture_id', count='exact').execute()
+                    resp_c = client.table('cuotas').select('fixture_id', count='exact').execute()
+                    num_p = len(resp_p.data) if resp_p.data else 0
+                    num_c = len(resp_c.data) if resp_c.data else 0
+                    
+                    # Borrar todos
+                    if num_p > 0:
+                        client.table('partidos').delete().execute()
+                    if num_c > 0:
+                        client.table('cuotas').delete().execute()
+                    
+                    st.session_state.api_requests_today = 0
+                    st.success(f"✅ Limpiado: {num_p} partidos y {num_c} cuotas")
+                    time.sleep(2)
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Error: {e}")
         
         with col_btn2:
             if st.button("🔄 Buscar", type="primary", use_container_width=True):
