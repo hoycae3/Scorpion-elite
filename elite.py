@@ -677,6 +677,7 @@ def render_login_form():
                         dias_totales = 1
                     
                     # Consultar cada día
+                    hoy = date.today()
                     for d in range(dias_totales):
                         fecha = (hoy + timedelta(days=d)).strftime('%Y-%m-%d')
                         
@@ -732,6 +733,7 @@ def render_login_form():
                     # ═══════════════════════════════════════════════════
                     st.info("📊 PASO 2: Consultando estadísticas de equipos...")
                     
+                    hoy = date.today()
                     fecha_manana = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
                     fecha_pasado = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
                     
@@ -840,8 +842,9 @@ def render_login_form():
             filtro_opcion = st.selectbox("📅 Ver", ["Todos", "Hoy", "Mañana", "Esta semana"])
         
         # Filtrar según opción
+        hoy = date.today()
         if filtro_opcion == "Hoy":
-            partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] == date.today().strftime('%Y-%m-%d')]
+            partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] == hoy.strftime('%Y-%m-%d')]
         elif filtro_opcion == "Mañana":
             partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] == (hoy + timedelta(days=1)).strftime('%Y-%m-%d')]
         elif filtro_opcion == "Esta semana":
