@@ -1068,26 +1068,29 @@ def render_login_form():
                     st.info("📊 PASO 2: Consultando estadísticas de equipos...")
                     
                     hoy = date.today()
+                    fecha_hoy = hoy.strftime('%Y-%m-%d')
                     fecha_manana = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
                     fecha_pasado = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
                     
                     try:
-                        response = client.table('partidos').select('*').in_('fecha', [fecha_manana, fecha_pasado]).execute()
+                        response = client.table('partidos').select('*').in_('fecha', [fecha_hoy, fecha_manana, fecha_pasado]).execute()
                         partidos_proximos = response.data if response.data else []
                     except:
                         partidos_proximos = []
                     
-                    equipos_ids = set()
+                    # Extraer equipos únicos por nombre
+                    equipos_nombres = set()
                     for p in partidos_proximos:
-                        if p.get('equipo_local_id'):
-                            equipos_ids.add((p['equipo_local_id'], p['equipo_local'], p['liga']))
-                        if p.get('equipo_visitante_id'):
-                            equipos_ids.add((p['equipo_visitante_id'], p['equipo_visitante'], p['liga']))
+                        if p.get('equipo_local'):
+                            equipos_nombres.add((p['equipo_local'], p.get('liga', '')))
+                        if p.get('equipo_visitante'):
+                            equipos_nombres.add((p['equipo_visitante'], p.get('liga', '')))
                     
-                    st.info(f"📊 {len(equipos_ids)} equipos a consultar...")
+                    st.info(f"📊 {len(equipos_nombres)} equipos a consultar...")
                     
-                    for team_id, team_name, league in equipos_ids:
+                    for team_name, league in equipos_nombres:
                         try:
+                            # Verificar si ya existe
                             existe = client.table('equipos_stats').select('equipo').eq('equipo', team_name).execute()
                             if existe.data:
                                 st.info(f"⏭️ {team_name} - ya existe")
@@ -1095,55 +1098,77 @@ def render_login_form():
                         except:
                             pass
                         
+                        # Buscar team_id desde la API usando el nombre
                         try:
                             headers = {'x-apisports-key': API_KEY}
-                            params = {'team': team_id, 'season': 2024}
-                            response = requests.get(f"{API_URL}/teams/statistics", headers=headers, params=params, timeout=15)
+                            params_search = {'search': team_name}
+                            response_search = requests.get(f"{API_URL}/teams", headers=headers, params=params_search, timeout=15)
                             requests_usados += 1
                             st.session_state.api_requests_today += 1
                             
-                            if response.status_code == 200:
-                                stats = response.json().get('response', {})
+                            if response_search.status_code == 200:
+                                data_search = response_search.json()
+                                teams = data_search.get('response', [])
+                                if not teams:
+                                    st.warning(f"⚠️ No encontrado: {team_name}")
+                                    continue
                                 
-                                partidos = stats.get('fixtures', {}).get('played', {}).get('total', 0) or 1
-                                goles_favor = stats.get('goals', {}).get('for', {}).get('total', {}).get('total', 0) or 0
-                                goles_contra = stats.get('goals', {}).get('against', {}).get('total', {}).get('total', 0) or 0
-                                victorias = stats.get('fixtures', {}).get('wins', {}).get('total', 0) or 0
-                                empates = stats.get('fixtures', {}).get('draws', {}).get('total', 0) or 0
-                                derrotas = stats.get('fixtures', {}).get('loses', {}).get('total', 0) or 0
+                                team_info = teams[0].get('team', {})
+                                team_id = team_info.get('id')
+                                team_name_api = team_info.get('name', team_name)
                                 
-                                lambda_local = round((goles_favor / partidos) * 1.15, 2)
-                                lambda_visitante = round((goles_favor / partidos) * 0.85, 2)
+                                if not team_id:
+                                    st.warning(f"⚠️ Sin ID: {team_name}")
+                                    continue
                                 
-                                corners_total = 0
-                                tarjetas_total = 0
-                                for stat in stats.get('statistics', []):
-                                    if stat.get('type') == 'Corners':
-                                        corners_total = int(stat.get('value', 0) or 0)
-                                    elif stat.get('type') == 'Yellow Cards':
-                                        tarjetas_total = int(stat.get('value', 0) or 0)
+                                # Obtener estadísticas
+                                params_stats = {'team': team_id, 'season': 2024}
+                                response_stats = requests.get(f"{API_URL}/teams/statistics", headers=headers, params=params_stats, timeout=15)
+                                requests_usados += 1
+                                st.session_state.api_requests_today += 1
                                 
-                                data_stats = {
-                                    'equipo': team_name,
-                                    'liga': league,
-                                    'temporada': '2024',
-                                    'partidos_jugados': partidos,
-                                    'victorias': victorias,
-                                    'empates': empates,
-                                    'derrotas': derrotas,
-                                    'goles_favor': goles_favor,
-                                    'goles_contra': goles_contra,
-                                    'lambda_local': lambda_local,
-                                    'lambda_visitante': lambda_visitante,
-                                    'promedio_corners_total': round(corners_total / max(partidos, 1), 1),
-                                    'promedio_tarjetas': round(tarjetas_total / max(partidos, 1), 1),
-                                }
-                                
-                                client.table('equipos_stats').upsert(data_stats, on_conflict='equipo').execute()
-                                st.success(f"✅ {team_name}")
-                                
+                                if response_stats.status_code == 200:
+                                    stats = response_stats.json().get('response', {})
+                                    
+                                    partidos = stats.get('fixtures', {}).get('played', {}).get('total', 0) or 1
+                                    goles_favor = stats.get('goals', {}).get('for', {}).get('total', {}).get('total', 0) or 0
+                                    goles_contra = stats.get('goals', {}).get('against', {}).get('total', {}).get('total', 0) or 0
+                                    victorias = stats.get('fixtures', {}).get('wins', {}).get('total', 0) or 0
+                                    empates = stats.get('fixtures', {}).get('draws', {}).get('total', 0) or 0
+                                    derrotas = stats.get('fixtures', {}).get('loses', {}).get('total', 0) or 0
+                                    
+                                    lambda_local = round((goles_favor / partidos) * 1.15, 2)
+                                    lambda_visitante = round((goles_favor / partidos) * 0.85, 2)
+                                    
+                                    corners_total = 0
+                                    tarjetas_total = 0
+                                    for stat in stats.get('statistics', []):
+                                        if stat.get('type') == 'Corners':
+                                            corners_total = int(stat.get('value', 0) or 0)
+                                        elif stat.get('type') == 'Yellow Cards':
+                                            tarjetas_total = int(stat.get('value', 0) or 0)
+                                    
+                                    data_stats = {
+                                        'equipo': team_name_api,
+                                        'liga': league or stats.get('league', {}).get('name', ''),
+                                        'temporada': '2024',
+                                        'partidos_jugados': partidos,
+                                        'victorias': victorias,
+                                        'empates': empates,
+                                        'derrotas': derrotas,
+                                        'goles_favor': goles_favor,
+                                        'goles_contra': goles_contra,
+                                        'lambda_local': lambda_local,
+                                        'lambda_visitante': lambda_visitante,
+                                        'promedio_corners_total': round(corners_total / max(partidos, 1), 1),
+                                        'promedio_tarjetas': round(tarjetas_total / max(partidos, 1), 1),
+                                    }
+                                    
+                                    client.table('equipos_stats').upsert(data_stats, on_conflict='equipo').execute()
+                                    st.success(f"✅ {team_name_api}")
+                                    
                         except Exception as e:
-                            st.error(f"❌ Error {team_name}: {e}")
+                            st.error(f"❌ Error {team_name}: {str(e)[:30]}")
                         
                         time.sleep(1)
                     
