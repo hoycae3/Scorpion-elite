@@ -808,12 +808,8 @@ def render_login_form():
                                                 'fecha': fixture.get('date', '')[:10],
                                                 'hora': fixture.get('date', '')[11:16],
                                                 'liga': league.get('name', ''),
-                                                'liga_id': league.get('id'),
                                                 'equipo_local': teams.get('home', {}).get('name', ''),
-                                                'equipo_local_id': teams.get('home', {}).get('id'),
-                                                'equipo_visitante': teams.get('away', {}).get('name', ''),
-                                                'equipo_visitante_id': teams.get('away', {}).get('id'),
-                                                'source': 'api-football'
+                                                'equipo_visitante': teams.get('away', {}).get('name', '')
                                             }
                                             client.table('partidos').upsert(data_partido, on_conflict='fixture_id').execute()
                                             partidos_guardados += 1
