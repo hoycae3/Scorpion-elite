@@ -1223,15 +1223,18 @@ def render_login_form():
                 cols_row = st.columns([1.5, 2, 2, 0.7, 1, 0.6])
                 
                 with cols_row[0]:
-                    st.markdown(f"<span style='color:#ffffff; font-size:13px'>📅 {html.escape(str(fecha))}</span>", unsafe_allow_html=True)
+                    fecha_mostrar = str(fecha)[:10] if fecha else "N/A"
+                    st.markdown(f"<span style='color:#ffffff; font-size:13px'>📅 {html.escape(fecha_mostrar)}</span>", unsafe_allow_html=True)
                 with cols_row[1]:
-                    st.markdown(f"<span style='color:#00ff88; font-size:13px'>🏠 **{html.escape(str(local))}**</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span style='color:#00ff88; font-size:13px'>🏠 **{html.escape(str(local) if local else '?')}**</span>", unsafe_allow_html=True)
                 with cols_row[2]:
-                    st.markdown(f"<span style='color:#ff6b6b; font-size:13px'>✈️ **{html.escape(str(visitante))}**</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span style='color:#ff6b6b; font-size:13px'>✈️ **{html.escape(str(visitante) if visitante else '?')}**</span>", unsafe_allow_html=True)
                 with cols_row[3]:
-                    st.markdown(f"<span style='color:#ffd700; font-size:13px'>⏰ {html.escape(str(hora))}</span>", unsafe_allow_html=True)
+                    hora_mostrar = str(hora)[:5] if hora else "N/A"
+                    st.markdown(f"<span style='color:#ffd700; font-size:13px'>⏰ {html.escape(hora_mostrar)}</span>", unsafe_allow_html=True)
                 with cols_row[4]:
-                    st.markdown(f"<span style='color:#00d4aa; font-size:13px'>{emoji} {html.escape(str(pais[:6]))}</span>", unsafe_allow_html=True)
+                    pais_str = str(pais)[:6] if pais else "N/A"
+                    st.markdown(f"<span style='color:#00d4aa; font-size:13px'>{emoji} {html.escape(pais_str)}</span>", unsafe_allow_html=True)
                 with cols_row[5]:
                     if st.button("🎯", key=f"match_{p.get('id')}", help=f"Analizar {local} vs {visitante}", use_container_width=True):
                         selected_match = p
