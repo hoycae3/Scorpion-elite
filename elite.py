@@ -711,11 +711,11 @@ def render_login_form():
                     num_p = len(resp_p.data) if resp_p.data else 0
                     num_c = len(resp_c.data) if resp_c.data else 0
                     
-                    # Borrar todos
+                    # Borrar todos (usar filtro dummy que siempre es verdadero)
                     if num_p > 0:
-                        client.table('partidos').delete().execute()
+                        client.table('partidos').delete().neq('fixture_id', -999999).execute()
                     if num_c > 0:
-                        client.table('cuotas').delete().execute()
+                        client.table('cuotas').delete().neq('fixture_id', -999999).execute()
                     
                     st.session_state.api_requests_today = 0
                     st.success(f"✅ Limpiado: {num_p} partidos y {num_c} cuotas")
