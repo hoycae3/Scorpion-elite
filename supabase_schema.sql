@@ -609,7 +609,39 @@ ALTER TABLE ranking ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "ranking_all" ON ranking FOR ALL USING (true) WITH CHECK (true);
 
 -- ═══════════════════════════════════════════════════════════════════════════════
--- TABLA CUOTAS_CACHE
+-- TABLA CUOTAS
+-- Guarda TODAS las cuotas de partidos (1X2, Over/Under, BTTS, etc.)
+-- ═══════════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS cuotas (
+    id BIGSERIAL PRIMARY KEY,
+    fixture_id BIGINT NOT NULL,
+    fecha DATE NOT NULL,
+    liga VARCHAR(255),
+    equipo_local VARCHAR(255),
+    equipo_visitante VARCHAR(255),
+    -- Tipo de apuesta
+    tipo_apuesta VARCHAR(100) NOT NULL,  -- 'Match Winner', 'Over/Under', 'Both Teams To Score'
+    -- Opciones y cuotas
+    opcion VARCHAR(50) NOT NULL,  -- '1', 'X', '2', 'Yes', 'No', 'Over 2.5', 'Under 2.5', etc.
+    cuota DECIMAL(6,2),
+    -- Casa de apuestas
+    bookmaker VARCHAR(100),
+    -- Metadatos
+    creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    actualizado_en DATE,
+    -- Unique constraint para evitar duplicados
+    UNIQUE(fixture_id, bookmaker, tipo_apuesta, opcion)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cuotas_fixture ON cuotas(fixture_id);
+CREATE INDEX IF NOT EXISTS idx_cuotas_fecha ON cuotas(fecha);
+CREATE INDEX IF NOT EXISTS idx_cuotas_tipo ON cuotas(tipo_apuesta);
+
+ALTER TABLE cuotas ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "cuotas_all" ON cuotas FOR ALL USING (true) WITH CHECK (true);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLA CUOTAS_CACHE (alternativa simplificada)
 -- Guarda cuotas de partidos para revisión posterior
 -- ═══════════════════════════════════════════════════════════════════════════════
 CREATE TABLE IF NOT EXISTS cuotas_cache (
@@ -641,8 +673,8 @@ CREATE TABLE IF NOT EXISTS cuotas_cache (
     actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_cuotas_fixture ON cuotas_cache(fixture_id);
-CREATE INDEX IF NOT EXISTS idx_cuotas_fecha ON cuotas_cache(fecha);
+CREATE INDEX IF NOT EXISTS idx_cuotas_cache_fixture ON cuotas_cache(fixture_id);
+CREATE INDEX IF NOT EXISTS idx_cuotas_cache_fecha ON cuotas_cache(fecha);
 
 ALTER TABLE cuotas_cache ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "cuotas_all" ON cuotas_cache FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "cuotas_cache_all" ON cuotas_cache FOR ALL USING (true) WITH CHECK (true);

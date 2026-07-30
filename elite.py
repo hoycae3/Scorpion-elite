@@ -634,13 +634,63 @@ def render_login_form():
         API_KEY = "e3926f829cd848f4b2b54d722ca29701"
         API_URL = "https://v3.football.api-sports.io"
         
-        # Las 5 ligas que sigue
+        # Las 43 ligas que sigue (todas las del mundo)
         LIGAS = [
-            {"id": 2, "name": "Champions League"},
+            # UEFA
+            {"id": 2, "name": "UEFA Champions League"},
+            {"id": 3, "name": "UEFA Europa League"},
+            {"id": 848, "name": "UEFA Europa Conference League"},
+            {"id": 554, "name": "UEFA Super Cup"},
+            # Sudamérica
+            {"id": 13, "name": "Copa Libertadores"},
             {"id": 87, "name": "Copa Sudamericana"},
+            {"id": 1078, "name": "Recopa Sudamericana"},
+            {"id": 15, "name": "Copa Intercontinental"},
+            # Mundial
+            {"id": 76, "name": "Mundial de Clubes"},
+            # Europa
+            {"id": 39, "name": "Premier League"},
             {"id": 71, "name": "La Liga"},
+            {"id": 135, "name": "Serie A"},
             {"id": 78, "name": "Bundesliga"},
+            {"id": 61, "name": "Ligue 1"},
+            {"id": 94, "name": "Primeira Liga"},
+            {"id": 88, "name": "Eredivisie"},
+            {"id": 22, "name": "Jupiler Pro League"},
+            {"id": 54, "name": "Süper Lig"},
+            {"id": 179, "name": "Scottish Premiership"},
+            {"id": 47, "name": "EFL Championship"},
+            # 2ª División Europa
+            {"id": 140, "name": "La Liga 2"},
+            {"id": 81, "name": "2. Bundesliga"},
+            {"id": 136, "name": "Serie B"},
+            {"id": 62, "name": "Ligue 2"},
+            # Sudamérica
             {"id": 24, "name": "Brasileirão"},
+            {"id": 71, "name": "Liga Argentina"},
+            {"id": 239, "name": "Liga Colombia"},
+            {"id": 241, "name": "Liga Paraguay"},
+            {"id": 242, "name": "Liga Ecuador"},
+            {"id": 243, "name": "Liga Uruguay"},
+            {"id": 244, "name": "Liga Chile"},
+            {"id": 245, "name": "Liga Perú"},
+            {"id": 246, "name": "Brasileirão Série B"},
+            {"id": 247, "name": "Primera Nacional"},
+            {"id": 248, "name": "Torneo Colombia B"},
+            {"id": 249, "name": "División Paraguay"},
+            {"id": 250, "name": "Serie B Ecuador"},
+            # Norteamérica
+            {"id": 291, "name": "MLS"},
+            {"id": 262, "name": "Liga MX"},
+            {"id": 293, "name": "USL Championship"},
+            {"id": 294, "name": "Liga MX Expansion"},
+            {"id": 13, "name": "Copa Concacaf"},
+            # Asia/Otras
+            {"id": 307, "name": "Saudi Pro League"},
+            {"id": 98, "name": "J1 League"},
+            {"id": 292, "name": "K League 1"},
+            {"id": 308, "name": "Premier League Egypt"},
+            {"id": 1, "name": "AFC Champions League"},
         ]
         
         # Contador de requests
@@ -711,7 +761,7 @@ def render_login_form():
                                     api_funciona = True
                                     all_matches = data.get('response', [])
                                     
-                                    # Nombres de las 5 ligas que nos interesan
+                                    # Nombres de las 43 ligas que nos interesan
                                     ligas_interes = [l['name'] for l in LIGAS]
                                     
                                     # Filtrar solo los de las ligas que nos interesan
@@ -722,16 +772,23 @@ def render_login_form():
                                         if league_name in ligas_interes:
                                             partidos_filtrados.append(match)
                                     
-                                    # Guardar solo los partidos de las ligas que nos interesan
+                                    # Guardar partidos y cuotas
                                     partidos_guardados = 0
+                                    cuotas_guardadas = 0
+                                    
                                     for match in partidos_filtrados:
                                         fixture = match.get('fixture', {})
                                         teams = match.get('teams', {})
                                         league = match.get('league', {})
+                                        odds = match.get('odds', {})
+                                        bookmakers = match.get('bookmakers', [])
+                                        
+                                        fixture_id = str(fixture.get('id'))
                                         
                                         try:
+                                            # Guardar partido
                                             data_partido = {
-                                                'fixture_id': str(fixture.get('id')),
+                                                'fixture_id': fixture_id,
                                                 'fecha': fixture.get('date', '')[:10],
                                                 'hora': fixture.get('date', '')[11:16],
                                                 'liga': league.get('name', ''),
@@ -744,11 +801,40 @@ def render_login_form():
                                             }
                                             client.table('partidos').upsert(data_partido, on_conflict='fixture_id').execute()
                                             partidos_guardados += 1
+                                            
+                                            # Guardar cuotas (buscar las del partido)
+                                            # Las cuotas vienen en match.odds o hay que pedirlas por separado
+                                            # Guardar cuotas principales del 1X2 si existen
+                                            for bm in bookmakers:
+                                                bm_name = bm.get('name', '')
+                                                bets = bm.get('bets', [])
+                                                
+                                                for bet in bets:
+                                                    bet_name = bet.get('name', '')
+                                                    # Solo guardar 1X2, Over/Under, BTTS
+                                                    if bet_name in ['Match Winner', 'Both Teams To Score', 'Over/Under']:
+                                                        values = bet.get('values', [])
+                                                        for val in values:
+                                                            cuota = {
+                                                                'fixture_id': fixture_id,
+                                                                'bookmaker': bm_name,
+                                                                'tipo_apuesta': bet_name,
+                                                                'opcion': val.get('value', ''),
+                                                                'cuota': val.get('odd', ''),
+                                                                'actualizado': date.today().isoformat()
+                                                            }
+                                                            try:
+                                                                client.table('cuotas').upsert(cuota, on_conflict='fixture_id,bookmaker,tipo_apuesta,opcion').execute()
+                                                                cuotas_guardadas += 1
+                                                            except:
+                                                                pass
                                         except:
                                             pass
                                     
                                     total_partidos_dia = len(all_matches)
-                                    st.success(f"✅ {fecha}: {partidos_guardados} partidos ({total_partidos_dia} totales, filtrados por tus 5 ligas)")
+                                    st.success(f"✅ {fecha}: {partidos_guardados} partidos ({total_partidos_dia} totales)")
+                                    if cuotas_guardadas > 0:
+                                        st.info(f"💰 Cuotas guardadas: {cuotas_guardadas}")
                         except Exception as e:
                             logger.warning(f"Error API-Football {fecha}: {e}")
                         
