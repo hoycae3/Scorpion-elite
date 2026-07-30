@@ -1258,31 +1258,18 @@ def render_login_form():
         if 'selected_match_data' not in st.session_state:
             st.session_state.selected_match_data = None
         
-        # Obtener lista de equipos disponibles
         client = get_client()
-        try:
-            response_equipos = client.table('equipos_stats').select('equipo, liga').execute()
-            equipos_disponibles = [e['equipo'].title() for e in response_equipos.data] if response_equipos.data else []
-            equipos_disponibles = sorted(set(equipos_disponibles))
-        except Exception as e:
-            logger.error(f"Error obteniendo equipos: {e}")
-            equipos_disponibles = []
         
-        # Obtener partidos de Supabase
-        try:
-            response_partidos = client.table('partidos').select('*').order('fecha', desc=True).order('hora', desc=True).execute()
-            partidos_data = response_partidos.data if response_partidos.data else []
-        except Exception as e:
-            logger.error(f"Error obteniendo partidos: {e}")
-            partidos_data = []
-        
-        # Variable para el partido seleccionado
-        selected_match = None
-        
-        # Mostrar partidos disponibles si hay
-        if partidos_data:
-            st.markdown("### 📋 Partidos en Base de Datos")
-            st.markdown(f"**Total: {len(partidos_data)} partidos**")
+        # Si no hay partido seleccionado, mostrar mensaje
+        if not st.session_state.selected_match_data:
+            st.info("🎯 Ve a la página **Partidos** para seleccionar un partido y analizarlo.")
+            st.info("📍 También puedes analizar desde el preview en la página principal.")
+            
+            if st.button("📋 Ir a Partidos", type="primary"):
+                st.session_state.page = "Partidos"
+                st.rerun()
+            
+            st.stop()  # Terminar aquí
             
             # Emoji por país
             pais_emoji = {'México': '🇲🇽', 'Colombia': '🇨🇴', 'Argentina': '🇦🇷', 'Brasil': '🇧🇷', 'Chile': '🇨🇱'}
