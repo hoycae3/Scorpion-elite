@@ -230,7 +230,7 @@ if "logged" not in st.session_state:
 if "df_partidos" not in st.session_state:
     st.session_state.df_partidos = None
 if "page" not in st.session_state:
-    st.session_state.page = "Carga"
+    st.session_state.page = "VIP"
 if "user_data" not in st.session_state:
     st.session_state.user_data = None
 if "is_admin" not in st.session_state:
@@ -593,20 +593,21 @@ def render_login_form():
     st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
     
     # Construir menú dinámicamente según tipo de usuario
+    # VIP va de primeras y es la página por defecto
     if is_admin:
         # Admin: ve todo
         menu_pages = [
+            ("👑 VIP", "VIP"),
             ("🏠 Partidos", "Partidos"),
             ("📊 Analizador", "Analizador"),
-            ("💰 Picks", "VIP"),
             ("🔑 Claves", "Claves"),
         ]
     else:
-        # VIP: solo Partidos, Analizador, VIP
+        # VIP: VIP primero, luego Partidos, Analizador
         menu_pages = [
+            ("👑 VIP", "VIP"),
             ("🏠 Partidos", "Partidos"),
             ("📊 Analizador", "Analizador"),
-            ("💰 Picks", "VIP"),
         ]
     
     # Crear columnas dinámicamente
