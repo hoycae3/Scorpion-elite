@@ -761,6 +761,9 @@ def render_login_form():
                     else:
                         st.info(f"📅 Buscando {len(dias_a_buscar)} días...")
                     
+                    # IDs de las 43 ligas configuradas
+                    LIGAS_IDS = [2, 3, 848, 554, 13, 87, 1078, 15, 76, 39, 71, 135, 78, 61, 94, 88, 22, 54, 179, 47, 140, 81, 136, 62, 24, 71, 239, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 291, 262, 293, 294, 13, 307, 98, 292, 308, 1]
+
                     for fecha in dias_a_buscar:
                         api_funciona = False
                         try:
@@ -795,8 +798,17 @@ def render_login_form():
                                             elif len(resp) == 0:
                                                 st.info(f"ℹ️ Sin partidos para {fecha}")
                                             else:
+                                                # FILTRAR solo ligas configuradas
+                                                all_matches = []
+                                                for m in resp:
+                                                    if isinstance(m, dict):
+                                                        league = m.get('league', {})
+                                                        if isinstance(league, dict):
+                                                            league_id = league.get('id')
+                                                            if league_id in LIGAS_IDS:
+                                                                all_matches.append(m)
+                                                
                                                 api_funciona = True
-                                                all_matches = resp
                                                 
                                                 # Guardar TODOS los partidos
                                                 partidos_guardados = 0
