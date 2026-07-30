@@ -699,10 +699,24 @@ def render_login_form():
             st.session_state.api_requests_today = 0
         
         # ═══════════════════════════════════════════════════════════════
-        # BOTÓN BUSCAR
+        # BOTONES BUSCAR Y LIMPIAR
         # ═══════════════════════════════════════════════════════════════
-        col_btn, col_info = st.columns([1, 3])
-        with col_btn:
+        col_btn1, col_btn2, col_info = st.columns([1, 1, 2])
+        
+        with col_btn1:
+            if st.button("🗑️ Limpiar", type="secondary", use_container_width=True):
+                with st.spinner("Limpiando..."):
+                    client = get_client()
+                    try:
+                        client.table('partidos').delete().neq('fixture_id', 0).execute()
+                        client.table('cuotas').delete().neq('fixture_id', 0).execute()
+                        st.session_state.api_requests_today = 0
+                        st.success("✅ Base de datos limpiada!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Error: {e}")
+        
+        with col_btn2:
             if st.button("🔄 Buscar", type="primary", use_container_width=True):
                 with st.spinner("Consultando..."):
                     client = get_client()
@@ -950,7 +964,7 @@ def render_login_form():
                     st.rerun()
         
         with col_info:
-            st.info(f"📅 {date.today().strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/90")
+            st.info(f"📅 {date.today().strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/999")
         
         # ═══════════════════════════════════════════════════════════════
         # MOSTRAR PARTIDOS (AGRUPADOS POR LIGA)
