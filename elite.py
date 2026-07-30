@@ -736,7 +736,7 @@ def render_login_form():
                     
                     # Buscar partidos de los próximos 3 días
                     st.info("📅 Buscando partidos...")
-                    dias_totales = 3  # HOY, MAÑANA, PASADO
+                    dias_totales = 7  # MAÑANA hasta +6 días
                     
                     hoy = date.today()
                     
@@ -744,7 +744,7 @@ def render_login_form():
                     dias_a_buscar = []
                     
                     # Verificar cada día del rango mañana a +6 días
-                    for d in range(0, dias_totales):
+                    for d in range(1, dias_totales + 1):
                         fecha = (hoy + timedelta(days=d)).strftime('%Y-%m-%d')
                         try:
                             existe = client.table('partidos').select('fixture_id').eq('fecha', fecha).execute()
