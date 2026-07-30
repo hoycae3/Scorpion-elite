@@ -711,21 +711,9 @@ def render_login_form():
                     # PASO 1: Consultar PARTIDOS
                     # ═══════════════════════════════════════════════════
                     
-                    # Verificar si ya hay partidos en Supabase
-                    try:
-                        response = client.table('partidos').select('fixture_id', count='exact').limit(1).execute()
-                        hay_partidos = response.count and response.count > 0
-                    except:
-                        hay_partidos = False
-                    
-                    if not hay_partidos:
-                        # PRIMERA VEZ: Buscar 7 días
-                        st.info("📅 PRIMERA VEZ: Buscando partidos de los próximos 7 días...")
-                        dias_totales = 7
-                    else:
-                        # Ya hay datos: buscar solo 1 día nuevo
-                        st.info("📅 Buscando solo 1 día nuevo...")
-                        dias_totales = 1
+                    # Siempre buscar 7 días desde HOY
+                    st.info("📅 Buscando partidos de los próximos 7 días (desde hoy)...")
+                    dias_totales = 7
                     
                     # Consultar cada día
                     hoy = date.today()
