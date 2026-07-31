@@ -429,7 +429,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 .scorpion-icon {
     font-size: 1.5rem !important;
     animation: scorpion-glow 1.5s ease-in-out infinite !important;
-    filter: sepia(0.5) saturate(2) hue-rotate(10deg) !important;
+    filter: grayscale(0.8) brightness(1.5) !important;
 }
 
 @keyframes gradient-shift {
@@ -441,11 +441,11 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 @keyframes scorpion-glow {
     0%, 100% { 
         transform: scale(1);
-        filter: sepia(0.5) saturate(2) hue-rotate(10deg) drop-shadow(0 0 8px rgba(255, 215, 0, 0.9));
+        filter: grayscale(0.8) brightness(1.5) drop-shadow(0 0 8px rgba(255, 255, 255, 0.9));
     }
     50% { 
         transform: scale(1.2);
-        filter: sepia(0.3) saturate(3) hue-rotate(50deg) drop-shadow(0 0 20px rgba(0, 255, 136, 1));
+        filter: grayscale(0.5) brightness(2) drop-shadow(0 0 20px rgba(200, 220, 255, 1));
     }
 }
 
