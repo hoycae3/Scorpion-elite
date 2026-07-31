@@ -1,19 +1,19 @@
 /* Scorpion Elite - Diseño Completo */
 
 /* ══════════════════════════════════════════════════════════ */
-/* VARIABLES CSS - Color #556765                      */
+/* VARIABLES CSS - Fondo #556765 con Alto Contraste       */
 /* ══════════════════════════════════════════════════════════ */
 :root {
     --bg-dark: #556765;
-    --bg-card: #4A5A56;
-    --bg-secondary: #3F4F4B;
-    --accent-primary: #D4AF37;
-    --accent-success: #90EE90;
-    --accent-warning: #F0E68C;
-    --accent-danger: #FF6B6B;
+    --bg-card: #3D4A47;
+    --bg-secondary: #2F3A37;
+    --accent-primary: #FFD700;
+    --accent-success: #00FF00;
+    --accent-warning: #FFD700;
+    --accent-danger: #FF4444;
     --text-primary: #FFFFFF;
-    --text-secondary: #E0E0E0;
-    --border-color: rgba(255, 255, 255, 0.2);
+    --text-secondary: #E8E8E8;
+    --border-color: rgba(255, 255, 255, 0.25);
 }
 
 /* ══════════════════════════════════════════════════════════ */
@@ -406,9 +406,9 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 .hero-section {
     text-align: center;
     padding: 40px 20px;
-    background: #556765;
+    background: #3D4A47;
     margin-bottom: 20px;
-    border-bottom: 3px solid #D4AF37;
+    border-bottom: 3px solid #FFD700;
 }
 
 .hero-title {
@@ -469,7 +469,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 /* ══════════════════════════════════════════════════════════ */
-/* STYLES ADICIONALES - Fondo #556765                 */
+/* STYLES ADICIONALES - #556765 con Contraste          */
 /* ══════════════════════════════════════════════════════════ */
 
 /* Página completa */
@@ -479,31 +479,31 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* Botones primarios Streamlit */
 .stButton > button[kind="primary"] {
-    background: linear-gradient(180deg, #D4AF37 0%, #90EE90 100%) !important;
+    background: linear-gradient(180deg, #FFD700 0%, #00FF00 100%) !important;
     color: #1A1A1A !important;
     border: none !important;
     font-weight: 700 !important;
-    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3) !important;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4) !important;
 }
 
 /* Botones secundarios */
 .stButton > button:not([kind="primary"]) {
     background-color: transparent !important;
-    color: #90EE90 !important;
-    border: 2px solid #90EE90 !important;
+    color: #00FF00 !important;
+    border: 2px solid #00FF00 !important;
     font-weight: 600 !important;
 }
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-    background-color: #3F4F4B !important;
-    border-right: 3px solid #D4AF37 !important;
+    background-color: #2F3A37 !important;
+    border-right: 3px solid #FFD700 !important;
 }
 
 /* Métricas */
 .st-emotion-cache-1wrl9td {
-    background-color: #4A5A56 !important;
-    border: 2px solid #D4AF37 !important;
+    background-color: #3D4A47 !important;
+    border: 2px solid #FFD700 !important;
     border-radius: 8px !important;
 }
 
@@ -514,19 +514,19 @@ h1, h2, h3 {
 
 /* Subtítulos */
 h4, h5, h6 {
-    color: #90EE90 !important;
+    color: #00FF00 !important;
 }
 
 /* Expander */
 .streamlit-expanderHeader {
-    background-color: #4A5A56 !important;
+    background-color: #3D4A47 !important;
     color: #FFFFFF !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
 }
 
 /* Links */
 a {
-    color: #90EE90 !important;
+    color: #00FF00 !important;
     text-decoration: none !important;
     font-weight: 600 !important;
 }
