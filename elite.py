@@ -1098,8 +1098,14 @@ def render_login_form():
                     # Ver qué días YA se procesaron
                     try:
                         resp_proc = client.table('dias_procesados').select('fecha').execute()
-                        dias_procesados = {str(d['fecha'])[:10] for d in resp_proc.data} if resp_proc.data else set()
-                    except:
+                        data = resp_proc.data if resp_proc.data else []
+                        dias_procesados = set()
+                        for d in data:
+                            fecha_val = d.get('fecha')
+                            if fecha_val:
+                                dias_procesados.add(str(fecha_val)[:10])
+                    except Exception as e:
+                        logger.warning(f"Error dias_procesados: {e}")
                         dias_procesados = set()
 
                     # Días que FALTAN por procesar
