@@ -1172,28 +1172,74 @@ def render_login_form():
                                 st.session_state.api_requests_today += 1
                                 
                                 if response_stats.status_code == 200:
-                                    stats = response_stats.json().get('response', {})
+                                    resp_json = response_stats.json()
+                                    if not isinstance(resp_json, dict):
+                                        st.error(f"❌ Respuesta inválida para {team_name}")
+                                        continue
                                     
-                                    partidos = stats.get('fixtures', {}).get('played', {}).get('total', 0) or 1
-                                    goles_favor = stats.get('goals', {}).get('for', {}).get('total', {}).get('total', 0) or 0
-                                    goles_contra = stats.get('goals', {}).get('against', {}).get('total', {}).get('total', 0) or 0
-                                    victorias = stats.get('fixtures', {}).get('wins', {}).get('total', 0) or 0
-                                    empates = stats.get('fixtures', {}).get('draws', {}).get('total', 0) or 0
-                                    derrotas = stats.get('fixtures', {}).get('loses', {}).get('total', 0) or 0
+                                    stats = resp_json.get('response', {})
+                                    if not isinstance(stats, dict):
+                                        st.error(f"❌ Stats no es dict para {team_name}")
+                                        continue
+
+                                    fixtures = stats.get('fixtures', {})
+                                    goals = stats.get('goals', {})
+
+                                    try:
+                                        played = fixtures.get('played', {})
+                                        partidos = (played.get('total', 0) or 1) if isinstance(played, dict) else (played or 1)
+                                    except:
+                                        partidos = 1
                                     
-                                    lambda_local = round((goles_favor / partidos) * 1.15, 2)
-                                    lambda_visitante = round((goles_favor / partidos) * 0.85, 2)
+                                    try:
+                                        goals_for = goals.get('for', {})
+                                        total_for = goals_for.get('total', {}) if isinstance(goals_for, dict) else {}
+                                        goles_favor = (total_for.get('total', 0) or 0) if isinstance(total_for, dict) else 0
+                                    except:
+                                        goles_favor = 0
                                     
+                                    try:
+                                        goals_against = goals.get('against', {})
+                                        total_against = goals_against.get('total', {}) if isinstance(goals_against, dict) else {}
+                                        goles_contra = (total_against.get('total', 0) or 0) if isinstance(total_against, dict) else 0
+                                    except:
+                                        goles_contra = 0
+                                    
+                                    try:
+                                        wins = fixtures.get('wins', {})
+                                        victorias = (wins.get('total', 0) or 0) if isinstance(wins, dict) else (wins or 0)
+                                        draws = fixtures.get('draws', {})
+                                        empates = (draws.get('total', 0) or 0) if isinstance(draws, dict) else 0
+                                        loses = fixtures.get('loses', {})
+                                        derrotas = (loses.get('total', 0) or 0) if isinstance(loses, dict) else 0
+                                    except:
+                                        victorias = empates = derrotas = 0
+
+                                    lambda_local = round((goles_favor / max(partidos, 1)) * 1.15, 2)
+                                    lambda_visitante = round((goles_favor / max(partidos, 1)) * 0.85, 2)
+
                                     corners_total = 0
                                     tarjetas_total = 0
-                                    for stat in stats.get('statistics', []):
-                                        if stat.get('type') == 'Corners':
-                                            corners_total = int(stat.get('value', 0) or 0)
-                                        elif stat.get('type') == 'Yellow Cards':
-                                            tarjetas_total = int(stat.get('value', 0) or 0)
-                                    
+                                    for stat in (stats.get('statistics', []) or []):
+                                        if isinstance(stat, dict):
+                                            if stat.get('type') == 'Corners':
+                                                try:
+                                                    corners_total = int(stat.get('value', 0) or 0)
+                                                except:
+                                                    pass
+                                            elif stat.get('type') == 'Yellow Cards':
+                                                try:
+                                                    tarjetas_total = int(stat.get('value', 0) or 0)
+                                                except:
+                                                    pass
+
+                                    league_data = stats.get('league', {})
+                                    league_name = (league_data.get('name', '') or '') if isinstance(league_data, dict) else (league_data or '')
+
                                     data_stats = {
                                         'equipo': team_name_api,
+                                        'liga': league or league_name,
+
                                         'liga': league or stats.get('league', {}).get('name', ''),
                                         'temporada': '2024',
                                         'partidos_jugados': partidos,
