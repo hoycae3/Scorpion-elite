@@ -1564,16 +1564,40 @@ def render_login_form():
                     equipo_local = partido.get('equipo_local', '')
                     equipo_visitante = partido.get('equipo_visitante', '')
                     hora = partido.get('hora', '00:00')[:5]
-                    
-                    col_hora, col_match = st.columns([1, 4])
+
+                    # Verificar si los equipos tienen estadísticas
+                    try:
+                        resp_local = client.table('equipos_stats').select('equipo').ilike('equipo', f'%{equipo_local}%').execute()
+                        resp_visit = client.table('equipos_stats').select('equipo').ilike('equipo', f'%{equipo_visitante}%').execute()
+                        tiene_local = len(resp_local.data) > 0 if resp_local.data else False
+                        tiene_visit = len(resp_visit.data) > 0 if resp_visit.data else False
+                        tiene_stats = tiene_local and tiene_visit
+                    except:
+                        tiene_stats = None
+
+                    # Badge de estado
+                    if tiene_stats is True:
+                        badge = "🟢"
+                        tooltip = "Ambos equipos tienen estadísticas"
+                    elif tiene_stats is False:
+                        badge = "🔴"
+                        tooltip = "Faltan estadísticas"
+                    else:
+                        badge = "⚪"
+                        tooltip = "No verificado"
+
+                    col_hora, col_badge, col_match = st.columns([1, 0.5, 4])
                     with col_hora:
                         st.markdown(f"**{hora}**")
+                    with col_badge:
+                        st.markdown(f"{badge}")
                     with col_match:
-                        if st.button(f"⚽ {equipo_local} vs {equipo_visitante}", key=f"match_{liga}_{i}", use_container_width=True):
+                        if st.button(f"⚽ {equipo_local} vs {equipo_visitante}", key=f"match_{liga}_{i}", use_container_width=True, help=tooltip):
                             st.session_state.selected_local = equipo_local
                             st.session_state.selected_away = equipo_visitante
                             st.session_state.page = "Analizador"
                             st.rerun()
+
         
     # Página: Analizador
     elif st.session_state.page == "Analizador":
