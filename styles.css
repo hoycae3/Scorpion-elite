@@ -399,24 +399,28 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 /* LANDING PAGE PÚBLICA */
 .hero-section {
     text-align: center;
-    padding: 40px 20px;
+    padding: 20px 20px;
     background: linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%);
     border-radius: 12px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     border: 1px solid #00CED1;
 }
 
 .hero-title {
-    font-size: 3.5rem !important;
-    color: #00CED1 !important;
-    margin-bottom: 10px !important;
-    text-shadow: 2px 2px 4px rgba(0, 206, 209, 0.3);
+    font-size: 1.8rem !important;
+    font-weight: 700 !important;
+    background: linear-gradient(135deg, #00CED1, #00ff88, #00CED1) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
 }
 
 .hero-subtitle {
-    font-size: 1.5rem !important;
-    color: #e0e0e0 !important;
-    margin-bottom: 15px !important;
+    font-size: 1rem !important;
+    color: #b0b0b0 !important;
+    margin-bottom: 10px !important;
 }
 
 .hero-description {
