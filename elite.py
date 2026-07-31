@@ -691,7 +691,6 @@ def render_login_form():
 
     # Página: Partidos (NUEVA)
     if st.session_state.page == "Partidos":
-        from partidos_manager import get_partidos_demo
         import requests
         import time
         
@@ -1462,8 +1461,8 @@ def render_login_form():
             st.success(f"✅ {len(partidos_db)} partidos de Supabase")
             partidos = partidos_db
         else:
-            st.info(f"📊 Mostrando {len(get_partidos_demo())} partidos de demostración")
-            partidos = get_partidos_demo()
+            st.warning("📭 No hay partidos. Clic en '🔄 Buscar' para obtener partidos.")
+            partidos = []
         
         # Filtro por período
         col_f1, col_f2 = st.columns([1, 3])
