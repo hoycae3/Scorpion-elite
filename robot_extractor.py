@@ -47,7 +47,8 @@ FD_HEADERS = {
 # API-FOOTBALL.COM
 # ═══════════════════════════════════════════════════════════════════════════════
 
-API_FOOTBALL_KEY = "e3926f829cd848f4b2b54d722ca29701"
+import os
+API_FOOTBALL_KEY = os.getenv("API_FOOTBALL_KEY", "")
 API_FOOTBALL_URL = "https://v3.football.api-sports.io"
 
 def search_team_api_football(team_name: str) -> Optional[Dict]:
@@ -55,6 +56,10 @@ def search_team_api_football(team_name: str) -> Optional[Dict]:
     Busca un equipo en api-football.com usando la API.
     Retorna estadísticas completas del equipo o None si no lo encuentra.
     """
+    if not API_FOOTBALL_KEY:
+        logger.warning("   ⚠️ API-Football: API_FOOTBALL_KEY no configurada")
+        return None
+    
     try:
         headers = {
             'x-apisports-key': API_FOOTBALL_KEY
