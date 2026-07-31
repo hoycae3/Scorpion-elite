@@ -1,19 +1,19 @@
 /* Scorpion Elite - Diseño Completo */
 
 /* ══════════════════════════════════════════════════════════ */
-/* VARIABLES CSS - Fondo #57DBC5 Turquesa Suave           */
+/* VARIABLES CSS - Fondo #57DBC5 + Alto Contraste         */
 /* ══════════════════════════════════════════════════════════ */
 :root {
     --bg-dark: #57DBC5;
-    --bg-card: #45B8A8;
-    --bg-secondary: #389990;
+    --bg-card: #FFFFFF;
+    --bg-secondary: #F0F0F0;
     --accent-primary: #1A5F52;
-    --accent-success: #1A5F52;
-    --accent-warning: #DAA520;
-    --accent-danger: #B22222;
-    --text-primary: #1A3D35;
-    --text-secondary: #2D5A4F;
-    --border-color: rgba(26, 95, 82, 0.3);
+    --accent-success: #006644;
+    --accent-warning: #CC8800;
+    --accent-danger: #CC0000;
+    --text-primary: #003322;
+    --text-secondary: #004433;
+    --border-color: rgba(0, 102, 68, 0.4);
 }
 
 /* ══════════════════════════════════════════════════════════ */
@@ -406,9 +406,10 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 .hero-section {
     text-align: center;
     padding: 40px 20px;
-    background: #45B8A8;
+    background: #FFFFFF;
     margin-bottom: 20px;
-    border-bottom: 3px solid #1A5F52;
+    border-bottom: 4px solid #57DBC5;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .hero-title {
@@ -423,40 +424,26 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .title-text {
-    background: linear-gradient(90deg, #1A5F52, #0D3D32, #1A5F52) !important;
-    background-size: 200% 100% !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
+    color: #006644 !important;
     font-weight: 800 !important;
     letter-spacing: 4px !important;
-    animation: title-flow 5s ease infinite !important;
-}
-
-@keyframes title-flow {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
 }
 
 .scorpion-icon {
     font-size: 2.2rem !important;
-    background: linear-gradient(180deg, #1A5F52 0%, #0D3D32 100%) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
+    color: #57DBC5 !important;
 }
 
 .hero-subtitle {
     font-size: 1rem !important;
-    color: #2D5A4F !important;
+    color: #555555 !important;
     margin-bottom: 10px !important;
     letter-spacing: 1px !important;
 }
 
 .hero-description {
     font-size: 0.95rem !important;
-    color: #1A5F52 !important;
+    color: #006644 !important;
     font-weight: 600 !important;
 }
 
@@ -469,7 +456,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 /* ══════════════════════════════════════════════════════════ */
-/* STYLES ADICIONALES - #57DBC5 Turquesa               */
+/* STYLES ADICIONALES - #57DBC5 Alto Contraste       */
 /* ══════════════════════════════════════════════════════════ */
 
 /* Página completa */
@@ -479,54 +466,55 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* Botones primarios Streamlit */
 .stButton > button[kind="primary"] {
-    background-color: #1A5F52 !important;
+    background-color: #006644 !important;
     color: #FFFFFF !important;
     border: none !important;
     font-weight: 700 !important;
-    box-shadow: 0 2px 8px rgba(26, 95, 82, 0.4) !important;
+    box-shadow: 0 2px 8px rgba(0, 102, 68, 0.4) !important;
 }
 
 /* Botones secundarios */
 .stButton > button:not([kind="primary"]) {
-    background-color: transparent !important;
-    color: #1A5F52 !important;
-    border: 2px solid #1A5F52 !important;
+    background-color: #FFFFFF !important;
+    color: #006644 !important;
+    border: 2px solid #006644 !important;
     font-weight: 600 !important;
 }
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-    background-color: #389990 !important;
-    border-right: 3px solid #1A5F52 !important;
+    background-color: #FFFFFF !important;
+    border-right: 4px solid #57DBC5 !important;
 }
 
 /* Métricas */
 .st-emotion-cache-1wrl9td {
-    background-color: #45B8A8 !important;
-    border: 2px solid #1A5F52 !important;
+    background-color: #FFFFFF !important;
+    border: 2px solid #57DBC5 !important;
     border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* Títulos y headers */
 h1, h2, h3 {
-    color: #1A3D35 !important;
+    color: #003322 !important;
 }
 
 /* Subtítulos */
 h4, h5, h6 {
-    color: #1A5F52 !important;
+    color: #006644 !important;
 }
 
 /* Expander */
 .streamlit-expanderHeader {
-    background-color: #45B8A8 !important;
-    color: #1A3D35 !important;
-    border: 1px solid rgba(26, 95, 82, 0.3) !important;
+    background-color: #FFFFFF !important;
+    color: #003322 !important;
+    border: 1px solid rgba(0, 102, 68, 0.3) !important;
 }
 
 /* Links */
 a {
-    color: #1A5F52 !important;
+    color: #006644 !important;
     text-decoration: none !important;
     font-weight: 600 !important;
 }
