@@ -1,19 +1,19 @@
 /* Scorpion Elite - Diseño Completo */
 
 /* ══════════════════════════════════════════════════════════ */
-/* VARIABLES CSS - FootballData Style                       */
+/* VARIABLES CSS - Dark Matter Minimalista                  */
 /* ══════════════════════════════════════════════════════════ */
 :root {
-    --bg-dark: #1A1A2E;
-    --bg-card: #16213E;
-    --bg-secondary: #0F1729;
-    --accent-primary: #00D4FF;
-    --accent-success: #00D4FF;
-    --accent-warning: #FFD700;
-    --accent-danger: #F85149;
+    --bg-dark: #0A0A0A;
+    --bg-card: #111111;
+    --bg-secondary: #0D0D0D;
+    --accent-primary: #FFFFFF;
+    --accent-success: #FFFFFF;
+    --accent-warning: #FFFFFF;
+    --accent-danger: #FFFFFF;
     --text-primary: #FFFFFF;
-    --text-secondary: #A0AEC0;
-    --border-color: rgba(0, 212, 255, 0.2);
+    --text-secondary: #888888;
+    --border-color: rgba(255, 255, 255, 0.08);
 }
 
 /* ══════════════════════════════════════════════════════════ */
@@ -405,11 +405,9 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 /* LANDING PAGE PÚBLICA */
 .hero-section {
     text-align: center;
-    padding: 20px 20px;
-    background: linear-gradient(135deg, #1A1A2E 0%, #16213E 100%);
-    border-radius: 12px;
+    padding: 30px 20px;
+    background: #0A0A0A;
     margin-bottom: 20px;
-    border: 1px solid #00D4FF;
 }
 
 .hero-title {
@@ -424,18 +422,14 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .title-text {
-    background: linear-gradient(135deg, #00D4FF, #FFFFFF, #00D4FF) !important;
-    background-size: 300% 100% !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
-    animation: gradient-shift 3s ease infinite !important;
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+    letter-spacing: 4px !important;
 }
 
 .scorpion-icon {
     font-size: 2rem !important;
-    animation: scorpion-glow 1.5s ease-in-out infinite !important;
-    filter: grayscale(0.8) brightness(1.5) !important;
+    color: #FFFFFF !important;
 }
 
 @keyframes gradient-shift {
@@ -480,33 +474,31 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 /* ══════════════════════════════════════════════════════════ */
-/* STYLES ADICIONALES - FootballData Style                 */
+/* STYLES ADICIONALES - Minimalista                       */
 /* ══════════════════════════════════════════════════════════ */
 
 /* Botones primarios Streamlit */
 .stButton > button[kind="primary"] {
-    background-color: #00D4FF !important;
-    color: #1A1A2E !important;
+    background-color: #FFFFFF !important;
+    color: #0A0A0A !important;
     border: none !important;
 }
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-    background-color: #0F1729 !important;
-    border-right: 1px solid #00D4FF !important;
+    background-color: #0A0A0A !important;
 }
 
 /* Métricas */
 .st-emotion-cache-1wrl9td {
-    background-color: #16213E !important;
-    border: 1px solid #00D4FF !important;
-    border-radius: 8px !important;
+    background-color: #111111 !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 4px !important;
 }
 
 /* Expander */
 .streamlit-expanderHeader {
-    background-color: #16213E !important;
-    border: 1px solid #00D4FF !important;
+    background-color: #111111 !important;
 }
 
 /* Demo Analysis */
