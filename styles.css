@@ -1,19 +1,19 @@
 /* Scorpion Elite - Diseño Completo */
 
 /* ══════════════════════════════════════════════════════════ */
-/* VARIABLES CSS - Fondo Blanco + Oro/Verde               */
+/* VARIABLES CSS - Fondo Blanco + Contraste Suave         */
 /* ══════════════════════════════════════════════════════════ */
 :root {
-    --bg-dark: #FFFFFF;
-    --bg-card: #F5F5F5;
-    --bg-secondary: #EBEBEB;
-    --accent-primary: #FFD700;
-    --accent-success: #00AA44;
-    --accent-warning: #FF8C00;
-    --accent-danger: #DD0000;
-    --text-primary: #1A1A1A;
-    --text-secondary: #666666;
-    --border-color: rgba(0, 0, 0, 0.1);
+    --bg-dark: #FAFAFA;
+    --bg-card: #F0F0F0;
+    --bg-secondary: #E8E8E8;
+    --accent-primary: #B8860B;
+    --accent-success: #2E8B57;
+    --accent-warning: #DAA520;
+    --accent-danger: #B22222;
+    --text-primary: #2C2C2C;
+    --text-secondary: #5A5A5A;
+    --border-color: rgba(0, 0, 0, 0.08);
 }
 
 /* ══════════════════════════════════════════════════════════ */
@@ -406,9 +406,9 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 .hero-section {
     text-align: center;
     padding: 40px 20px;
-    background: #FFFFFF;
+    background: #FAFAFA;
     margin-bottom: 20px;
-    border-bottom: 3px solid #FFD700;
+    border-bottom: 2px solid #B8860B;
 }
 
 .hero-title {
@@ -423,37 +423,40 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .title-text {
-    background: linear-gradient(90deg, #FFD700, #00AA44, #DD0000, #FFD700) !important;
-    background-size: 300% 100% !important;
+    background: linear-gradient(90deg, #B8860B, #2E8B57, #B8860B) !important;
+    background-size: 200% 100% !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
     background-clip: text !important;
     font-weight: 800 !important;
     letter-spacing: 4px !important;
-    animation: color-flow 5s ease infinite !important;
+    animation: gold-green-flow 4s ease infinite !important;
 }
 
-@keyframes color-flow {
+@keyframes gold-green-flow {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
 }
 
 .scorpion-icon {
-    font-size: 2rem !important;
-    color: #1A1A1A !important;
+    font-size: 2.2rem !important;
+    background: linear-gradient(180deg, #DAA520 0%, #2E8B57 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
 }
 
 .hero-subtitle {
     font-size: 1rem !important;
-    color: #666666 !important;
+    color: #5A5A5A !important;
     margin-bottom: 10px !important;
     letter-spacing: 1px !important;
 }
 
 .hero-description {
     font-size: 0.95rem !important;
-    color: #00AA44 !important;
+    color: #2E8B57 !important;
     font-weight: 500 !important;
 }
 
@@ -466,63 +469,64 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 /* ══════════════════════════════════════════════════════════ */
-/* STYLES ADICIONALES - Fondo Blanco + Colores           */
+/* STYLES ADICIONALES - Contraste Suave                 */
 /* ══════════════════════════════════════════════════════════ */
 
 /* Página completa */
 .stApp {
-    background-color: #FFFFFF !important;
+    background-color: #FAFAFA !important;
 }
 
 /* Botones primarios Streamlit */
 .stButton > button[kind="primary"] {
-    background-color: #1A1A1A !important;
+    background: linear-gradient(180deg, #DAA520 0%, #2E8B57 100%) !important;
     color: #FFFFFF !important;
     border: none !important;
     font-weight: 700 !important;
+    box-shadow: 0 2px 8px rgba(184, 134, 11, 0.3) !important;
 }
 
 /* Botones secundarios */
 .stButton > button:not([kind="primary"]) {
     background-color: transparent !important;
-    color: #00AA44 !important;
-    border: 2px solid #00AA44 !important;
+    color: #2E8B57 !important;
+    border: 2px solid #2E8B57 !important;
     font-weight: 600 !important;
 }
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-    background-color: #F5F5F5 !important;
-    border-right: 3px solid #FFD700 !important;
+    background-color: #F0F0F0 !important;
+    border-right: 2px solid #B8860B !important;
 }
 
 /* Métricas */
 .st-emotion-cache-1wrl9td {
-    background-color: #F5F5F5 !important;
-    border: 2px solid #FFD700 !important;
+    background-color: #F0F0F0 !important;
+    border: 2px solid #B8860B !important;
     border-radius: 8px !important;
 }
 
 /* Títulos y headers */
 h1, h2, h3 {
-    color: #1A1A1A !important;
+    color: #2C2C2C !important;
 }
 
 /* Subtítulos */
 h4, h5, h6 {
-    color: #00AA44 !important;
+    color: #2E8B57 !important;
 }
 
 /* Expander */
 .streamlit-expanderHeader {
-    background-color: #F5F5F5 !important;
-    color: #1A1A1A !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    background-color: #F0F0F0 !important;
+    color: #2C2C2C !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
 /* Links */
 a {
-    color: #00AA44 !important;
+    color: #2E8B57 !important;
     text-decoration: none !important;
     font-weight: 600 !important;
 }
