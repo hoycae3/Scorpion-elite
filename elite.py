@@ -882,7 +882,7 @@ def render_login_form():
                     
                     hoy = datetime.now(timezone(timedelta(hours=-5))).date()
                     
-                    # Siempre trabajamos con el rango: mañana hasta 6 días después (7 días)
+                    # Siempre trabajamos con el rango: mañana hasta 2 días después (3 días)
                     dias_a_buscar = []
                     
                     # Verificar cada día del rango mañana a +6 días
@@ -1230,7 +1230,7 @@ def render_login_form():
                     st.info("📊 Buscando estadísticas de equipos...")
 
                     hoy = datetime.now(timezone(timedelta(hours=-5))).date()
-                    fecha_7 = (hoy + timedelta(days=7)).strftime('%Y-%m-%d')
+                    fecha_7 = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
 
                     try:
                         response = client.table('partidos').select('*').gte('fecha', hoy.strftime('%Y-%m-%d')).lte('fecha', fecha_7).execute()
@@ -1471,7 +1471,7 @@ def render_login_form():
         elif filtro_opcion == "Mañana":
             partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] == (hoy + timedelta(days=1)).strftime('%Y-%m-%d')]
         elif filtro_opcion == "Esta semana":
-            semana = (hoy + timedelta(days=7)).strftime('%Y-%m-%d')
+            semana = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
             partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] <= semana]
         
         # Agrupar por liga
