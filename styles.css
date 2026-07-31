@@ -34,13 +34,13 @@ div[data-testid="stHorizontalBlock"] { align-items: center; }
 /* ══════════════════════════════════════════════════════════ */
 /* FONDO GENERAL                                             */
 /* ══════════════════════════════════════════════════════════ */
-.main { background: #FFFFFF !important; }
+.main { background: #F0FDFA !important; }
 
 /* Título principal */
 .title { color: #ffd700; font-size: 42px; font-weight: bold; margin: 0; line-height: 48px; text-align: center; }
 
 /* DataFrames */
-.stDataFrame { background: #FFFFFF; }
+.stDataFrame { background: #F0FDFA; }
 
 /* Headers */
 .header { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 2px solid #333; }
@@ -58,7 +58,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* Caja principal de probabilidades 1X2 */
 .caja-1x2 {
-    background: #FFFFFF;
+    background: #F0FDFA;
     border-radius: 12px;
     padding: 20px 15px;
     text-align: center;
@@ -411,7 +411,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 .hero-section {
     text-align: center;
     padding: 40px 20px;
-    background: #FFFFFF;
+    background: #F0FDFA;
     margin-bottom: 20px;
     border-bottom: 4px solid #57DBC5;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -480,7 +480,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* Botones secundarios */
 .stButton > button:not([kind="primary"]) {
-    background-color: #FFFFFF !important;
+    background-color: #F0FDFA !important;
     color: #006644 !important;
     border: 2px solid #006644 !important;
     font-weight: 600 !important;
@@ -488,13 +488,13 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-    background-color: #FFFFFF !important;
+    background-color: #F0FDFA !important;
     border-right: 4px solid #57DBC5 !important;
 }
 
 /* Métricas */
 .st-emotion-cache-1wrl9td {
-    background-color: #FFFFFF !important;
+    background-color: #F0FDFA !important;
     border: 2px solid #57DBC5 !important;
     border-radius: 8px !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
@@ -512,7 +512,7 @@ h4, h5, h6 {
 
 /* Expander */
 .streamlit-expanderHeader {
-    background-color: #FFFFFF !important;
+    background-color: #F0FDFA !important;
     color: #003322 !important;
     border: 1px solid rgba(0, 102, 68, 0.3) !important;
 }
