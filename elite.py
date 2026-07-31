@@ -455,6 +455,12 @@ def render_public_landing():
             st.caption("Preview gratuito - Accede con tu cuenta para análisis completo")
             
             for i, partido in enumerate(partidos_aleatorios, 1):
+                # Variables del partido
+                local = partido.get('equipo_local', 'Local')
+                visitante = partido.get('equipo_visitante', 'Visitante')
+                liga = partido.get('liga', '')
+                hora = partido.get('hora', '')
+
                 # Número en lugar de emoji
                 num = f"{i}"
 
