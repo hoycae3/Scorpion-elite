@@ -428,7 +428,8 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 .scorpion-icon {
     font-size: 1.5rem !important;
-    animation: scorpion-pulse 1.5s ease-in-out infinite !important;
+    animation: scorpion-glow 1.5s ease-in-out infinite !important;
+    filter: sepia(0.5) saturate(2) hue-rotate(10deg) !important;
 }
 
 @keyframes gradient-shift {
@@ -437,14 +438,14 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
     100% { background-position: 0% 50%; }
 }
 
-@keyframes scorpion-pulse {
+@keyframes scorpion-glow {
     0%, 100% { 
         transform: scale(1);
-        filter: drop-shadow(0 0 5px rgba(0, 206, 209, 0.8));
+        filter: sepia(0.5) saturate(2) hue-rotate(10deg) drop-shadow(0 0 8px rgba(255, 215, 0, 0.9));
     }
     50% { 
         transform: scale(1.2);
-        filter: drop-shadow(0 0 15px rgba(0, 255, 136, 1));
+        filter: sepia(0.3) saturate(3) hue-rotate(50deg) drop-shadow(0 0 20px rgba(0, 255, 136, 1));
     }
 }
 
