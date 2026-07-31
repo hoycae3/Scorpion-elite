@@ -467,7 +467,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* Página completa */
 .stApp {
-    background-color: #57DBC5 !important;
+    background: linear-gradient(180deg, #0d9488 0%, #5eead4 50%, #99f6e4 100%) !important;
 }
 
 /* Botones primarios Streamlit */
