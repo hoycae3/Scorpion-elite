@@ -384,8 +384,14 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* METRICS */
 .stMetric label {
-    color: var(--text-secondary) !important;
+    color: #1e293b !important;
     font-size: 11px !important;
+}
+
+.stMetric [data-testid="stMetricValue"] {
+    color: #1e293b !important;
+    font-size: 22px !important;
+    font-weight: 700 !important;
 }
 
 /* PREDICCIONES */
