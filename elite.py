@@ -475,16 +475,20 @@ def render_public_landing():
                 elif 'Ligue 1' in liga: pais_emoji = "🇫🇷"
                 elif 'Champions' in liga or 'Europa' in liga: pais_emoji = "🏆"
                 
-                # Tarjeta del partido
-                col1, col2, col3 = st.columns([1, 4, 1])
+                # Tarjeta del partido (clickeable)
+                col1, col2, col3 = st.columns([1, 3, 1])
                 with col1:
                     st.markdown(f"{pais_emoji}")
                 with col2:
-                    st.markdown(f"**{local}** vs **{visitante}**")
-                    if liga:
-                        st.caption(f"🏆 {liga}")
+                    if st.button(f"**{local}** vs **{visitante}**", key=f"partido_{partido.get('id', local)}_{random.randint(1, 9999)}"):
+                        st.session_state.preview_partido = partido
+                        st.rerun()
+                    if hora:
+                        st.caption(f"{hora} · {liga}")
+                    else:
+                        st.caption(f"{liga}")
                 with col3:
-                    if st.button("📊", key=f"demo_{partido.get('id', local)}_{random.randint(1, 9999)}"):
+                    if st.button("⚽", key=f"btn_{partido.get('id', local)}", help="Analizar partido"):
                         st.session_state.preview_partido = partido
                         st.rerun()
             
