@@ -1496,14 +1496,16 @@ def render_login_form():
                         equipos_sin_stats = []
 
                         if not dias_pendientes:
-                            st.success("✅ Todos los días ya tienen estadísticas")
+                            st.warning("⚠️ Todos los días ya marcados. Buscando equipos sin stats...")
                         else:
                             st.info(f"📅 Días pendientes: {sorted(dias_pendientes)}")
 
+                        # SIEMPRE extraer equipos (de días pendientes o todos)
                         equipos_nombres = set()
                         for p in todos_partidos:
                             fecha_p = str(p.get('fecha', ''))[:10]
-                            if fecha_p in dias_pendientes:
+                            # Buscar equipos de días pendientes O todos si no hay pendientes
+                            if not dias_pendientes or fecha_p in dias_pendientes:
                                 if p.get('equipo_local'):
                                     equipos_nombres.add((p['equipo_local'], p.get('liga', '')))
                                 if p.get('equipo_visitante'):
@@ -1515,14 +1517,6 @@ def render_login_form():
                         API_KEY = "e3926f829cd848f4b2b54d722ca29701"
 
                         for team_name, league in equipos_nombres:
-                            try:
-                                existe = client.table('equipos_stats').select('equipo').eq('equipo', team_name).execute()
-                                if existe.data:
-                                    st.info(f"⏭️ {team_name} - ya existe")
-                                    continue
-                            except:
-                                pass
-
                             try:
                                 headers = {'x-apisports-key': API_KEY}
                                 params_search = {'search': team_name}
