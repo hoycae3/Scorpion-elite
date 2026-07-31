@@ -1299,7 +1299,7 @@ def render_login_form():
                                     continue
                                 
                                 # Obtener estadísticas
-                                params_stats = {'team': team_id, 'season': 2024}
+                                params_stats = {'team': team_id, 'season': 2025}
                                 response_stats = requests.get(f"{API_URL}/teams/statistics", headers=headers, params=params_stats, timeout=15)
                                 requests_usados += 1
                                 st.session_state.api_requests_today += 1
@@ -1376,7 +1376,7 @@ def render_login_form():
                                         'liga': league or league_name,
 
                                         'liga': league or stats.get('league', {}).get('name', ''),
-                                        'temporada': '2024',
+                                        'temporada': '2025',
                                         'partidos_jugados': partidos,
                                         'victorias': victorias,
                                         'empates': empates,
