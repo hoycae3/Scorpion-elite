@@ -1,19 +1,19 @@
 /* Scorpion Elite - Diseño Completo */
 
 /* ══════════════════════════════════════════════════════════ */
-/* VARIABLES CSS - Gris Hueso + Contraste                */
+/* VARIABLES CSS - Color #556765                      */
 /* ══════════════════════════════════════════════════════════ */
 :root {
-    --bg-dark: #BEBEBE;
-    --bg-card: #A9A9A9;
-    --bg-secondary: #999999;
-    --accent-primary: #B8860B;
-    --accent-success: #228B22;
-    --accent-warning: #DAA520;
-    --accent-danger: #B22222;
-    --text-primary: #1A1A1A;
-    --text-secondary: #333333;
-    --border-color: rgba(0, 0, 0, 0.2);
+    --bg-dark: #556765;
+    --bg-card: #4A5A56;
+    --bg-secondary: #3F4F4B;
+    --accent-primary: #D4AF37;
+    --accent-success: #90EE90;
+    --accent-warning: #F0E68C;
+    --accent-danger: #FF6B6B;
+    --text-primary: #FFFFFF;
+    --text-secondary: #E0E0E0;
+    --border-color: rgba(255, 255, 255, 0.2);
 }
 
 /* ══════════════════════════════════════════════════════════ */
@@ -406,9 +406,9 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 .hero-section {
     text-align: center;
     padding: 40px 20px;
-    background: #BEBEBE;
+    background: #556765;
     margin-bottom: 20px;
-    border-bottom: 3px solid #B8860B;
+    border-bottom: 3px solid #D4AF37;
 }
 
 .hero-title {
@@ -469,64 +469,64 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 /* ══════════════════════════════════════════════════════════ */
-/* STYLES ADICIONALES - Gris Hueso                     */
+/* STYLES ADICIONALES - Fondo #556765                 */
 /* ══════════════════════════════════════════════════════════ */
 
 /* Página completa */
 .stApp {
-    background-color: #BEBEBE !important;
+    background-color: #556765 !important;
 }
 
 /* Botones primarios Streamlit */
 .stButton > button[kind="primary"] {
-    background: linear-gradient(180deg, #DAA520 0%, #228B22 100%) !important;
-    color: #FFFFFF !important;
+    background: linear-gradient(180deg, #D4AF37 0%, #90EE90 100%) !important;
+    color: #1A1A1A !important;
     border: none !important;
     font-weight: 700 !important;
-    box-shadow: 0 2px 8px rgba(184, 134, 11, 0.3) !important;
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3) !important;
 }
 
 /* Botones secundarios */
 .stButton > button:not([kind="primary"]) {
     background-color: transparent !important;
-    color: #228B22 !important;
-    border: 2px solid #228B22 !important;
+    color: #90EE90 !important;
+    border: 2px solid #90EE90 !important;
     font-weight: 600 !important;
 }
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-    background-color: #A9A9A9 !important;
-    border-right: 3px solid #B8860B !important;
+    background-color: #3F4F4B !important;
+    border-right: 3px solid #D4AF37 !important;
 }
 
 /* Métricas */
 .st-emotion-cache-1wrl9td {
-    background-color: #A9A9A9 !important;
-    border: 2px solid #B8860B !important;
+    background-color: #4A5A56 !important;
+    border: 2px solid #D4AF37 !important;
     border-radius: 8px !important;
 }
 
 /* Títulos y headers */
 h1, h2, h3 {
-    color: #1A1A1A !important;
+    color: #FFFFFF !important;
 }
 
 /* Subtítulos */
 h4, h5, h6 {
-    color: #228B22 !important;
+    color: #90EE90 !important;
 }
 
 /* Expander */
 .streamlit-expanderHeader {
-    background-color: #A9A9A9 !important;
-    color: #1A1A1A !important;
-    border: 1px solid rgba(0, 0, 0, 0.2) !important;
+    background-color: #4A5A56 !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
 /* Links */
 a {
-    color: #228B22 !important;
+    color: #90EE90 !important;
     text-decoration: none !important;
     font-weight: 600 !important;
 }
