@@ -956,12 +956,16 @@ def render_login_form():
                                                         local_str = teams.get('home', {}).get('name', '') if isinstance(teams.get('home'), dict) else ''
                                                         visita_str = teams.get('away', {}).get('name', '') if isinstance(teams.get('away'), dict) else ''
                                                         
+                                                        # Obtener league_id
+                                                        league_id_val = league.get('id', 0) if isinstance(league, dict) else 0
+                                                        
                                                         # Guardar partido
                                                         data_partido = {
                                                             'fixture_id': fixture_id_int,
                                                             'fecha': fecha_str,
                                                             'hora': hora_str,
                                                             'liga': liga_str,
+                                                            'liga_id': league_id_val,
                                                             'equipo_local': local_str,
                                                             'equipo_visitante': visita_str
                                                         }
@@ -1538,7 +1542,11 @@ def render_login_form():
                                     if not team_id:
                                         continue
 
-                                    params_stats = {'team': team_id, 'season': 2025}
+                                    # Obtener league_id de la respuesta del equipo
+                                    teams_league = teams[0].get('league', {})
+                                    league_id_from_api = teams_league.get('id', 0) if isinstance(teams_league, dict) else 0
+                                    
+                                    params_stats = {'team': team_id, 'league': league_id_from_api, 'season': 2025}
                                     response_stats = requests.get(f"{API_URL}/teams/statistics", headers=headers, params=params_stats, timeout=15)
                                     requests_usados += 1
                                     st.session_state.api_requests_today += 1
