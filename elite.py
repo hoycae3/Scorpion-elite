@@ -462,7 +462,7 @@ def render_public_landing():
                 hora = partido.get('hora', '')
 
                 # Partido en una línea
-                st.markdown(f"**{num}.** **{local}** VS **{visitante}**  ·  {hora} {liga}")
+                st.markdown(f"**{i}.** **{local}** VS **{visitante}**  ·  {hora} {liga}")
                 if st.button("📊 Analizar", key=f"btn_{partido.get('id', local)}_{i}", help=f"Analizar {local} vs {visitante}"):
                     st.session_state.preview_partido = partido
                     st.rerun()
