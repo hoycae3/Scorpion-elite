@@ -1,19 +1,19 @@
 /* Scorpion Elite - Diseño Completo */
 
 /* ══════════════════════════════════════════════════════════ */
-/* VARIABLES CSS - Fondo Blanco + Contraste Suave         */
+/* VARIABLES CSS - Blanco Gris + Alto Contraste           */
 /* ══════════════════════════════════════════════════════════ */
 :root {
-    --bg-dark: #FAFAFA;
-    --bg-card: #F0F0F0;
-    --bg-secondary: #E8E8E8;
+    --bg-dark: #E5E5E5;
+    --bg-card: #DCDCDC;
+    --bg-secondary: #CCCCCC;
     --accent-primary: #B8860B;
-    --accent-success: #2E8B57;
+    --accent-success: #228B22;
     --accent-warning: #DAA520;
     --accent-danger: #B22222;
-    --text-primary: #2C2C2C;
-    --text-secondary: #5A5A5A;
-    --border-color: rgba(0, 0, 0, 0.08);
+    --text-primary: #1A1A1A;
+    --text-secondary: #404040;
+    --border-color: rgba(0, 0, 0, 0.15);
 }
 
 /* ══════════════════════════════════════════════════════════ */
@@ -406,9 +406,9 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 .hero-section {
     text-align: center;
     padding: 40px 20px;
-    background: #FAFAFA;
+    background: #E5E5E5;
     margin-bottom: 20px;
-    border-bottom: 2px solid #B8860B;
+    border-bottom: 3px solid #B8860B;
 }
 
 .hero-title {
@@ -469,17 +469,17 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 /* ══════════════════════════════════════════════════════════ */
-/* STYLES ADICIONALES - Contraste Suave                 */
+/* STYLES ADICIONALES - Blanco Gris + Contraste           */
 /* ══════════════════════════════════════════════════════════ */
 
 /* Página completa */
 .stApp {
-    background-color: #FAFAFA !important;
+    background-color: #E5E5E5 !important;
 }
 
 /* Botones primarios Streamlit */
 .stButton > button[kind="primary"] {
-    background: linear-gradient(180deg, #DAA520 0%, #2E8B57 100%) !important;
+    background: linear-gradient(180deg, #DAA520 0%, #228B22 100%) !important;
     color: #FFFFFF !important;
     border: none !important;
     font-weight: 700 !important;
@@ -489,44 +489,44 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 /* Botones secundarios */
 .stButton > button:not([kind="primary"]) {
     background-color: transparent !important;
-    color: #2E8B57 !important;
-    border: 2px solid #2E8B57 !important;
+    color: #228B22 !important;
+    border: 2px solid #228B22 !important;
     font-weight: 600 !important;
 }
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-    background-color: #F0F0F0 !important;
-    border-right: 2px solid #B8860B !important;
+    background-color: #DCDCDC !important;
+    border-right: 3px solid #B8860B !important;
 }
 
 /* Métricas */
 .st-emotion-cache-1wrl9td {
-    background-color: #F0F0F0 !important;
+    background-color: #DCDCDC !important;
     border: 2px solid #B8860B !important;
     border-radius: 8px !important;
 }
 
 /* Títulos y headers */
 h1, h2, h3 {
-    color: #2C2C2C !important;
+    color: #1A1A1A !important;
 }
 
 /* Subtítulos */
 h4, h5, h6 {
-    color: #2E8B57 !important;
+    color: #228B22 !important;
 }
 
 /* Expander */
 .streamlit-expanderHeader {
-    background-color: #F0F0F0 !important;
-    color: #2C2C2C !important;
-    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    background-color: #DCDCDC !important;
+    color: #1A1A1A !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
 }
 
 /* Links */
 a {
-    color: #2E8B57 !important;
+    color: #228B22 !important;
     text-decoration: none !important;
     font-weight: 600 !important;
 }
