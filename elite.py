@@ -1545,6 +1545,15 @@ def render_login_form():
                         API_KEY = "e3926f829cd848f4b2b54d722ca29701"
 
                         for team_name, league in equipos_nombres:
+                            # Verificar si YA tiene estadísticas guardadas
+                            try:
+                                existe = client.table('equipos_stats').select('equipo').ilike('equipo', f'%{team_name}%').execute()
+                                if existe.data and len(existe.data) > 0:
+                                    equipos_encontrados.append(team_name)
+                                    continue
+                            except:
+                                pass
+                            
                             try:
                                 headers = {'x-apisports-key': API_KEY}
                                 params_search = {'search': team_name}
