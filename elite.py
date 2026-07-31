@@ -642,14 +642,14 @@ def render_login_form():
             {"id": 554, "name": "UEFA Super Cup"},
             # Sudamérica
             {"id": 13, "name": "Copa Libertadores"},
-            {"id": 87, "name": "Copa Sudamericana"},
+            {"id": 11, "name": "Copa Sudamericana"},
             {"id": 1078, "name": "Recopa Sudamericana"},
             {"id": 15, "name": "Copa Intercontinental"},
             # Mundial
             {"id": 76, "name": "Mundial de Clubes"},
             # Europa
             {"id": 39, "name": "Premier League"},
-            {"id": 71, "name": "La Liga"},
+            {"id": 71, "name": "La Liga (España)"},  # La Liga de España,
             {"id": 135, "name": "Serie A"},
             {"id": 78, "name": "Bundesliga"},
             {"id": 61, "name": "Ligue 1"},
@@ -666,6 +666,7 @@ def render_login_form():
             {"id": 62, "name": "Ligue 2"},
             # Sudamérica
             {"id": 24, "name": "Brasileirão"},
+            {"id": 71, "name": "Serie A (Brasil)"},
             {"id": 128, "name": "Liga Argentina"},  # ID corregido
             {"id": 239, "name": "Liga Colombia"},
             {"id": 241, "name": "Liga Paraguay"},
@@ -679,10 +680,10 @@ def render_login_form():
             {"id": 249, "name": "División Paraguay"},
             {"id": 250, "name": "Serie B Ecuador"},
             # Norteamérica
-            {"id": 291, "name": "MLS"},
+            {"id": 253, "name": "MLS"},
             {"id": 262, "name": "Liga MX"},
             {"id": 293, "name": "USL Championship"},
-            {"id": 294, "name": "Liga MX Expansion"},
+            {"id": 263, "name": "Liga de Expansión MX"},
             {"id": 195, "name": "Copa Concacaf"},  # ID corregido
             # Asia/Otras
             {"id": 307, "name": "Saudi Pro League"},
