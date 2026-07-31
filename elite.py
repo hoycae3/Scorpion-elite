@@ -1225,12 +1225,12 @@ def render_login_form():
                                 if response_stats.status_code == 200:
                                     resp_json = response_stats.json()
                                     if not isinstance(resp_json, dict):
-                                        st.error(f"❌ Respuesta inválida para {team_name}")
+                                        st.warning(f"⚠️ {team_name}: respuesta inválida")
                                         continue
                                     
                                     stats = resp_json.get('response', {})
                                     if not isinstance(stats, dict):
-                                        st.error(f"❌ Stats no es dict para {team_name}")
+                                        st.warning(f"⚠️ {team_name}: sin estadísticas")
                                         continue
 
                                     fixtures = stats.get('fixtures', {})
