@@ -374,7 +374,7 @@ def render_public_landing():
         liga = partido.get('liga', '')
         
         st.markdown("---")
-        st.markdown(f"## ⚽ Pronóstico: {local} vs {visitante}")
+        st.markdown(f"## ⚽ Pronóstico: {local} VS {visitante}")
         if liga:
             st.caption(f"🏆 {liga}")
         
@@ -451,46 +451,25 @@ def render_public_landing():
             random.seed()  # Semilla aleatoria basada en tiempo
             partidos_aleatorios = random.sample(partidos, min(4, len(partidos)))
             
-            st.markdown("###### ⚽ Partidos Destacados")
+            st.markdown("###### Partidos Destacados")
             st.caption("Preview gratuito - Accede con tu cuenta para análisis completo")
             
-            for partido in partidos_aleatorios:
-                local = partido.get('equipo_local', 'Local')
-                visitante = partido.get('equipo_visitante', 'Visitante')
-                liga = partido.get('liga', '')
-                hora = partido.get('hora', '')
-                
-                # Emoji del país según la liga
-                pais_emoji = "🌍"
-                if 'Argentina' in liga: pais_emoji = "🇦🇷"
-                elif 'Brasil' in liga: pais_emoji = "🇧🇷"
-                elif 'Colombia' in liga: pais_emoji = "🇨🇴"
-                elif 'Chile' in liga: pais_emoji = "🇨🇱"
-                elif 'México' in liga or 'Liga MX' in liga: pais_emoji = "🇲🇽"
-                elif 'MLS' in liga: pais_emoji = "🇺🇸"
-                elif 'Premier' in liga: pais_emoji = "🏴󠁧󠁢󠁥󠁮󠁧󠁿"
-                elif 'La Liga' in liga or 'España' in liga: pais_emoji = "🇪🇸"
-                elif 'Bundesliga' in liga: pais_emoji = "🇩🇪"
-                elif 'Serie A' in liga: pais_emoji = "🇮🇹"
-                elif 'Ligue 1' in liga: pais_emoji = "🇫🇷"
-                elif 'Champions' in liga or 'Europa' in liga: pais_emoji = "🏆"
-                
-                # Tarjeta del partido (clickeable)
-                col1, col2, col3 = st.columns([1, 3, 1])
+            for i, partido in enumerate(partidos_aleatorios, 1):
+                # Número en lugar de emoji
+                num = f"{i}"
+
+                # Tarjeta del partido (clickeable) - alineado a la izquierda
+                col1, col2 = st.columns([1, 4])
                 with col1:
-                    st.markdown(f"{pais_emoji}")
+                    st.markdown(f"**{num}.**")
                 with col2:
-                    if st.button(f"**{local}** vs **{visitante}**", key=f"partido_{partido.get('id', local)}_{random.randint(1, 9999)}"):
+                    if st.button(f"**{local}** VS **{visitante}**", key=f"partido_{partido.get('id', local)}_{random.randint(1, 9999)}"):
                         st.session_state.preview_partido = partido
                         st.rerun()
                     if hora:
                         st.caption(f"{hora} · {liga}")
                     else:
                         st.caption(f"{liga}")
-                with col3:
-                    if st.button("⚽", key=f"btn_{partido.get('id', local)}", help="Analizar partido"):
-                        st.session_state.preview_partido = partido
-                        st.rerun()
             
             st.caption("🔐 Accede con tu cuenta para ver todos los partidos y análisis completo con 4 modelos matemáticos.")
         else:
@@ -1100,8 +1079,6 @@ def render_login_form():
                             st.metric("✅ Encontrados", len(equipos_encontrados))
                         with col2:
                             st.metric("❌ No encontrados", len(equipos_no_encontrados))
-                        with col3:
-                            st.metric("⚠️ Sin stats", len(equipos_sin_stats))
 
                         if equipos_no_encontrados:
                             st.markdown("**❌ No encontrados:** " + ', '.join([f"`{e}`" for e in sorted(equipos_no_encontrados)]))
@@ -1259,7 +1236,7 @@ def render_login_form():
                     with col_badge:
                         st.markdown(f"{badge}")
                     with col_match:
-                        if st.button(f"⚽ {equipo_local} vs {equipo_visitante}", key=f"match_{liga}_{i}", use_container_width=True, help=tooltip):
+                        if st.button(f"⚽ {equipo_local} VS {equipo_visitante}", key=f"match_{liga}_{i}", use_container_width=True, help=tooltip):
                             st.session_state.selected_local = equipo_local
                             st.session_state.selected_away = equipo_visitante
                             st.session_state.page = "Analizador"
@@ -1332,7 +1309,7 @@ def render_login_form():
                     pais_str = str(pais)[:6] if pais else "N/A"
                     st.markdown(f"<span style='color:#00d4aa; font-size:13px'>{emoji} {html.escape(pais_str)}</span>", unsafe_allow_html=True)
                 with cols_row[5]:
-                    if st.button("🎯", key=f"match_{p.get('id')}", help=f"Analizar {local} vs {visitante}", use_container_width=True):
+                    if st.button("🎯", key=f"match_{p.get('id')}", help=f"Analizar {local} VS {visitante}", use_container_width=True):
                         selected_match = p
                         st.session_state.selected_match_data = selected_match
         elif not equipos_disponibles:
@@ -1353,7 +1330,7 @@ def render_login_form():
             local_nombre = st.session_state.selected_local
             visitante_nombre = st.session_state.selected_away
             st.markdown("---")
-            st.markdown(f"### 🎯 Analizando: **{local_nombre}** vs **{visitante_nombre}**")
+            st.markdown(f"### 🎯 Analizando: **{local_nombre}** VS **{visitante_nombre}**")
             
             # Buscar stats de los equipos en Supabase
             stats_local = None
@@ -1741,7 +1718,7 @@ def render_login_form():
             st.markdown(f"""
             <div class="caja-analisis">
                 <p class="analisis-etiqueta">⚡ ANÁLISIS PRINCIPAL</p>
-                <p class="analisis-partido">⚽ {home} vs {away}</p>
+                <p class="analisis-partido">⚽ {home} VS {away}</p>
                 <p class="analisis-score">Expected Score: {marcador}</p>
                 <p class="analisis-pick">{pick_icon.get(pick, '🎯')} {pick}</p>
                 <span class="analisis-confianza">
@@ -1824,14 +1801,6 @@ def render_login_form():
                 <div class="{clase}">
                     <p class="etiqueta-equipo etiqueta-empate">🤝 Empate</p>
                     <p class="probabilidad">{px:.1f}%</p>
-                </div>
-                """, unsafe_allow_html=True)
-            with col3:
-                clase = "caja-1x2 caja-visitante" if es_visita_max else "caja-1x2"
-                st.markdown(f"""
-                <div class="{clase}">
-                    <p class="etiqueta-equipo etiqueta-visitante">✈️ {away}</p>
-                    <p class="probabilidad">{p2:.1f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -2239,13 +2208,6 @@ def render_login_form():
                 st.markdown("**🆓 GRATIS** - Sin VIP")
             with col2:
                 st.markdown("**📆 SEMANA** - 7 días VIP")
-            with col3:
-                st.markdown("**👑 MES** - 30 días VIP")
-            col4, col5 = st.columns(2)
-            with col4:
-                st.markdown("**🔥 ELITE** - 90 días VIP")
-            with col5:
-                st.markdown("**⭐ VIP** - 90 días VIP")
         
         # ========== TAB: GESTIONAR ==========
         with tab_gestionar:
@@ -2457,11 +2419,6 @@ def render_login_form():
                         if pct_ou > 55: st.success("✅ Rentable")
                         elif pct_ou < 45: st.error("❌ Perjudicial")
                         else: st.info("📊 Neutral")
-                    with col3:
-                        st.metric("⚽ BTTS", f"{acertados_btts}/{len(picks_btts)}", f"{pct_btts:.1f}% acierto")
-                        if pct_btts > 55: st.success("✅ Rentable")
-                        elif pct_btts < 45: st.error("❌ Perjudicial")
-                        else: st.info("📊 Neutral")
                     
                     col4, col5, col6 = st.columns(3)
                     with col4:
@@ -2571,18 +2528,14 @@ def render_login_form():
                     visitante = p.get('equipo_visitante', '?')
                     fecha = p.get('fecha', '')[:10]
                     
-                    with st.expander(f"⚽ {local} vs {visitante} ({fecha})"):
-                        st.markdown(f"**Predicciones:** 1X2: {p.get('prediccion_1x2')} | O/U: {p.get('prediccion_ou')} | BTTS: {p.get('prediccion_btts')}")
+                    with st.expander(f"⚽ {local} VS {visitante} ({fecha})"):
+                        st.markdown(f"**Predicciones:** 1X2: XXX('prediccion_1x2')} | O/U: XXX('prediccion_ou')} | BTTS: XXX('prediccion_btts')}")
                         
                         col1, col2, col3, col4 = st.columns([1,1,1,1])
                         with col1:
                             gl = st.number_input("GF Local", min_value=0, max_value=15, value=0, key=f"gf_l_{pick_id}")
                         with col2:
                             gv = st.number_input("GF Visit", min_value=0, max_value=15, value=0, key=f"gf_v_{pick_id}")
-                        with col3:
-                            corners = st.number_input("Corners", min_value=0, max_value=50, value=0, key=f"cor_{pick_id}")
-                        with col4:
-                            tarjetas = st.number_input("Tarjetas", min_value=0, max_value=30, value=0, key=f"tar_{pick_id}")
                         
                         col5, col6 = st.columns([1,1])
                         with col5:
@@ -2817,7 +2770,7 @@ def render_login_form():
                         
                         if picks_sin_resultado:
                             # Selector de pick
-                            opciones_pick = [f"{p.get('local', '?')} vs {p.get('visitante', '?')} - {p.get('mercado', '?')} @ {p.get('cuota', '?')}" 
+                            opciones_pick = [f"XXX('local', '?')} vs XXX('visitante', '?')} - XXX('mercado', '?')} @ XXX('cuota', '?')}" 
                                           for p in picks_sin_resultado]
                             pick_seleccionado = st.selectbox("Pick", options=range(len(opciones_pick)), format_func=lambda x: opciones_pick[x])
                             
