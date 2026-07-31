@@ -68,14 +68,11 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 # Valores por defecto SOLO para desarrollo local (NO usar en producción)
 # En producción, estas variables DEBEN estar configuradas en el Dashboard de Render
 if not ADMIN_PASSWORD:
-    ADMIN_PASSWORD = "scorpion2026"
-    logger.warning("⚠️ ADMIN_PASSWORD usando valor por defecto. Configura la variable en producción.")
+    raise ValueError("❌ ADMIN_PASSWORD no está configurada. Configúrala en variables de entorno.")
 if not SUPABASE_URL:
-    SUPABASE_URL = "https://jjtifureeygvygxtpuku.supabase.co"
-    logger.warning("⚠️ SUPABASE_URL usando valor por defecto. Configura la variable en producción.")
+    raise ValueError("❌ SUPABASE_URL no está configurada. Configúrala en variables de entorno.")
 if not SUPABASE_KEY:
-    SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqdGlmdXJlZXlndnlneHRwdWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTI2NDcsImV4cCI6MjA5OTg4ODY0N30.6f8dgLmHx9x9W-5X2Ld31rPkeZ6HJGSeGgx3oq9XSRA"
-    logger.warning("⚠️ SUPABASE_KEY usando valor por defecto. Configura la variable en producción.")
+    raise ValueError("❌ SUPABASE_KEY no está configurada. Configúrala en variables de entorno.")
 
 # Base de datos persistente en el directorio de la aplicación
 APP_DIR = os.path.dirname(os.path.abspath(__file__))

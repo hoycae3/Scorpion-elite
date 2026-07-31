@@ -11,9 +11,9 @@ from typing import Dict
 class Config:
     """Configuración global de la aplicación."""
     
-    # API Keys
-    API_FOOTBALL_KEY: str = os.getenv("API_FOOTBALL_KEY", "124c9519df145caf883cd82f0b2a4671")
-    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "scorpion_admin_2025")
+    # API Keys - Requeridas (configura en variables de entorno)
+    API_FOOTBALL_KEY: str = os.getenv("API_FOOTBALL_KEY", "")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "")
     
     # Rutas
     DB_PATH: str = os.getenv("DB_PATH", "/tmp/scorpion_v4.db")
