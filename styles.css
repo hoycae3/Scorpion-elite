@@ -1,19 +1,19 @@
 /* Scorpion Elite - Diseño Completo */
 
 /* ══════════════════════════════════════════════════════════ */
-/* VARIABLES CSS - Blanco Gris + Alto Contraste           */
+/* VARIABLES CSS - Gris Hueso + Contraste                */
 /* ══════════════════════════════════════════════════════════ */
 :root {
-    --bg-dark: #E5E5E5;
-    --bg-card: #DCDCDC;
-    --bg-secondary: #CCCCCC;
+    --bg-dark: #BEBEBE;
+    --bg-card: #A9A9A9;
+    --bg-secondary: #999999;
     --accent-primary: #B8860B;
     --accent-success: #228B22;
     --accent-warning: #DAA520;
     --accent-danger: #B22222;
     --text-primary: #1A1A1A;
-    --text-secondary: #404040;
-    --border-color: rgba(0, 0, 0, 0.15);
+    --text-secondary: #333333;
+    --border-color: rgba(0, 0, 0, 0.2);
 }
 
 /* ══════════════════════════════════════════════════════════ */
@@ -406,7 +406,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 .hero-section {
     text-align: center;
     padding: 40px 20px;
-    background: #E5E5E5;
+    background: #BEBEBE;
     margin-bottom: 20px;
     border-bottom: 3px solid #B8860B;
 }
@@ -469,12 +469,12 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 /* ══════════════════════════════════════════════════════════ */
-/* STYLES ADICIONALES - Blanco Gris + Contraste           */
+/* STYLES ADICIONALES - Gris Hueso                     */
 /* ══════════════════════════════════════════════════════════ */
 
 /* Página completa */
 .stApp {
-    background-color: #E5E5E5 !important;
+    background-color: #BEBEBE !important;
 }
 
 /* Botones primarios Streamlit */
@@ -496,13 +496,13 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-    background-color: #DCDCDC !important;
+    background-color: #A9A9A9 !important;
     border-right: 3px solid #B8860B !important;
 }
 
 /* Métricas */
 .st-emotion-cache-1wrl9td {
-    background-color: #DCDCDC !important;
+    background-color: #A9A9A9 !important;
     border: 2px solid #B8860B !important;
     border-radius: 8px !important;
 }
@@ -519,9 +519,9 @@ h4, h5, h6 {
 
 /* Expander */
 .streamlit-expanderHeader {
-    background-color: #DCDCDC !important;
+    background-color: #A9A9A9 !important;
     color: #1A1A1A !important;
-    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(0, 0, 0, 0.2) !important;
 }
 
 /* Links */
