@@ -666,7 +666,7 @@ def render_login_form():
             {"id": 62, "name": "Ligue 2"},
             # Sudamérica
             {"id": 24, "name": "Brasileirão"},
-            {"id": 71, "name": "Liga Argentina"},
+            {"id": 128, "name": "Liga Argentina"},  # ID corregido
             {"id": 239, "name": "Liga Colombia"},
             {"id": 241, "name": "Liga Paraguay"},
             {"id": 242, "name": "Liga Ecuador"},
@@ -683,7 +683,7 @@ def render_login_form():
             {"id": 262, "name": "Liga MX"},
             {"id": 293, "name": "USL Championship"},
             {"id": 294, "name": "Liga MX Expansion"},
-            {"id": 13, "name": "Copa Concacaf"},
+            {"id": 195, "name": "Copa Concacaf"},  # ID corregido
             # Asia/Otras
             {"id": 307, "name": "Saudi Pro League"},
             {"id": 98, "name": "J1 League"},
@@ -762,7 +762,7 @@ def render_login_form():
                         st.info(f"📅 Buscando {len(dias_a_buscar)} días...")
                     
                     # IDs de las 43 ligas configuradas
-                    LIGAS_IDS = [2, 3, 848, 554, 13, 87, 1078, 15, 76, 39, 71, 135, 78, 61, 94, 88, 22, 54, 179, 47, 140, 81, 136, 62, 24, 71, 239, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 291, 262, 293, 294, 13, 307, 98, 292, 308, 1]
+                    LIGAS_IDS = [liga["id"] for liga in LIGAS]
 
                     for fecha in dias_a_buscar:
                         api_funciona = False
