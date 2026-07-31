@@ -445,95 +445,55 @@ def render_public_landing():
         except Exception as e:
             st.error(f"Error: {str(e)}")
     else:
-        # MOSTRAR LISTA DE PARTIDOS - AGRUPADOS POR PAÍS/LIGA
+        # MOSTRAR 4 PARTIDOS ALEATORIOS - PRUEBA GRATIS
         if partidos:
-            # Agrupar por liga
-            partidos_por_liga = {}
-            for partido in partidos:
-                liga = partido.get('liga', 'Sin liga')
-                if liga not in partidos_por_liga:
-                    partidos_por_liga[liga] = []
-                partidos_por_liga[liga].append(partido)
+            import random
+            random.seed()  # Semilla aleatoria basada en tiempo
+            partidos_aleatorios = random.sample(partidos, min(4, len(partidos)))
             
-            # Mostrar por cada liga
-            for liga in sorted(partidos_por_liga.keys()):
-                partidos_liga = partidos_por_liga[liga]
+            st.markdown("### 🎯 Partidos Destacados de Hoy")
+            st.caption("👀 Preview gratis - Inicia sesión para análisis completo")
+            
+            for partido in partidos_aleatorios:
+                local = partido.get('equipo_local', 'Local')
+                visitante = partido.get('equipo_visitante', 'Visitante')
+                liga = partido.get('liga', '')
+                hora = partido.get('hora', '')
                 
-                # Header de la liga con emoji de país
-                pais_emoji = ""
-                if 'Argentina' in liga or 'Copa Argentina' in liga:
-                    pais_emoji = "🇦🇷"
-                elif 'Brasil' in liga or 'Serie A' in liga or 'Brasileirão' in liga:
-                    pais_emoji = "🇧🇷"
-                elif 'Colombia' in liga or 'Dimayor' in liga:
-                    pais_emoji = "🇨🇴"
-                elif 'Chile' in liga:
-                    pais_emoji = "🇨🇱"
-                elif 'México' in liga or 'Liga MX' in liga or 'Expansion' in liga:
-                    pais_emoji = "🇲🇽"
-                elif 'MLS' in liga or 'USL' in liga:
-                    pais_emoji = "🇺🇸"
-                elif 'Uruguay' in liga:
-                    pais_emoji = "🇺🇾"
-                elif 'Perú' in liga or 'Liga 1' in liga:
-                    pais_emoji = "🇵🇪"
-                elif 'Paraguay' in liga:
-                    pais_emoji = "🇵🇾"
-                elif 'Ecuador' in liga:
-                    pais_emoji = "🇪🇨"
-                elif 'Premier League' in liga or 'Inglaterra' in liga:
-                    pais_emoji = "🏴󠁧󠁢󠁥󠁮󠁧󠁿"
-                elif 'La Liga' in liga or 'España' in liga or 'Segunda' in liga:
-                    pais_emoji = "🇪🇸"
-                elif 'Bundesliga' in liga or 'Alemania' in liga:
-                    pais_emoji = "🇩🇪"
-                elif 'Serie A' in liga and 'Brasil' not in liga:
-                    pais_emoji = "🇮🇹"
-                elif 'Ligue 1' in liga or 'Francia' in liga:
-                    pais_emoji = "🇫🇷"
-                elif 'Portugal' in liga or 'Primeira' in liga:
-                    pais_emoji = "🇵🇹"
-                elif 'Eredivisie' in liga or 'Holanda' in liga:
-                    pais_emoji = "🇳🇱"
-                elif 'Champions' in liga or 'Europa' in liga or 'Libertadores' in liga or 'Sudamericana' in liga:
-                    pais_emoji = "🏆"
-                elif 'MLS Next' in liga:
-                    pais_emoji = "🔱"
-                elif 'Saudi' in liga or 'Arabia' in liga:
-                    pais_emoji = "🇸🇦"
-                elif 'Egypt' in liga:
-                    pais_emoji = "🇪🇬"
-                elif 'Japan' in liga or 'Japón' in liga:
-                    pais_emoji = "🇯🇵"
-                elif 'Korea' in liga or 'Corea' in liga:
-                    pais_emoji = "🇰🇷"
-                elif 'Turkey' in liga or 'Turquía' in liga or 'Süper' in liga:
-                    pais_emoji = "🇹🇷"
-                else:
-                    pais_emoji = "🌍"
+                # Emoji del país según la liga
+                pais_emoji = "🌍"
+                if 'Argentina' in liga: pais_emoji = "🇦🇷"
+                elif 'Brasil' in liga: pais_emoji = "🇧🇷"
+                elif 'Colombia' in liga: pais_emoji = "🇨🇴"
+                elif 'Chile' in liga: pais_emoji = "🇨🇱"
+                elif 'México' in liga or 'Liga MX' in liga: pais_emoji = "🇲🇽"
+                elif 'MLS' in liga: pais_emoji = "🇺🇸"
+                elif 'Premier' in liga: pais_emoji = "🏴󠁧󠁢󠁥󠁮󠁧󠁿"
+                elif 'La Liga' in liga or 'España' in liga: pais_emoji = "🇪🇸"
+                elif 'Bundesliga' in liga: pais_emoji = "🇩🇪"
+                elif 'Serie A' in liga: pais_emoji = "🇮🇹"
+                elif 'Ligue 1' in liga: pais_emoji = "🇫🇷"
+                elif 'Champions' in liga or 'Europa' in liga: pais_emoji = "🏆"
+                
+                # Tarjeta del partido
+                col1, col2, col3, col4 = st.columns([1, 3, 1, 1])
+                with col1:
+                    st.markdown(f"{pais_emoji}")
+                with col2:
+                    st.markdown(f"**{local}** vs **{visitante}**")
+                    if liga:
+                        st.caption(f"🏆 {liga}")
+                with col3:
+                    if hora:
+                        st.markdown(f"⏰ {hora}")
+                with col4:
+                    if st.button("📊", key=f"demo_{partido.get('id', local)}_{random.randint(1, 9999)}"):
+                        st.session_state.preview_partido = partido
+                        st.rerun()
                 
                 st.markdown("---")
-                st.markdown(f"### {pais_emoji} {liga} ({len(partidos_liga)} partidos)")
-                
-                # Mostrar partidos de esta liga
-                for partido in partidos_liga[:10]:
-                    local = partido.get('equipo_local', 'Local')
-                    visitante = partido.get('equipo_visitante', 'Visitante')
-                    hora = partido.get('hora', '')
-
-                    c1, c2, c3 = st.columns([3, 1, 1])
-                    with c1:
-                        st.markdown(f"**{local} vs {visitante}**")
-                    with c2:
-                        if hora:
-                            st.markdown(f"⏰ {hora}")
-                    with c3:
-                        if st.button("📊", key=f"demo_{partido.get('id', local)}_{liga}"):
-                            st.session_state.preview_partido = partido
-                            st.rerun()
             
-            st.markdown("---")
-            st.caption(f"📊 Total: {len(partidos)} partidos en {len(partidos_por_liga)} ligas")
+            st.info("🔐 **Inicia sesión** para ver todos los partidos y análisis completo con 4 modelos matemáticos.")
         else:
             st.info("📭 No hay partidos cargados. Sube un Excel desde la página **Carga**.")
 
@@ -1112,6 +1072,8 @@ def render_login_form():
                                                 'promedio_corners_local': round(corners_local / max(partidos, 1), 1),
                                                 'promedio_corners_visitante': round(corners_visit / max(partidos, 1), 1),
                                                 'promedio_corners_total': round((corners_for + corners_against) / max(partidos, 1), 1),
+                                                'corners_favor': corners_for,
+                                                'corners_contra': corners_against,
                                                 'promedio_amarillas': round(amarillas / max(partidos, 1), 1),
                                                 'promedio_rojas': round(rojas / max(partidos, 1), 1),
                                                 'promedio_posesion': posesion,
@@ -1698,7 +1660,7 @@ def render_login_form():
                         ("📊 Diferencia", f"{gf_l - gc_l:+.0f}", "#00d4ff"),
                         ("λ Local", f"{stats_local.get('lambda_local', 0):.2f}", "#00d4ff"),
                         (f"λ Ajustada {icono_ajuste_local}", f"{lambda_local_adj['lambda_ajustada']:.2f}", color_ajuste_local),
-                        ("🌽 Córners", f"{prom_corners_l:.1f}", "#00d4ff"),
+                        ("🌽 Córners", f"⬆️{stats_local.get('corners_favor', 0)} ⬇️{stats_local.get('corners_contra', 0)}", "#00d4ff"),
                         ("🟨 Amarillas", f"{prom_amarillas_l:.1f}", "#ffd700"),
                         ("🔫 Tiros", f"{prom_tiros_l:.1f}", "#fff"),
                         ("🎯 Tiros Arco", f"{prom_tiros_arco_l:.1f}", "#fff"),
@@ -1719,7 +1681,7 @@ def render_login_form():
                         ("📊 Diferencia", f"{gf_v - gc_v:+.0f}", "#00d4ff"),
                         ("λ Visitante", f"{stats_visitante.get('lambda_visitante', 0):.2f}", "#00d4ff"),
                         (f"λ Ajustada {icono_ajuste_vis}", f"{lambda_visitante_adj['lambda_ajustada']:.2f}", color_ajuste_vis),
-                        ("🌽 Córners", f"{prom_corners_v:.1f}", "#00d4ff"),
+                        ("🌽 Córners", f"⬆️{stats_visitante.get('corners_favor', 0)} ⬇️{stats_visitante.get('corners_contra', 0)}", "#00d4ff"),
                         ("🟨 Amarillas", f"{prom_amarillas_v:.1f}", "#ffd700"),
                         ("🔫 Tiros", f"{prom_tiros_v:.1f}", "#fff"),
                         ("🎯 Tiros Arco", f"{prom_tiros_arco_v:.1f}", "#fff"),

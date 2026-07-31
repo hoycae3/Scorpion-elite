@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS equipos_stats (
     promedio_corners_local DECIMAL(4,2) DEFAULT 0,
     promedio_corners_visitante DECIMAL(4,2) DEFAULT 0,
     promedio_corners_total DECIMAL(4,2) DEFAULT 0,
+    corners_favor INTEGER DEFAULT 0,
+    corners_contra INTEGER DEFAULT 0,
     -- Tarjetas
     promedio_amarillas DECIMAL(4,2) DEFAULT 0,
     promedio_rojas DECIMAL(4,2) DEFAULT 0,
