@@ -282,7 +282,11 @@ def render_public_landing():
     # --- HERO SECTION ---
     st.markdown("""
     <div class="hero-section">
-        <h1 class="hero-title">⚡ SCORPION ELITE ⚡</h1>
+        <h1 class="hero-title">
+            <span class="scorpion-icon">🦂</span>
+            <span class="title-text">SCORPION ELITE</span>
+            <span class="scorpion-icon">🦂</span>
+        </h1>
         <p class="hero-subtitle">Analítica Deportiva e IA para Apuestas Inteligentes</p>
         <p class="hero-description">Sistema de análisis predictivo con 4 modelos matemáticos avanzados</p>
     </div>

@@ -409,14 +409,26 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 .hero-title {
     font-size: 1.2rem !important;
     font-weight: 700 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 15px !important;
+    letter-spacing: 3px !important;
+    text-transform: uppercase !important;
+}
+
+.title-text {
     background: linear-gradient(135deg, #00CED1, #FFD700, #00ff88, #00CED1) !important;
     background-size: 300% 100% !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
     background-clip: text !important;
-    letter-spacing: 3px !important;
-    text-transform: uppercase !important;
     animation: gradient-shift 3s ease infinite !important;
+}
+
+.scorpion-icon {
+    font-size: 1.5rem !important;
+    animation: scorpion-pulse 1.5s ease-in-out infinite !important;
 }
 
 @keyframes gradient-shift {
@@ -425,9 +437,15 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
     100% { background-position: 0% 50%; }
 }
 
-@keyframes pulse-glow {
-    0%, 100% { text-shadow: 0 0 10px rgba(0, 206, 209, 0.5); }
-    50% { text-shadow: 0 0 20px rgba(0, 255, 136, 0.8), 0 0 30px rgba(0, 206, 209, 0.6); }
+@keyframes scorpion-pulse {
+    0%, 100% { 
+        transform: scale(1);
+        filter: drop-shadow(0 0 5px rgba(0, 206, 209, 0.8));
+    }
+    50% { 
+        transform: scale(1.2);
+        filter: drop-shadow(0 0 15px rgba(0, 255, 136, 1));
+    }
 }
 
 @keyframes flash {
