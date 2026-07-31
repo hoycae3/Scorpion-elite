@@ -1488,20 +1488,66 @@ def render_login_form():
                 ligas_partidos[liga] = []
             ligas_partidos[liga].append(p)
         
-        # Emoji por liga
-        liga_emoji = {
-            'Champions League': '🏆',
-            'Copa Sudamericana': '🌎',
-            'La Liga': '🇪🇸',
-            'Bundesliga': '🇩🇪',
-            'Brasileirão': '🇧🇷',
-        }
+        # Emoji por país para cada liga
+        def get_pais_emoji(liga):
+            if 'Argentina' in liga or 'Copa Argentina' in liga:
+                return "🇦🇷"
+            elif 'Brasil' in liga or 'Serie A' in liga or 'Brasileirão' in liga:
+                return "🇧🇷"
+            elif 'Colombia' in liga or 'Dimayor' in liga or 'Primera A' in liga or 'Primera B Colombia' in liga:
+                return "🇨🇴"
+            elif 'Chile' in liga:
+                return "🇨🇱"
+            elif 'México' in liga or 'Liga MX' in liga or 'Expansion' in liga:
+                return "🇲🇽"
+            elif 'MLS' in liga or 'USL' in liga:
+                return "🇺🇸"
+            elif 'Uruguay' in liga:
+                return "🇺🇾"
+            elif 'Perú' in liga or 'Liga 1' in liga:
+                return "🇵🇪"
+            elif 'Paraguay' in liga:
+                return "🇵🇾"
+            elif 'Ecuador' in liga:
+                return "🇪🇨"
+            elif 'Premier League' in liga or 'Inglaterra' in liga:
+                return "🏴󠁧󠁢󠁥󠁮󠁧󠁿"
+            elif 'La Liga' in liga or 'España' in liga or 'Segunda' in liga:
+                return "🇪🇸"
+            elif 'Bundesliga' in liga or 'Alemania' in liga:
+                return "🇩🇪"
+            elif 'Serie A' in liga and 'Brasil' not in liga:
+                return "🇮🇹"
+            elif 'Ligue 1' in liga or 'Francia' in liga:
+                return "🇫🇷"
+            elif 'Portugal' in liga or 'Primeira' in liga:
+                return "🇵🇹"
+            elif 'Eredivisie' in liga or 'Holanda' in liga:
+                return "🇳🇱"
+            elif 'Champions' in liga or 'Europa' in liga or 'Libertadores' in liga or 'Sudamericana' in liga:
+                return "🏆"
+            elif 'MLS Next' in liga:
+                return "🔱"
+            elif 'Saudi' in liga or 'Arabia' in liga:
+                return "🇸🇦"
+            elif 'Egypt' in liga:
+                return "🇪🇬"
+            elif 'Japan' in liga or 'Japón' in liga:
+                return "🇯🇵"
+            elif 'Korea' in liga or 'Corea' in liga:
+                return "🇰🇷"
+            elif 'Turkey' in liga or 'Turquía' in liga or 'Süper' in liga:
+                return "🇹🇷"
+            elif 'Championship' in liga or 'League One' in liga or 'League Two' in liga:
+                return "🏴󠁧󠁢󠁥󠁮󠁧󠁿"
+            else:
+                return "🌍"
         
         # Mostrar cada liga como un expander (colapsado por defecto)
         for liga, partidos_liga in sorted(ligas_partidos.items()):
-            emoji = liga_emoji.get(liga, '⚽')
+            emoji = get_pais_emoji(liga)
             
-            with st.expander(f"{emoji} **{liga}**", expanded=False):
+            with st.expander(f"{emoji} **{liga}** ({len(partidos_liga)} partidos)", expanded=False):
                 # Ordenar partidos por fecha y hora
                 partidos_liga.sort(key=lambda x: (str(x.get('fecha', '')), str(x.get('hora', ''))))
                 
