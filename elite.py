@@ -287,20 +287,20 @@ def render_public_landing():
             <span class="title-text">SCORPION ELITE</span>
             <span class="scorpion-icon">🦂</span>
         </h1>
-        <p class="hero-subtitle">Analítica Deportiva e IA para Apuestas Inteligentes</p>
-        <p class="hero-description">Sistema de análisis predictivo con 4 modelos matemáticos avanzados</p>
+        <p class="hero-subtitle">Inteligencia Artificial para Pronósticos Deportivos</p>
+        <p class="hero-description">Sistema predictivo con 4 modelos matemáticos avanzados</p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Botón Iniciar Sesión arriba
+    # Botón Acceder arriba
     col_btn1, col_btn2, col_btn3 = st.columns([2, 1, 2])
     with col_btn2:
-        if st.button("🔐 Iniciar Sesión", use_container_width=True, type="primary"):
+        if st.button("🔐 Acceder", use_container_width=True, type="primary"):
             st.session_state.show_login = True
             st.rerun()
 
     # --- KPIs EN VIVO ---
-    st.markdown("##### 📊 Sistema")
+    st.markdown("##### 📊 Métricas")
 
     # Obtener métricas REALES de Supabase
     try:
@@ -345,7 +345,7 @@ def render_public_landing():
         st.metric("Aciertos", f"{pct_aciertos}%", f"{aciertos}/{total_picks}")
 
     with col_kpi2:
-        st.metric("Picks", f"{total_picks:,}", f"{total_equipos} equipos")
+        st.metric("Pronósticos", f"{total_picks:,}", f"{total_equipos} equipos")
 
     with col_kpi3:
         st.metric("Yield", f"{yield_pct:+.1f}%", "")
@@ -374,12 +374,12 @@ def render_public_landing():
         liga = partido.get('liga', '')
         
         st.markdown("---")
-        st.markdown(f"## 📊 Análisis: {local} vs {visitante}")
+        st.markdown(f"## ⚽ Pronóstico: {local} vs {visitante}")
         if liga:
             st.caption(f"🏆 {liga}")
         
         # Botón para volver
-        if st.button("← Volver a partidos", key="volver_partidos"):
+        if st.button("← Volver", key="volver_partidos"):
             st.session_state.preview_partido = None
             st.rerun()
         
@@ -423,23 +423,23 @@ def render_public_landing():
                     
                     # 1X2
                     if prom_l > prom_v * 1.2:
-                        st.success(f"**1X2:** 1 (Victoria local) - Alta confianza")
+                        st.success(f"**1X2:** Local - Alta probabilidad")
                     elif prom_v > prom_l * 1.2:
-                        st.success(f"**1X2:** 2 (Victoria visitante) - Alta confianza")
+                        st.success(f"**1X2:** Visitante - Alta probabilidad")
                     else:
-                        st.warning(f"**1X2:** X (Empate) - Confianza media")
+                        st.warning(f"**1X2:** Empate - Probabilidad media")
                     
                     # Over/Under
                     total = prom_l + prom_v
                     ou = "Over 2.5" if total > 2.5 else "Under 2.5"
-                    st.info(f"**Over/Under:** {ou} ({total:.1f} goles esperados)")
+                    st.info(f"**Over/Under 2.5:** {ou} ({total:.1f} goles esperados)")
                     
                     # BTTS
                     btts = "Sí" if gf_l > 1 and gf_v > 1 else "No"
-                    st.info(f"**Ambos marcan:** {btts}")
+                    st.info(f"**Ambos Marcan (BTTS):** {btts}")
                     
                     st.markdown("---")
-                    st.caption("📝 Inicia sesión para análisis completo con 4 modelos matemáticos.")
+                    st.caption("🔐 Accede con tu cuenta para análisis completo con 4 modelos matemáticos.")
                 else:
                     st.warning(f"No hay estadísticas para {local} o {visitante}")
         except Exception as e:
@@ -451,8 +451,8 @@ def render_public_landing():
             random.seed()  # Semilla aleatoria basada en tiempo
             partidos_aleatorios = random.sample(partidos, min(4, len(partidos)))
             
-            st.markdown("##### 🎯 Partidos Destacados")
-            st.caption("👀 Preview gratis - Inicia sesión para análisis completo")
+            st.markdown("##### ⚽ Partidos Destacados")
+            st.caption("👀 Preview gratuito - Accede con tu cuenta para análisis completo")
             
             for partido in partidos_aleatorios:
                 local = partido.get('equipo_local', 'Local')
@@ -493,9 +493,9 @@ def render_public_landing():
                 
                 st.markdown("---")
             
-            st.info("🔐 **Inicia sesión** para ver todos los partidos y análisis completo con 4 modelos matemáticos.")
+            st.info("🔐 **Accede con tu cuenta** para ver todos los partidos y análisis completo con 4 modelos matemáticos.")
         else:
-            st.info("📭 No hay partidos cargados. Sube un Excel desde la página **Carga**.")
+            st.info("📭 No hay partidos cargados. Ve a la pestaña **Carga** para subir datos.")
 
 
 
