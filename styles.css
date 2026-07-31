@@ -396,6 +396,11 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
     text-align: center !important;
 }
 
+/* FUENTE DE EMOJIS MODERNA */
+* {
+    font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'EmojiOne', sans-serif !important;
+}
+
 /* LANDING PAGE PÚBLICA */
 .hero-section {
     text-align: center;
@@ -427,7 +432,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .scorpion-icon {
-    font-size: 1.5rem !important;
+    font-size: 2rem !important;
     animation: scorpion-glow 1.5s ease-in-out infinite !important;
     filter: grayscale(0.8) brightness(1.5) !important;
 }

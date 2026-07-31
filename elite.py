@@ -300,7 +300,7 @@ def render_public_landing():
             st.rerun()
 
     # --- KPIs EN VIVO ---
-    st.markdown("### 📊 Métricas del Sistema")
+    st.markdown("##### 📊 Sistema")
 
     # Obtener métricas REALES de Supabase
     try:
@@ -342,17 +342,13 @@ def render_public_landing():
     col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
 
     with col_kpi1:
-        st.metric("📈 Aciertos Totales", f"{pct_aciertos}%", f"{aciertos} de {total_picks} picks")
+        st.metric("Aciertos", f"{pct_aciertos}%", f"{aciertos}/{total_picks}")
 
     with col_kpi2:
-        st.metric("🎯 Picks Guardados", f"{total_picks:,}", f"{total_equipos} equipos analizados")
+        st.metric("Picks", f"{total_picks:,}", f"{total_equipos} equipos")
 
     with col_kpi3:
-        st.metric("💰 Yield Promedio", f"{yield_pct:+.1f}%", "Rentabilidad real")
-
-    
-    # --- PARTIDOS DEL DÍA ---
-    st.markdown("### 🏆 Partidos del Día")
+        st.metric("Yield", f"{yield_pct:+.1f}%", "")
 
     # Estado para análisis preview
     if "preview_partido" not in st.session_state:
@@ -455,7 +451,7 @@ def render_public_landing():
             random.seed()  # Semilla aleatoria basada en tiempo
             partidos_aleatorios = random.sample(partidos, min(4, len(partidos)))
             
-            st.markdown("### 🎯 Partidos Destacados de Hoy")
+            st.markdown("##### 🎯 Partidos Destacados")
             st.caption("👀 Preview gratis - Inicia sesión para análisis completo")
             
             for partido in partidos_aleatorios:
