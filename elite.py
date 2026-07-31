@@ -1231,6 +1231,16 @@ def render_login_form():
 
                     if not dias_pendientes:
                         st.success("✅ Todos los días ya tienen estadísticas")
+                        # Mostrar resumen aunque no haya días pendientes
+                        st.markdown("---")
+                        st.markdown("### 📊 Estado de Estadísticas en Base de Datos")
+                        # Contar equipos en base de datos
+                        try:
+                            resp = client.table('equipos_stats').select('equipo', count='exact').execute()
+                            total_equipos = len(resp.data) if resp.data else 0
+                            st.info(f"📊 Total de equipos con estadísticas: {total_equipos}")
+                        except:
+                            pass
                     else:
                         st.info(f"📅 Días pendientes: {sorted(dias_pendientes)}")
 
