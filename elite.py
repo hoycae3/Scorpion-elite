@@ -1262,16 +1262,17 @@ def render_login_form():
                         equipos_sin_stats = []
 
                         if not dias_pendientes:
-                            st.warning("⚠️ Todos los días ya marcados. Buscando equipos sin stats...")
+                            st.success("✅ Todos los días ya tienen estadísticas")
                         else:
                             st.info(f"📅 Días pendientes: {sorted(dias_pendientes)}")
 
-                        # SIEMPRE extraer equipos (de días pendientes o todos)
+                        # ═══════════════════════════════════════════════════════
+                        # SOLO extraer equipos de días PENDIENTES
+                        # ═══════════════════════════════════════════════════════
                         equipos_nombres = set()
                         for p in todos_partidos:
                             fecha_p = str(p.get('fecha', ''))[:10]
-                            # Buscar equipos de días pendientes O todos si no hay pendientes
-                            if not dias_pendientes or fecha_p in dias_pendientes:
+                            if fecha_p in dias_pendientes:
                                 if p.get('equipo_local'):
                                     equipos_nombres.add((p['equipo_local'], p.get('liga', '')))
                                 if p.get('equipo_visitante'):
@@ -1343,57 +1344,113 @@ def render_login_form():
 
                                         if stats:
                                             fixtures = stats.get('fixtures', {})
-                                            goals = stats.get('goals', {})
 
+                                        if stats:
+                                            # ═══════════════════════════════════════════════════════
+                                            # Extraer TODOS los datos solicitados
+                                            # ═══════════════════════════════════════════════════════
+                                            fixtures = stats.get('fixtures', {})
+                                            goals = stats.get('goals', {})
+                                            
+                                            # Partidos jugados
                                             try:
                                                 played = fixtures.get('played', {})
                                                 partidos = (played.get('total', 0) or 1) if isinstance(played, dict) else (played or 1)
                                             except:
                                                 partidos = 1
-
+                                            
+                                            # Victorias, Empates, Derrotas
+                                            try:
+                                                wins = fixtures.get('wins', {})
+                                                victorias = (wins.get('total', 0) or 0) if isinstance(wins, dict) else 0
+                                                draws = fixtures.get('draws', {})
+                                                empates = (draws.get('total', 0) or 0) if isinstance(draws, dict) else 0
+                                                loses = fixtures.get('loses', {})
+                                                derrotas = (loses.get('total', 0) or 0) if isinstance(loses, dict) else 0
+                                            except:
+                                                victorias = empates = derrotas = 0
+                                            
+                                            # Goles y promedios
                                             try:
                                                 goals_for = goals.get('for', {})
                                                 goals_against = goals.get('against', {})
-                                                
                                                 if isinstance(goals_for, dict):
                                                     total_gf = goals_for.get('total', {})
                                                     goles_favor = total_gf.get('total', 0) or 0
+                                                    prom_goles_local = goals_for.get('home', {}).get('average', 0) or 0
+                                                    prom_goles_visit = goals_for.get('away', {}).get('average', 0) or 0
                                                 else:
-                                                    goles_favor = 0
-                                                
+                                                    goles_favor = prom_goles_local = prom_goles_visit = 0
                                                 if isinstance(goals_against, dict):
                                                     total_gc = goals_against.get('total', {})
                                                     goles_contra = total_gc.get('total', 0) or 0
                                                 else:
                                                     goles_contra = 0
                                             except:
-                                                goles_favor = 0
-                                                goles_contra = 0
-
+                                                goles_favor = goles_contra = prom_goles_local = prom_goles_visit = 0
+                                            
+                                            # Lambda
                                             try:
-                                                lambda_local = goals_for.get('home', {}).get('average', '0') or '0'
-                                                lambda_visitante = goals_for.get('away', {}).get('average', '0') or '0'
+                                                lambda_local = goals_for.get('home', {}).get('average', 1.3) or 1.3
+                                                lambda_visitante = goals_for.get('away', {}).get('average', 1.1) or 1.1
                                             except:
-                                                lambda_local = '0'
-                                                lambda_visitante = '0'
-
+                                                lambda_local = 1.3
+                                                lambda_visitante = 1.1
+                                            
+                                            # Tiros
                                             try:
-                                                corners_total = (stats.get('corners', {}).get('for', {}).get('total', 0) or 0) + (stats.get('corners', {}).get('against', {}).get('total', 0) or 0)
-                                                tarjetas_total = (stats.get('cards', {}).get('for', {}).get('total', 0) or 0) + (stats.get('cards', {}).get('against', {}).get('total', 0) or 0)
+                                                shots = stats.get('shots', {})
+                                                tiros_total = (shots.get('total', 0) or 0) if isinstance(shots, dict) else 0
+                                                tiros_arco = (shots.get('on target', 0) or 0) if isinstance(shots, dict) else 0
                                             except:
-                                                corners_total = 0
-                                                tarjetas_total = 0
+                                                tiros_total = tiros_arco = 0
+                                            
+                                            # Corners
+                                            try:
+                                                corners = stats.get('corners', {})
+                                                corners_for = (corners.get('for', {}).get('total', 0) or 0) if isinstance(corners, dict) else 0
+                                                corners_against = (corners.get('against', {}).get('total', 0) or 0) if isinstance(corners, dict) else 0
+                                                corners_local = (corners.get('for', {}).get('home', 0) or 0) if isinstance(corners, dict) else 0
+                                                corners_visit = (corners.get('for', {}).get('away', 0) or 0) if isinstance(corners, dict) else 0
+                                            except:
+                                                corners_for = corners_against = corners_local = corners_visit = 0
+                                            
+                                            # Tarjetas
+                                            try:
+                                                cards = stats.get('cards', {})
+                                                amarillas = (cards.get('yellow', {}).get('total', 0) or 0) if isinstance(cards, dict) else 0
+                                                rojas = (cards.get('red', {}).get('total', 0) or 0) if isinstance(cards, dict) else 0
+                                            except:
+                                                amarillas = rojas = 0
+                                            
+                                            # Posesión
+                                            try:
+                                                possession = stats.get('ball possession', {})
+                                                posesion = float(possession.replace('%', '')) if isinstance(possession, str) else 50
+                                            except:
+                                                posesion = 50
 
                                             data_stats = {
                                                 'equipo': team_name_api,
                                                 'liga': league,
                                                 'partidos_jugados': partidos,
+                                                'victorias': victorias,
+                                                'empates': empates,
+                                                'derrotas': derrotas,
                                                 'goles_favor': goles_favor,
                                                 'goles_contra': goles_contra,
+                                                'promedio_goles_local': round(prom_goles_local, 2),
+                                                'promedio_goles_visitante': round(prom_goles_visit, 2),
                                                 'lambda_local': lambda_local,
                                                 'lambda_visitante': lambda_visitante,
-                                                'promedio_corners_total': round(corners_total / max(partidos, 1), 1),
-                                                'promedio_amarillas': round(tarjetas_total / max(partidos, 1), 1),
+                                                'promedio_tiros': round(tiros_total / max(partidos, 1), 1),
+                                                'promedio_tiros_arco': round(tiros_arco / max(partidos, 1), 1),
+                                                'promedio_corners_local': round(corners_local / max(partidos, 1), 1),
+                                                'promedio_corners_visitante': round(corners_visit / max(partidos, 1), 1),
+                                                'promedio_corners_total': round((corners_for + corners_against) / max(partidos, 1), 1),
+                                                'promedio_amarillas': round(amarillas / max(partidos, 1), 1),
+                                                'promedio_rojas': round(rojas / max(partidos, 1), 1),
+                                                'promedio_posesion': posesion,
                                                 'temporada': '2024-25',
                                             }
 
