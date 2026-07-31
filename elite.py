@@ -1093,12 +1093,12 @@ def render_login_form():
                     fechas_partidos = set()
                     for p in todos_partidos:
                         if p.get('fecha'):
-                            fechas_partidos.add(p['fecha'][:10])
+                            fechas_partidos.add(str(p.get('fecha', ''))[:10])
 
                     # Ver qué días YA se procesaron
                     try:
                         resp_proc = client.table('dias_procesados').select('fecha').execute()
-                        dias_procesados = {d['fecha'][:10] for d in resp_proc.data} if resp_proc.data else set()
+                        dias_procesados = {str(d['fecha'])[:10] for d in resp_proc.data} if resp_proc.data else set()
                     except:
                         dias_procesados = set()
 
@@ -1113,7 +1113,7 @@ def render_login_form():
                     # Extraer equipos únicos de partidos de días pendientes
                     equipos_nombres = set()
                     for p in todos_partidos:
-                        fecha_p = p.get('fecha', '')[:10]
+                        fecha_p = str(p.get('fecha', ''))[:10]
                         if fecha_p in dias_pendientes:
                             if p.get('equipo_local'):
                                 equipos_nombres.add((p['equipo_local'], p.get('liga', '')))
