@@ -1,19 +1,19 @@
 /* Scorpion Elite - Diseño Completo */
 
 /* ══════════════════════════════════════════════════════════ */
-/* VARIABLES CSS - Oro/Verde/Blanco/Negro                  */
+/* VARIABLES CSS - Fondo Blanco + Oro/Verde               */
 /* ══════════════════════════════════════════════════════════ */
 :root {
-    --bg-dark: #0A0A0A;
-    --bg-card: #111111;
-    --bg-secondary: #1A1A1A;
+    --bg-dark: #FFFFFF;
+    --bg-card: #F5F5F5;
+    --bg-secondary: #EBEBEB;
     --accent-primary: #FFD700;
-    --accent-success: #00FF88;
-    --accent-warning: #FFD700;
-    --accent-danger: #FF4444;
-    --text-primary: #FFFFFF;
-    --text-secondary: #CCCCCC;
-    --border-color: rgba(255, 215, 0, 0.3);
+    --accent-success: #00AA44;
+    --accent-warning: #FF8C00;
+    --accent-danger: #DD0000;
+    --text-primary: #1A1A1A;
+    --text-secondary: #666666;
+    --border-color: rgba(0, 0, 0, 0.1);
 }
 
 /* ══════════════════════════════════════════════════════════ */
@@ -406,9 +406,9 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 .hero-section {
     text-align: center;
     padding: 40px 20px;
-    background: #0A0A0A;
+    background: #FFFFFF;
     margin-bottom: 20px;
-    border-bottom: 2px solid rgba(255, 215, 0, 0.4);
+    border-bottom: 3px solid #FFD700;
 }
 
 .hero-title {
@@ -423,17 +423,17 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .title-text {
-    background: linear-gradient(90deg, #FFD700, #FFA500, #00FF88, #FFD700) !important;
+    background: linear-gradient(90deg, #FFD700, #00AA44, #DD0000, #FFD700) !important;
     background-size: 300% 100% !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
     background-clip: text !important;
-    font-weight: 700 !important;
+    font-weight: 800 !important;
     letter-spacing: 4px !important;
-    animation: gold-flow 4s ease infinite !important;
+    animation: color-flow 5s ease infinite !important;
 }
 
-@keyframes gold-flow {
+@keyframes color-flow {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
@@ -441,22 +441,20 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 .scorpion-icon {
     font-size: 2rem !important;
-    background: linear-gradient(180deg, #FFD700, #00FF88) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
+    color: #1A1A1A !important;
 }
 
 .hero-subtitle {
     font-size: 1rem !important;
-    color: #CCCCCC !important;
+    color: #666666 !important;
     margin-bottom: 10px !important;
     letter-spacing: 1px !important;
 }
 
 .hero-description {
     font-size: 0.95rem !important;
-    color: #00FF88 !important;
+    color: #00AA44 !important;
+    font-weight: 500 !important;
 }
 
 /* KPI Cards */
@@ -468,18 +466,18 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 /* ══════════════════════════════════════════════════════════ */
-/* STYLES ADICIONALES - Oro/Verde/Blanco/Negro          */
+/* STYLES ADICIONALES - Fondo Blanco + Colores           */
 /* ══════════════════════════════════════════════════════════ */
 
 /* Página completa */
 .stApp {
-    background-color: #0A0A0A !important;
+    background-color: #FFFFFF !important;
 }
 
 /* Botones primarios Streamlit */
 .stButton > button[kind="primary"] {
-    background: linear-gradient(90deg, #FFD700, #FFA500) !important;
-    color: #0A0A0A !important;
+    background-color: #1A1A1A !important;
+    color: #FFFFFF !important;
     border: none !important;
     font-weight: 700 !important;
 }
@@ -487,44 +485,46 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 /* Botones secundarios */
 .stButton > button:not([kind="primary"]) {
     background-color: transparent !important;
-    color: #00FF88 !important;
-    border: 1px solid rgba(0, 255, 136, 0.5) !important;
+    color: #00AA44 !important;
+    border: 2px solid #00AA44 !important;
+    font-weight: 600 !important;
 }
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-    background-color: #0A0A0A !important;
-    border-right: 2px solid rgba(255, 215, 0, 0.3) !important;
+    background-color: #F5F5F5 !important;
+    border-right: 3px solid #FFD700 !important;
 }
 
 /* Métricas */
 .st-emotion-cache-1wrl9td {
-    background-color: #111111 !important;
-    border: 1px solid rgba(255, 215, 0, 0.3) !important;
-    border-radius: 6px !important;
+    background-color: #F5F5F5 !important;
+    border: 2px solid #FFD700 !important;
+    border-radius: 8px !important;
 }
 
 /* Títulos y headers */
 h1, h2, h3 {
-    color: #FFD700 !important;
+    color: #1A1A1A !important;
 }
 
 /* Subtítulos */
 h4, h5, h6 {
-    color: #FFFFFF !important;
+    color: #00AA44 !important;
 }
 
 /* Expander */
 .streamlit-expanderHeader {
-    background-color: #111111 !important;
-    color: #00FF88 !important;
-    border: 1px solid rgba(0, 255, 136, 0.3) !important;
+    background-color: #F5F5F5 !important;
+    color: #1A1A1A !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
 }
 
 /* Links */
 a {
-    color: #00FF88 !important;
+    color: #00AA44 !important;
     text-decoration: none !important;
+    font-weight: 600 !important;
 }
 
 /* Demo Analysis */
