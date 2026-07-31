@@ -1387,14 +1387,14 @@ def render_login_form():
                                             data_stats = {
                                                 'equipo': team_name_api,
                                                 'liga': league,
-                                                'partidos': partidos,
+                                                'partidos_jugados': partidos,
                                                 'goles_favor': goles_favor,
                                                 'goles_contra': goles_contra,
                                                 'lambda_local': lambda_local,
                                                 'lambda_visitante': lambda_visitante,
                                                 'promedio_corners_total': round(corners_total / max(partidos, 1), 1),
-                                                'promedio_tarjetas': round(tarjetas_total / max(partidos, 1), 1),
-                                                'temporada': '2025',
+                                                'promedio_amarillas': round(tarjetas_total / max(partidos, 1), 1),
+                                                'temporada': '2024-25',
                                             }
 
                                             client.table('equipos_stats').upsert(data_stats, on_conflict='equipo').execute()
