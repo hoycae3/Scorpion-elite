@@ -3,6 +3,30 @@ import pandas as pd
 import os
 import sqlite3
 import hashlib
+# Mapeo de league_id por nombre de liga
+LIGAS_MAP = {
+    'Premier League': 39,
+    'La Liga': 140,
+    'Bundesliga': 78,
+    'Serie A': 135,
+    'Ligue 1': 61,
+    'Liga MX': 262,
+    'MLS': 1,
+    'Copa Libertadores': 13,
+    'Champions League': 2,
+    'Europa League': 3,
+    'Primeira Liga': 94,
+    'Eredivisie': 88,
+    'Belgian Pro League': 61,
+    'Scottish Premiership': 50,
+    'Brasileirao': 71,
+    'Argentine Primera': 128,
+    'Chile Primera Division': 215,
+    'Primera Division': 215,
+    'Primera A': 215,
+    'Primera B': 216,
+}
+
 import logging
 import html
 import bcrypt
@@ -1542,11 +1566,26 @@ def render_login_form():
                                     if not team_id:
                                         continue
 
-                                    # Obtener league_id de la respuesta del equipo
-                                    teams_league = teams[0].get('league', {})
-                                    league_id_from_api = teams_league.get('id', 0) if isinstance(teams_league, dict) else 0
+                                    # Buscar league_id del mapeo
+                                    league_id_from_api = LIGAS_MAP.get(league, 0)
                                     
-                                    params_stats = {'team': team_id, 'league': league_id_from_api, 'season': 2025}
+                                    # Intentar buscar si no está en el mapeo
+                                    if not league_id_from_api:
+                                        try:
+                                            resp_league = requests.get(
+                                                f"{API_URL}/leagues?name={requests.utils.quote(league)}&season=2024",
+                                                headers=headers, timeout=15
+                                            )
+                                            if resp_league.status_code == 200:
+                                                leagues_data = resp_league.json().get('response', [])
+                                                for l in leagues_data:
+                                                    if l.get('league', {}).get('name') == league:
+                                                        league_id_from_api = l.get('league', {}).get('id', 0)
+                                                        break
+                                        except:
+                                            pass
+                                    
+                                    params_stats = {'team': team_id, 'league': league_id_from_api, 'season': 2024}
                                     response_stats = requests.get(f"{API_URL}/teams/statistics", headers=headers, params=params_stats, timeout=15)
                                     requests_usados += 1
                                     st.session_state.api_requests_today += 1
