@@ -6,7 +6,7 @@ import hashlib
 import logging
 import html
 import bcrypt
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, timezone, time
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -92,7 +92,7 @@ def verify_password(password: str, hashed: str) -> bool:
         return False
 
 def get_hoy():
-    return str(date.today())
+    return str(datetime.now(timezone(timedelta(hours=-5))).date())
 
 def init_db():
     """Inicializa la base de datos SQLite con context manager"""
@@ -856,7 +856,7 @@ def render_login_form():
                     st.info("⚽ Buscando partidos de HOY y próximos días...")
                     dias_totales = 7  # MAÑANA hasta +6 días
                     
-                    hoy = date.today()
+                    hoy = datetime.now(timezone(timedelta(hours=-5))).date()
                     
                     # Siempre trabajamos con el rango: mañana hasta 6 días después (7 días)
                     dias_a_buscar = []
@@ -1197,7 +1197,7 @@ def render_login_form():
                     # ═══════════════════════════════════════════════════
                     st.info("📊 PASO 2: Buscando estadísticas de equipos nuevos...")
 
-                    hoy = date.today()
+                    hoy = datetime.now(timezone(timedelta(hours=-5))).date()
                     fecha_7 = (hoy + timedelta(days=7)).strftime('%Y-%m-%d')
 
                     # Obtener todos los partidos de los próximos 7 días
@@ -1455,7 +1455,7 @@ def render_login_form():
                     st.rerun()
         
         with col_info:
-            st.info(f"📅 {date.today().strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/999")
+            st.info(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/999")
         
         # ═══════════════════════════════════════════════════════════════
         # MOSTRAR PARTIDOS (AGRUPADOS POR LIGA)
@@ -1480,7 +1480,7 @@ def render_login_form():
             filtro_opcion = st.selectbox("📅 Ver", ["Todos", "Hoy", "Mañana", "Esta semana"])
         
         # Filtrar según opción
-        hoy = date.today()
+        hoy = datetime.now(timezone(timedelta(hours=-5))).date()
         if filtro_opcion == "Hoy":
             partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] == hoy.strftime('%Y-%m-%d')]
         elif filtro_opcion == "Mañana":
@@ -2103,7 +2103,7 @@ def render_login_form():
                             # Guardar TODAS las predicciones
                             pick_1x2 = predicciones_act.get('1x2', {}).get('pick', '')
                             pick_data = {
-                                'fecha': str(date.today()),
+                                'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
                                 'liga': stats_local.get('liga', 'Desconocida'),
                                 'equipo_local': home,
                                 'equipo_visitante': away,
@@ -3184,7 +3184,7 @@ def render_login_form():
                     with col_d4:
                         mercado = st.selectbox("📊 Mercado", ["1X2", "Over/Under", "BTTS", "Corners", "Tarjetas", "Otro"])
                     with col_d5:
-                        fecha = st.date_input("📅 Fecha", value=date.today())
+                        fecha = st.date_input("📅 Fecha", value=datetime.now(timezone(timedelta(hours=-5))).date())
                     
                     # Resultado (para apuestas ya resueltas)
                     with st.expander("✅ Marcar Resultado (opcional)"):
