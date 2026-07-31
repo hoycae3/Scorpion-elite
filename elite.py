@@ -817,7 +817,7 @@ def render_login_form():
         # ═══════════════════════════════════════════════════════════════
         # BOTONES BUSCAR Y LIMPIAR
         # ═══════════════════════════════════════════════════════════════
-        col_btn1, col_btn2, col_info = st.columns([1, 1, 2])
+        col_btn1, col_btn2, col_btn3, col_info = st.columns([1, 1, 1, 2])
         
         with col_btn1:
             if st.button("🗑️ Limpiar", type="secondary", use_container_width=True):
@@ -843,7 +843,7 @@ def render_login_form():
                     st.error(f"❌ Error: {e}")
         
         with col_btn2:
-            if st.button("🔄 Buscar", type="primary", use_container_width=True):
+            if st.button("⚽ Partidos", type="primary", use_container_width=True):
                 with st.spinner("Consultando..."):
                     client = get_client()
                     requests_usados = 0
@@ -1454,6 +1454,203 @@ def render_login_form():
                         st.info(f"📅 Días marcados como procesados: {sorted(dias_pendientes)}")
                     st.rerun()
         
+
+        with col_btn3:
+            if st.button("📊 Stats", type="secondary", use_container_width=True):
+                with st.spinner("Buscando estadísticas..."):
+                    client = get_client()
+                    requests_usados = 0
+
+                    st.info("📊 Buscando estadísticas de equipos...")
+
+                    hoy = datetime.now(timezone(timedelta(hours=-5))).date()
+                    fecha_7 = (hoy + timedelta(days=7)).strftime('%Y-%m-%d')
+
+                    try:
+                        response = client.table('partidos').select('*').gte('fecha', hoy.strftime('%Y-%m-%d')).lte('fecha', fecha_7).execute()
+                        todos_partidos = response.data if response.data else []
+                    except:
+                        todos_partidos = []
+
+                    if not todos_partidos:
+                        st.warning("⚠️ Primero busca partidos con ⚽ Partidos")
+                    else:
+                        fechas_partidos = set()
+                        for p in todos_partidos:
+                            if p.get('fecha'):
+                                fechas_partidos.add(str(p.get('fecha', ''))[:10])
+
+                        try:
+                            resp_proc = client.table('dias_procesados').select('fecha').execute()
+                            dias_procesados = set()
+                            for d in (resp_proc.data or []):
+                                if d.get('fecha'):
+                                    dias_procesados.add(str(d['fecha'])[:10])
+                        except:
+                            dias_procesados = set()
+
+                        dias_pendientes = fechas_partidos - dias_procesados
+
+                        equipos_encontrados = []
+                        equipos_no_encontrados = []
+                        equipos_sin_stats = []
+
+                        if not dias_pendientes:
+                            st.success("✅ Todos los días ya tienen estadísticas")
+                        else:
+                            st.info(f"📅 Días pendientes: {sorted(dias_pendientes)}")
+
+                        equipos_nombres = set()
+                        for p in todos_partidos:
+                            fecha_p = str(p.get('fecha', ''))[:10]
+                            if fecha_p in dias_pendientes:
+                                if p.get('equipo_local'):
+                                    equipos_nombres.add((p['equipo_local'], p.get('liga', '')))
+                                if p.get('equipo_visitante'):
+                                    equipos_nombres.add((p['equipo_visitante'], p.get('liga', '')))
+
+                        st.info(f"📊 {len(equipos_nombres)} equipos a consultar...")
+
+                        API_URL = "https://v3.football.api-sports.io"
+                        API_KEY = "e3926f829cd848f4b2b54d722ca29701"
+
+                        for team_name, league in equipos_nombres:
+                            try:
+                                existe = client.table('equipos_stats').select('equipo').eq('equipo', team_name).execute()
+                                if existe.data:
+                                    st.info(f"⏭️ {team_name} - ya existe")
+                                    continue
+                            except:
+                                pass
+
+                            try:
+                                headers = {'x-apisports-key': API_KEY}
+                                params_search = {'search': team_name}
+                                response_search = requests.get(f"{API_URL}/teams", headers=headers, params=params_search, timeout=15)
+                                requests_usados += 1
+                                st.session_state.api_requests_today += 1
+
+                                if response_search.status_code == 200:
+                                    data_search = response_search.json()
+                                    teams = data_search.get('response', [])
+                                    if not teams:
+                                        equipos_no_encontrados.append(team_name)
+                                        continue
+
+                                    team_info = teams[0].get('team', {})
+                                    team_id = team_info.get('id')
+                                    team_name_api = team_info.get('name', team_name)
+
+                                    if not team_id:
+                                        continue
+
+                                    params_stats = {'team': team_id, 'season': 2025}
+                                    response_stats = requests.get(f"{API_URL}/teams/statistics", headers=headers, params=params_stats, timeout=15)
+                                    requests_usados += 1
+                                    st.session_state.api_requests_today += 1
+
+                                    if response_stats.status_code == 200:
+                                        resp_json = response_stats.json()
+                                        stats = resp_json.get('response', {})
+
+                                        if stats:
+                                            fixtures = stats.get('fixtures', {})
+                                            goals = stats.get('goals', {})
+
+                                            try:
+                                                played = fixtures.get('played', {})
+                                                partidos = (played.get('total', 0) or 1) if isinstance(played, dict) else (played or 1)
+                                            except:
+                                                partidos = 1
+
+                                            try:
+                                                goals_for = goals.get('for', {})
+                                                goals_against = goals.get('against', {})
+                                                
+                                                if isinstance(goals_for, dict):
+                                                    total_gf = goals_for.get('total', {})
+                                                    goles_favor = total_gf.get('total', 0) or 0
+                                                else:
+                                                    goles_favor = 0
+                                                
+                                                if isinstance(goals_against, dict):
+                                                    total_gc = goals_against.get('total', {})
+                                                    goles_contra = total_gc.get('total', 0) or 0
+                                                else:
+                                                    goles_contra = 0
+                                            except:
+                                                goles_favor = 0
+                                                goles_contra = 0
+
+                                            try:
+                                                lambda_local = goals_for.get('home', {}).get('average', '0') or '0'
+                                                lambda_visitante = goals_for.get('away', {}).get('average', '0') or '0'
+                                            except:
+                                                lambda_local = '0'
+                                                lambda_visitante = '0'
+
+                                            try:
+                                                corners_total = (stats.get('corners', {}).get('for', {}).get('total', 0) or 0) + (stats.get('corners', {}).get('against', {}).get('total', 0) or 0)
+                                                tarjetas_total = (stats.get('cards', {}).get('for', {}).get('total', 0) or 0) + (stats.get('cards', {}).get('against', {}).get('total', 0) or 0)
+                                            except:
+                                                corners_total = 0
+                                                tarjetas_total = 0
+
+                                            data_stats = {
+                                                'equipo': team_name_api,
+                                                'liga': league,
+                                                'partidos': partidos,
+                                                'goles_favor': goles_favor,
+                                                'goles_contra': goles_contra,
+                                                'lambda_local': lambda_local,
+                                                'lambda_visitante': lambda_visitante,
+                                                'promedio_corners_total': round(corners_total / max(partidos, 1), 1),
+                                                'promedio_tarjetas': round(tarjetas_total / max(partidos, 1), 1),
+                                                'temporada': '2025',
+                                            }
+
+                                            client.table('equipos_stats').upsert(data_stats, on_conflict='equipo').execute()
+                                            equipos_encontrados.append(team_name_api)
+                                        else:
+                                            equipos_sin_stats.append(team_name)
+                                    else:
+                                        equipos_sin_stats.append(team_name)
+                                else:
+                                    equipos_sin_stats.append(team_name)
+                            except Exception as e:
+                                equipos_sin_stats.append(team_name)
+
+                            time.sleep(1)
+
+                        st.markdown("---")
+                        st.markdown("### 📊 Resumen")
+
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("✅ Encontrados", len(equipos_encontrados))
+                        with col2:
+                            st.metric("❌ No encontrados", len(equipos_no_encontrados))
+                        with col3:
+                            st.metric("⚠️ Sin stats", len(equipos_sin_stats))
+
+                        if equipos_no_encontrados:
+                            st.markdown("**❌ No encontrados:** " + ', '.join([f"`{e}`" for e in sorted(equipos_no_encontrados)]))
+
+                        if equipos_encontrados:
+                            with st.expander(f"✅ Ver {len(equipos_encontrados)} equipos", expanded=False):
+                                for eq in sorted(equipos_encontrados):
+                                    st.markdown(f"  🟢 {eq}")
+
+                        st.success(f"✅ {requests_usados} requests usados")
+
+                        if dias_pendientes:
+                            for dia in dias_pendientes:
+                                try:
+                                    client.table('dias_procesados').upsert({'fecha': dia, 'equipos_procesados': len(equipos_nombres)}, on_conflict='fecha').execute()
+                                except:
+                                    pass
+                        st.rerun()
+
         with col_info:
             st.info(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/999")
         
