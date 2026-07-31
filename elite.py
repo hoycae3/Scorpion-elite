@@ -880,382 +880,49 @@ def render_login_form():
                     st.info("⚽ Buscando partidos de HOY y próximos días...")
                     dias_totales = 7  # MAÑANA hasta +6 días
                     
+                    # ═══════════════════════════════════════════════════════
+                    # LÓGICA: Primera vez=Hoy+2, después=2 días siguiente al último
+                    # ═══════════════════════════════════════════════════════
+                    
                     hoy = datetime.now(timezone(timedelta(hours=-5))).date()
                     
-                    # Siempre trabajamos con el rango: mañana hasta 2 días después (3 días)
-                    dias_a_buscar = []
-                    
-                    # Verificar cada día del rango mañana a +6 días
-                    for d in range(0, dias_totales + 1):  # 0 = hoy, 1 = mañana, etc.
-                        fecha = (hoy + timedelta(days=d)).strftime('%Y-%m-%d')
-                        try:
-                            existe = client.table('partidos').select('fixture_id').eq('fecha', fecha).execute()
-                            if existe.data:
-                                st.info(f"⏭️ {fecha}: ya hay {len(existe.data)} partidos guardados")
-                            else:
-                                dias_a_buscar.append(fecha)
-                                st.info(f"✅ {fecha}: se buscara")
-                        except:
-                            dias_a_buscar.append(fecha)
-                    
-                    if not dias_a_buscar:
-                        st.success("🎉 Todo actualizado!")
-                    else:
-                        st.info(f"📅 Buscando {len(dias_a_buscar)} días...")
-                    
-                    # IDs de las 43 ligas configuradas
-                    LIGAS_IDS = [liga["id"] for liga in LIGAS]
-
-                    for fecha in dias_a_buscar:
-                        api_funciona = False
-                        try:
-                            # Llamada SIN filtrar por liga - obtiene todos los partidos del día
-                            headers = {'x-apisports-key': API_KEY}
-                            params = {'date': fecha}  # Sin league ni season
-                            response = requests.get(f"{API_URL}/fixtures", headers=headers, params=params, timeout=30)
-                            requests_usados += 1
-                            st.session_state.api_requests_today += 1
-                            
-                            if response.status_code == 200:
-                                try:
-                                    data = response.json()
-                                    
-                                    # Verificar si la respuesta es un dict
-                                    if not isinstance(data, dict):
-                                        logger.warning(f"Response no es dict: {type(data)}")
-                                        st.error("❌ Error API-Football: Respuesta inesperada")
-                                    else:
-                                        # Verificar si hay errores de API
-                                        errors = data.get('errors', {})
-                                        if isinstance(errors, dict) and errors.get('token', ''):
-                                            logger.warning(f"API-Football error: {errors['token']}")
-                                            st.error(f"❌ Error API-Football: {errors['token']}")
-                                        else:
-                                            resp = data.get('response', [])
-                                            
-                                            # Verificar que response sea una lista
-                                            if not isinstance(resp, list):
-                                                logger.warning(f"Response no es lista: {type(resp)}")
-                                                st.error("❌ Error API-Football: Sin partidos disponibles")
-                                            elif len(resp) == 0:
-                                                st.info(f"ℹ️ Sin partidos para {fecha}")
-                                            else:
-                                                # FILTRAR solo ligas configuradas
-                                                all_matches = []
-                                                for m in resp:
-                                                    if isinstance(m, dict):
-                                                        league = m.get('league', {})
-                                                        if isinstance(league, dict):
-                                                            league_id = league.get('id')
-                                                            if league_id in LIGAS_IDS:
-                                                                all_matches.append(m)
-                                                
-                                                api_funciona = True
-                                                
-                                                # Guardar TODOS los partidos
-                                                partidos_guardados = 0
-                                                cuotas_guardadas = 0
-                                                
-                                                for match in all_matches:
-                                                    if not isinstance(match, dict):
-                                                        continue
-                                                    
-                                                    fixture = match.get('fixture', {})
-                                                    teams = match.get('teams', {})
-                                                    league = match.get('league', {})
-                                                    bookmakers = match.get('bookmakers', [])
-                                                    
-                                                    if not isinstance(fixture, dict) or not isinstance(teams, dict):
-                                                        continue
-                                                    
-                                                    fixture_id_val = fixture.get('id')
-                                                    if not fixture_id_val:
-                                                        continue
-                                                    
-                                                    try:
-                                                        fixture_id_int = int(fixture_id_val)
-                                                        fecha_str = str(fixture.get('date', ''))[:10]
-                                                        hora_str = str(fixture.get('date', ''))[11:16]
-                                                        liga_str = league.get('name', '') if isinstance(league, dict) else ''
-                                                        local_str = teams.get('home', {}).get('name', '') if isinstance(teams.get('home'), dict) else ''
-                                                        visita_str = teams.get('away', {}).get('name', '') if isinstance(teams.get('away'), dict) else ''
-                                                        
-                                                        # Obtener league_id
-                                                        league_id_val = league.get('id', 0) if isinstance(league, dict) else 0
-                                                        
-                                                        # Guardar partido
-                                                        data_partido = {
-                                                            'fixture_id': fixture_id_int,
-                                                            'fecha': fecha_str,
-                                                            'hora': hora_str,
-                                                            'liga': liga_str,
-                                                            'liga_id': league_id_val,
-                                                            'equipo_local': local_str,
-                                                            'equipo_visitante': visita_str
-                                                        }
-                                                        client.table('partidos').upsert(data_partido, on_conflict='fixture_id').execute()
-                                                        partidos_guardados += 1
-                                                        
-                                                        # Guardar cuotas si existen
-                                                        if isinstance(bookmakers, list):
-                                                            for bm in bookmakers:
-                                                                if not isinstance(bm, dict):
-                                                                    continue
-                                                                
-                                                                bm_name = bm.get('name', '')
-                                                                bets = bm.get('bets', [])
-                                                                
-                                                                if not isinstance(bets, list):
-                                                                    continue
-                                                                
-                                                                for bet in bets:
-                                                                    if not isinstance(bet, dict):
-                                                                        continue
-                                                                    
-                                                                    bet_name = bet.get('name', '')
-                                                                    if bet_name in ['Match Winner', 'Both Teams To Score', 'Over/Under']:
-                                                                        values = bet.get('values', [])
-                                                                        if not isinstance(values, list):
-                                                                            continue
-                                                                        
-                                                                        for val in values:
-                                                                            if not isinstance(val, dict):
-                                                                                continue
-                                                                            
-                                                                            cuota = {
-                                                                                'fixture_id': fixture_id_int,
-                                                                                'fecha': fecha_str,
-                                                                                'liga': liga_str,
-                                                                                'tipo_apuesta': bet_name,
-                                                                                'opcion': val.get('value', ''),
-                                                                                'cuota': float(val.get('odd', 0)) if val.get('odd') else 0,
-                                                                                'bookmaker': bm_name,
-                                                                            }
-                                                                            try:
-                                                                                client.table('cuotas').upsert(cuota, on_conflict='fixture_id,bookmaker,tipo_apuesta,opcion').execute()
-                                                                                cuotas_guardadas += 1
-                                                                            except:
-                                                                                pass
-                                                    except Exception as e:
-                                                        logger.warning(f"Error guardando: {e}")
-                                                        continue
-                                                
-                                                total_partidos_dia = len(all_matches)
-                                                st.success(f"✅ {fecha}: {partidos_guardados} partidos ({total_partidos_dia} totales)")
-                                                
-                                except Exception as e:
-                                    logger.warning(f"Error procesando: {e}")
-                                    st.error(f"❌ Error API-Football: {str(e)[:50]}")
-                                    
-                                    # ═══════════════════════════════════════════════════
-                                    # OBTENER CUOTAS con endpoint /odds
-                                    # ═══════════════════════════════════════════════════
-                                    try:
-                                        st.info(f"💰 Obteniendo cuotas de {fecha}...")
-                                        headers_odds = {'x-apisports-key': API_KEY}
-                                        params_odds = {'date': fecha}
-                                        response_odds = requests.get(f"{API_URL}/odds", headers=headers_odds, params=params_odds, timeout=30)
-                                        requests_usados += 1
-                                        st.session_state.api_requests_today += 1
-                                        
-                                        if response_odds.status_code == 200:
-                                            try:
-                                                data_odds = response_odds.json()
-                                                
-                                                # Verificar estructura de respuesta
-                                                if not isinstance(data_odds, dict):
-                                                    logger.warning(f"Odds response no es dict: {type(data_odds)}")
-                                                    st.info(f"💰 Sin cuotas disponibles (formato inesperado)")
-                                                else:
-                                                    odds_data = data_odds.get('response', [])
-                                                    
-                                                    if not isinstance(odds_data, list):
-                                                        logger.warning(f"Odds response no es lista: {type(odds_data)}")
-                                                        st.info(f"💰 Sin cuotas disponibles")
-                                                    else:
-                                                        cuotas_nuevas = 0
-                                                        for odds_match in odds_data:
-                                                            if not isinstance(odds_match, dict):
-                                                                continue
-                                                            
-                                                            fixture_odds = odds_match.get('fixture', {})
-                                                            if not isinstance(fixture_odds, dict):
-                                                                continue
-                                                                
-                                                            fixture_id_odds = fixture_odds.get('id')
-                                                            
-                                                            if not fixture_id_odds:
-                                                                continue
-                                                            
-                                                            league_odds = odds_match.get('league', {})
-                                                            bookmakers = odds_match.get('bookmakers', [])
-                                                            
-                                                            if not isinstance(bookmakers, list):
-                                                                continue
-                                                                
-                                                            for bm in bookmakers:
-                                                                if not isinstance(bm, dict):
-                                                                    continue
-                                                                    
-                                                                bm_name = bm.get('name', '')
-                                                                bets = bm.get('bets', [])
-                                                                
-                                                                if not isinstance(bets, list):
-                                                                    continue
-                                                                
-                                                                for bet in bets:
-                                                                    if not isinstance(bet, dict):
-                                                                        continue
-                                                                        
-                                                                    bet_name = bet.get('name', '')
-                                                                    # Solo guardar 1X2, Over/Under, BTTS
-                                                                    if bet_name in ['Match Winner', 'Both Teams To Score', 'Over/Under', 'Half Time', 'Correct Score']:
-                                                                        values = bet.get('values', [])
-                                                                        
-                                                                        if not isinstance(values, list):
-                                                                            continue
-                                                                        
-                                                                        for val in values:
-                                                                            if not isinstance(val, dict):
-                                                                                continue
-                                                                            
-                                                                            cuota_data = {
-                                                                                'fixture_id': fixture_id_odds,
-                                                                                'fecha': fixture_odds.get('date', '')[:10] if fixture_odds.get('date') else fecha,
-                                                                                'liga': league_odds.get('name', '') if isinstance(league_odds, dict) else '',
-                                                                                'tipo_apuesta': bet_name,
-                                                                                'opcion': val.get('value', ''),
-                                                                                'cuota': float(val.get('odd', 0)) if val.get('odd') else 0,
-                                                                                'bookmaker': bm_name,
-                                                                            }
-                                                                            try:
-                                                                                client.table('cuotas').upsert(cuota_data, on_conflict='fixture_id,bookmaker,tipo_apuesta,opcion').execute()
-                                                                                cuotas_nuevas += 1
-                                                                            except:
-                                                                                pass
-                                                        
-                                                        if cuotas_nuevas > 0:
-                                                            st.info(f"💰 Cuotas guardadas: {cuotas_nuevas}")
-                                                        else:
-                                                            st.info(f"💰 Sin cuotas disponibles para {fecha}")
-                                            except Exception as e:
-                                                logger.warning(f"Error procesando cuotas: {e}")
-                                                st.info(f"💰 Sin cuotas disponibles")
-                                        else:
-                                            logger.warning(f"Error obtieniendo cuotas: {response_odds.status_code}")
-                                    except Exception as e:
-                                        logger.warning(f"Error cuotas {fecha}: {e}")
-                                    
-                        except Exception as e:
-                            logger.warning(f"Error API-Football {fecha}: {e}")
-                            st.error(f"❌ Error API-Football: {e}")
-                        
-                        time.sleep(1)
-
-                    # ═══════════════════════════════════════════════════
-                    # OBTENER CUOTAS con endpoint /odds
-                    # ═══════════════════════════════════════════════════
-                    if api_funciona:
-                        try:
-                            st.info(f"💰 Obteniendo cuotas de {fecha}...")
-                            headers_odds = {'x-apisports-key': API_KEY}
-                            params_odds = {'date': fecha}
-                            response_odds = requests.get(f"{API_URL}/odds", headers=headers_odds, params=params_odds, timeout=30)
-                            requests_usados += 1
-                            st.session_state.api_requests_today += 1
-                            
-                            if response_odds.status_code == 200:
-                                data_odds = response_odds.json()
-                                if isinstance(data_odds, dict):
-                                    odds_data = data_odds.get('response', [])
-                                    if isinstance(odds_data, list):
-                                        cuotas_nuevas = 0
-                                        for odds_match in odds_data:
-                                            if not isinstance(odds_match, dict):
-                                                continue
-                                            fixture_odds = odds_match.get('fixture', {})
-                                            if not isinstance(fixture_odds, dict):
-                                                continue
-                                            fixture_id_odds = fixture_odds.get('id')
-                                            if not fixture_id_odds:
-                                                continue
-                                            bookmakers = odds_match.get('bookmakers', [])
-                                            if not isinstance(bookmakers, list):
-                                                continue
-                                            for bm in bookmakers:
-                                                if not isinstance(bm, dict):
-                                                    continue
-                                                bm_name = bm.get('name', '')
-                                                bets = bm.get('bets', [])
-                                                if not isinstance(bets, list):
-                                                    continue
-                                                for bet in bets:
-                                                    if not isinstance(bet, dict):
-                                                        continue
-                                                    bet_name = bet.get('name', '')
-                                                    if bet_name in ['Match Winner', 'Both Teams To Score', 'Over/Under', 'Half Time', 'Correct Score']:
-                                                        values = bet.get('values', [])
-                                                        if isinstance(values, list):
-                                                            for val in values:
-                                                                if not isinstance(val, dict):
-                                                                    continue
-                                                                try:
-                                                                    cuota_data = {
-                                                                        'fixture_id': fixture_id_odds,
-                                                                        'fecha': fecha,
-                                                                        'liga': odds_match.get('league', {}).get('name', '') if isinstance(odds_match.get('league'), dict) else '',
-                                                                        'tipo_apuesta': bet_name,
-                                                                        'opcion': val.get('value', ''),
-                                                                        'cuota': float(val.get('odd', 0)) if val.get('odd') else 0,
-                                                                        'bookmaker': bm_name,
-                                                                    }
-                                                                    client.table('cuotas').upsert(cuota_data, on_conflict='fixture_id,bookmaker,tipo_apuesta,opcion').execute()
-                                                                    cuotas_nuevas += 1
-                                                                except:
-                                                                    pass
-                                        if cuotas_nuevas > 0:
-                                            st.info(f"💰 Cuotas guardadas: {cuotas_nuevas}")
-                                        else:
-                                            st.info(f"💰 Sin cuotas para {fecha}")
-                        except Exception as e:
-                            logger.warning(f"Error cuotas: {e}")
-
-                    # ═══════════════════════════════════════════════════
-        with col_btn3:
-            if st.button("📊 Stats", type="secondary", use_container_width=True):
-                with st.spinner("Buscando estadísticas..."):
-                    client = get_client()
-                    requests_usados = 0
-
-                    st.info("📊 Buscando estadísticas de equipos...")
-
-                    hoy = datetime.now(timezone(timedelta(hours=-5))).date()
-                    fecha_7 = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
-
+                    # Obtener días ya procesados
                     try:
-                        response = client.table('partidos').select('*').gte('fecha', hoy.strftime('%Y-%m-%d')).lte('fecha', fecha_7).execute()
+                        resp_proc = client.table('dias_procesados').select('fecha').order('fecha').execute()
+                        dias_procesados = sorted([str(d.get('fecha', ''))[:10] for d in (resp_proc.data or []) if d.get('fecha')])
+                    except:
+                        dias_procesados = []
+                    
+                    # Determinar desde qué fecha buscar
+                    if not dias_procesados:
+                        # PRIMERA VEZ: buscar hoy + 2 días
+                        fecha_desde = hoy
+                        fecha_hasta = (hoy + timedelta(days=2))
+                        st.info("📅 Primera vez: buscando HOY + 2 días")
+                    else:
+                        # Ya hay días procesados: buscar 2 días después del último
+                        ultimo_dia = datetime.strptime(dias_procesados[-1], '%Y-%m-%d').date()
+                        fecha_desde = ultimo_dia + timedelta(days=1)
+                        fecha_hasta = fecha_desde + timedelta(days=2)
+                        st.info(f"📅 Siguiente: desde {fecha_desde} hasta {fecha_hasta}")
+                    
+                    # Obtener partidos en el rango
+                    try:
+                        response = client.table('partidos').select('*').gte('fecha', fecha_desde.strftime('%Y-%m-%d')).lte('fecha', fecha_hasta.strftime('%Y-%m-%d')).execute()
                         todos_partidos = response.data if response.data else []
                     except:
                         todos_partidos = []
-
+                    
                     if not todos_partidos:
-                        st.warning("⚠️ Primero busca partidos con ⚽ Partidos")
+                        st.warning("⚠️ No hay partidos en el rango. Ejecuta ⚽ Partidos")
                     else:
+                        # Extraer fechas únicas (todos son pendientes)
                         fechas_partidos = set()
                         for p in todos_partidos:
                             if p.get('fecha'):
                                 fechas_partidos.add(str(p.get('fecha', ''))[:10])
-
-                        try:
-                            resp_proc = client.table('dias_procesados').select('fecha').execute()
-                            dias_procesados = set()
-                            for d in (resp_proc.data or []):
-                                if d.get('fecha'):
-                                    dias_procesados.add(str(d['fecha'])[:10])
-                        except:
-                            dias_procesados = set()
-
-                        dias_pendientes = fechas_partidos - dias_procesados
+                        
+                        dias_pendientes = fechas_partidos  # Todos los días del rango
 
                         equipos_encontrados = []
                         equipos_no_encontrados = []
@@ -1272,7 +939,7 @@ def render_login_form():
                         equipos_nombres = set()
                         for p in todos_partidos:
                             fecha_p = str(p.get('fecha', ''))[:10]
-                            if fecha_p in dias_pendientes:
+                            if fecha_p in fechas_partidos:
                                 if p.get('equipo_local'):
                                     equipos_nombres.add((p['equipo_local'], p.get('liga', '')))
                                 if p.get('equipo_visitante'):
