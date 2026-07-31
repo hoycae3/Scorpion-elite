@@ -348,7 +348,7 @@ def render_public_landing():
         st.metric("Pronósticos", f"{total_picks:,}", f"{total_equipos} equipos")
 
     with col_kpi3:
-        st.metric("Yield", f"{yield_pct:+.1f}%", "")
+        st.metric("Rentab.", f"{yield_pct:+.1f}%", "")
 
     # Estado para análisis preview
     if "preview_partido" not in st.session_state:
@@ -451,8 +451,8 @@ def render_public_landing():
             random.seed()  # Semilla aleatoria basada en tiempo
             partidos_aleatorios = random.sample(partidos, min(4, len(partidos)))
             
-            st.markdown("##### ⚽ Partidos Destacados")
-            st.caption("👀 Preview gratuito - Accede con tu cuenta para análisis completo")
+            st.markdown("###### ⚽ Partidos Destacados")
+            st.caption("Preview gratuito - Accede con tu cuenta para análisis completo")
             
             for partido in partidos_aleatorios:
                 local = partido.get('equipo_local', 'Local')
@@ -476,7 +476,7 @@ def render_public_landing():
                 elif 'Champions' in liga or 'Europa' in liga: pais_emoji = "🏆"
                 
                 # Tarjeta del partido
-                col1, col2, col3, col4 = st.columns([1, 3, 1, 1])
+                col1, col2, col3 = st.columns([1, 4, 1])
                 with col1:
                     st.markdown(f"{pais_emoji}")
                 with col2:
@@ -484,16 +484,11 @@ def render_public_landing():
                     if liga:
                         st.caption(f"🏆 {liga}")
                 with col3:
-                    if hora:
-                        st.markdown(f"⏰ {hora}")
-                with col4:
                     if st.button("📊", key=f"demo_{partido.get('id', local)}_{random.randint(1, 9999)}"):
                         st.session_state.preview_partido = partido
                         st.rerun()
-                
-                st.markdown("---")
             
-            st.info("🔐 **Accede con tu cuenta** para ver todos los partidos y análisis completo con 4 modelos matemáticos.")
+            st.caption("🔐 Accede con tu cuenta para ver todos los partidos y análisis completo con 4 modelos matemáticos.")
         else:
             st.info("📭 No hay partidos cargados. Ve a la pestaña **Carga** para subir datos.")
 
