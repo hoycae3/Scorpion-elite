@@ -2529,7 +2529,7 @@ def render_login_form():
                     fecha = p.get('fecha', '')[:10]
                     
                     with st.expander(f"⚽ {local} VS {visitante} ({fecha})"):
-                        st.markdown(f"**Predicciones:** 1X2: XXX('prediccion_1x2')} | O/U: XXX('prediccion_ou')} | BTTS: XXX('prediccion_btts')}")
+                        st.markdown(f"**Predicciones:** 1X2: {p.get('prediccion_1x2', 'N/A')} | O/U: {p.get('prediccion_ou', 'N/A')} | BTTS: {p.get('prediccion_btts', 'N/A')}")
                         
                         col1, col2, col3, col4 = st.columns([1,1,1,1])
                         with col1:
@@ -2769,9 +2769,7 @@ def render_login_form():
                         picks_sin_resultado = [p for p in picks_disponibles if p.get('acertado_1x2') is None and p.get('resultado') is None]
                         
                         if picks_sin_resultado:
-                            # Selector de pick
-                            opciones_pick = [f"XXX('local', '?')} vs XXX('visitante', '?')} - XXX('mercado', '?')} @ XXX('cuota', '?')}" 
-                                          for p in picks_sin_resultado]
+                            opciones_pick = [f"{p.get('local', '?')} VS {p.get('visitante', '?')} - {p.get('mercado', '?')} @ {p.get('cuota', '?')}" for p in picks_sin_resultado]
                             pick_seleccionado = st.selectbox("Pick", options=range(len(opciones_pick)), format_func=lambda x: opciones_pick[x])
                             
                             pick = picks_sin_resultado[pick_seleccionado]
