@@ -464,12 +464,16 @@ def render_public_landing():
                 # Número en lugar de emoji
                 num = f"{i}"
 
-                # Tarjeta del partido (clickeable) - alineado a la izquierda
-                col1, col2 = st.columns([1, 4])
-                with col1:
+                # Partido alineado a la izquierda
+                col_partido, col_info = st.columns([1, 4])
+                with col_partido:
                     st.markdown(f"**{num}.**")
-                with col2:
-                    if st.button(f"**{local}** VS **{visitante}**", key=f"partido_{partido.get('id', local)}_{random.randint(1, 9999)}"):
+                    if st.button(f"**{local}**", key=f"btn_local_{partido.get('id', local)}_{i}", help=f"Ver {local}"):
+                        st.session_state.preview_partido = partido
+                        st.rerun()
+                with col_info:
+                    st.markdown(f"**VS**")
+                    if st.button(f"**{visitante}**", key=f"btn_visita_{partido.get('id', visitante)}_{i}", help=f"Ver {visitante}"):
                         st.session_state.preview_partido = partido
                         st.rerun()
                     if hora:

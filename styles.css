@@ -4,15 +4,15 @@
 /* VARIABLES CSS - Fondo #57DBC5 + Alto Contraste         */
 /* ══════════════════════════════════════════════════════════ */
 :root {
-    --bg-dark: #57DBC5;
+    --bg-dark: #FFFFFF;
     --bg-card: #FFFFFF;
-    --bg-secondary: #F0F0F0;
+    --bg-secondary: #f8fafc;
     --accent-primary: #1A5F52;
     --accent-success: #006644;
     --accent-warning: #CC8800;
     --accent-danger: #CC0000;
-    --text-primary: #003322;
-    --text-secondary: #004433;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
     --border-color: rgba(0, 102, 68, 0.4);
 }
 
@@ -34,8 +34,8 @@ div[data-testid="stHorizontalBlock"] { align-items: center; }
 /* ══════════════════════════════════════════════════════════ */
 /* FONDO GENERAL                                             */
 /* ══════════════════════════════════════════════════════════ */
-.stApp { background: #0a0a0a !important; }
-.main { background: #0a0a0a !important; }
+.stApp { background: #FFFFFF !important; }
+.main { background: #FFFFFF !important; }
 
 /* Título principal - Verde oscuro con fondo */
 .title { 
@@ -71,12 +71,12 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* Caja principal de probabilidades 1X2 */
 .caja-1x2 {
-    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    background: #FFFFFF;
     border-radius: 12px;
     padding: 20px 15px;
     text-align: center;
     margin: 5px;
-    border: 2px solid #333;
+    border: 1px solid #e2e8f0;
     transition: all 0.3s ease;
     min-height: 120px;
     display: flex;
@@ -90,23 +90,23 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .caja-local {
-    border-color: #00D4FF;
-    box-shadow: 0 0 20px rgba(0,255,136,0.1);
+    border-color: #0369a1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .caja-empate {
     border-color: #ffd700;
-    box-shadow: 0 0 20px rgba(255,215,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .caja-visitante {
-    border-color: #ff6b6b;
-    box-shadow: 0 0 20px rgba(255,107,107,0.1);
+    border-color: #dc2626;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 /* Etiqueta del equipo */
 .etiqueta-equipo {
-    color: #888;
+    color: #475569;
     font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
@@ -116,7 +116,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* Probabilidad grande */
 .probabilidad {
-    color: #fff;
+    color: #1e293b;
     font-size: 36px;
     font-weight: bold;
     margin: 5px 0 0 0;
@@ -152,7 +152,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* Título de la caja */
 .titulo-caja {
-    color: #666;
+    color: #475569;
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
@@ -175,10 +175,10 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 /* Colores de Picks */
-.pick-over { color: #00D4FF; }
-.pick-under { color: #ff6b6b; }
+.pick-over { color: #0369a1; }
+.pick-under { color: #dc2626; }
 .pick-si { color: #a55eea; }
-.pick-no { color: #666; }
+.pick-no { color: #475569; }
 
 /* ══════════════════════════════════════════════════════════ */
 /* CAJAS DE FORMA RECIENTE                                 */
@@ -205,8 +205,8 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
     margin: 0 0 10px 0;
 }
 
-.forma-local .forma-titulo { color: #00D4FF; }
-.forma-visitante .forma-titulo { color: #ff6b6b; }
+.forma-local .forma-titulo { color: #0369a1; }
+.forma-visitante .forma-titulo { color: #dc2626; }
 
 /* Letras de forma */
 .forma-letras {
@@ -215,17 +215,17 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
     margin: 5px 0;
 }
 
-.forma-g { color: #00D4FF; font-weight: bold; }
+.forma-g { color: #0369a1; font-weight: bold; }
 .forma-e { color: #ffd700; font-weight: bold; }
-.forma-p { color: #ff6b6b; font-weight: bold; }
+.forma-p { color: #dc2626; font-weight: bold; }
 
 .forma-stats {
-    color: #888;
+    color: #475569;
     font-size: 11px;
     margin: 8px 0 0 0;
 }
 
-.forma-stats span { color: #fff; }
+.forma-stats span { color: #1e293b; }
 
 /* ══════════════════════════════════════════════════════════ */
 /* RECUADRO PRINCIPAL DE ANÁLISIS                          */
@@ -251,7 +251,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .analisis-partido {
-    color: #fff;
+    color: #1e293b;
     font-size: 26px;
     margin: 8px 0;
 }
@@ -305,10 +305,10 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
     font-size: 13px;
 }
 
-.stats-label { color: #888; }
-.stats-value { color: #fff; font-weight: 600; }
-.stats-value-positivo { color: #00D4FF; }
-.stats-value-negativo { color: #ff6b6b; }
+.stats-label { color: #475569; }
+.stats-value { color: #1e293b; font-weight: 600; }
+.stats-value-positivo { color: #0369a1; }
+.stats-value-negativo { color: #dc2626; }
 .stats-value-neutro { color: #00d4ff; }
 
 /* ══════════════════════════════════════════════════════════ */
@@ -325,13 +325,13 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 .badge-verde {
     background: rgba(0,255,136,0.15);
-    color: #00D4FF;
+    color: #0369a1;
     border: 1px solid #00D4FF;
 }
 
 .badge-rojo {
     background: rgba(255,107,107,0.15);
-    color: #ff6b6b;
+    color: #dc2626;
     border: 1px solid #ff6b6b;
 }
 
@@ -359,7 +359,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 .forma-badge-g { background: #00D4FF; color: #000; }
 .forma-badge-e { background: #ffd700; color: #000; }
-.forma-badge-p { background: #ff6b6b; color: #fff; }
+.forma-badge-p { background: #ff6b6b; color: #1e293b; }
 
 /* ══════════════════════════════════════════════════════════ */
 /* TARJETAS SIMPLES                                         */
