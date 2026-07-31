@@ -19,17 +19,14 @@
 /* FONDO PRINCIPAL */
 .stApp {
     background-color: var(--bg-main) !important;
-    color: var(--text-primary) !important;
 }
 
 body, .stApp > div, main {
     background-color: var(--bg-main) !important;
-    color: var(--text-primary) !important;
 }
 
 /* TÍTULOS */
 h1, h2, h3, h4, h5, h6, p, span, div {
-    color: var(--text-primary) !important;
 }
 
 /* TÍTULO PRINCIPAL */
@@ -45,15 +42,15 @@ h1, h2, h3, h4, h5, h6, p, span, div {
 
 /* BOTONES */
 .stButton > button {
-    background-color: var(--text-primary) !important;
-    color: #FFFFFF !important;
+    background-color: var(--accent-cyan) !important;
+    color: var(--text-primary) !important;
     border: none !important;
     font-weight: 600 !important;
     border-radius: 6px !important;
 }
 
 .stButton > button:hover {
-    background-color: #334155 !important;
+    background-color: #00b8d9 !important;
 }
 
 /* SIDEBAR */
@@ -76,7 +73,6 @@ h1, h2, h3, h4, h5, h6, p, span, div {
 }
 
 .stMetric [data-testid="stMetricValue"] {
-    color: var(--text-primary) !important;
     font-size: 22px !important;
     font-weight: 700 !important;
 }
@@ -298,11 +294,15 @@ h1, h2, h3, h4, h5, h6, p, span, div {
 .hero-title {
     font-size: 20px !important;
     font-weight: 800 !important;
-    color: #FFFFFF !important;
-    background: var(--text-primary) !important;
+    background: var(--accent-cyan) !important;
     padding: 12px 24px !important;
     border-radius: 8px !important;
     display: inline-block !important;
+}
+
+.title-text {
+    color: var(--text-primary) !important;
+    font-weight: 900 !important;
 }
 
 .hero-subtitle {
@@ -323,7 +323,6 @@ h1, h2, h3, h4, h5, h6, p, span, div {
 }
 
 .plan-card h3 {
-    color: var(--text-primary) !important;
     margin-bottom: 10px !important;
 }
 
@@ -334,7 +333,6 @@ h1, h2, h3, h4, h5, h6, p, span, div {
 }
 
 .plan-card li {
-    color: var(--text-primary) !important;
     padding: 6px 0 !important;
 }
 
@@ -349,7 +347,6 @@ h1, h2, h3, h4, h5, h6, p, span, div {
 /* EXPANDER */
 .streamlit-expanderHeader {
     background-color: var(--bg-card) !important;
-    color: var(--text-primary) !important;
     border: 1px solid var(--border-light) !important;
     border-radius: 6px !important;
 }
@@ -364,7 +361,6 @@ h1, h2, h3, h4, h5, h6, p, span, div {
 
 .stTabs [aria-selected="true"] {
     background-color: var(--accent-cyan) !important;
-    color: var(--text-primary) !important;
 }
 
 /* SELECTBOX */
