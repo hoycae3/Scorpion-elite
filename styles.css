@@ -5,7 +5,7 @@
 /* ══════════════════════════════════════════════════════════ */
 :root {
     --bg-dark: linear-gradient(180deg, #0d9488 0%, #5eead4 50%, #99f6e4 100%);
-    --bg-card: #FFFFFF;
+    --bg-card: rgba(255, 255, 255, 0.9);
     --bg-secondary: #F0F0F0;
     --accent-primary: #1A5F52;
     --accent-success: #006644;
