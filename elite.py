@@ -424,30 +424,98 @@ def render_public_landing():
         except Exception as e:
             st.error(f"Error: {str(e)}")
     else:
-        # MOSTRAR LISTA DE PARTIDOS
+        # MOSTRAR LISTA DE PARTIDOS - AGRUPADOS POR PAÍS/LIGA
         if partidos:
-            for partido in partidos[:5]:
-                local = partido.get('equipo_local', 'Local')
-                visitante = partido.get('equipo_visitante', 'Visitante')
-                liga = partido.get('liga', '')
-                hora = partido.get('hora', '')
+            # Agrupar por liga
+            partidos_por_liga = {}
+            for partido in partidos:
+                liga = partido.get('liga', 'Sin liga')
+                if liga not in partidos_por_liga:
+                    partidos_por_liga[liga] = []
+                partidos_por_liga[liga].append(partido)
+            
+            # Mostrar por cada liga
+            for liga in sorted(partidos_por_liga.keys()):
+                partidos_liga = partidos_por_liga[liga]
                 
-                c1, c2, c3 = st.columns([3, 1, 1])
-                with c1:
-                    st.markdown(f"**{local} vs {visitante}**")
-                    if liga:
-                        st.caption(f"🏆 {liga}")
-                with c2:
-                    if hora:
-                        st.markdown(f"⏰ {hora}")
-                with c3:
-                    if st.button("📊 Analizar", key=f"demo_{partido.get('id', local)}"):
-                        st.session_state.preview_partido = partido
-                        st.rerun()
+                # Header de la liga con emoji de país
+                pais_emoji = ""
+                if 'Argentina' in liga or 'Copa Argentina' in liga:
+                    pais_emoji = "🇦🇷"
+                elif 'Brasil' in liga or 'Serie A' in liga or 'Brasileirão' in liga:
+                    pais_emoji = "🇧🇷"
+                elif 'Colombia' in liga or 'Dimayor' in liga:
+                    pais_emoji = "🇨🇴"
+                elif 'Chile' in liga:
+                    pais_emoji = "🇨🇱"
+                elif 'México' in liga or 'Liga MX' in liga or 'Expansion' in liga:
+                    pais_emoji = "🇲🇽"
+                elif 'MLS' in liga or 'USL' in liga:
+                    pais_emoji = "🇺🇸"
+                elif 'Uruguay' in liga:
+                    pais_emoji = "🇺🇾"
+                elif 'Perú' in liga or 'Liga 1' in liga:
+                    pais_emoji = "🇵🇪"
+                elif 'Paraguay' in liga:
+                    pais_emoji = "🇵🇾"
+                elif 'Ecuador' in liga:
+                    pais_emoji = "🇪🇨"
+                elif 'Premier League' in liga or 'Inglaterra' in liga:
+                    pais_emoji = "🏴󠁧󠁢󠁥󠁮󠁧󠁿"
+                elif 'La Liga' in liga or 'España' in liga or 'Segunda' in liga:
+                    pais_emoji = "🇪🇸"
+                elif 'Bundesliga' in liga or 'Alemania' in liga:
+                    pais_emoji = "🇩🇪"
+                elif 'Serie A' in liga and 'Brasil' not in liga:
+                    pais_emoji = "🇮🇹"
+                elif 'Ligue 1' in liga or 'Francia' in liga:
+                    pais_emoji = "🇫🇷"
+                elif 'Portugal' in liga or 'Primeira' in liga:
+                    pais_emoji = "🇵🇹"
+                elif 'Eredivisie' in liga or 'Holanda' in liga:
+                    pais_emoji = "🇳🇱"
+                elif 'Champions' in liga or 'Europa' in liga or 'Libertadores' in liga or 'Sudamericana' in liga:
+                    pais_emoji = "🏆"
+                elif 'MLS Next' in liga:
+                    pais_emoji = "🔱"
+                elif 'Saudi' in liga or 'Arabia' in liga:
+                    pais_emoji = "🇸🇦"
+                elif 'Egypt' in liga:
+                    pais_emoji = "🇪🇬"
+                elif 'Japan' in liga or 'Japón' in liga:
+                    pais_emoji = "🇯🇵"
+                elif 'Korea' in liga or 'Corea' in liga:
+                    pais_emoji = "🇰🇷"
+                elif 'Turkey' in liga or 'Turquía' in liga or 'Süper' in liga:
+                    pais_emoji = "🇹🇷"
+                else:
+                    pais_emoji = "🌍"
+                
+                st.markdown("---")
+                st.markdown(f"### {pais_emoji} {liga} ({len(partidos_liga)} partidos)")
+                
+                # Mostrar partidos de esta liga
+                for partido in partidos_liga[:10]:
+                    local = partido.get('equipo_local', 'Local')
+                    visitante = partido.get('equipo_visitante', 'Visitante')
+                    hora = partido.get('hora', '')
+
+                    c1, c2, c3 = st.columns([3, 1, 1])
+                    with c1:
+                        st.markdown(f"**{local} vs {visitante}**")
+                    with c2:
+                        if hora:
+                            st.markdown(f"⏰ {hora}")
+                    with c3:
+                        if st.button("📊", key=f"demo_{partido.get('id', local)}_{liga}"):
+                            st.session_state.preview_partido = partido
+                            st.rerun()
+            
             st.markdown("---")
-            st.caption(f"Mostrando {min(len(partidos), 5)} de {len(partidos)} partidos")
+            st.caption(f"📊 Total: {len(partidos)} partidos en {len(partidos_por_liga)} ligas")
         else:
             st.info("📭 No hay partidos cargados. Sube un Excel desde la página **Carga**.")
+
 
 
     # --- CÓMO FUNCIONA ---
