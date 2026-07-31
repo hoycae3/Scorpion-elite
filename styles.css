@@ -1,19 +1,19 @@
 /* Scorpion Elite - Diseño Completo */
 
 /* ══════════════════════════════════════════════════════════ */
-/* VARIABLES CSS - Dark Matter Minimalista                  */
+/* VARIABLES CSS - Negro Profundo + Alto Contraste          */
 /* ══════════════════════════════════════════════════════════ */
 :root {
-    --bg-dark: #0A0A0A;
-    --bg-card: #111111;
-    --bg-secondary: #0D0D0D;
+    --bg-dark: #000000;
+    --bg-card: #0D0D0D;
+    --bg-secondary: #111111;
     --accent-primary: #FFFFFF;
     --accent-success: #FFFFFF;
-    --accent-warning: #FFFFFF;
-    --accent-danger: #FFFFFF;
+    --accent-warning: #FFD700;
+    --accent-danger: #FF4444;
     --text-primary: #FFFFFF;
-    --text-secondary: #888888;
-    --border-color: rgba(255, 255, 255, 0.08);
+    --text-secondary: #AAAAAA;
+    --border-color: rgba(255, 255, 255, 0.15);
 }
 
 /* ══════════════════════════════════════════════════════════ */
@@ -405,9 +405,10 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 /* LANDING PAGE PÚBLICA */
 .hero-section {
     text-align: center;
-    padding: 30px 20px;
-    background: #0A0A0A;
+    padding: 40px 20px;
+    background: #000000;
     margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
 .hero-title {
@@ -456,13 +457,14 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 .hero-subtitle {
     font-size: 1rem !important;
-    color: #b0b0b0 !important;
+    color: #AAAAAA !important;
     margin-bottom: 10px !important;
+    letter-spacing: 1px !important;
 }
 
 .hero-description {
-    font-size: 1.1rem !important;
-    color: #a0a0a0 !important;
+    font-size: 0.95rem !important;
+    color: #888888 !important;
 }
 
 /* KPI Cards */
@@ -474,31 +476,46 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 /* ══════════════════════════════════════════════════════════ */
-/* STYLES ADICIONALES - Minimalista                       */
+/* STYLES ADICIONALES - Alto Contraste                    */
 /* ══════════════════════════════════════════════════════════ */
 
 /* Botones primarios Streamlit */
 .stButton > button[kind="primary"] {
     background-color: #FFFFFF !important;
-    color: #0A0A0A !important;
+    color: #000000 !important;
     border: none !important;
+    font-weight: 600 !important;
+}
+
+/* Botones secundarios */
+.stButton > button:not([kind="primary"]) {
+    background-color: transparent !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255,255,255,0.3) !important;
 }
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-    background-color: #0A0A0A !important;
+    background-color: #000000 !important;
+    border-right: 1px solid rgba(255,255,255,0.1) !important;
 }
 
 /* Métricas */
 .st-emotion-cache-1wrl9td {
-    background-color: #111111 !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
-    border-radius: 4px !important;
+    background-color: #0D0D0D !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    border-radius: 6px !important;
+}
+
+/* Títulos y headers */
+h1, h2, h3, h4, h5, h6 {
+    color: #FFFFFF !important;
 }
 
 /* Expander */
 .streamlit-expanderHeader {
-    background-color: #111111 !important;
+    background-color: #0D0D0D !important;
+    color: #FFFFFF !important;
 }
 
 /* Demo Analysis */
