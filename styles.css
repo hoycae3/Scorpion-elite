@@ -1,18 +1,19 @@
 /* Scorpion Elite - Diseño Completo */
 
 /* ══════════════════════════════════════════════════════════ */
-/* VARIABLES CSS                                             */
+/* VARIABLES CSS - FootballData Style                       */
 /* ══════════════════════════════════════════════════════════ */
 :root {
-    --bg-dark: #0a0a0a;
-    --bg-card: #1a1a2e;
-    --accent-primary: #00d4ff;
-    --accent-success: #00ff88;
-    --accent-warning: #ffd700;
-    --accent-danger: #ff6b6b;
-    --text-primary: #ffffff;
-    --text-secondary: #aaaaaa;
-    --border-color: rgba(255, 255, 255, 0.1);
+    --bg-dark: #1A1A2E;
+    --bg-card: #16213E;
+    --bg-secondary: #0F1729;
+    --accent-primary: #00D4FF;
+    --accent-success: #00D4FF;
+    --accent-warning: #FFD700;
+    --accent-danger: #F85149;
+    --text-primary: #FFFFFF;
+    --text-secondary: #A0AEC0;
+    --border-color: rgba(0, 212, 255, 0.2);
 }
 
 /* ══════════════════════════════════════════════════════════ */
@@ -77,7 +78,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .caja-local {
-    border-color: #00ff88;
+    border-color: #00D4FF;
     box-shadow: 0 0 20px rgba(0,255,136,0.1);
 }
 
@@ -110,7 +111,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 /* Equipo Local */
-.etiqueta-local { color: #00ff88 !important; }
+.etiqueta-local { color: #00D4FF !important; }
 .etiqueta-empate { color: #ffd700 !important; }
 .etiqueta-visitante { color: #ff6b6b !important; }
 
@@ -162,7 +163,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 /* Colores de Picks */
-.pick-over { color: #00ff88; }
+.pick-over { color: #00D4FF; }
 .pick-under { color: #ff6b6b; }
 .pick-si { color: #a55eea; }
 .pick-no { color: #666; }
@@ -179,7 +180,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .caja-forma-local {
-    border-left: 4px solid #00ff88;
+    border-left: 4px solid #00D4FF;
 }
 
 .caja-forma-visitante {
@@ -192,7 +193,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
     margin: 0 0 10px 0;
 }
 
-.forma-local .forma-titulo { color: #00ff88; }
+.forma-local .forma-titulo { color: #00D4FF; }
 .forma-visitante .forma-titulo { color: #ff6b6b; }
 
 /* Letras de forma */
@@ -202,7 +203,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
     margin: 5px 0;
 }
 
-.forma-g { color: #00ff88; font-weight: bold; }
+.forma-g { color: #00D4FF; font-weight: bold; }
 .forma-e { color: #ffd700; font-weight: bold; }
 .forma-p { color: #ff6b6b; font-weight: bold; }
 
@@ -294,7 +295,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 .stats-label { color: #888; }
 .stats-value { color: #fff; font-weight: 600; }
-.stats-value-positivo { color: #00ff88; }
+.stats-value-positivo { color: #00D4FF; }
 .stats-value-negativo { color: #ff6b6b; }
 .stats-value-neutro { color: #00d4ff; }
 
@@ -312,8 +313,8 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 .badge-verde {
     background: rgba(0,255,136,0.15);
-    color: #00ff88;
-    border: 1px solid #00ff88;
+    color: #00D4FF;
+    border: 1px solid #00D4FF;
 }
 
 .badge-rojo {
@@ -344,7 +345,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
     margin: 0 2px;
 }
 
-.forma-badge-g { background: #00ff88; color: #000; }
+.forma-badge-g { background: #00D4FF; color: #000; }
 .forma-badge-e { background: #ffd700; color: #000; }
 .forma-badge-p { background: #ff6b6b; color: #fff; }
 
@@ -405,10 +406,10 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 .hero-section {
     text-align: center;
     padding: 20px 20px;
-    background: linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%);
+    background: linear-gradient(135deg, #1A1A2E 0%, #16213E 100%);
     border-radius: 12px;
     margin-bottom: 20px;
-    border: 1px solid #00CED1;
+    border: 1px solid #00D4FF;
 }
 
 .hero-title {
@@ -423,7 +424,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .title-text {
-    background: linear-gradient(135deg, #00CED1, #FFD700, #00ff88, #00CED1) !important;
+    background: linear-gradient(135deg, #00D4FF, #FFFFFF, #00D4FF) !important;
     background-size: 300% 100% !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
@@ -476,6 +477,36 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
     border: 1px solid var(--border-color) !important;
     border-radius: 8px !important;
     padding: 15px !important;
+}
+
+/* ══════════════════════════════════════════════════════════ */
+/* STYLES ADICIONALES - FootballData Style                 */
+/* ══════════════════════════════════════════════════════════ */
+
+/* Botones primarios Streamlit */
+.stButton > button[kind="primary"] {
+    background-color: #00D4FF !important;
+    color: #1A1A2E !important;
+    border: none !important;
+}
+
+/* Sidebar */
+[data-testid="stSidebar"] {
+    background-color: #0F1729 !important;
+    border-right: 1px solid #00D4FF !important;
+}
+
+/* Métricas */
+.st-emotion-cache-1wrl9td {
+    background-color: #16213E !important;
+    border: 1px solid #00D4FF !important;
+    border-radius: 8px !important;
+}
+
+/* Expander */
+.streamlit-expanderHeader {
+    background-color: #16213E !important;
+    border: 1px solid #00D4FF !important;
 }
 
 /* Demo Analysis */
