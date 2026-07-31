@@ -1,19 +1,19 @@
 /* Scorpion Elite - Diseño Completo */
 
 /* ══════════════════════════════════════════════════════════ */
-/* VARIABLES CSS - Fondo #556765 con Alto Contraste       */
+/* VARIABLES CSS - Fondo #57DBC5 Turquesa Suave           */
 /* ══════════════════════════════════════════════════════════ */
 :root {
-    --bg-dark: #556765;
-    --bg-card: #3D4A47;
-    --bg-secondary: #2F3A37;
-    --accent-primary: #FFD700;
-    --accent-success: #00FF00;
-    --accent-warning: #FFD700;
-    --accent-danger: #FF4444;
-    --text-primary: #FFFFFF;
-    --text-secondary: #E8E8E8;
-    --border-color: rgba(255, 255, 255, 0.25);
+    --bg-dark: #57DBC5;
+    --bg-card: #45B8A8;
+    --bg-secondary: #389990;
+    --accent-primary: #1A5F52;
+    --accent-success: #1A5F52;
+    --accent-warning: #DAA520;
+    --accent-danger: #B22222;
+    --text-primary: #1A3D35;
+    --text-secondary: #2D5A4F;
+    --border-color: rgba(26, 95, 82, 0.3);
 }
 
 /* ══════════════════════════════════════════════════════════ */
@@ -406,9 +406,9 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 .hero-section {
     text-align: center;
     padding: 40px 20px;
-    background: #3D4A47;
+    background: #45B8A8;
     margin-bottom: 20px;
-    border-bottom: 3px solid #FFD700;
+    border-bottom: 3px solid #1A5F52;
 }
 
 .hero-title {
@@ -423,17 +423,17 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .title-text {
-    background: linear-gradient(90deg, #B8860B, #2E8B57, #B8860B) !important;
+    background: linear-gradient(90deg, #1A5F52, #0D3D32, #1A5F52) !important;
     background-size: 200% 100% !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
     background-clip: text !important;
     font-weight: 800 !important;
     letter-spacing: 4px !important;
-    animation: gold-green-flow 4s ease infinite !important;
+    animation: title-flow 5s ease infinite !important;
 }
 
-@keyframes gold-green-flow {
+@keyframes title-flow {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
@@ -441,7 +441,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 .scorpion-icon {
     font-size: 2.2rem !important;
-    background: linear-gradient(180deg, #DAA520 0%, #2E8B57 100%) !important;
+    background: linear-gradient(180deg, #1A5F52 0%, #0D3D32 100%) !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
     background-clip: text !important;
@@ -449,15 +449,15 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 .hero-subtitle {
     font-size: 1rem !important;
-    color: #5A5A5A !important;
+    color: #2D5A4F !important;
     margin-bottom: 10px !important;
     letter-spacing: 1px !important;
 }
 
 .hero-description {
     font-size: 0.95rem !important;
-    color: #2E8B57 !important;
-    font-weight: 500 !important;
+    color: #1A5F52 !important;
+    font-weight: 600 !important;
 }
 
 /* KPI Cards */
@@ -469,64 +469,64 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 /* ══════════════════════════════════════════════════════════ */
-/* STYLES ADICIONALES - #556765 con Contraste          */
+/* STYLES ADICIONALES - #57DBC5 Turquesa               */
 /* ══════════════════════════════════════════════════════════ */
 
 /* Página completa */
 .stApp {
-    background-color: #556765 !important;
+    background-color: #57DBC5 !important;
 }
 
 /* Botones primarios Streamlit */
 .stButton > button[kind="primary"] {
-    background: linear-gradient(180deg, #FFD700 0%, #00FF00 100%) !important;
-    color: #1A1A1A !important;
+    background-color: #1A5F52 !important;
+    color: #FFFFFF !important;
     border: none !important;
     font-weight: 700 !important;
-    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4) !important;
+    box-shadow: 0 2px 8px rgba(26, 95, 82, 0.4) !important;
 }
 
 /* Botones secundarios */
 .stButton > button:not([kind="primary"]) {
     background-color: transparent !important;
-    color: #00FF00 !important;
-    border: 2px solid #00FF00 !important;
+    color: #1A5F52 !important;
+    border: 2px solid #1A5F52 !important;
     font-weight: 600 !important;
 }
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-    background-color: #2F3A37 !important;
-    border-right: 3px solid #FFD700 !important;
+    background-color: #389990 !important;
+    border-right: 3px solid #1A5F52 !important;
 }
 
 /* Métricas */
 .st-emotion-cache-1wrl9td {
-    background-color: #3D4A47 !important;
-    border: 2px solid #FFD700 !important;
+    background-color: #45B8A8 !important;
+    border: 2px solid #1A5F52 !important;
     border-radius: 8px !important;
 }
 
 /* Títulos y headers */
 h1, h2, h3 {
-    color: #FFFFFF !important;
+    color: #1A3D35 !important;
 }
 
 /* Subtítulos */
 h4, h5, h6 {
-    color: #00FF00 !important;
+    color: #1A5F52 !important;
 }
 
 /* Expander */
 .streamlit-expanderHeader {
-    background-color: #3D4A47 !important;
-    color: #FFFFFF !important;
-    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    background-color: #45B8A8 !important;
+    color: #1A3D35 !important;
+    border: 1px solid rgba(26, 95, 82, 0.3) !important;
 }
 
 /* Links */
 a {
-    color: #00FF00 !important;
+    color: #1A5F52 !important;
     text-decoration: none !important;
     font-weight: 600 !important;
 }
