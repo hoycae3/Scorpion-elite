@@ -1181,6 +1181,11 @@ def render_login_form():
 
                     # Lista de días procesados en esta ejecución
                     dias_procesados_lista = []
+                    
+                    # Contadores para el resumen visual
+                    equipos_encontrados = []
+                    equipos_no_encontrados = []
+                    equipos_sin_stats = []
 
                     
                     for team_name, league in equipos_nombres:
@@ -1205,7 +1210,7 @@ def render_login_form():
                                 data_search = response_search.json()
                                 teams = data_search.get('response', [])
                                 if not teams:
-                                    st.warning(f"⚠️ No encontrado: {team_name}")
+                                    equipos_no_encontrados.append(team_name)
                                     continue
                                 
                                 team_info = teams[0].get('team', {})
@@ -1226,11 +1231,13 @@ def render_login_form():
                                     resp_json = response_stats.json()
                                     if not isinstance(resp_json, dict):
                                         st.warning(f"⚠️ {team_name}: respuesta inválida")
+                                        equipos_sin_stats.append(team_name)
                                         continue
                                     
                                     stats = resp_json.get('response', {})
                                     if not isinstance(stats, dict):
                                         st.warning(f"⚠️ {team_name}: sin estadísticas")
+                                        equipos_sin_stats.append(team_name)
                                         continue
 
                                     fixtures = stats.get('fixtures', {})
@@ -1306,12 +1313,54 @@ def render_login_form():
                                     }
                                     
                                     client.table('equipos_stats').upsert(data_stats, on_conflict='equipo').execute()
-                                    st.success(f"✅ {team_name_api}")
+                                    equipos_encontrados.append(team_name_api)
                                     
                         except Exception as e:
                             st.error(f"❌ Error {team_name}: {str(e)[:30]}")
                         
                         time.sleep(1)
+                    
+                    # ═══════════════════════════════════════════════════════════════
+                    # RESUMEN VISUAL
+                    # ═══════════════════════════════════════════════════════════════
+                    st.markdown("---")
+                    st.markdown("### 📊 Resumen de Búsqueda de Estadísticas")
+                    
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        st.metric("✅ Encontrados", len(equipos_encontrados))
+                    with col2:
+                        st.metric("⚠️ No encontrados", len(equipos_no_encontrados))
+                    with col3:
+                        st.metric("⚠️ Sin stats", len(equipos_sin_stats))
+                    
+                    # Equipos NO encontrados (en rojo)
+                    if equipos_no_encontrados:
+                        st.markdown("#### ❌ Equipos NO encontrados en la API:")
+                        st.markdown(
+                            '<span style="background-color:#ffcccc;padding:5px;border-radius:5px;display:inline-block;margin:2px;">'
+                            + '</span> '.join([f"`{e}`" for e in sorted(equipos_no_encontrados)])
+                            + '</span>',
+                            unsafe_allow_html=True
+                        )
+                    
+                    # Equipos sin estadísticas (en amarillo)
+                    if equipos_sin_stats:
+                        st.markdown("#### ⚠️ Equipos sin estadísticas disponibles:")
+                        st.markdown(
+                            '<span style="background-color:#fff3cd;padding:5px;border-radius:5px;display:inline-block;margin:2px;">'
+                            + '</span> '.join([f"`{e}`" for e in sorted(equipos_sin_stats)])
+                            + '</span>',
+                            unsafe_allow_html=True
+                        )
+                    
+                    # Equipos encontrados (en verde)
+                    if equipos_encontrados:
+                        st.markdown("#### ✅ Equipos encontrados exitosamente:")
+                        with st.expander(f"Ver {len(equipos_encontrados)} equipos", expanded=False):
+                            for eq in sorted(equipos_encontrados):
+                                st.markdown(f"  🟢 {eq}")
                     
                     st.success(f"✅ Actualización completada: {requests_usados} requests usados")
 
