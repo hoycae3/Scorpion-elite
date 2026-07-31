@@ -95,7 +95,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .caja-empate {
-    border-color: #ffd700;
+    border-color: #2563eb;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
@@ -124,7 +124,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* Equipo Local */
 .etiqueta-local { color: #00D4FF !important; }
-.etiqueta-empate { color: #ffd700 !important; }
+.etiqueta-empate { color: #2563eb !important; }
 .etiqueta-visitante { color: #ff6b6b !important; }
 
 /* ══════════════════════════════════════════════════════════ */
@@ -216,7 +216,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .forma-g { color: #0369a1; font-weight: bold; }
-.forma-e { color: #ffd700; font-weight: bold; }
+.forma-e { color: #2563eb; font-weight: bold; }
 .forma-p { color: #dc2626; font-weight: bold; }
 
 .forma-stats {
@@ -337,8 +337,8 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 .badge-amarillo {
     background: rgba(255,215,0,0.15);
-    color: #ffd700;
-    border: 1px solid #ffd700;
+    color: #2563eb;
+    border: 1px solid #2563eb;
 }
 
 .badge-azul {
@@ -358,7 +358,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .forma-badge-g { background: #00D4FF; color: #000; }
-.forma-badge-e { background: #ffd700; color: #000; }
+.forma-badge-e { background: #2563eb; color: #000; }
 .forma-badge-p { background: #ff6b6b; color: #1e293b; }
 
 /* ══════════════════════════════════════════════════════════ */

@@ -461,25 +461,12 @@ def render_public_landing():
                 liga = partido.get('liga', '')
                 hora = partido.get('hora', '')
 
-                # Número en lugar de emoji
-                num = f"{i}"
-
-                # Partido alineado a la izquierda
-                col_partido, col_info = st.columns([1, 4])
-                with col_partido:
-                    st.markdown(f"**{num}.**")
-                    if st.button(f"**{local}**", key=f"btn_local_{partido.get('id', local)}_{i}", help=f"Ver {local}"):
-                        st.session_state.preview_partido = partido
-                        st.rerun()
-                with col_info:
-                    st.markdown(f"**VS**")
-                    if st.button(f"**{visitante}**", key=f"btn_visita_{partido.get('id', visitante)}_{i}", help=f"Ver {visitante}"):
-                        st.session_state.preview_partido = partido
-                        st.rerun()
-                    if hora:
-                        st.caption(f"{hora} · {liga}")
-                    else:
-                        st.caption(f"{liga}")
+                # Partido en una línea
+                st.markdown(f"**{num}.** **{local}** VS **{visitante}**  ·  {hora} {liga}")
+                if st.button("📊 Analizar", key=f"btn_{partido.get('id', local)}_{i}", help=f"Analizar {local} vs {visitante}"):
+                    st.session_state.preview_partido = partido
+                    st.rerun()
+                st.markdown("---")
             
             st.caption("🔐 Accede con tu cuenta para ver todos los partidos y análisis completo con 4 modelos matemáticos.")
         else:
