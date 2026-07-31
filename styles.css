@@ -1,19 +1,19 @@
 /* Scorpion Elite - Diseño Completo */
 
 /* ══════════════════════════════════════════════════════════ */
-/* VARIABLES CSS - Verde / Negro (Estilo Dinero/Ganancia)    */
+/* VARIABLES CSS - Fondo Verde Oscuro + Texto Blanco         */
 /* ══════════════════════════════════════════════════════════ */
 :root {
-    --bg-dark: #0A0A0A;
-    --bg-card: #0F0F0F;
-    --bg-secondary: #141414;
-    --accent-primary: #00FF88;
-    --accent-success: #00FF88;
+    --bg-dark: #0D3D0D;
+    --bg-card: #0A330A;
+    --bg-secondary: #082808;
+    --accent-primary: #FFFFFF;
+    --accent-success: #FFFFFF;
     --accent-warning: #FFD700;
     --accent-danger: #FF4444;
     --text-primary: #FFFFFF;
-    --text-secondary: #AAAAAA;
-    --border-color: rgba(0, 255, 136, 0.2);
+    --text-secondary: #CCFFCC;
+    --border-color: rgba(255, 255, 255, 0.15);
 }
 
 /* ══════════════════════════════════════════════════════════ */
@@ -406,9 +406,9 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 .hero-section {
     text-align: center;
     padding: 40px 20px;
-    background: #0A0A0A;
+    background: #0D3D0D;
     margin-bottom: 20px;
-    border-bottom: 1px solid rgba(0, 255, 136, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .hero-title {
@@ -423,37 +423,28 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .title-text {
-    background: linear-gradient(90deg, #00FF88, #00CC66, #00FF88) !important;
-    background-size: 200% 100% !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
+    color: #FFFFFF !important;
     font-weight: 700 !important;
     letter-spacing: 4px !important;
-    animation: gradient-flow 3s ease infinite !important;
-}
-
-@keyframes gradient-flow {
-    0% { background-position: 0% 50%; }
-    100% { background-position: 200% 50%; }
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
 }
 
 .scorpion-icon {
     font-size: 2rem !important;
-    color: #00FF88 !important;
-    text-shadow: 0 0 10px rgba(0, 255, 136, 0.5) !important;
+    color: #FFFFFF !important;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.5) !important;
 }
 
 .hero-subtitle {
     font-size: 1rem !important;
-    color: #AAAAAA !important;
+    color: #CCFFCC !important;
     margin-bottom: 10px !important;
     letter-spacing: 1px !important;
 }
 
 .hero-description {
     font-size: 0.95rem !important;
-    color: #888888 !important;
+    color: #AAFFAA !important;
 }
 
 /* KPI Cards */
@@ -465,13 +456,18 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 /* ══════════════════════════════════════════════════════════ */
-/* STYLES ADICIONALES - Verde / Negro                     */
+/* STYLES ADICIONALES - Fondo Verde Oscuro               */
 /* ══════════════════════════════════════════════════════════ */
+
+/* Página completa */
+.stApp {
+    background-color: #0D3D0D !important;
+}
 
 /* Botones primarios Streamlit */
 .stButton > button[kind="primary"] {
-    background-color: #00FF88 !important;
-    color: #0A0A0A !important;
+    background-color: #FFFFFF !important;
+    color: #0D3D0D !important;
     border: none !important;
     font-weight: 700 !important;
 }
@@ -479,49 +475,44 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 /* Botones secundarios */
 .stButton > button:not([kind="primary"]) {
     background-color: transparent !important;
-    color: #00FF88 !important;
-    border: 1px solid rgba(0, 255, 136, 0.5) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
 }
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-    background-color: #0A0A0A !important;
-    border-right: 1px solid rgba(0, 255, 136, 0.3) !important;
+    background-color: #082808 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
 /* Métricas */
 .st-emotion-cache-1wrl9td {
-    background-color: #0F0F0F !important;
-    border: 1px solid rgba(0, 255, 136, 0.3) !important;
+    background-color: #0A330A !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
     border-radius: 6px !important;
 }
 
 /* Títulos y headers */
-h1, h2, h3, h4, h5, h6 {
-    color: #00FF88 !important;
+h1, h2, h3 {
+    color: #FFFFFF !important;
 }
 
-/* Subtítulos en gris */
+/* Subtítulos */
 h4, h5, h6 {
-    color: #AAAAAA !important;
+    color: #CCFFCC !important;
 }
 
 /* Expander */
 .streamlit-expanderHeader {
-    background-color: #0F0F0F !important;
-    color: #00FF88 !important;
-    border: 1px solid rgba(0, 255, 136, 0.2) !important;
+    background-color: #0A330A !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
 /* Links */
 a {
-    color: #00FF88 !important;
-}
-
-/* Texto seleccionado */
-::selection {
-    background: #00FF88 !important;
-    color: #0A0A0A !important;
+    color: #FFFFFF !important;
+    text-decoration: underline !important;
 }
 
 /* Demo Analysis */
