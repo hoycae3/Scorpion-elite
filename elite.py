@@ -463,10 +463,7 @@ def render_public_landing():
 
                 # Partido en una línea
                 st.markdown(f"**{i}.** **{local}** VS **{visitante}**  ·  {hora} {liga}")
-                if st.button("📊 Analizar", key=f"btn_{partido.get('id', local)}_{i}", help=f"Analizar {local} vs {visitante}"):
-                    st.session_state.preview_partido = partido
-                    st.rerun()
-                st.markdown("---")
+                st.markdown("")
             
             st.caption("🔐 Accede con tu cuenta para ver todos los partidos y análisis completo con 4 modelos matemáticos.")
         else:
