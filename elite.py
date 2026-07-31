@@ -633,64 +633,114 @@ def render_login_form():
         API_KEY = "e3926f829cd848f4b2b54d722ca29701"
         API_URL = "https://v3.football.api-sports.io"
         
-        # Las 43 ligas que sigue (todas las del mundo)
+                # ═══════════════════════════════════════════════════════════════
+        # LISTA DE LIGAS - TODAS CON IDS CORRECTOS
+        # ═══════════════════════════════════════════════════════════════
         LIGAS = [
-            # UEFA
-            {"id": 2, "name": "UEFA Champions League"},
-            {"id": 3, "name": "UEFA Europa League"},
-            {"id": 848, "name": "UEFA Europa Conference League"},
-            {"id": 554, "name": "UEFA Super Cup"},
-            # Sudamérica
-            {"id": 13, "name": "Copa Libertadores"},
-            {"id": 11, "name": "Copa Sudamericana"},
-            {"id": 1078, "name": "Recopa Sudamericana"},
-            {"id": 15, "name": "Copa Intercontinental"},
-            # Mundial
-            {"id": 76, "name": "Mundial de Clubes"},
-            # Europa
-            {"id": 39, "name": "Premier League"},
-            {"id": 71, "name": "La Liga (España)"},  # La Liga de España,
-            {"id": 135, "name": "Serie A"},
-            {"id": 78, "name": "Bundesliga"},
-            {"id": 61, "name": "Ligue 1"},
-            {"id": 94, "name": "Primeira Liga"},
-            {"id": 88, "name": "Eredivisie"},
-            {"id": 22, "name": "Jupiler Pro League"},
-            {"id": 54, "name": "Süper Lig"},
-            {"id": 179, "name": "Scottish Premiership"},
-            {"id": 47, "name": "EFL Championship"},
-            # 2ª División Europa
-            {"id": 140, "name": "La Liga 2"},
-            {"id": 81, "name": "2. Bundesliga"},
-            {"id": 136, "name": "Serie B"},
-            {"id": 62, "name": "Ligue 2"},
-            # Sudamérica
-            {"id": 24, "name": "Brasileirão"},
-            {"id": 71, "name": "Serie A (Brasil)"},
-            {"id": 128, "name": "Liga Argentina"},  # ID corregido
-            {"id": 239, "name": "Liga Colombia"},
-            {"id": 241, "name": "Liga Paraguay"},
-            {"id": 242, "name": "Liga Ecuador"},
-            {"id": 243, "name": "Liga Uruguay"},
-            {"id": 244, "name": "Liga Chile"},
-            {"id": 245, "name": "Liga Perú"},
-            {"id": 246, "name": "Brasileirão Série B"},
-            {"id": 247, "name": "Primera Nacional"},
-            {"id": 248, "name": "Torneo Colombia B"},
-            {"id": 249, "name": "División Paraguay"},
-            {"id": 250, "name": "Serie B Ecuador"},
-            # Norteamérica
-            {"id": 253, "name": "MLS"},
-            {"id": 262, "name": "Liga MX"},
-            {"id": 293, "name": "USL Championship"},
-            {"id": 263, "name": "Liga de Expansión MX"},
-            {"id": 195, "name": "Copa Concacaf"},  # ID corregido
-            # Asia/Otras
-            {"id": 307, "name": "Saudi Pro League"},
-            {"id": 98, "name": "J1 League"},
-            {"id": 292, "name": "K League 1"},
-            {"id": 308, "name": "Premier League Egypt"},
-            {"id": 1, "name": "AFC Champions League"},
+            # 🏆 TORNEOS INTERNACIONALES
+            {"id": 2, "name": "UEFA Champions League", "pais": "Mundial"},
+            {"id": 3, "name": "UEFA Europa League", "pais": "Mundial"},
+            {"id": 848, "name": "UEFA Europa Conference League", "pais": "Mundial"},
+            {"id": 13, "name": "Copa Libertadores", "pais": "Mundial"},
+            {"id": 11, "name": "Copa Sudamericana", "pais": "Mundial"},
+            {"id": 541, "name": "CONMEBOL Recopa", "pais": "Mundial"},
+            {"id": 15, "name": "FIFA Club World Cup", "pais": "Mundial"},
+            {"id": 16, "name": "CONCACAF Champions League", "pais": "Mundial"},
+            {"id": 17, "name": "AFC Champions League", "pais": "Mundial"},
+            
+            # 🇪🇸 ESPAÑA
+            {"id": 140, "name": "La Liga", "pais": "España"},
+            {"id": 141, "name": "Segunda División", "pais": "España"},
+            
+            # 🏴󠁧󠁢󠁥󠁮󠁧󠁿 INGLATERRA
+            {"id": 39, "name": "Premier League", "pais": "Inglaterra"},
+            {"id": 40, "name": "Championship", "pais": "Inglaterra"},
+            {"id": 41, "name": "League One", "pais": "Inglaterra"},
+            {"id": 42, "name": "League Two", "pais": "Inglaterra"},
+            
+            # 🇩🇪 ALEMANIA
+            {"id": 78, "name": "Bundesliga", "pais": "Alemania"},
+            {"id": 79, "name": "2. Bundesliga", "pais": "Alemania"},
+            
+            # 🇮🇹 ITALIA
+            {"id": 135, "name": "Serie A", "pais": "Italia"},
+            {"id": 136, "name": "Serie B", "pais": "Italia"},
+            
+            # 🇫🇷 FRANCIA
+            {"id": 61, "name": "Ligue 1", "pais": "Francia"},
+            {"id": 62, "name": "Ligue 2", "pais": "Francia"},
+            
+            # 🇵🇹 PORTUGAL
+            {"id": 94, "name": "Primeira Liga", "pais": "Portugal"},
+            
+            # 🇳🇱 HOLANDA
+            {"id": 88, "name": "Eredivisie", "pais": "Holanda"},
+            
+            # 🇧🇪 BÉLGICA
+            {"id": 144, "name": "Jupiler Pro League", "pais": "Bélgica"},
+            
+            # 🇹🇷 TURQUÍA
+            {"id": 203, "name": "Süper Lig", "pais": "Turquía"},
+            {"id": 204, "name": "1. Lig", "pais": "Turquía"},
+            
+            # 🏴󠁧󠁢󠁳󠁣󠁴󠁿 ESCOCIA
+            {"id": 179, "name": "Scottish Premiership", "pais": "Escocia"},
+            {"id": 180, "name": "Championship Scotland", "pais": "Escocia"},
+            
+            # 🇧🇷 BRASIL
+            {"id": 71, "name": "Serie A Brasil", "pais": "Brasil"},
+            {"id": 72, "name": "Serie B Brasil", "pais": "Brasil"},
+            {"id": 75, "name": "Serie C Brasil", "pais": "Brasil"},
+            
+            # 🇦🇷 ARGENTINA
+            {"id": 128, "name": "Liga Profesional Argentina", "pais": "Argentina"},
+            {"id": 129, "name": "Primera Nacional", "pais": "Argentina"},
+            {"id": 131, "name": "Primera B Metropolitana", "pais": "Argentina"},
+            
+            # 🇨🇴 COLOMBIA
+            {"id": 239, "name": "Primera A Colombia", "pais": "Colombia"},
+            {"id": 240, "name": "Primera B Colombia", "pais": "Colombia"},
+            
+            # 🇵🇾 PARAGUAY
+            {"id": 250, "name": "Division Profesional Paraguay", "pais": "Paraguay"},
+            {"id": 251, "name": "Division Intermedia Paraguay", "pais": "Paraguay"},
+            
+            # 🇪🇨 ECUADOR
+            {"id": 242, "name": "Liga Pro Ecuador", "pais": "Ecuador"},
+            {"id": 243, "name": "Liga Pro Serie B Ecuador", "pais": "Ecuador"},
+            
+            # 🇺🇾 URUGUAY
+            {"id": 268, "name": "Primera División Uruguay", "pais": "Uruguay"},
+            {"id": 269, "name": "Segunda División Uruguay", "pais": "Uruguay"},
+            
+            # 🇨🇱 CHILE
+            {"id": 265, "name": "Primera División Chile", "pais": "Chile"},
+            {"id": 266, "name": "Primera B Chile", "pais": "Chile"},
+            
+            # 🇵🇪 PERÚ
+            {"id": 281, "name": "Liga 1 Peru", "pais": "Perú"},
+            {"id": 282, "name": "Liga 2 Peru", "pais": "Perú"},
+            
+            # 🇺🇸🇨🇦 USA / CANADÁ
+            {"id": 253, "name": "MLS", "pais": "USA"},
+            {"id": 255, "name": "USL Championship", "pais": "USA"},
+            {"id": 909, "name": "MLS Next Pro", "pais": "USA"},
+            
+            # 🇲🇽 MÉXICO
+            {"id": 262, "name": "Liga MX", "pais": "México"},
+            {"id": 263, "name": "Liga de Expansión MX", "pais": "México"},
+            
+            # 🇸🇦 ARABIA SAUDITA
+            {"id": 307, "name": "Saudi Pro League", "pais": "Arabia Saudita"},
+            
+            # 🇪🇬 EGIPTO
+            {"id": 233, "name": "Premier League Egypt", "pais": "Egipto"},
+            
+            # 🇯🇵 JAPÓN
+            {"id": 98, "name": "J1 League", "pais": "Japón"},
+            
+            # 🇰🇷 COREA DEL SUR
+            {"id": 292, "name": "K League 1", "pais": "Corea del Sur"},
         ]
         
         # Contador de requests
