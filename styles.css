@@ -1,19 +1,21 @@
-/* Scorpion Elite - Diseño Completo */
+/* Scorpion Elite - Diseño Completo v3.0 */
+/* Fondo Claro + Texto Negro + Verde Oscuro */
 
 /* ══════════════════════════════════════════════════════════ */
-/* VARIABLES CSS - Fondo #57DBC5 + Alto Contraste         */
+/* VARIABLES CSS                                             */
 /* ══════════════════════════════════════════════════════════ */
 :root {
-    --bg-dark: #57DBC5;
+    --bg-dark: #f0f4f8;
     --bg-card: #FFFFFF;
-    --bg-secondary: #F0F0F0;
-    --accent-primary: #1A5F52;
-    --accent-success: #006644;
-    --accent-warning: #CC8800;
-    --accent-danger: #CC0000;
-    --text-primary: #003322;
-    --text-secondary: #004433;
-    --border-color: rgba(0, 102, 68, 0.4);
+    --bg-secondary: #f8fafc;
+    --accent-primary: #052e16;
+    --accent-success: #047857;
+    --accent-warning: #b45309;
+    --accent-danger: #dc2626;
+    --accent-info: #2563eb;
+    --text-primary: #1e293b;
+    --text-secondary: #475569;
+    --border-color: rgba(71, 85, 105, 0.2);
 }
 
 /* ══════════════════════════════════════════════════════════ */
@@ -32,23 +34,31 @@ div.block-container { padding-top: 1rem; }
 div[data-testid="stHorizontalBlock"] { align-items: center; }
 
 /* ══════════════════════════════════════════════════════════ */
-/* FONDO GENERAL                                             */
+/* FONDO GENERAL - CLARO                                    */
 /* ══════════════════════════════════════════════════════════ */
-.stApp { background: #0a0a0a !important; }
-.main { background: #0a0a0a !important; }
+.stApp { background: #f0f4f8 !important; }
+.main { background: #f0f4f8 !important; }
 
-/* Título principal */
-.title { color: #ffd700; font-size: 42px; font-weight: bold; margin: 0; line-height: 48px; text-align: center; }
+/* Título principal - VERDE MUY OSCURO */
+.title { 
+    color: #052e16; 
+    font-size: 42px; 
+    font-weight: 900; 
+    margin: 0; 
+    line-height: 48px; 
+    text-align: center;
+    text-shadow: 0 2px 4px rgba(5, 46, 22, 0.2);
+}
 
 /* DataFrames */
-.stDataFrame { background: #1a1a1a; }
+.stDataFrame { background: #ffffff; border-radius: 8px; }
 
 /* Headers */
-.header { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 2px solid #333; }
-.section-title { margin-top: 5px; margin-bottom: 0; }
+.header { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 2px solid var(--border-color); }
+.section-title { margin-top: 5px; margin-bottom: 0; color: var(--text-primary); }
 
 /* Sidebar */
-.css-1d391kg { background: var(--bg-card) !important; }
+.css-1d391kg { background: #ffffff !important; border-right: 1px solid var(--border-color); }
 
 /* TÍTULOS */
 h1, h2, h3, h4 { color: var(--text-primary) !important; }
@@ -59,42 +69,43 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* Caja principal de probabilidades 1X2 */
 .caja-1x2 {
-    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    background: #ffffff;
     border-radius: 12px;
     padding: 20px 15px;
     text-align: center;
     margin: 5px;
-    border: 2px solid #333;
+    border: 2px solid var(--border-color);
     transition: all 0.3s ease;
     min-height: 120px;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .caja-1x2:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
 }
 
 .caja-local {
-    border-color: #00D4FF;
-    box-shadow: 0 0 20px rgba(0,255,136,0.1);
+    border-color: var(--accent-success);
+    border-left-width: 4px;
 }
 
 .caja-empate {
-    border-color: #ffd700;
-    box-shadow: 0 0 20px rgba(255,215,0,0.1);
+    border-color: var(--accent-warning);
+    border-left-width: 4px;
 }
 
 .caja-visitante {
-    border-color: #ff6b6b;
-    box-shadow: 0 0 20px rgba(255,107,107,0.1);
+    border-color: var(--accent-danger);
+    border-left-width: 4px;
 }
 
 /* Etiqueta del equipo */
 .etiqueta-equipo {
-    color: #888;
+    color: var(--text-secondary);
     font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
@@ -104,38 +115,39 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* Probabilidad grande */
 .probabilidad {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 36px;
     font-weight: bold;
     margin: 5px 0 0 0;
 }
 
 /* Equipo Local */
-.etiqueta-local { color: #00D4FF !important; }
-.etiqueta-empate { color: #ffd700 !important; }
-.etiqueta-visitante { color: #ff6b6b !important; }
+.etiqueta-local { color: var(--accent-success) !important; }
+.etiqueta-empate { color: var(--accent-warning) !important; }
+.etiqueta-visitante { color: var(--accent-danger) !important; }
 
 /* ══════════════════════════════════════════════════════════ */
 /* CAJAS DE PREDICCIONES ADICIONALES                       */
 /* ══════════════════════════════════════════════════════════ */
 
 .caja-prediccion {
-    background: linear-gradient(180deg, #1a1a2e 0%, #12121f 100%);
+    background: #ffffff;
     border-radius: 10px;
     padding: 15px 10px;
     text-align: center;
     margin: 3px;
-    border: 1px solid #2a2a3e;
+    border: 1px solid var(--border-color);
     min-height: 130px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
 .caja-prediccion:hover {
-    border-color: #3a3a4e;
-    background: linear-gradient(180deg, #1f1f35 0%, #15152a 100%);
+    border-color: var(--accent-primary);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 /* Título de la caja */
@@ -383,9 +395,30 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 /* METRICS */
+.stMetric {
+    background: #ffffff !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    padding: 15px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+}
+
 .stMetric label {
     color: var(--text-secondary) !important;
-    font-size: 11px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+}
+
+/* VALORES DE MÉTRICAS EN NEGRO */
+.stMetric [data-testid="stMetricValue"],
+.stMetric div:nth-child(2),
+div[data-testid="stMetricValue"],
+.stMetric p,
+.stMetric span,
+.stMetric div {
+    color: #000000 !important;
+    font-size: 32px !important;
+    font-weight: 800 !important;
 }
 
 /* PREDICCIONES */
@@ -424,7 +457,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .title-text {
-    color: #006644 !important;
+    color: #052e16 !important;
     font-weight: 800 !important;
     letter-spacing: 4px !important;
 }
@@ -599,6 +632,21 @@ a {
     padding: 20px !important;
     color: var(--text-secondary) !important;
     font-size: 0.9rem !important;
+}
+
+/* ══════════════════════════════════════════════════════════ */
+/* OVERRIDE FINAL MÉTRICAS - FORZAR NEGRO                 */
+/* ══════════════════════════════════════════════════════════ */
+div[data-testid="stHorizontalBlock"] [data-testid="stMetricValue"] {
+    color: #000000 !important;
+}
+
+[data-testid="stMetricValue"] {
+    color: #000000 !important;
+}
+
+.stHorizontalBlock [data-testid="stMetricValue"] * {
+    color: #000000 !important;
 }
 
 /* Responsive */
