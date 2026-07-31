@@ -407,14 +407,32 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .hero-title {
-    font-size: 1.8rem !important;
+    font-size: 1.2rem !important;
     font-weight: 700 !important;
-    background: linear-gradient(135deg, #00CED1, #00ff88, #00CED1) !important;
+    background: linear-gradient(135deg, #00CED1, #FFD700, #00ff88, #00CED1) !important;
+    background-size: 300% 100% !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
     background-clip: text !important;
-    letter-spacing: 2px !important;
+    letter-spacing: 3px !important;
     text-transform: uppercase !important;
+    animation: gradient-shift 3s ease infinite !important;
+}
+
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes pulse-glow {
+    0%, 100% { text-shadow: 0 0 10px rgba(0, 206, 209, 0.5); }
+    50% { text-shadow: 0 0 20px rgba(0, 255, 136, 0.8), 0 0 30px rgba(0, 206, 209, 0.6); }
+}
+
+@keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
 }
 
 .hero-subtitle {
