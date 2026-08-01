@@ -1033,9 +1033,8 @@ def render_login_form():
                         progress_bar.empty()
                         status_text.empty()
 
-                        st.success(f"✅ GUARDADO! Partidos: {total_partidos} | Equipos: {total_equipos}")
-                        st.markdown(f"📊 Partidos nuevos: **{total_partidos}** | Equipos nuevos: **{total_equipos}**")
-                        st.info("🔄 Recarga la página para ver los cambios")
+                        st.success(f"✅ GUARDADO!")
+                        st.markdown(f"📊 **Partidos:** {total_partidos} | **Estadísticas equipos guardadas:** {total_equipos}")
 
                     except Exception as e:
                         st.error(f"❌ Error: {e}")
