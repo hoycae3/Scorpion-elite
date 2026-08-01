@@ -1094,6 +1094,49 @@ def render_login_form():
                     hoy_str = hoy.strftime('%Y-%m-%d')
 
                     progress_bar = st.progress(0)
+
+                    # ═══════════════════════════════════════════════════════
+                    # PASO 0: ACTUALIZAR PARTIDOS JUGADOS (HOY-1 y HOY-2)
+                    # ═══════════════════════════════════════════════════════
+                    st.info("🔄 Verificando partidos jugados recently...")
+                    
+                    fecha_ayer = (hoy - timedelta(days=1)).strftime('%Y-%m-%d')
+                    fecha_antier = (hoy - timedelta(days=2)).strftime('%Y-%m-%d')
+                    
+                    try:
+                        resp_part = client.table('partidos').select('*').in_('fecha', [fecha_ayer, fecha_antier]).execute()
+                        partidos_por_actualizar = [p for p in resp_part.data if p.get('fecha') in [fecha_ayer, fecha_antier]]
+                        
+                        if partidos_por_actualizar:
+                            st.info(f"📊 {len(partidos_por_actualizar)} partidos jugados - actualizando...")
+                            
+                            for p in partidos_por_actualizar:
+                                fix_id = p.get('fixture_id')
+                                if fix_id:
+                                    try:
+                                        resp_fix = requests.get(f"{API_URL}/fixtures", headers=headers, params={'id': fix_id}, timeout=10)
+                                        if resp_fix.status_code == 200:
+                                            data = resp_fix.json().get('response', [])
+                                            if data:
+                                                f_data = data[0]
+                                                goals = f_data.get('goals', {})
+                                                status = f_data.get('fixture', {}).get('status', {}).get('short', '')
+                                                
+                                                update_data = {}
+                                                gl = goals.get('home')
+                                                gv = goals.get('away')
+                                                if gl is not None:
+                                                    update_data['goles_local'] = gl
+                                                if gv is not None:
+                                                    update_data['goles_visitante'] = gv
+                                                if status:
+                                                    update_data['estado'] = status
+                                                
+                                                if update_data:
+                                                    client.table('partidos').update(update_data).eq('fixture_id', fix_id).execute()
+                                    except: pass
+                    except: pass
+
                     status_text = st.empty()
 
                     LIGAS = [
