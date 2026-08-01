@@ -803,8 +803,14 @@ def render_login_form():
         
         with col_btn2:
             if st.button("🔄 Sincronizar", type="primary", use_container_width=True):
-                with st.spinner("Sincronizando..."):
+                st.info("🔄 Iniciando sincronización...")
+                try:
                     client = get_client()
+                    if not client:
+                        st.error("❌ No se pudo conectar a Supabase")
+                        st.stop()
+                    
+                    st.success("✅ Conectado a Supabase")
                     API_URL = "https://v3.football.api-sports.io"
                     API_KEY = "e3926f829cd848f4b2b54d722ca29701"
                     headers = {'x-apisports-key': API_KEY}
@@ -1000,6 +1006,10 @@ def render_login_form():
                     
                     st.success(f"📡 Requests: {st.session_state.api_requests_today}")
                     st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Error general: {e}")
+                    import traceback
+                    st.code(traceback.format_exc())
 
         with col_info:
             st.markdown(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/999")
