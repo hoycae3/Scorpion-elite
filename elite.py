@@ -859,14 +859,26 @@ def render_login_form():
                             fecha_inicio = hoy_str
                             fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
                         else:
-                            # Buscar último día que tenemos y agregar solo el siguiente
-                            from datetime import datetime as dt
+                            # Buscar último partido en BD para saber hasta dónde llega
                             try:
-                                ult = max([dt.strptime(p, '%Y-%m-%d').date() for p in list(partidos_existentes)[:100] if isinstance(p, str) and len(str(p)) >= 10])
-                                fecha_inicio = (ult + timedelta(days=1)).strftime('%Y-%m-%d')
-                                fecha_fin = fecha_inicio
-                                st.info(f"📡 Agregando día nuevo: {fecha_inicio}")
-                            except:
+                                ult_resp = client.table('partidos').select('fecha').order('fecha', desc=True).limit(1).execute()
+                                if ult_resp.data:
+                                    ult_fecha = ult_resp.data[0].get('fecha', '')[:10]
+                                    st.info(f"📡 Último partido: {ult_fecha}")
+                                    # Verificar si hay días faltantes hasta HOY+6
+                                    if ult_fecha < (hoy + timedelta(days=6)).strftime('%Y-%m-%d'):
+                                        ult_dt = dt.strptime(ult_fecha, '%Y-%m-%d').date()
+                                        fecha_inicio = (ult_dt + timedelta(days=1)).strftime('%Y-%m-%d')
+                                        fecha_fin = fecha_inicio
+                                        st.info(f"📡 Agregando día nuevo: {fecha_inicio}")
+                                    else:
+                                        fecha_inicio = hoy_str
+                                        fecha_fin = hoy_str
+                                        st.info("📡 Todo actualizado")
+                                else:
+                                    fecha_inicio = hoy_str
+                                    fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
+                            except Exception as e:
                                 fecha_inicio = hoy_str
                                 fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
 
