@@ -516,7 +516,7 @@ def render_public_landing():
     <style>
     .price-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
     .price-table th, .price-table td { padding: 12px 15px; text-align: center; border: 1px solid #E2E8F0; }
-    .price-table th { background: rgba(22, 27, 38, 0.9); color: #1e293b; font-weight: 600; }
+    .price-table th { background: #121824; color: #1e293b; font-weight: 600; }
     .price-table tr:nth-child(even) { background: rgba(240, 253, 250, 0.5); }
     .price-table .popular { background: rgba(14, 116, 144, 0.1) !important; border: 2px solid #0e7490; }
     .price-table .popular-tag { background: #0e7490; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
