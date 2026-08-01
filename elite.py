@@ -881,22 +881,36 @@ def render_login_form():
                                 if resp_team.status_code == 200:
                                     stats = resp_team.json().get('response', {})
                                     if stats:
-                                        played = stats.get('fixtures', {}).get('played', {}).get('total', 0)
-                                        wins = stats.get('fixtures', {}).get('wins', {}).get('total', 0)
-                                        draws = stats.get('fixtures', {}).get('draws', {}).get('total', 0)
-                                        loses = stats.get('fixtures', {}).get('loses', {}).get('total', 0)
-                                        goals_for = stats.get('goals', {}).get('for', {}).get('total', {}).get('total', 0)
-                                        goals_against = stats.get('goals', {}).get('against', {}).get('total', {}).get('total', 0)
+                                        # Calcular lambdas desde API
+                                        goals_for = stats.get('goals', {}).get('for', {}).get('total', {})
+                                        goals_against = stats.get('goals', {}).get('against', {}).get('total', {})
+                                        
+                                        gf_total = goals_for.get('total', 0) or 0
+                                        gc_total = goals_against.get('total', 0) or 0
+                                        gf_home = goals_for.get('home', 0) or 0
+                                        gf_away = goals_for.get('away', 0) or 0
+                                        gc_home = goals_against.get('home', 0) or 0
+                                        gc_away = goals_against.get('away', 0) or 0
+                                        
+                                        played_total = stats.get('fixtures', {}).get('played', {}).get('total', 1) or 1
+                                        played_home = stats.get('fixtures', {}).get('played', {}).get('home', 1) or 1
+                                        played_away = stats.get('fixtures', {}).get('played', {}).get('away', 1) or 1
+                                        
                                         equipo_data = {
                                             'equipo': team_name,
                                             'liga': league.get('name', ''),
                                             'temporada': f'{season}-{season+1}',
-                                            'partidos_jugados': played,
-                                            'victorias': wins,
-                                            'empates': draws,
-                                            'derrotas': loses,
-                                            'goles_favor': goals_for,
-                                            'goles_contra': goals_against,
+                                            'partidos_jugados': stats.get('fixtures', {}).get('played', {}).get('total', 0),
+                                            'victorias': stats.get('fixtures', {}).get('wins', {}).get('total', 0),
+                                            'empates': stats.get('fixtures', {}).get('draws', {}).get('total', 0),
+                                            'derrotas': stats.get('fixtures', {}).get('loses', {}).get('total', 0),
+                                            'goles_favor': gf_total,
+                                            'goles_contra': gc_total,
+                                            # Lambdas calculadas
+                                            'lambda_local': round((gf_home + gc_away) / played_home / 2, 2),
+                                            'lambda_visitante': round((gf_away + gc_home) / played_away / 2, 2),
+                                            # Forma (últimos resultados)
+                                            'ultimos_5_partidos': list(stats.get('form', ''))[:5] if stats.get('form') else [],
                                         }
                                         st.json(equipo_data)
                                         st.markdown("**Guardando equipo...**")
@@ -931,6 +945,19 @@ def render_login_form():
                                 if resp_away.status_code == 200:
                                     stats_a = resp_away.json().get('response', {})
                                     if stats_a:
+                                        goals_for_a = stats_a.get('goals', {}).get('for', {}).get('total', {})
+                                        goals_against_a = stats_a.get('goals', {}).get('against', {}).get('total', {})
+                                        
+                                        gf_total_a = goals_for_a.get('total', 0) or 0
+                                        gc_total_a = goals_against_a.get('total', 0) or 0
+                                        gf_home_a = goals_for_a.get('home', 0) or 0
+                                        gf_away_a = goals_for_a.get('away', 0) or 0
+                                        gc_home_a = goals_against_a.get('home', 0) or 0
+                                        gc_away_a = goals_against_a.get('away', 0) or 0
+                                        
+                                        played_home_a = stats_a.get('fixtures', {}).get('played', {}).get('home', 1) or 1
+                                        played_away_a = stats_a.get('fixtures', {}).get('played', {}).get('away', 1) or 1
+                                        
                                         equip_away_data = {
                                             'equipo': team_away_name,
                                             'liga': league.get('name', ''),
@@ -939,8 +966,11 @@ def render_login_form():
                                             'victorias': stats_a.get('fixtures', {}).get('wins', {}).get('total', 0),
                                             'empates': stats_a.get('fixtures', {}).get('draws', {}).get('total', 0),
                                             'derrotas': stats_a.get('fixtures', {}).get('loses', {}).get('total', 0),
-                                            'goles_favor': stats_a.get('goals', {}).get('for', {}).get('total', {}).get('total', 0),
-                                            'goles_contra': stats_a.get('goals', {}).get('against', {}).get('total', {}).get('total', 0),
+                                            'goles_favor': gf_total_a,
+                                            'goles_contra': gc_total_a,
+                                            'lambda_local': round((gf_home_a + gc_away_a) / played_home_a / 2, 2),
+                                            'lambda_visitante': round((gf_away_a + gc_home_a) / played_away_a / 2, 2),
+                                            'ultimos_5_partidos': list(stats_a.get('form', ''))[:5] if stats_a.get('form') else [],
                                         }
                                         try:
                                             client.table('equipos_stats').insert(equip_away_data).execute()
