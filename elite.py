@@ -1031,8 +1031,8 @@ def render_login_form():
                                     for t in resp_s.json().get('response', []):
                                         if t.get('team', {}).get('name') == eq_nombre:
                                             tid = t.get('team', {}).get('id')
-                                            # Buscar stats
-                                            resp_st = requests.get(f"{API_URL}/teams/statistics", headers=headers, params={'team': tid, 'league': 140, 'season': season}, timeout=10)
+                                            # Buscar stats con la liga correcta
+                                            resp_st = requests.get(f"{API_URL}/teams/statistics", headers=headers, params={'team': tid, 'league': liga_id, 'season': season}, timeout=10)
                                             if resp_st.status_code == 200:
                                                 stats_data = resp_st.json().get('response', {})
                                                 if stats_data:
@@ -1265,6 +1265,7 @@ def render_login_form():
                         fecha_fin = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
                         st.info(f"📡 Fechas: {fecha_inicio} al {fecha_fin}")
 
+                        # Guardar como {nombre_equipo: (liga_nombre, liga_id)}
                         equipos_por_buscar = {}
 
                         for idx, (liga_id, liga_nombre) in enumerate(LIGAS):
@@ -1279,8 +1280,8 @@ def render_login_form():
                                         teams = f.get('teams', {})
                                         local = teams.get('home', {}).get('name', '')
                                         visitante = teams.get('away', {}).get('name', '')
-                                        if local: equipos_por_buscar[local] = f.get('league', {}).get('name', '')
-                                        if visitante: equipos_por_buscar[visitante] = f.get('league', {}).get('name', '')
+                                        if local: equipos_por_buscar[local] = (f.get('league', {}).get('name', ''), liga_id)
+                                        if visitante: equipos_por_buscar[visitante] = (f.get('league', {}).get('name', ''), liga_id)
                             except: pass
 
                     # ═══════════════════════════════════════════════════════
@@ -1293,6 +1294,7 @@ def render_login_form():
                         fecha_fin = (hoy + timedelta(days=3)).strftime('%Y-%m-%d')
                         st.info(f"📡 Equipos de partidos: {fecha_inicio} al {fecha_fin}")
 
+                        # Guardar como {nombre_equipo: (liga_nombre, liga_id)}
                         equipos_por_buscar = {}
 
                         for idx, (liga_id, liga_nombre) in enumerate(LIGAS):
@@ -1307,8 +1309,8 @@ def render_login_form():
                                         teams = f.get('teams', {})
                                         local = teams.get('home', {}).get('name', '')
                                         visitante = teams.get('away', {}).get('name', '')
-                                        if local: equipos_por_buscar[local] = f.get('league', {}).get('name', '')
-                                        if visitante: equipos_por_buscar[visitante] = f.get('league', {}).get('name', '')
+                                        if local: equipos_por_buscar[local] = (f.get('league', {}).get('name', ''), liga_id)
+                                        if visitante: equipos_por_buscar[visitante] = (f.get('league', {}).get('name', ''), liga_id)
                             except: pass
 
                     # ═══════════════════════════════════════════════════════
@@ -1322,7 +1324,7 @@ def render_login_form():
                         total_guardados = 0
                         total_actualizados = 0
 
-                        for idx, (eq_nombre, eq_liga) in enumerate(equipos_por_buscar.items()):
+                        for idx, (eq_nombre, (eq_liga_nombre, eq_liga_id)) in enumerate(equipos_por_buscar.items()):
                             progress_bar.progress(0.2 + (idx / len(equipos_por_buscar) * 0.8))
                             status_text.text(f"📊 {idx+1}/{len(equipos_por_buscar)}: {eq_nombre}")
 
@@ -1332,7 +1334,8 @@ def render_login_form():
                                     for t in resp_s.json().get('response', []):
                                         if t.get('team', {}).get('name') == eq_nombre:
                                             tid = t.get('team', {}).get('id')
-                                            resp_st = requests.get(f"{API_URL}/teams/statistics", headers=headers, params={'team': tid, 'league': 140, 'season': season}, timeout=10)
+                                            # Usar la liga correcta del equipo
+                                            resp_st = requests.get(f"{API_URL}/teams/statistics", headers=headers, params={'team': tid, 'league': eq_liga_id, 'season': season}, timeout=10)
                                             if resp_st.status_code == 200:
                                                 st_eq = resp_st.json().get('response', {})
                                                 if st_eq:
@@ -1351,7 +1354,7 @@ def render_login_form():
 
                                                     eq_data = {
                                                         'equipo': eq_nombre,
-                                                        'liga': eq_liga or st_eq.get('league', {}).get('name', ''),
+                                                        'liga': eq_liga_nombre,
                                                         'temporada': f'{season}-{season+1}',
                                                         'partidos_jugados': pj_t,
                                                         'victorias': wins,
