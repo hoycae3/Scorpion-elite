@@ -841,11 +841,55 @@ def render_login_form():
                         fecha_hasta_7 = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
 
                         LIGAS = [
-                            (1, "MLS"), (39, "Premier League"), (61, "Ligue 1"),
-                            (78, "Bundesliga"), (128, "Serie A"), (140, "La Liga"),
-                            (3, "Eredivisie"), (4, "Liga NOS"), (94, "Primeira"),
-                            (40, "Championship"), (53, "Serie A BR"), (5, "Jupiler Pro"),
-                            (6, "Super Lig"), (79, "2.Bundesliga"), (141, "La Liga 2"),
+                            # TORNEOS INTERNACIONALES
+                            (2, "Champions League"), (3, "Europa League"), (848, "Conf League"),
+                            (13, "Libertadores"), (11, "Sudamericana"), (16, "CONCACAF CL"),
+                            # ESPAÑA
+                            (140, "La Liga"), (141, "Segunda División"),
+                            # INGLATERRA
+                            (39, "Premier League"), (40, "Championship"), (41, "League One"), (42, "League Two"),
+                            # ALEMANIA
+                            (78, "Bundesliga"), (79, "2.Bundesliga"),
+                            # ITALIA
+                            (135, "Serie A Italia"), (136, "Serie B Italia"),
+                            # FRANCIA
+                            (61, "Ligue 1"), (62, "Ligue 2"),
+                            # PORTUGAL
+                            (94, "Primeira Liga"),
+                            # HOLANDA
+                            (88, "Eredivisie"),
+                            # BÉLGICA
+                            (144, "Jupiler Pro"),
+                            # TURQUÍA
+                            (203, "Süper Lig"), (204, "1. Lig"),
+                            # ESCOCIA
+                            (179, "Scottish Premiership"),
+                            # BRASIL
+                            (71, "Serie A Brasil"), (72, "Serie B Brasil"),
+                            # ARGENTINA
+                            (128, "Liga Argentina"),
+                            # COLOMBIA
+                            (239, "Primera A Colombia"),
+                            # PARAGUAY
+                            (250, "Division Paraguay"),
+                            # ECUADOR
+                            (242, "Liga Pro Ecuador"),
+                            # URUGUAY
+                            (268, "Primera Uruguay"),
+                            # CHILE
+                            (265, "Primera Chile"),
+                            # PERÚ
+                            (281, "Liga 1 Perú"),
+                            # USA/MÉXICO
+                            (253, "MLS"), (262, "Liga MX"),
+                            # ARABIA SAUDITA
+                            (307, "Saudi Pro League"),
+                            # EGIPTO
+                            (233, "Premier Egypt"),
+                            # JAPÓN
+                            (98, "J1 League"),
+                            # COREA
+                            (292, "K League 1"),
                         ]
 
                         total_partidos = 0
