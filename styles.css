@@ -20,7 +20,7 @@
 /* CONFIGURACIÓN DE LA PÁGINA                               */
 /* ══════════════════════════════════════════════════════════ */
 .stApp {
-    background-color: var(--bg-dark) !important;
+    background: var(--bg-dark) !important;
     color: var(--text-primary) !important;
 }
 
@@ -34,7 +34,7 @@ div[data-testid="stHorizontalBlock"] { align-items: center; }
 /* ══════════════════════════════════════════════════════════ */
 /* FONDO GENERAL                                             */
 /* ══════════════════════════════════════════════════════════ */
-.main { background: #F0FDFA !important; }
+.main { background: transparent !important; }
 
 /* Título principal */
 .title { color: #ffd700; font-size: 42px; font-weight: bold; margin: 0; line-height: 48px; text-align: center; }
