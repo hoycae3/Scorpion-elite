@@ -1035,8 +1035,7 @@ def render_login_form():
 
                         st.success(f"✅ **COMPLETO!**")
                         st.markdown(f"📊 Partidos nuevos: **{total_partidos}** | Equipos nuevos: **{total_equipos}**")
-                        time.sleep(2)
-                        st.rerun()
+                        st.info("🔄 Recarga la página para ver los cambios")
 
                     except Exception as e:
                         st.error(f"❌ Error: {e}")
