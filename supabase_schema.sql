@@ -93,7 +93,7 @@ CREATE POLICY "equipos_all" ON equipos_stats FOR ALL USING (true) WITH CHECK (tr
 -- ═══════════════════════════════════════════════════════════════════════════════
 CREATE TABLE IF NOT EXISTS partidos_stats (
     id BIGSERIAL PRIMARY KEY,
-    fixture_id BIGINT,
+    fixture_id BIGINT UNIQUE,
     fecha DATE,
     liga VARCHAR(255),
     equipo_local VARCHAR(255),

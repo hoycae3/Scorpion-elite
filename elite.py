@@ -816,11 +816,8 @@ def render_login_form():
                         262, 253, 16, 307, 98, 292
                     ]
                     
-                    current_month = datetime.now().month
-                    season = 2025 if current_month >= 8 else 2025
-                    
+                    season = 2025
                     hoy = datetime.now(timezone(timedelta(hours=-5))).date()
-                    TZ = timezone(timedelta(hours=-5))
                     hoy_str = hoy.strftime('%Y-%m-%d')
                     fecha_hasta_7 = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
                     
@@ -836,8 +833,15 @@ def render_login_form():
                         st.error(f"❌ Error BD: {e}")
                         fixture_ids_existentes = set()
                     
+                    # Equipos ya guardados
+                    try:
+                        resp_eq = client.table('equipos_stats').select('equipo').execute()
+                        equipos_existentes = {e.get('equipo') for e in (resp_eq.data or []) if e.get('equipo')}
+                    except:
+                        equipos_existentes = set()
+                    
                     partidos_nuevos = 0
-                    stats_nuevas = 0
+                    equipos_nuevos = 0
                     errores = []
                     
                     st.markdown("**📅 Buscando partidos...**")
@@ -860,15 +864,18 @@ def render_login_form():
                                     league = f.get('league', {})
                                     fix_id = fix.get('id')
                                     
+                                    nombre_local = teams.get('home', {}).get('name', '')
+                                    nombre_visit = teams.get('away', {}).get('name', '')
+                                    
+                                    # GUARDAR PARTIDO
                                     if fix_id and fix_id not in fixture_ids_existentes:
-                                        # GUARDAR EN TABLA PARTIDOS
                                         partido_data = {
                                             'fixture_id': fix_id,
                                             'fecha': fix.get('date', '')[:10],
                                             'hora': fix.get('date', '')[11:16],
                                             'liga': league.get('name', ''),
-                                            'equipo_local': teams.get('home', {}).get('name', ''),
-                                            'equipo_visitante': teams.get('away', {}).get('name', ''),
+                                            'equipo_local': nombre_local,
+                                            'equipo_visitante': nombre_visit,
                                             'goles_local': goals.get('home'),
                                             'goles_visitante': goals.get('away'),
                                             'estado': fix.get('status', {}).get('short', 'NS')
@@ -878,81 +885,68 @@ def render_login_form():
                                             partidos_nuevos += 1
                                             fixture_ids_existentes.add(fix_id)
                                         except Exception as e:
-                                            errores.append(f"Partido {fix_id}: {e}")
+                                            errores.append(f"P: {fix_id}: {e}")
+                                    
+                                    # GUARDAR EQUIPOS (stats de la temporada)
+                                    for team_info, es_local in [(teams.get('home', {}), True), (teams.get('away', {}), False)]:
+                                        team_name = team_info.get('name', '')
+                                        team_id_api = team_info.get('id')
                                         
-                                        # OBTENER STATS DEL PARTIDO
-                                        try:
-                                            resp_stats = requests.get(f"{API_URL}/fixtures/statistics", headers=headers, params={'fixture': fix_id}, timeout=10)
-                                            st.session_state.api_requests_today += 1
-                                            
-                                            if resp_stats.status_code == 200:
-                                                stats_data = resp_stats.json().get('response', []) or []
+                                        if team_name and team_name not in equipos_existentes:
+                                            # Obtener stats del equipo
+                                            try:
+                                                resp_team = requests.get(
+                                                    f"{API_URL}/teams/statistics",
+                                                    headers=headers,
+                                                    params={'team': team_id_api, 'league': liga_id, 'season': season},
+                                                    timeout=10
+                                                )
+                                                st.session_state.api_requests_today += 1
                                                 
-                                                # Parsear stats (viene como array de 2 equipos)
-                                                stats_local = {}
-                                                stats_visit = {}
-                                                
-                                                for team_stats in stats_data:
-                                                    team_name_api = team_stats.get('team', {}).get('name', '')
-                                                    is_home = team_name_api == teams.get('home', {}).get('name', '')
+                                                if resp_team.status_code == 200:
+                                                    stats = resp_team.json().get('response', {})
                                                     
-                                                    parsed = {}
-                                                    for stat in team_stats.get('statistics', []) or []:
-                                                        parsed[stat.get('type', '')] = stat.get('value', 0)
-                                                    
-                                                    if is_home:
-                                                        stats_local = parsed
-                                                    else:
-                                                        stats_visit = parsed
-                                                
-                                                # GUARDAR EN TABLA PARTIDOS_STATS
-                                                def get_int(val):
-                                                    if val is None: return None
-                                                    if isinstance(val, int): return val
-                                                    if isinstance(val, float): return int(val)
-                                                    return int(str(val).replace('%', '').strip()) if val else None
-                                                
-                                                def get_str(val):
-                                                    if val is None: return None
-                                                    return str(val).replace('%', '').strip() if val else None
-                                                
-                                                stats_record = {
-                                                    'fixture_id': fix_id,
-                                                    'fecha': fix.get('date', '')[:10],
-                                                    'liga': league.get('name', ''),
-                                                    'equipo_local': teams.get('home', {}).get('name', ''),
-                                                    'equipo_visitante': teams.get('away', {}).get('name', ''),
-                                                    'goles_local': goals.get('home'),
-                                                    'goles_visitante': goals.get('away'),
-                                                    'tiros_local': get_int(stats_local.get('Total Shots')),
-                                                    'tiros_visitante': get_int(stats_visit.get('Total Shots')),
-                                                    'tiros_arco_local': get_int(stats_local.get('Shots on Goal')),
-                                                    'tiros_arco_visitante': get_int(stats_visit.get('Shots on Goal')),
-                                                    'corners_local': get_int(stats_local.get('Corner Kicks')),
-                                                    'corners_visitante': get_int(stats_visit.get('Corner Kicks')),
-                                                    'corners_total': None,
-                                                    'amarillas_local': get_int(stats_local.get('Yellow Cards')),
-                                                    'amarillas_visitante': get_int(stats_visit.get('Yellow Cards')),
-                                                    'rojas_local': get_int(stats_local.get('Red Cards')),
-                                                    'rojas_visitante': get_int(stats_visit.get('Red Cards')),
-                                                    'posesion_local': get_int(stats_local.get('Ball Possession')),
-                                                    'posesion_visitante': get_int(stats_visit.get('Ball Possession')),
-                                                    'faltas_local': get_int(stats_local.get('Fouls')),
-                                                    'faltas_visitante': get_int(stats_visit.get('Fouls')),
-                                                    'fueras_juego_local': get_int(stats_local.get('Offsides')),
-                                                    'fueras_juego_visitante': get_int(stats_visit.get('Offsides')),
-                                                    'source': 'API-Football'
-                                                }
-                                                
-                                                try:
-                                                    client.table('partidos_stats').upsert(stats_record, on_conflict='fixture_id').execute()
-                                                    stats_nuevas += 1
-                                                except Exception as e:
-                                                    errores.append(f"Stats {fix_id}: {e}")
-                                        except Exception as e:
-                                            errores.append(f"Stats API {fix_id}: {e}")
-                                        
-                                        time.sleep(0.3)
+                                                    if stats:
+                                                        fixtures_stats = stats.get('fixtures', {})
+                                                        goals_stats = stats.get('goals', {})
+                                                        
+                                                        played = fixtures_stats.get('played', {})
+                                                        wins = fixtures_stats.get('wins', {})
+                                                        draws = fixtures_stats.get('draws', {})
+                                                        loses = fixtures_stats.get('loses', {})
+                                                        
+                                                        goals_for = goals_stats.get('for', {})
+                                                        goals_against = goals_stats.get('against', {})
+                                                        
+                                                        equipo_data = {
+                                                            'equipo': team_name,
+                                                            'liga': league.get('name', ''),
+                                                            'temporada': f'{season}-{season+1}',
+                                                            'partidos_jugados': played.get('total', 0) if isinstance(played, dict) else 0,
+                                                            'victorias': wins.get('total', 0) if isinstance(wins, dict) else 0,
+                                                            'empates': draws.get('total', 0) if isinstance(draws, dict) else 0,
+                                                            'derrotas': loses.get('total', 0) if isinstance(loses, dict) else 0,
+                                                            'goles_favor': goals_for.get('total', {}).get('total', 0) if isinstance(goals_for, dict) else 0,
+                                                            'goles_contra': goals_against.get('total', {}).get('total', 0) if isinstance(goals_against, dict) else 0,
+                                                            'promedio_goles_local': goals_for.get('home', {}).get('average', 1.3) or 1.3,
+                                                            'promedio_goles_visitante': goals_for.get('away', {}).get('average', 1.1) or 1.1,
+                                                            'lambda_local': goals_for.get('home', {}).get('average', 1.3) or 1.3,
+                                                            'lambda_visitante': goals_for.get('away', {}).get('average', 1.1) or 1.1,
+                                                            'source_fbdata': False,
+                                                            'source_whoscored': False,
+                                                            'source_fbref': False
+                                                        }
+                                                        
+                                                        try:
+                                                            client.table('equipos_stats').upsert(equipo_data, on_conflict='equipo').execute()
+                                                            equipos_nuevos += 1
+                                                            equipos_existentes.add(team_name)
+                                                        except Exception as e:
+                                                            errores.append(f"E: {team_name}: {e}")
+                                            except Exception as e:
+                                                errores.append(f"API Equipo: {team_name}: {e}")
+                                    
+                                    time.sleep(0.3)
                         except Exception as e:
                             errores.append(f"Liga {liga_id}: {e}")
                         
@@ -966,7 +960,7 @@ def render_login_form():
                     with col1:
                         st.metric("🏆 Partidos", partidos_nuevos)
                     with col2:
-                        st.metric("📊 Stats", stats_nuevas)
+                        st.metric("👥 Equipos", equipos_nuevos)
                     
                     if errores and len(errores) <= 10:
                         with st.expander("⚠️ Errores"):
