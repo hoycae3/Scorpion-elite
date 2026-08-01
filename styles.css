@@ -11,8 +11,8 @@
     --accent-success: #006644;
     --accent-warning: #CC8800;
     --accent-danger: #CC0000;
-    --text-primary: #003322;
-    --text-secondary: #004433;
+    --text-primary: #000000;
+    --text-secondary: #333333;
     --border-color: rgba(0, 102, 68, 0.4);
 }
 
@@ -21,7 +21,7 @@
 /* ══════════════════════════════════════════════════════════ */
 .stApp, body, .stApp > div, main, .stMainBlock, div[data-testid="stMainBlockContainer"] {
     background: linear-gradient(180deg, #0d9488 0%, #5eead4 50%, #99f6e4 100%) !important;
-    color: #1e293b !important;
+    color: #000000 !important;
 }
 
 div.block-container { padding-top: 1rem; }
@@ -89,7 +89,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* Etiqueta del equipo */
 .etiqueta-equipo {
-    color: #333;
+    color: #000000;
     font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
@@ -99,7 +99,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* Probabilidad grande */
 .probabilidad {
-    color: #1e293b;
+    color: #000000;
     font-size: 36px;
     font-weight: bold;
     margin: 5px 0 0 0;
@@ -203,12 +203,12 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 .forma-p { color: #ff6b6b; font-weight: bold; }
 
 .forma-stats {
-    color: #333;
+    color: #000000;
     font-size: 11px;
     margin: 8px 0 0 0;
 }
 
-.forma-stats span { color: #1e293b; }
+.forma-stats span { color: #000000; }
 
 /* ══════════════════════════════════════════════════════════ */
 /* RECUADRO PRINCIPAL DE ANÁLISIS                          */
@@ -234,7 +234,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 }
 
 .analisis-partido {
-    color: #1e293b;
+    color: #000000;
     font-size: 26px;
     margin: 8px 0;
 }
@@ -288,8 +288,8 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
     font-size: 13px;
 }
 
-.stats-label { color: #333; }
-.stats-value { color: #1e293b; font-weight: 600; }
+.stats-label { color: #000000; }
+.stats-value { color: #000000; font-weight: 600; }
 .stats-value-positivo { color: #00D4FF; }
 .stats-value-negativo { color: #ff6b6b; }
 .stats-value-neutro { color: #00d4ff; }
@@ -342,7 +342,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 .forma-badge-g { background: #00D4FF; color: #000; }
 .forma-badge-e { background: #ffd700; color: #000; }
-.forma-badge-p { background: #ff6b6b; color: #1e293b; }
+.forma-badge-p { background: #ff6b6b; color: #000000; }
 
 /* ══════════════════════════════════════════════════════════ */
 /* TARJETAS SIMPLES                                         */
