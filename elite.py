@@ -852,7 +852,6 @@ def render_login_form():
                                 'equipo_visitante': teams.get('away', {}).get('name', ''),
                                 'goles_local': goals.get('home'),
                                 'goles_visitante': goals.get('away'),
-                                'estado': fix.get('status', {}).get('short', 'NS')
                             }
                             
                             st.write("**Datos a guardar:**")
