@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import os
 import sqlite3
-import hashlib
 # Mapeo de league_id por nombre de liga
 LIGAS_MAP = {
     'Premier League': 39,
@@ -115,44 +114,6 @@ def verify_password(password: str, hashed: str) -> bool:
 def get_hoy():
     return str(datetime.now(timezone(timedelta(hours=-5))).date())
 
-def init_db():
-    """Inicializa la base de datos SQLite con context manager"""
-    with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
-        # Crear tabla SIN columna password (texto plano) - solo password_hash con bcrypt
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            password_hash TEXT NOT NULL,
-            nombre TEXT,
-            plan TEXT DEFAULT 'vip',
-            fecha_inicio TEXT,
-            dias INTEGER DEFAULT 36500,
-            activo INTEGER DEFAULT 1,
-            es_admin INTEGER DEFAULT 0,
-            creado TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-        """)
-        
-        # Crear tabla de picks si no existe
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS picks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            fecha TEXT, liga TEXT, local TEXT, visitante TEXT, hora TEXT,
-            mercado TEXT, detalle TEXT, cuota REAL, edge REAL,
-            confianza REAL, rango TEXT, notas TEXT, plan_min TEXT DEFAULT 'vip'
-        )
-        """)
-        
-        # Crear admin si no existe (usando bcrypt)
-        admin_exists = conn.execute("SELECT id FROM usuarios WHERE es_admin=1").fetchone()
-        if not admin_exists:
-            pwd_hash = hash_password(ADMIN_PASSWORD)
-            conn.execute("""INSERT INTO usuarios (password_hash, nombre, plan, fecha_inicio, dias, activo, es_admin) 
-                          VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                        (pwd_hash, "Administrador", "admin", get_hoy(), 36500, 1, 1))
-        conn.commit()
-
-def db_get_by_id(user_id):
     """Obtiene usuario por ID"""
     try:
         with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
@@ -164,6 +125,16 @@ def db_get_by_id(user_id):
         return None
 
 def db_todos():
+    """Obtiene todos los usuarios"""
+    client = get_client()
+    if not client:
+        return []
+    try:
+        resp = client.table('usuarios').select('id, nombre, plan, dias, activo, es_admin, creado_at').execute()
+        return resp.data if resp.data else []
+    except Exception as e:
+        logger.error(f"Error en db_todos: {e}")
+        return []
     """Obtiene todos los usuarios (sin password_hash para seguridad)"""
     try:
         with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
@@ -175,6 +146,25 @@ def db_todos():
         return []
 
 def db_crear_usuario(password, nombre, plan, dias):
+    """Crea un nuevo usuario VIP en Supabase"""
+    client = get_client()
+    if not client:
+        return False
+    try:
+        pwd_hash = hash_password(password)
+        client.table('usuarios').insert({
+            'password_hash': pwd_hash,
+            'nombre': nombre,
+            'plan': plan,
+            'fecha_inicio': get_hoy(),
+            'dias': dias,
+            'activo': True,
+            'es_admin': False
+        }).execute()
+        return True
+    except Exception as e:
+        logger.error(f"Error en db_crear_usuario: {e}")
+        return False
     """Crea un nuevo usuario con password hasheado (bcrypt)"""
     pwd_hash = hash_password(password)
     try:
@@ -191,6 +181,17 @@ def db_crear_usuario(password, nombre, plan, dias):
         return False
 
 def db_cambiar_password(user_id, password):
+    """Cambia password de usuario"""
+    client = get_client()
+    if not client:
+        return False
+    try:
+        pwd_hash = hash_password(password)
+        client.table('usuarios').update({'password_hash': pwd_hash}).eq('id', user_id).execute()
+        return True
+    except Exception as e:
+        logger.error(f"Error en db_cambiar_password: {e}")
+        return False
     """Cambia password de usuario (bcrypt)"""
     pwd_hash = hash_password(password)
     try:
@@ -203,6 +204,16 @@ def db_cambiar_password(user_id, password):
         return False
 
 def db_eliminar_usuario(user_id):
+    """Elimina un usuario (no admin)"""
+    client = get_client()
+    if not client:
+        return False
+    try:
+        client.table('usuarios').delete().eq('id', user_id).eq('es_admin', False).execute()
+        return True
+    except Exception as e:
+        logger.error(f"Error en db_eliminar_usuario: {e}")
+        return False
     """Elimina un usuario"""
     try:
         with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
@@ -215,6 +226,20 @@ def db_eliminar_usuario(user_id):
 
 def db_actualizar_plan(user_id, plan, dias):
     """Actualiza plan de usuario"""
+    client = get_client()
+    if not client:
+        return False
+    try:
+        client.table('usuarios').update({
+            'plan': plan,
+            'dias': dias,
+            'fecha_inicio': get_hoy()
+        }).eq('id', user_id).execute()
+        return True
+    except Exception as e:
+        logger.error(f"Error en db_actualizar_plan: {e}")
+        return False
+    """Actualiza plan de usuario"""
     try:
         with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
             conn.execute("UPDATE usuarios SET plan=?, dias=?, fecha_inicio=? WHERE id=?", 
@@ -226,58 +251,25 @@ def db_actualizar_plan(user_id, plan, dias):
         return False
 
 def db_login(password):
-    """Verifica password con bcrypt y retorna usuario"""
-    init_db()
+    """Verifica password con bcrypt contra Supabase"""
+    client = get_client()
+    if not client:
+        return None
     try:
-        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
-            conn.row_factory = sqlite3.Row
-            # Obtener todos los usuarios activos y verificar con bcrypt
-            usuarios = conn.execute("SELECT * FROM usuarios WHERE activo=1").fetchall()
-            for usuario in usuarios:
-                if verify_password(password, usuario['password_hash']):
-                    return dict(usuario)
-            return None
+        resp = client.table('usuarios').select('*').eq('activo', True).execute()
+        if resp.data:
+            for usuario in resp.data:
+                pwd_hash = usuario.get('password_hash', '')
+                if verify_password(password, pwd_hash):
+                    return usuario
+        return None
     except Exception as e:
         logger.error(f"Error en db_login: {e}")
         return None
-
-# ══════════════════════════════════════════════════════════
-# SESSION STATE
-# ══════════════════════════════════════════════════════════
 if "logged" not in st.session_state:
     st.session_state.logged = False
 if "show_login" not in st.session_state:
     st.session_state.show_login = False
-if "df_partidos" not in st.session_state:
-    st.session_state.df_partidos = None
-if "page" not in st.session_state:
-    st.session_state.page = "VIP"
-if "user_data" not in st.session_state:
-    st.session_state.user_data = None
-if "is_admin" not in st.session_state:
-    st.session_state.is_admin = False
-if "equipos_excel_actual" not in st.session_state:
-    st.session_state.equipos_excel_actual = []
-
-# ══════════════════════════════════════════════════════════
-# CSS EXTERNO - Leer desde archivo styles.css
-# ══════════════════════════════════════════════════════════
-@st.cache_data(ttl=3600)
-def load_css():
-    """Carga el CSS desde el archivo externo - cacheado por 1 hora"""
-    css_path = Path(__file__).parent / "styles.css"
-    try:
-        return css_path.read_text()
-    except Exception as e:
-        logger.warning(f"No se pudo cargar styles.css: {e}")
-        return ""
-
-st.markdown(f"<style>{load_css()}</style>", unsafe_allow_html=True)
-
-
-# ══════════════════════════════════════════════════════════
-# LANDING PAGE PÚBLICA
-# ══════════════════════════════════════════════════════════
 def render_public_landing():
     """Renderiza la landing page pública para usuarios no autenticados"""
     
