@@ -824,7 +824,7 @@ def render_login_form():
         
         with col_btn2:
             if st.button("🔄 Sincronizar", type="primary", use_container_width=True):
-                with st.spinner("Guardando..."):
+                with st.spinner("Descargando partidos y stats..."):
                     try:
                         client = get_client()
                         if not client:
@@ -1033,7 +1033,7 @@ def render_login_form():
                         progress_bar.empty()
                         status_text.empty()
 
-                        st.success(f"✅ **COMPLETO!**")
+                        st.success(f"✅ GUARDADO! Partidos: {total_partidos} | Equipos: {total_equipos}")
                         st.markdown(f"📊 Partidos nuevos: **{total_partidos}** | Equipos nuevos: **{total_equipos}**")
                         st.info("🔄 Recarga la página para ver los cambios")
 
