@@ -1079,7 +1079,7 @@ def render_login_form():
 
         with col_btn3:
             if st.button("👥 Equipos", type="secondary", use_container_width=True):
-                st.info("👥 Buscando stats de equipos de mañana y pasado...")
+                st.info("🔄 Sincronizando equipos y estadísticas...")
                 try:
                     client = get_client()
                     if not client:
@@ -1091,15 +1091,10 @@ def render_login_form():
                     headers = {'x-apisports-key': API_KEY}
                     season = 2026
                     hoy = datetime.now(timezone(timedelta(hours=-5))).date()
+                    hoy_str = hoy.strftime('%Y-%m-%d')
 
                     progress_bar = st.progress(0)
                     status_text = st.empty()
-
-                    # Buscar partidos de MAÑANA y PASADO MAÑANA
-                    fecha_inicio = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
-                    fecha_fin = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
-                    
-                    st.info(f"📡 Equipos de partidos: {fecha_inicio} al {fecha_fin}")
 
                     LIGAS = [
                         (140, "La Liga"), (39, "Premier League"), (78, "Bundesliga"),
@@ -1107,34 +1102,90 @@ def render_login_form():
                         (2, "Champions League"), (13, "Libertadores"),
                     ]
 
-                    equipos_unicos = {}
+                    # ═══════════════════════════════════════════════════════
+                    # PASO 1: Consultar equipos existentes en Supabase
+                    # ═══════════════════════════════════════════════════════
+                    status_text.text("📊 Verificando equipos en BD...")
+                    try:
+                        resp_eq = client.table('equipos_stats').select('equipo').execute()
+                        equipos_en_bd = {e['equipo'] for e in resp_eq.data} if resp_eq.data else set()
+                    except:
+                        equipos_en_bd = set()
 
-                    # PASO 1: Descargar partidos de los 2 días y extraer equipos
-                    for idx, (liga_id, liga_nombre) in enumerate(LIGAS):
-                        status_text.text(f"📊 {liga_nombre}...")
-                        progress_bar.progress((idx + 1) / len(LIGAS) * 0.3)
+                    total_bd = len(equipos_en_bd)
+                    st.markdown(f"📊 Equipos en BD: **{total_bd}**")
 
-                        params = {'league': liga_id, 'season': season, 'from': fecha_inicio, 'to': fecha_fin}
-                        try:
-                            resp = requests.get(f"{API_URL}/fixtures", headers=headers, params=params, timeout=15)
-                            if resp.status_code == 200:
-                                fixtures = resp.json().get('response', []) or []
-                                for f in fixtures:
-                                    teams = f.get('teams', {})
-                                    local = teams.get('home', {}).get('name', '')
-                                    visitante = teams.get('away', {}).get('name', '')
-                                    if local: equipos_unicos[local] = f.get('league', {}).get('name', '')
-                                    if visitante: equipos_unicos[visitante] = f.get('league', {}).get('name', '')
-                        except: pass
+                    # ═══════════════════════════════════════════════════════
+                    # CASO A: PRIMERA EJECUCIÓN (BD vacía)
+                    # Busca HOY + MAÑANA + PASADO (3 días)
+                    # ═══════════════════════════════════════════════════════
+                    if total_bd == 0:
+                        st.info("📥 CASO A: Primera ejecución - descargando equipos de 3 días")
+                        
+                        fecha_inicio = hoy_str
+                        fecha_fin = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
+                        st.info(f"📡 Fechas: {fecha_inicio} al {fecha_fin}")
 
-                    # PASO 2: Buscar stats de los equipos únicos
-                    if equipos_unicos:
-                        st.info(f"🔍 {len(equipos_unicos)} equipos. Buscando stats...")
-                        total_equipos = 0
+                        equipos_por_buscar = {}
 
-                        for idx, (eq_nombre, eq_liga) in enumerate(equipos_unicos.items()):
-                            progress_bar.progress(0.3 + (idx / len(equipos_unicos) * 0.7))
-                            status_text.text(f"📊 {idx+1}/{len(equipos_unicos)}: {eq_nombre}")
+                        for idx, (liga_id, liga_nombre) in enumerate(LIGAS):
+                            status_text.text(f"📊 {liga_nombre}...")
+                            progress_bar.progress((idx + 1) / len(LIGAS) * 0.2)
+                            params = {'league': liga_id, 'season': season, 'from': fecha_inicio, 'to': fecha_fin}
+                            try:
+                                resp = requests.get(f"{API_URL}/fixtures", headers=headers, params=params, timeout=15)
+                                if resp.status_code == 200:
+                                    fixtures = resp.json().get('response', []) or []
+                                    for f in fixtures:
+                                        teams = f.get('teams', {})
+                                        local = teams.get('home', {}).get('name', '')
+                                        visitante = teams.get('away', {}).get('name', '')
+                                        if local: equipos_por_buscar[local] = f.get('league', {}).get('name', '')
+                                        if visitante: equipos_por_buscar[visitante] = f.get('league', {}).get('name', '')
+                            except: pass
+
+                    # ═══════════════════════════════════════════════════════
+                    # CASO B: MANTENER COLCHÓN A FUTURO (DÍA 3 y DÍA 4)
+                    # ═══════════════════════════════════════════════════════
+                    else:
+                        st.info("📥 CASO B: Actualizando colchón a futuro (Días 3 y 4)")
+                        
+                        fecha_inicio = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
+                        fecha_fin = (hoy + timedelta(days=3)).strftime('%Y-%m-%d')
+                        st.info(f"📡 Equipos de partidos: {fecha_inicio} al {fecha_fin}")
+
+                        equipos_por_buscar = {}
+
+                        for idx, (liga_id, liga_nombre) in enumerate(LIGAS):
+                            status_text.text(f"📊 {liga_nombre}...")
+                            progress_bar.progress((idx + 1) / len(LIGAS) * 0.2)
+                            params = {'league': liga_id, 'season': season, 'from': fecha_inicio, 'to': fecha_fin}
+                            try:
+                                resp = requests.get(f"{API_URL}/fixtures", headers=headers, params=params, timeout=15)
+                                if resp.status_code == 200:
+                                    fixtures = resp.json().get('response', []) or []
+                                    for f in fixtures:
+                                        teams = f.get('teams', {})
+                                        local = teams.get('home', {}).get('name', '')
+                                        visitante = teams.get('away', {}).get('name', '')
+                                        if local: equipos_por_buscar[local] = f.get('league', {}).get('name', '')
+                                        if visitante: equipos_por_buscar[visitante] = f.get('league', {}).get('name', '')
+                            except: pass
+
+                    # ═══════════════════════════════════════════════════════
+                    # PASO 2: Filtrar y buscar stats de equipos
+                    # ═══════════════════════════════════════════════════════
+                    equipos_faltan = {k: v for k, v in equipos_por_buscar.items() if k not in equipos_en_bd}
+
+                    if equipos_por_buscar:
+                        st.info(f"🔍 Equipos: {len(equipos_por_buscar)} | Nuevos: {len(equipos_faltan)}")
+                        
+                        total_guardados = 0
+                        total_actualizados = 0
+
+                        for idx, (eq_nombre, eq_liga) in enumerate(equipos_por_buscar.items()):
+                            progress_bar.progress(0.2 + (idx / len(equipos_por_buscar) * 0.8))
+                            status_text.text(f"📊 {idx+1}/{len(equipos_por_buscar)}: {eq_nombre}")
 
                             try:
                                 resp_s = requests.get(f"{API_URL}/teams", headers=headers, params={'search': eq_nombre}, timeout=10)
@@ -1174,18 +1225,25 @@ def render_login_form():
                                                         'ultimos_5_partidos': list(st_eq.get('form', '') or '')[:5],
                                                     }
                                                     client.table('equipos_stats').upsert(eq_data, ignore_duplicates=True).execute()
-                                                    total_equipos += 1
+                                                    if eq_nombre in equipos_faltan:
+                                                        total_guardados += 1
+                                                    else:
+                                                        total_actualizados += 1
                                             break
                             except: pass
 
                         progress_bar.empty()
                         status_text.empty()
-                        st.success(f"✅ EQUIPOS GUARDADOS: {total_equipos}")
+                        st.success(f"✅ COMPLETADO: {total_guardados} guardados | {total_actualizados} actualizados")
+                        st.markdown(f"📊 Total en BD: **{total_bd + total_guardados}**")
                     else:
                         progress_bar.empty()
-                        st.warning("📅 Sin partidos para esos días")
+                        status_text.empty()
+                        st.info("📅 Sin partidos para esas fechas")
 
                 except Exception as e:
+                    progress_bar.empty()
+                    status_text.empty()
                     st.error(f"❌ Error: {e}")
 
         with col_info:
