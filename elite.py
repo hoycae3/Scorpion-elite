@@ -853,34 +853,10 @@ def render_login_form():
 
                         st.markdown(f"📊 Ya tienes: **{len(partidos_existentes)}** partidos, **{len(equipos_existentes)}** equipos")
 
-                        # Si no hay partidos = primera vez, descargar 7 días
-                        if len(partidos_existentes) == 0:
-                            st.info("📡 Primera vez - descargando ventana completa (7 días)...")
-                            fecha_inicio = hoy_str
-                            fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
-                        else:
-                            # Buscar último partido en BD para saber hasta dónde llega
-                            try:
-                                ult_resp = client.table('partidos').select('fecha').order('fecha', desc=True).limit(1).execute()
-                                if ult_resp.data:
-                                    ult_fecha = ult_resp.data[0].get('fecha', '')[:10]
-                                    st.info(f"📡 Último partido: {ult_fecha}")
-                                    # Verificar si hay días faltantes hasta HOY+6
-                                    if ult_fecha < (hoy + timedelta(days=6)).strftime('%Y-%m-%d'):
-                                        ult_dt = dt.strptime(ult_fecha, '%Y-%m-%d').date()
-                                        fecha_inicio = (ult_dt + timedelta(days=1)).strftime('%Y-%m-%d')
-                                        fecha_fin = fecha_inicio
-                                        st.info(f"📡 Agregando día nuevo: {fecha_inicio}")
-                                    else:
-                                        fecha_inicio = hoy_str
-                                        fecha_fin = hoy_str
-                                        st.info("📡 Todo actualizado")
-                                else:
-                                    fecha_inicio = hoy_str
-                                    fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
-                            except Exception as e:
-                                fecha_inicio = hoy_str
-                                fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
+                        # Ventana de 3 días desde MAÑANA (no incluye hoy)
+                        fecha_inicio = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
+                        fecha_fin = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
+                        st.info(f"📡 Buscando partidos: {fecha_inicio} al {fecha_fin}")
 
                         LIGAS = [
                             # TORNEOS INTERNACIONALES
