@@ -802,174 +802,192 @@ def render_login_form():
                     st.error(f"❌ Error: {e}")
         
         with col_btn2:
-        with col_btn2:
-            if st.button("📥 Sincronizar", type="primary", use_container_width=True):
+            if st.button("🔄 Sincronizar", type="primary", use_container_width=True):
                 with st.spinner("Sincronizando..."):
                     client = get_client()
                     API_URL = "https://v3.football.api-sports.io"
                     API_KEY = "e3926f829cd848f4b2b54d722ca29701"
                     headers = {'x-apisports-key': API_KEY}
                     
-                    # PASO 1: Obtener partidos de los próximos 3 días
+                    # ═══════════════════════════════════════════════════
+                    # 36 LIGAS OBJETIVO
+                    # ═══════════════════════════════════════════════════
+                    LIGAS_OBJETIVO = [
+                        # Sudamérica (16)
+                        239, 240, 241, 128, 129, 71, 72, 281, 265, 242, 252, 299, 268, 244, 13, 11,
+                        # Europa (14)
+                        39, 40, 140, 141, 135, 78, 61, 88, 94, 144, 203, 2, 3, 848,
+                        # Norteamérica y Global (6)
+                        262, 253, 16, 307, 98, 292
+                    ]
+                    
                     hoy = datetime.now(timezone(timedelta(hours=-5))).date()
+                    TZ = timezone(timedelta(hours=-5))
+                    
+                    # ═══════════════════════════════════════════════════
+                    # PASO 1: SINCRONIZAR PARTIDOS (ventana 7 días)
+                    # ═══════════════════════════════════════════════════
                     fecha_desde = hoy.strftime('%Y-%m-%d')
-                    fecha_hasta = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
+                    fecha_hasta_7 = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
                     
-                    st.info(f"📅 Buscando partidos: {fecha_desde} → {fecha_hasta}")
+                    st.markdown("### 📅 Sincronizando Partidos (7 días)")
                     
-                    # Fixture IDs ya procesados
+                    # Obtener fixture_ids ya existentes en el rango
                     try:
-                        resp_stats = client.table('match_stats').select('fixture_id').execute()
-                        stats_processed = {s.get('fixture_id') for s in (resp_stats.data or [])}
+                        resp_existing = client.table('partidos').select('fixture_id,fecha').execute()
+                        existentes = {p.get('fixture_id') for p in (resp_existing.data or [])}
                     except:
-                        stats_processed = set()
+                        existentes = set()
                     
                     partidos_nuevos = 0
-                    stats_descargadas = 0
-                    h2h_descargados = 0
-                    forma_descargada = 0
+                    requests_usados = 0
                     
-                    # PASO 2: Para cada liga, buscar partidos y stats
-                    for liga_info in LIGAS:
-                        liga_id = liga_info['id']
-                        liga_nombre = liga_info['name']
-                        
-                        params = {'league': liga_id, 'season': 2024, 'from': fecha_desde, 'to': fecha_hasta}
-                        
+                    for liga_id in LIGAS_OBJETIVO:
+                        params = {'league': liga_id, 'season': 2024, 'from': fecha_desde, 'to': fecha_hasta_7}
                         try:
                             resp = requests.get(f"{API_URL}/fixtures", headers=headers, params=params, timeout=15)
+                            requests_usados += 1
                             st.session_state.api_requests_today += 1
                             
                             if resp.status_code == 200:
                                 fixtures = resp.json().get('response', []) or []
-                                
                                 for f in fixtures:
                                     fix = f.get('fixture', {})
                                     teams = f.get('teams', {})
                                     goals = f.get('goals', {})
+                                    league = f.get('league', {})
                                     
                                     fix_id = fix.get('id')
-                                    fecha_partido = fix.get('date', '')[:10]
-                                    hora = fix.get('date', '')[11:16]
-                                    equipo_local = teams.get('home', {}).get('name', '')
-                                    equipo_visitante = teams.get('away', {}).get('name', '')
-                                    logo_local = teams.get('home', {}).get('logo', '')
-                                    logo_visitante = teams.get('away', {}).get('logo', '')
-                                    gl = goals.get('home')
-                                    gv = goals.get('away')
-                                    estado = fix.get('status', {}).get('short', 'NS')
-                                    
-                                    # Guardar partido
-                                    if fix_id:
+                                    if fix_id and fix_id not in existentes:
                                         partido_data = {
                                             'fixture_id': fix_id,
-                                            'fecha': fecha_partido,
-                                            'hora': hora,
-                                            'liga': liga_nombre,
-                                            'equipo_local': equipo_local,
-                                            'equipo_visitante': equipo_visitante,
-                                            'logo_local': logo_local,
-                                            'logo_visitante': logo_visitante,
-                                            'goles_local': gl,
-                                            'goles_visitante': gv,
-                                            'estado': estado
+                                            'fecha': fix.get('date', '')[:10],
+                                            'hora': fix.get('date', '')[11:16],
+                                            'liga': league.get('name', ''),
+                                            'liga_id': liga_id,
+                                            'equipo_local': teams.get('home', {}).get('name', ''),
+                                            'equipo_visitante': teams.get('away', {}).get('name', ''),
+                                            'logo_local': teams.get('home', {}).get('logo', ''),
+                                            'logo_visitante': teams.get('away', {}).get('logo', ''),
+                                            'goles_local': goals.get('home'),
+                                            'goles_visitante': goals.get('away'),
+                                            'estado': fix.get('status', {}).get('short', 'NS'),
+                                            'team_id_local': teams.get('home', {}).get('id'),
+                                            'team_id_visitante': teams.get('away', {}).get('id')
                                         }
                                         try:
                                             client.table('partidos').upsert(partido_data, on_conflict='fixture_id').execute()
                                             partidos_nuevos += 1
                                         except:
                                             pass
+                        except Exception as e:
+                            logger.error(f"Error liga {liga_id}: {e}")
+                        time.sleep(0.5)
+                    
+                    st.success(f"✅ Partidos: {partidos_nuevos} nuevos")
+                    
+                    # ═══════════════════════════════════════════════════
+                    # PASO 2: SINCRONIZAR STATS (ventana 3 días)
+                    # ═══════════════════════════════════════════════════
+                    fecha_stats_desde = hoy.strftime('%Y-%m-%d')
+                    fecha_stats_hasta = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
+                    
+                    st.markdown("### 📊 Sincronizando Stats y H2H (3 días)")
+                    
+                    # Obtener partidos en ventana de 3 días
+                    try:
+                        resp_partidos = client.table('partidos').select('*').gte('fecha', fecha_stats_desde).lte('fecha', fecha_stats_hasta).execute()
+                        partidos_stats = resp_partidos.data or []
+                    except:
+                        partidos_stats = []
+                    
+                    # Fixture IDs con stats ya descargadas
+                    try:
+                        resp_stats = client.table('match_stats').select('fixture_id').execute()
+                        stats_processed = {s.get('fixture_id') for s in (resp_stats.data or [])}
+                    except:
+                        stats_processed = set()
+                    
+                    stats_descargadas = 0
+                    h2h_descargados = 0
+                    forma_descargada = 0
+                    
+                    for p in partidos_stats:
+                        fix_id = p.get('fixture_id')
+                        if fix_id and fix_id not in stats_processed:
+                            tid_local = p.get('team_id_local')
+                            tid_visit = p.get('team_id_visitante')
+                            
+                            # Stats del partido
+                            try:
+                                resp_stats = requests.get(f"{API_URL}/fixtures/statistics", headers=headers, params={'fixture': fix_id}, timeout=10)
+                                requests_usados += 1
+                                st.session_state.api_requests_today += 1
+                                
+                                stats_data = []
+                                h2h_data = []
+                                
+                                if resp_stats.status_code == 200:
+                                    stats_data = resp_stats.json().get('response', [])
                                     
-                                    # Descargar estadísticas del partido
-                                    if fix_id and fix_id not in stats_processed:
+                                    # H2H
+                                    if tid_local and tid_visit:
                                         try:
-                                            resp_stats = requests.get(
-                                                f"{API_URL}/fixtures/statistics",
-                                                headers=headers,
-                                                params={'fixture': fix_id},
-                                                timeout=10
-                                            )
+                                            resp_h2h = requests.get(f"{API_URL}/fixtures/headtohead", headers=headers, params={'h2h': f"{tid_local}-{tid_visit}", 'last': 5}, timeout=10)
+                                            requests_usados += 1
                                             st.session_state.api_requests_today += 1
-                                            
-                                            if resp_stats.status_code == 200:
-                                                stats_data = resp_stats.json().get('response', [])
-                                                
-                                                # H2H
-                                                h2h_data = []
-                                                try:
-                                                    tid_local = teams.get('home', {}).get('id')
-                                                    tid_visit = teams.get('away', {}).get('id')
-                                                    if tid_local and tid_visit:
-                                                        resp_h2h = requests.get(
-                                                            f"{API_URL}/fixtures/headtohead",
-                                                            headers=headers,
-                                                            params={'h2h': f"{tid_local}-{tid_visit}", 'last': 5},
-                                                            timeout=10
-                                                        )
-                                                        st.session_state.api_requests_today += 1
-                                                        if resp_h2h.status_code == 200:
-                                                            h2h_data = resp_h2h.json().get('response', []) or []
-                                                except:
-                                                    pass
-                                                
-                                                client.table('match_stats').upsert({
-                                                    'fixture_id': fix_id,
-                                                    'stats_data': stats_data,
-                                                    'h2h_data': h2h_data,
-                                                    'actualizado_en': datetime.now(timezone(timedelta(hours=-5))).isoformat()
-                                                }, on_conflict='fixture_id').execute()
-                                                stats_descargadas += 1
-                                                h2h_descargados += len(h2h_data)
+                                            if resp_h2h.status_code == 200:
+                                                h2h_data = resp_h2h.json().get('response', []) or []
                                         except:
                                             pass
+                                    
+                                    client.table('match_stats').upsert({
+                                        'fixture_id': fix_id,
+                                        'stats_data': stats_data,
+                                        'h2h_data': h2h_data,
+                                        'actualizado_en': datetime.now(TZ).isoformat()
+                                    }, on_conflict='fixture_id').execute()
+                                    stats_descargadas += 1
+                                    h2h_descargados += len(h2h_data)
+                            except:
+                                pass
+                            
+                            # Forma de equipos
+                            for tid, eq in [(tid_local, p.get('equipo_local')), (tid_visit, p.get('equipo_visitante'))]:
+                                if tid:
+                                    try:
+                                        resp_form = requests.get(f"{API_URL}/fixtures", headers=headers, params={'team': tid, 'last': 5}, timeout=10)
+                                        requests_usados += 1
+                                        st.session_state.api_requests_today += 1
                                         
-                                        time.sleep(0.5)
-                                    
-                                    # Forma de los equipos
-                                    tid_local = teams.get('home', {}).get('id')
-                                    tid_visit = teams.get('away', {}).get('id')
-                                    
-                                    for tid, eq in [(tid_local, equipo_local), (tid_visit, equipo_visitante)]:
-                                        if tid:
-                                            try:
-                                                resp_form = requests.get(
-                                                    f"{API_URL}/fixtures",
-                                                    headers=headers,
-                                                    params={'team': tid, 'last': 5},
-                                                    timeout=10
-                                                )
-                                                st.session_state.api_requests_today += 1
-                                                
-                                                if resp_form.status_code == 200:
-                                                    form_data = resp_form.json().get('response', []) or []
-                                                    form_records = [{
-                                                        'fecha': ff.get('fixture', {}).get('date', '')[:10],
-                                                        'local': ff.get('teams', {}).get('home', {}).get('name', ''),
-                                                        'visitante': ff.get('teams', {}).get('away', {}).get('name', ''),
-                                                        'goles_local': ff.get('goals', {}).get('home'),
-                                                        'goles_visitante': ff.get('goals', {}).get('away'),
-                                                        'es_local': ff.get('teams', {}).get('home', {}).get('id') == tid
-                                                    } for ff in form_data]
-                                                    
-                                                    client.table('team_form').upsert({
-                                                        'team_id': tid,
-                                                        'equipo': eq,
-                                                        'forma_data': form_records,
-                                                        'actualizado_en': datetime.now(timezone(timedelta(hours=-5))).isoformat()
-                                                    }, on_conflict='team_id').execute()
-                                                    forma_descargada += 1
-                                            except:
-                                                pass
-                                    
-                                    time.sleep(0.3)
-                        except Exception as e:
-                            logger.error(f"Error Liga {liga_nombre}: {e}")
-                        
-                        time.sleep(1)
+                                        if resp_form.status_code == 200:
+                                            form_data = resp_form.json().get('response', []) or []
+                                            form_records = [{
+                                                'fecha': ff.get('fixture', {}).get('date', '')[:10],
+                                                'local': ff.get('teams', {}).get('home', {}).get('name', ''),
+                                                'visitante': ff.get('teams', {}).get('away', {}).get('name', ''),
+                                                'goles_local': ff.get('goals', {}).get('home'),
+                                                'goles_visitante': ff.get('goals', {}).get('away'),
+                                                'es_local': ff.get('teams', {}).get('home', {}).get('id') == tid
+                                            } for ff in form_data]
+                                            
+                                            client.table('team_form').upsert({
+                                                'team_id': tid,
+                                                'equipo': eq,
+                                                'forma_data': form_records,
+                                                'actualizado_en': datetime.now(TZ).isoformat()
+                                            }, on_conflict='team_id').execute()
+                                            forma_descargada += 1
+                                    except:
+                                        pass
+                            
+                            time.sleep(0.3)
                     
-                    # RESUMEN
+                    # ═══════════════════════════════════════════════════
+                    # RESUMEN FINAL
+                    # ═══════════════════════════════════════════════════
                     st.markdown("---")
-                    st.markdown("### 📊 Resumen de Sincronización")
+                    st.markdown("### ✅ Sincronización Completa")
                     
                     col1, col2, col3, col4 = st.columns(4)
                     with col1:
@@ -981,8 +999,9 @@ def render_login_form():
                     with col4:
                         st.metric("📈 Forma", forma_descargada)
                     
-                    st.success(f"✅ Requests: {st.session_state.api_requests_today}")
+                    st.success(f"✅ Requests usados: {st.session_state.api_requests_today}")
                     st.rerun()
+st.rerun()
 
 
         with col_info:
