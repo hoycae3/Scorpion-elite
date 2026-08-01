@@ -718,3 +718,8 @@ div[data-testid="stHorizontalBlock"]:has([data-testid="stMarkdownContainer"]) p 
     color: #000000 !important;
     font-size: 14px !important;
 }
+
+/* Ocultar badge de versión de Streamlit */
+footer, .stDeployButton, [data-testid="stStatusWidget"] {
+    display: none !important;
+}
