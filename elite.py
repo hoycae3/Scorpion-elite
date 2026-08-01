@@ -838,7 +838,7 @@ def render_login_form():
                     # OBTENER DATOS EXISTENTES
                     # ═══════════════════════════════════════════════════
                     try:
-                        resp_partidos = client.table('partidos').select('fixture_id,fecha,liga_id').execute()
+                        resp_partidos = client.table('partidos').select('fixture_id,fecha,liga').execute()
                         partidos_db = resp_partidos.data or []
                     except:
                         partidos_db = []
@@ -846,15 +846,15 @@ def render_login_form():
                     # Fixture IDs existentes
                     fixture_ids_existentes = {p.get('fixture_id') for p in partidos_db if p.get('fixture_id')}
                     
-                    # Fechas por liga
+                    # Fechas por liga (usar nombre de liga)
                     fechas_por_liga = {}
                     for p in partidos_db:
-                        lid = p.get('liga_id')
-                        if lid:
-                            if lid not in fechas_por_liga:
-                                fechas_por_liga[lid] = set()
+                        liga_nombre = p.get('liga', '')
+                        if liga_nombre:
+                            if liga_nombre not in fechas_por_liga:
+                                fechas_por_liga[liga_nombre] = set()
                             if p.get('fecha'):
-                                fechas_por_liga[lid].add(str(p['fecha'])[:10])
+                                fechas_por_liga[liga_nombre].add(str(p['fecha'])[:10])
                     
                     # Fixture IDs con stats
                     try:
@@ -942,7 +942,7 @@ def render_login_form():
                     st.markdown("**📊 Paso 2: Stats y H2H (ventana 3 días)**")
                     
                     try:
-                        resp_partidos = client.table('partidos').select('*').gte('fecha', hoy_str).lte('fecha', fecha_hasta_3).execute()
+                        resp_partidos = client.table('partidos').select('fixture_id,fecha,equipo_local,equipo_visitante').gte('fecha', hoy_str).lte('fecha', fecha_hasta_3).execute()
                         partidos_stats = resp_partidos.data or []
                     except:
                         partidos_stats = []
