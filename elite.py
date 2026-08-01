@@ -226,16 +226,20 @@ def db_actualizar_plan(user_id, plan, dias):
         return False
 
 def db_login(password):
-    """Verifica password directo con ADMIN_PASSWORD de entorno (Secrets)"""
-    # Comparación directa con la contraseña en Secrets - NO usa BD
-    if password == ADMIN_PASSWORD:
-        return {
-            'nombre': 'Administrador',
-            'plan': 'admin',
-            'es_admin': True,
-            'dias': 36500
-        }
-    return None
+    """Verifica password con bcrypt y retorna usuario"""
+    init_db()
+    try:
+        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
+            conn.row_factory = sqlite3.Row
+            # Obtener todos los usuarios activos y verificar con bcrypt
+            usuarios = conn.execute("SELECT * FROM usuarios WHERE activo=1").fetchall()
+            for usuario in usuarios:
+                if verify_password(password, usuario['password_hash']):
+                    return dict(usuario)
+            return None
+    except Exception as e:
+        logger.error(f"Error en db_login: {e}")
+        return None
 
 # ══════════════════════════════════════════════════════════
 # SESSION STATE
