@@ -383,14 +383,19 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* METRICS */
 .stMetric label {
-    color: #1e293b !important;
-    font-size: 11px !important;
+    color: #000000 !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
 }
 
 .stMetric [data-testid="stMetricValue"] {
-    color: #1e293b !important;
-    font-size: 22px !important;
+    color: #000000 !important;
+    font-size: 24px !important;
     font-weight: 700 !important;
+}
+
+.stMetric [data-testid="stMetricDelta"] {
+    color: #000000 !important;
 }
 
 /* PREDICCIONES */
