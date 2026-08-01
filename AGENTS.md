@@ -381,3 +381,38 @@ curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploy
    - NO hacer deploy automático sin confirmar con el usuario
    - Guardar cambios en git ANTES de hacer cambios grandes
    - Los backups están en `backups/` - NO perderlos
+
+---
+
+## 📅 Sesión 2026-07-31 (09:40) - Sincronización Inteligente
+
+### ✅ LOGGING ACTUAL DEL BOTÓN "🔄 Sincronizar"
+
+**Lógica implementada:**
+
+| Datos | Ventana | Comportamiento |
+|-------|---------|----------------|
+| **Partidos** | HOY → HOY+6 (7 días) | Solo agrega partidos nuevos |
+| **Stats equipos** | HOY → HOY+3 (3 días) | **Actualiza** stats de equipos existentes |
+
+**Flujo:**
+1. **Primera vez:** Descarga ventana completa (7 días partidos, 3 días stats equipos)
+2. **Siguientes clicks:** Solo agrega lo que falta (partidos día nuevo, actualiza stats equipos)
+
+**Variables clave:**
+- `partidos_existentes` - Set de fixture_ids ya en BD
+- `equipos_existentes` - Set de nombres de equipos ya en BD  
+- `fecha_inicio` / `fecha_fin` - Determinan rango a descargar
+- `fecha_equipos_fin` - HOY+3 para stats de equipos
+
+**Commit hash funcional:** `2dbf812`
+
+### ❌ DESCARTADO
+- Tabla `sync_log` - No usar, verificar BD directamente
+- Descargar equipos por cada partido - Ahora solo ventana HOY+3
+
+### 🔧 Comandos de recuperación
+```bash
+# Restaurar a estado funcional conocido
+git checkout 2dbf812 -- elite.py
+```
