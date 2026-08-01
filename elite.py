@@ -520,7 +520,6 @@ def render_login_form():
                 if not password.strip():
                     st.error("⚠️ Ingresa la contraseña")
                 else:
-                    init_db()
                     user = db_login(password)
                     if user:
                         st.session_state.logged = True
