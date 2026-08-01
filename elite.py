@@ -885,6 +885,7 @@ def render_login_form():
                                         equipo_data = {
                                             'equipo': team_name,
                                             'liga': league.get('name', ''),
+                                            'temporada': f'{season}-{season+1}',
                                             'partidos_jugados': played,
                                             'victorias': wins,
                                             'empates': draws,
@@ -894,7 +895,7 @@ def render_login_form():
                                         }
                                         st.json(equipo_data)
                                         st.markdown("**Guardando equipo...**")
-                                        result_eq = client.table('equipos_stats').insert(equipo_data).execute()
+                                        result_eq = client.table('equipos_stats').upsert(equipo_data, on_conflict='equipo_temporada').execute()
                                         st.success(f"✅ Equipo guardado")
                                     else:
                                         st.warning("⚠️ Sin stats")
