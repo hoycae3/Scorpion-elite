@@ -894,7 +894,7 @@ def render_login_form():
                                         }
                                         st.json(equipo_data)
                                         st.markdown("**Guardando equipo...**")
-                                        result_eq = client.table('equipos_stats').upsert(equipo_data, on_conflict='equipo').execute()
+                                        result_eq = client.table('equipos_stats').insert(equipo_data).execute()
                                         st.success(f"✅ Equipo guardado")
                                     else:
                                         st.warning("⚠️ Sin stats")
