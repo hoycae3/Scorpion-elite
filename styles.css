@@ -364,8 +364,6 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
     border: 1px solid var(--accent-primary) !important;
     border-radius: 10px !important;
     padding: 15px !important;
-    min-height: auto !important;
-    height: auto !important;
     text-align: center !important;
 }
 
@@ -490,8 +488,6 @@ div[data-testid="stHorizontalBlock"] > div {
     margin: 0 !important;
     padding: 0 !important;
 }
-    min-height: auto !important;
-    height: auto !important;
 /* ══════════════════════════════════════════════════════════ */
 
 /* Página completa */
@@ -645,4 +641,20 @@ a {
     .hero-subtitle {
         font-size: 1.2rem !important;
     }
+}
+
+/* ══════════════════════════════════════════════════════════ */
+/* FORZAR MÉTRICAS PEGADAS                                   */
+/* ══════════════════════════════════════════════════════════ */
+section[data-testid="stHorizontalBlock"] .stMetric,
+div[data-testid="stHorizontalBlock"] .stMetric,
+.stHorizontalBlock .stMetric {
+    margin: 0 !important;
+    padding: 6px 4px !important;
+    min-width: 80px !important;
+    border-radius: 4px !important;
+}
+
+[data-testid="stHorizontalBlock"]:has(.stMetric) {
+    gap: 0 !important;
 }
