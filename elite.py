@@ -1142,33 +1142,15 @@ def render_login_form():
                         badge_color = "#9ca3af"
                         tooltip = "No verificado"
 
-                    # Fila mejorada
-                    st.markdown(f"""
-                    <div style="display: flex; align-items: center; padding: 8px 12px; margin: 4px 0; background: #F0FDFA; border-radius: 8px; border: 1px solid #e5e7eb;">
-                        <div style="width: 60px; text-align: center; font-weight: bold; color: #374151;">{hora}</div>
-                        <div style="width: 30px; text-align: center; font-size: 18px;">{badge}</div>
-                        <div style="flex: 1; text-align: center;">
-                            <span style="color: #059669; font-weight: 600;">{equipo_local}</span>
-                            <span style="color: #6b7280; margin: 0 10px;">VS</span>
-                            <span style="color: #dc2626; font-weight: 600;">{equipo_visitante}</span>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    col_btn1, col_btn2 = st.columns([1, 1])
-                    with col_btn1:
-                        if st.button(f"📊 Analizar {equipo_local}", key=f"ana_{liga}_{i}_local", use_container_width=True):
-                            st.session_state.selected_local = equipo_local
-                            st.session_state.selected_away = equipo_visitante
-                            st.session_state.page = "Analizador"
-                            st.rerun()
-                    with col_btn2:
-                        if st.button(f"📊 Analizar {equipo_visitante}", key=f"ana_{liga}_{i}_visit", use_container_width=True):
-                            st.session_state.selected_local = equipo_local
-                            st.session_state.selected_away = equipo_visitante
-                            st.session_state.page = "Analizador"
-                            st.rerun()
-                    st.markdown("---")
+                    # Fila clickeable como enlace
+                    if st.button(f"🗓️ {hora}  |  🏠 {equipo_local}  ⚽  {equipo_visitante}  ✈️", 
+                                key=f"match_{liga}_{i}", 
+                                use_container_width=True,
+                                help=f"Click para analizar {equipo_local} vs {equipo_visitante}"):
+                        st.session_state.selected_local = equipo_local
+                        st.session_state.selected_away = equipo_visitante
+                        st.session_state.page = "Analizador"
+                        st.rerun()
 
         
     # Página: Analizador
