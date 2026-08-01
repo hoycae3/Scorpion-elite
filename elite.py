@@ -489,43 +489,49 @@ def render_public_landing():
     st.markdown("<hr>", unsafe_allow_html=True)
     
     # --- TABLA DE PLANES ---
-    st.markdown("### 📋 Planes Disponibles")
+    st.markdown("### 💰 Planes y Precios")
+
+    st.markdown("""
+    <style>
+    .price-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .price-table th, .price-table td { padding: 12px 15px; text-align: center; border: 1px solid #E2E8F0; }
+    .price-table th { background: #F0FDFA; color: #1e293b; font-weight: 600; }
+    .price-table tr:nth-child(even) { background: rgba(240, 253, 250, 0.5); }
+    .price-table .popular { background: rgba(0, 212, 255, 0.1) !important; border: 2px solid #00D4FF; }
+    .price-table .popular-tag { background: #00D4FF; color: #1e293b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .price-table .duration { color: #1e293b; font-size: 13px; }
+    .price-table .price { color: #1e293b; font-size: 18px; font-weight: bold; }
+    </style>
     
-    plan_col1, plan_col2 = st.columns([1, 1])
-    
-    with plan_col1:
-        st.markdown("""
-        <div class="plan-card plan-free">
-            <h3>🆓 Plan Gratuito</h3>
-            <p class="plan-price">$0 <span>/para siempre</span></p>
-            <ul>
-                <li>✅ Análisis básico</li>
-                <li>✅ 10 picks por día</li>
-                <li>✅ 2 modelos matemáticos</li>
-                <li>✅ Acceso a comunidad</li>
-                <li>❌ Sin stats avanzadas</li>
-                <li>❌ Sin picks VIP</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with plan_col2:
-        st.markdown("""
-        <div class="plan-card plan-vip">
-            <h3>👑 Plan Elite VIP</h3>
-            <p class="plan-price">$29.99 <span>/mes</span></p>
-            <ul>
-                <li>✅ Análisis completo + IA</li>
-                <li>✅ Picks ILIMITADOS</li>
-                <li>✅ 4 modelos + calibración</li>
-                <li>✅ Stats avanzadas (corners, tarjetas)</li>
-                <li>✅ Picks VIP exclusivos</li>
-                <li>✅ Soporte prioritario 24/7</li>
-            </ul>
-            <p class="plan-cta"><strong>🎁 7 días GRATIS - Sin tarjeta</strong></p>
-        </div>
-        """, unsafe_allow_html=True)
-    
+    <table class="price-table">
+        <tr>
+            <th>Duración</th>
+            <th>Precio (USD)</th>
+            <th>Etiqueta</th>
+        </tr>
+        <tr>
+            <td class="duration">24 Horas</td>
+            <td class="price">$3.99</td>
+            <td>Pase 1 Día</td>
+        </tr>
+        <tr>
+            <td class="duration">7 Días</td>
+            <td class="price">$9.99</td>
+            <td>Pase 1 Semana</td>
+        </tr>
+        <tr class="popular">
+            <td class="duration">30 Días <span class="popular-tag">MÁS POPULAR 🔥</span></td>
+            <td class="price">$24.99</td>
+            <td>Plan 1 Mes</td>
+        </tr>
+        <tr>
+            <td class="duration">365 Días <span style="background: #10B981; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">AHORRA 36%</span></td>
+            <td class="price">$189.99</td>
+            <td>Plan 1 Año</td>
+        </tr>
+    </table>
+    """, unsafe_allow_html=True)
+
     st.markdown("<hr>", unsafe_allow_html=True)
     
 
