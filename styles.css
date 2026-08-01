@@ -17,15 +17,11 @@
 }
 
 /* ══════════════════════════════════════════════════════════ */
-/* CONFIGURACIÓN DE LA PÁGINA                               */
+/* CONFIGURACIÓN DE LA PÁGINA - FONDO GRADIENTE CYAN        */
 /* ══════════════════════════════════════════════════════════ */
-.stApp {
-    background: var(--bg-dark) !important;
-    color: var(--text-primary) !important;
-}
-
-body, .stApp > div, main {
-    background: var(--bg-dark) !important;
+.stApp, body, .stApp > div, main, .stMainBlock, div[data-testid="stMainBlockContainer"] {
+    background: linear-gradient(180deg, #0d9488 0%, #5eead4 50%, #99f6e4 100%) !important;
+    color: #1e293b !important;
 }
 
 div.block-container { padding-top: 1rem; }
@@ -461,22 +457,26 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* KPI Cards */
 .stMetric {
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 4px !important;
-    padding: 8px !important;
+    background: rgba(255,255,255,0.9) !important;
+    border: 1px solid rgba(0,102,68,0.3) !important;
+    border-radius: 6px !important;
+    padding: 6px 4px !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: center !important;
     align-items: center !important;
     text-align: center !important;
-    box-sizing: border-box !important;
-    overflow: hidden !important;
+    min-width: 80px !important;
+    max-width: 100px !important;
+    margin: 0 auto !important;
 }
 
 .stMetric > div {
     width: 100% !important;
     text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
 }
     min-height: auto !important;
     height: auto !important;
