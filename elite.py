@@ -918,6 +918,18 @@ def render_login_form():
                                                         goals_for = goals_stats.get('for', {})
                                                         goals_against = goals_stats.get('against', {})
                                                         
+                                                        # Obtener más stats
+                                                        shots = stats.get('shots', {})
+                                                        corners = stats.get('corners', {})
+                                                        cards = stats.get('cards', {})
+                                                        possession = stats.get('ball possession', '50%')
+                                                        
+                                                        # Parsear posesión
+                                                        try:
+                                                            posesion = float(str(possession).replace('%', '').strip()) if possession else 50
+                                                        except:
+                                                            posesion = 50
+                                                        
                                                         equipo_data = {
                                                             'equipo': team_name,
                                                             'liga': league.get('name', ''),
@@ -928,13 +940,27 @@ def render_login_form():
                                                             'derrotas': loses.get('total', 0) if isinstance(loses, dict) else 0,
                                                             'goles_favor': goals_for.get('total', {}).get('total', 0) if isinstance(goals_for, dict) else 0,
                                                             'goles_contra': goals_against.get('total', {}).get('total', 0) if isinstance(goals_against, dict) else 0,
-                                                            'promedio_goles_local': goals_for.get('home', {}).get('average', 1.3) or 1.3,
-                                                            'promedio_goles_visitante': goals_for.get('away', {}).get('average', 1.1) or 1.1,
-                                                            'lambda_local': goals_for.get('home', {}).get('average', 1.3) or 1.3,
-                                                            'lambda_visitante': goals_for.get('away', {}).get('average', 1.1) or 1.1,
+                                                            'promedio_goles_local': round(float(goals_for.get('home', {}).get('average', 1.3) or 1.3), 2),
+                                                            'promedio_goles_visitante': round(float(goals_for.get('away', {}).get('average', 1.1) or 1.1), 2),
+                                                            'lambda_local': round(float(goals_for.get('home', {}).get('average', 1.3) or 1.3), 2),
+                                                            'lambda_visitante': round(float(goals_for.get('away', {}).get('average', 1.1) or 1.1), 2),
+                                                            # Tiros
+                                                            'promedio_tiros': round(float(shots.get('total', 0) or 0) / max(played.get('total', 1) if isinstance(played, dict) else 1, 1), 1),
+                                                            'promedio_tiros_arco': round(float(shots.get('on target', 0) or 0) / max(played.get('total', 1) if isinstance(played, dict) else 1, 1), 1),
+                                                            # Corners
+                                                            'promedio_corners_local': round(float(corners.get('home', 0) or 0) / max(played.get('total', 1) if isinstance(played, dict) else 1, 1), 1),
+                                                            'promedio_corners_visitante': round(float(corners.get('away', 0) or 0) / max(played.get('total', 1) if isinstance(played, dict) else 1, 1), 1),
+                                                            'corners_favor': corners.get('total', 0) if isinstance(corners, dict) else 0,
+                                                            'corners_contra': corners.get('against', 0) if isinstance(corners, dict) else 0,
+                                                            'promedio_corners_total': round(float((corners.get('total', 0) or 0) + (corners.get('against', 0) or 0)) / max(played.get('total', 1) if isinstance(played, dict) else 1, 1), 1),
+                                                            # Tarjetas
+                                                            'promedio_amarillas': round(float(cards.get('yellow', 0) or 0) / max(played.get('total', 1) if isinstance(played, dict) else 1, 1), 1),
+                                                            'promedio_rojas': round(float(cards.get('red', 0) or 0) / max(played.get('total', 1) if isinstance(played, dict) else 1, 1), 1),
+                                                            # Posesión
+                                                            'promedio_posesion': round(posesion, 1),
                                                             'source_fbdata': False,
                                                             'source_whoscored': False,
-                                                            'source_fbref': False
+                                                            'source_fbref': True
                                                         }
                                                         
                                                         try:
