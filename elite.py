@@ -823,8 +823,8 @@ def render_login_form():
                     st.error(f"❌ Error: {e}")
         
         with col_btn2:
-            if st.button("🔄 Sincronizar Todo", type="primary", use_container_width=True):
-                with st.spinner("🔄 Sincronizando partidos y estadísticas..."):
+            if st.button("🔄 Sincronizar", type="primary", use_container_width=True):
+                with st.spinner("🔄 Sincronizando..."):
                     try:
                         client = get_client()
                         if not client:
@@ -834,11 +834,41 @@ def render_login_form():
                         API_URL = "https://v3.football.api-sports.io"
                         API_KEY = "e3926f829cd848f4b2b54d722ca29701"
                         headers = {'x-apisports-key': API_KEY}
-
                         season = 2026
                         hoy = datetime.now(timezone(timedelta(hours=-5))).date()
                         hoy_str = hoy.strftime('%Y-%m-%d')
-                        fecha_hasta_7 = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
+
+                        # Obtener partidos existentes
+                        partidos_existentes = set()
+                        try:
+                            resp_ex = client.table('partidos').select('fixture_id').execute()
+                            partidos_existentes = {p['fixture_id'] for p in resp_ex.data} if resp_ex.data else set()
+                        except: pass
+
+                        equipos_existentes = set()
+                        try:
+                            resp_eq = client.table('equipos_stats').select('equipo').execute()
+                            equipos_existentes = {e['equipo'] for e in resp_eq.data} if resp_eq.data else set()
+                        except: pass
+
+                        st.markdown(f"📊 Ya tienes: **{len(partidos_existentes)}** partidos, **{len(equipos_existentes)}** equipos")
+
+                        # Si no hay partidos = primera vez, descargar 7 días
+                        if len(partidos_existentes) == 0:
+                            st.info("📡 Primera vez - descargando ventana completa (7 días)...")
+                            fecha_inicio = hoy_str
+                            fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
+                        else:
+                            # Buscar último día que tenemos y agregar solo el siguiente
+                            from datetime import datetime as dt
+                            try:
+                                ult = max([dt.strptime(p, '%Y-%m-%d').date() for p in list(partidos_existentes)[:100] if isinstance(p, str) and len(str(p)) >= 10])
+                                fecha_inicio = (ult + timedelta(days=1)).strftime('%Y-%m-%d')
+                                fecha_fin = fecha_inicio
+                                st.info(f"📡 Agregando día nuevo: {fecha_inicio}")
+                            except:
+                                fecha_inicio = hoy_str
+                                fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
 
                         LIGAS = [
                             # TORNEOS INTERNACIONALES
@@ -926,10 +956,12 @@ def render_login_form():
                                             'equipo_visitante': teams.get('away', {}).get('name', ''),
                                         }
                                         
-                                        try:
-                                            client.table('partidos').upsert(partido_data, on_conflict='fixture_id').execute()
-                                            total_partidos += 1
-                                        except: pass
+                                        # Solo guardar si es partido nuevo
+                                        if fix_id not in partidos_existentes:
+                                            try:
+                                                client.table('partidos').upsert(partido_data, on_conflict='fixture_id').execute()
+                                                total_partidos += 1
+                                            except: pass
 
                                         for tipo in ['home', 'away']:
                                             team = teams.get(tipo, {})
@@ -976,10 +1008,12 @@ def render_login_form():
                                                             'ultimos_5_partidos': list(stats.get('form', '') or '')[:5],
                                                         }
                                                         
-                                                        try:
-                                                            client.table('equipos_stats').upsert(equipo_data, ignore_duplicates=True).execute()
-                                                            total_equipos += 1
-                                                        except: pass
+                                                        # Solo guardar si es equipo nuevo
+                                                        if team_name not in equipos_existentes:
+                                                            try:
+                                                                client.table('equipos_stats').upsert(equipo_data, ignore_duplicates=True).execute()
+                                                                total_equipos += 1
+                                                            except: pass
                                 elif resp.status_code == 403:
                                     errores += 1
                             except: errores += 1
@@ -987,8 +1021,8 @@ def render_login_form():
                         progress_bar.empty()
                         status_text.empty()
 
-                        st.success(f"✅ **Sincronización completa!**")
-                        st.markdown(f"📊 Partidos: **{total_partidos}** | Equipos: **{total_equipos}** | Errores: **{errores}**")
+                        st.success(f"✅ **COMPLETO!**")
+                        st.markdown(f"📊 Partidos nuevos: **{total_partidos}** | Equipos nuevos: **{total_equipos}**")
                         time.sleep(2)
                         st.rerun()
 
