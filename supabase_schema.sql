@@ -745,3 +745,38 @@ ALTER TABLE dias_procesados ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow all" ON dias_procesados FOR ALL USING (true) WITH CHECK (true);
 
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLA MATCH_STATS
+-- Estadísticas detalladas de partidos (tiros, corners, tarjetas, posesión)
+-- ═══════════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS match_stats (
+    id BIGSERIAL PRIMARY KEY,
+    fixture_id BIGINT UNIQUE NOT NULL,
+    stats_data JSONB DEFAULT '[]',
+    h2h_data JSONB DEFAULT '[]',
+    actualizado_en TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_match_stats_fixture ON match_stats(fixture_id);
+
+ALTER TABLE match_stats ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "match_stats_all" ON match_stats FOR ALL USING (true) WITH CHECK (true);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLA TEAM_FORM
+-- Forma/recientes de equipos (últimos 5 partidos)
+-- ═══════════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS team_form (
+    id BIGSERIAL PRIMARY KEY,
+    team_id BIGINT UNIQUE NOT NULL,
+    equipo VARCHAR(255),
+    liga_id BIGINT,
+    forma_data JSONB DEFAULT '[]',
+    actualizado_en TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_team_form_team ON team_form(team_id);
+
+ALTER TABLE team_form ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "team_form_all" ON team_form FOR ALL USING (true) WITH CHECK (true);
+
