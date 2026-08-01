@@ -785,3 +785,22 @@ CREATE INDEX IF NOT EXISTS idx_team_form_team ON team_form(team_id);
 ALTER TABLE team_form ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "team_form_all" ON team_form FOR ALL USING (true) WITH CHECK (true);
 
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLA USUARIOS
+-- Usuarios del sistema (login)
+-- ═══════════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS usuarios (
+    id BIGSERIAL PRIMARY KEY,
+    password_hash TEXT NOT NULL,
+    nombre TEXT,
+    plan TEXT DEFAULT 'vip',
+    fecha_inicio DATE,
+    dias INTEGER DEFAULT 36500,
+    activo BOOLEAN DEFAULT true,
+    es_admin BOOLEAN DEFAULT false,
+    creado_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "usuarios_all" ON usuarios FOR ALL USING (true) WITH CHECK (true);
+
