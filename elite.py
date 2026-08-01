@@ -1300,18 +1300,18 @@ def render_login_form():
         
         
         # Si hay un partido seleccionado de la lista, usar esos equipos
-        if selected_match:
-            local_nombre = selected_match.get('equipo_local', '')
-            visitante_nombre = selected_match.get('equipo_visitante', '')
-            
-            # Buscar coincidencia en equipos disponibles
-            local_match = next((e for e in equipos_disponibles if local_nombre.lower() in e.lower() or e.lower() in local_nombre.lower()), None)
-            visitante_match = next((e for e in equipos_disponibles if visitante_nombre.lower() in e.lower() or e.lower() in visitante_nombre.lower()), None)
-            
-            home_team = local_match if local_match else (local_nombre.title() if local_nombre else "")
-            away_team = visitante_match if visitante_match else (visitante_nombre.title() if visitante_nombre else "")
-        else:
-            # Usar selectores si no hay partido seleccionado
+        # Bloque comentado
+        #             local_nombre = selected_match.get('equipo_local', '')
+        #             visitante_nombre = selected_match.get('equipo_visitante', '')
+        #             
+        #             # Buscar coincidencia en equipos disponibles
+        #             local_match = next((e for e in equipos_disponibles if local_nombre.lower() in e.lower() or e.lower() in local_nombre.lower()), None)
+        #             visitante_match = next((e for e in equipos_disponibles if visitante_nombre.lower() in e.lower() or e.lower() in visitante_nombre.lower()), None)
+        #             
+        #             home_team = local_match if local_match else (local_nombre.title() if local_nombre else "")
+        #             away_team = visitante_match if visitante_match else (visitante_nombre.title() if visitante_nombre else "")
+        #         else:
+        #             # Usar selectores si no hay partido seleccionado
             col_space, col1, col2, col_space2 = st.columns([2, 1, 1, 2])
             st.markdown("""
 <style>
