@@ -892,10 +892,13 @@ def render_login_form():
                                             'estado': fix.get('status', {}).get('short', 'NS')
                                         }
                                         try:
-                                            client.table('partidos').upsert(partido_data, on_conflict='fixture_id').execute()
+                                            st.write(f"   Guardando: {fix_id} - {nombre_local} vs {nombre_visit}")
+                                            result = client.table('partidos').upsert(partido_data, on_conflict='fixture_id').execute()
+                                            st.write(f"   ✅ Guardado: {fix_id}")
                                             partidos_nuevos += 1
                                             fixture_ids_existentes.add(fix_id)
                                         except Exception as e:
+                                            st.error(f"   ❌ Error upsert partido: {e}")
                                             errores.append(f"P: {fix_id}: {e}")
                                     
                                     # GUARDAR EQUIPOS (stats de la temporada)
@@ -975,10 +978,13 @@ def render_login_form():
                                                         }
                                                         
                                                         try:
-                                                            client.table('equipos_stats').upsert(equipo_data, on_conflict='equipo').execute()
+                                                            st.write(f"   Guardando equipo: {team_name}")
+                                                            result = client.table('equipos_stats').upsert(equipo_data).execute()
+                                                            st.write(f"   ✅ Equipo guardado: {team_name}")
                                                             equipos_nuevos += 1
                                                             equipos_existentes.add(team_name)
                                                         except Exception as e:
+                                                            st.error(f"   ❌ Error equipo: {e}")
                                                             errores.append(f"E: {team_name}: {e}")
                                             except Exception as e:
                                                 errores.append(f"API Equipo: {team_name}: {e}")
