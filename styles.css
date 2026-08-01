@@ -25,7 +25,7 @@
 }
 
 body, .stApp > div, main {
-    background-color: var(--bg-dark) !important;
+    background: var(--bg-dark) !important;
 }
 
 div.block-container { padding-top: 1rem; }
