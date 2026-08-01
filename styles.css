@@ -644,17 +644,8 @@ a {
 }
 
 /* ══════════════════════════════════════════════════════════ */
-/* FORZAR MÉTRICAS PEGADAS                                   */
+/* MÉTRICAS CENTRADAS                                        */
 /* ══════════════════════════════════════════════════════════ */
-section[data-testid="stHorizontalBlock"] .stMetric,
-div[data-testid="stHorizontalBlock"] .stMetric,
-.stHorizontalBlock .stMetric {
-    margin: 0 !important;
-    padding: 6px 4px !important;
-    min-width: 80px !important;
-    border-radius: 4px !important;
-}
-
-[data-testid="stHorizontalBlock"]:has(.stMetric) {
-    gap: 0 !important;
+.stMetric {
+    margin: 0 auto !important;
 }
