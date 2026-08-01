@@ -355,7 +355,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 .simple-card {
     background: var(--bg-card) !important;
     border: 1px solid var(--border-color) !important;
-    border-radius: 8px !important;
+    border-radius: 4px !important;
     padding: 12px !important;
 }
 
@@ -368,6 +368,8 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
     border: 1px solid var(--accent-primary) !important;
     border-radius: 10px !important;
     padding: 15px !important;
+    min-height: auto !important;
+    height: auto !important;
     text-align: center !important;
 }
 
@@ -459,11 +461,25 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* KPI Cards */
 .stMetric {
+    min-height: auto !important;
+    height: auto !important;
     background: var(--bg-card) !important;
+    min-height: auto !important;
+    height: auto !important;
     border: 1px solid var(--border-color) !important;
-    border-radius: 8px !important;
+    min-height: auto !important;
+    height: auto !important;
+    border-radius: 4px !important;
+    min-height: auto !important;
+    height: auto !important;
     padding: 15px !important;
+    min-height: auto !important;
+    height: auto !important;
+    min-height: auto !important;
+    height: auto !important;
 }
+    min-height: auto !important;
+    height: auto !important;
 
 /* ══════════════════════════════════════════════════════════ */
 /* STYLES ADICIONALES - #57DBC5 Alto Contraste       */
@@ -501,7 +517,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 .st-emotion-cache-1wrl9td {
     background-color: #F0FDFA !important;
     border: 2px solid #57DBC5 !important;
-    border-radius: 8px !important;
+    border-radius: 4px !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
@@ -533,7 +549,7 @@ a {
 .demo-analysis {
     background: var(--bg-card) !important;
     border: 1px solid #FFD700 !important;
-    border-radius: 8px !important;
+    border-radius: 4px !important;
     padding: 20px !important;
     margin-top: 15px !important;
 }
