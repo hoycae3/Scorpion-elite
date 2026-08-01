@@ -397,21 +397,37 @@ def render_public_landing():
                 
                 # DEBUG - ver qué equipos se encuentran
                 st.write(f"🔍 Buscando: '{local}' y '{visitante}'")
-                st.write(f"🔍 Local en BD: {[e['equipo'] for e in local_resp.data] if local_resp.data else 'No encontrado'}")
-                st.write(f"🔍 Visitante en BD: {[e['equipo'] for e in visit_resp.data] if visit_resp.data else 'No encontrado'}")
+                
                 
                 if stats_local and stats_visit:
+                    st.markdown("---")
+                    st.markdown("### 📊 Estadísticas Calibradas")
+                    
                     col1, col2 = st.columns(2)
                     with col1:
-                        st.markdown(f"### {local}")
-                        st.write(f"**Forma:** {stats_local.get('forma', 'N/A')}")
-                        st.write(f"**V/E/D:** {stats_local.get('victorias', 0)}/{stats_local.get('empates', 0)}/{stats_local.get('derrotas', 0)}")
-                        st.write(f"**GF/GC:** {stats_local.get('goles_favor', 0)}/{stats_local.get('goles_contra', 0)}")
+                        st.markdown(f"**🏠 {local}**")
+                        forma_l = stats_local.get('forma', 'N/A')
+                        if forma_l and forma_l != 'N/A':
+                            forma_html = ''.join([{'W': '<span style="color:#22c55e">W</span>', 'L': '<span style="color:#ef4444">L</span>', 'D': '<span style="color:#eab308">D</span>'}.get(c, c) for c in str(forma_l)])
+                            st.markdown(f"**Forma:** {forma_html}", unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"**Forma:** N/A")
+                        st.markdown(f"**V/E/D:** <span style='color:black;font-weight:bold'>{stats_local.get('victorias', 0)}/{stats_local.get('empates', 0)}/{stats_local.get('derrotas', 0)}</span>", unsafe_allow_html=True)
+                        st.markdown(f"**GF/GC:** <span style='color:black;font-weight:bold'>{stats_local.get('goles_favor', 0)}/{stats_local.get('goles_contra', 0)}</span>", unsafe_allow_html=True)
+                        lambda_l = stats_local.get('lambda_local', 0)
+                        st.markdown(f"**Ataque:** <span style='color:black;font-weight:bold'>{lambda_l:.2f}</span> goles/partido", unsafe_allow_html=True)
                     with col2:
-                        st.markdown(f"### {visitante}")
-                        st.write(f"**Forma:** {stats_visit.get('forma', 'N/A')}")
-                        st.write(f"**V/E/D:** {stats_visit.get('victorias', 0)}/{stats_visit.get('empates', 0)}/{stats_visit.get('derrotas', 0)}")
-                        st.write(f"**GF/GC:** {stats_visit.get('goles_favor', 0)}/{stats_visit.get('goles_contra', 0)}")
+                        st.markdown(f"**✈️ {visitante}**")
+                        forma_v = stats_visit.get('forma', 'N/A')
+                        if forma_v and forma_v != 'N/A':
+                            forma_html = ''.join([{'W': '<span style="color:#22c55e">W</span>', 'L': '<span style="color:#ef4444">L</span>', 'D': '<span style="color:#eab308">D</span>'}.get(c, c) for c in str(forma_v)])
+                            st.markdown(f"**Forma:** {forma_html}", unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"**Forma:** N/A")
+                        st.markdown(f"**V/E/D:** <span style='color:black;font-weight:bold'>{stats_visit.get('victorias', 0)}/{stats_visit.get('empates', 0)}/{stats_visit.get('derrotas', 0)}</span>", unsafe_allow_html=True)
+                        st.markdown(f"**GF/GC:** <span style='color:black;font-weight:bold'>{stats_visit.get('goles_favor', 0)}/{stats_visit.get('goles_contra', 0)}</span>", unsafe_allow_html=True)
+                        lambda_v = stats_visit.get('lambda_visitante', 0)
+                        st.markdown(f"**Ataque:** <span style='color:black;font-weight:bold'>{lambda_v:.2f}</span> goles/partido", unsafe_allow_html=True)
                     
                     st.markdown("---")
                     
@@ -1243,9 +1259,7 @@ def render_login_form():
                 pass
             
             # DEBUG
-            st.write(f"🔍 Buscando: {local_nombre} vs {visitante_nombre}")
-            st.write(f"🔍 Encontrados: local={stats_local is not None}, visita={stats_visitante is not None}")
-            
+                                    
             # Limpiar session_state después de usar
             del st.session_state.selected_local
             del st.session_state.selected_away
