@@ -1243,6 +1243,10 @@ def render_login_form():
             except:
                 pass
             
+            # DEBUG
+            st.write(f"🔍 Buscando: {local_nombre} vs {visitante_nombre}")
+            st.write(f"🔍 Encontrados: local={stats_local is not None}, visita={stats_visitante is not None}")
+            
             # Limpiar session_state después de usar
             del st.session_state.selected_local
             del st.session_state.selected_away
