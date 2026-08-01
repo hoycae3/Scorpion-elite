@@ -824,8 +824,8 @@ def render_login_form():
         
         with col_btn2:
             if st.button("🔄 Sincronizar", type="primary", use_container_width=True):
-                with st.spinner("Descargando partidos y stats..."):
-                    try:
+                st.info("Descargando partidos y stats...")
+                try:
                         client = get_client()
                         if not client:
                             st.error("❌ No se pudo conectar a Supabase")
@@ -1036,7 +1036,7 @@ def render_login_form():
                         st.success(f"✅ GUARDADO!")
                         st.markdown(f"📊 **Partidos:** {total_partidos} | **Estadísticas equipos guardadas:** {total_equipos}")
 
-                    except Exception as e:
+                except Exception as e:
                         st.error(f"❌ Error: {e}")
 
         with col_info:
