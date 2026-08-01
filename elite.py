@@ -1018,7 +1018,7 @@ def render_login_form():
                         todos_partidos = client.table('partidos').select('*').execute()
                         
                         # Mapeo de nombre de liga a liga_id
-                        LIGAS_MAP_REVERSE = {nombre: lid for lid, nombre in LIGAS}
+                        LIGAS_MAP_REVERSE = {liga['name']: liga['id'] for liga in LIGAS}
                         
                         # Guardar equipos con su liga_id correcto: {equipo: (liga_nombre, liga_id)}
                         equipos_unicos = {}
