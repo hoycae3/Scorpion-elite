@@ -1,4 +1,4 @@
-# Scorpion Elite - Estado del Proyecto (Julio 2026)
+# Scorpion Elite - Estado del Proyecto (Agosto 2026)
 
 ## 📌 Información General
 
@@ -12,7 +12,33 @@
 
 ---
 
-## 📅 Resumen Sesión Actual (2026-07-26)
+## 📅 Resumen Sesión Actual (2026-08-01)
+
+### ✅ Correcciones al Botón Sincronizar
+
+**Problemas corregidos:**
+
+| Problema | Solución |
+|----------|----------|
+| `season = 2026` hardcodeado | Cálculo dinámico según mes actual |
+| Ventana de solo 2 días | Ahora busca **7 días** (HOY → HOY+6) |
+| Solo 35 ligas | Ahora **55 ligas** con formato unificado |
+| No mostraba info de temporada | Ahora muestra: `⚽ Temporada: 2026 \| Pretemporada: True/False` |
+
+**Ligas incluidas (55):**
+- 🏆 9 torneos internacionales (Champions, Libertadores, Sudamericana, etc.)
+- 🇪🇺 19 ligas europeas (La Liga, Premier, Bundesliga, Serie A, Ligue 1, etc.)
+- 🇧🇷 3 Brasil, 🇦🇷 3 Argentina, 🇨🇴 2 Colombia, 🇨🇱 2 Chile, etc.
+- 🇺🇸 3 USA (MLS, USL), 🇲🇽 2 México (Liga MX)
+- 🇯🇵 Japón, 🇰🇷 Corea, 🇸🇦 Arabia, 🇪🇬 Egipto
+
+**Lógica de temporada:**
+```
+Si mes >= 8 (agos-dic) → season = año_actual
+Si mes < 8 (ene-jul) → season = año_actual - 1
+```
+
+---
 
 ### ✅ Dashboard VIP Completo Implementado
 
@@ -216,16 +242,16 @@ CREATE TABLE IF NOT EXISTS picks (...)
 
 ### 🔴 CRÍTICO - Funcionalidad
 
-1. **Probar análisis de partidos** - ¿Funciona el preview en producción?
+1. **Probar sincronización en producción** - Verificar que busque con temporada correcta
 2. **Testar flujo completo login** - ¿El usuario puede guardar picks?
-3. **Fuentes para América Latina** - football-data NO tiene Brasil, México, Argentina, MLS
+3. **Verificar cobertura de ligas** - ¿Las 55 ligas funcionan correctamente?
 
 ### 🟡 IMPORTANTE - Mejoras
 
 4. **Mejorar UI del análisis preview** - Más visual, gráficos
 5. **Exportar picks** - Descargar análisis en PDF/Excel
 6. **Notificaciones** - Alertas para alta confianza
-7. **ROI y streaks** - Métricas de rendimiento en Dashboard
+7. **Pretemporada** - Agregar opción de buscar partidos de pretemporada o liga anterior
 
 ### 🟢 OPCIONAL - Extras
 
@@ -246,7 +272,12 @@ python3 -c "from robot_extractor import get_team_stats_from_football_data; print
 
 # Deploy en Render
 curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploys" \
-  -H "Authorization: Bearer rnd_RDmwWhiDyjbeT5wFWvXYTAonhOUY"
+  -H "Authorization: Bearer $RENDER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"clearCache": "dont_clear"}'
+
+# Verificar app
+curl -s -o /dev/null -w "%{http_code}" https://scorpion-elite.onrender.com/
 ```
 
 ---
@@ -384,40 +415,9 @@ curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploy
 
 ---
 
-## 📅 Sesión 2026-07-31 (09:40) - Sincronización Inteligente
+## 📅 Sesión 2026-08-01 - Correcciones al Sincronizar
 
-### ✅ LOGGING ACTUAL DEL BOTÓN "🔄 Sincronizar"
-
-**Lógica implementada:**
-
-| Datos | Ventana | Comportamiento |
-|-------|---------|----------------|
-| **Partidos** | HOY → HOY+6 (7 días) | Solo agrega partidos nuevos |
-| **Stats equipos** | HOY → HOY+3 (3 días) | **Actualiza** stats de equipos existentes |
-
-**Flujo:**
-1. **Primera vez:** Descarga ventana completa (7 días partidos, 3 días stats equipos)
-2. **Siguientes clicks:** Solo agrega lo que falta (partidos día nuevo, actualiza stats equipos)
-
-**Variables clave:**
-- `partidos_existentes` - Set de fixture_ids ya en BD
-- `equipos_existentes` - Set de nombres de equipos ya en BD  
-- `fecha_inicio` / `fecha_fin` - Determinan rango a descargar
-- `fecha_equipos_fin` - HOY+3 para stats de equipos
-
-**Commit hash funcional:** `2dbf812`
-
-### ❌ DESCARTADO
-- Tabla `sync_log` - No usar, verificar BD directamente
-- Descargar equipos por cada partido - Ahora solo ventana HOY+3
-
-### 🔧 Comandos de recuperación
-```bash
-# Restaurar a estado funcional conocido
-git checkout 2dbf812 -- elite.py
-```
-
-### 2026-08-01 - Sesión Corrección Sincronizar
+### Cambios realizados:
 
 | Cambio | Descripción |
 |--------|-------------|
@@ -425,22 +425,16 @@ git checkout 2dbf812 -- elite.py
 | **Ventana 7 días** | Cambiado de 2 a 7 días (HOY → HOY+6) |
 | **Mostrar info** | Ahora muestra: "⚽ Temporada: 2026 \| Pretemporada: True/False" |
 | **Botones corregidos** | Sincronizar y Equipos usan el mismo cálculo dinámico |
-
-**Problema resuelto:** Si BD vacía, ahora busca con la temporada correcta (no siempre 2026).
-
-**Nota:** En pretemporada (agos-feb) no habrá partidos de liga - es normal.
-
-### 2026-08-01 - Sesión Lista Completa de Ligas
-
-| Cambio | Descripción |
-|--------|-------------|
 | **55 ligas** | Reemplazada lista corta (35) con completa (55 ligas) |
 | **Formato unificado** | Ambos botones usan diccionarios con `id`, `name`, `pais` |
-| **Cobertura** | Internacionales + Europa + Latinoamérica + USA/Canadá + Asia |
 
-**Ligas incluidas:**
-- 🏆 9 torneos internacionales (Champions, Libertadores, etc.)
-- 🇪🇺 19 ligas europeas (La Liga, Premier, Bundesliga, Serie A, etc.)
-- 🇧🇷 3 Brasil, 🇦🇷 3 Argentina, 🇨🇴 2 Colombia, etc.
-- 🇺🇸 3 USA, 🇲🇽 2 México
-- 🇯🇵 Japón, 🇰🇷 Corea, 🇸🇦 Arabia, 🇪🇬 Egipto
+### Lógica implementada:
+
+| Datos | Ventana | Comportamiento |
+|-------|---------|----------------|
+| **Partidos** | HOY → HOY+6 (7 días) | Solo agrega partidos nuevos |
+| **Stats equipos** | De partidos guardados | Usa `upsert` - actualiza solo si es nuevo |
+
+### Nota importante:
+- En pretemporada (agos-feb) no habrá partidos de liga - es normal
+- La app buscará con la temporada correcta automáticamente
