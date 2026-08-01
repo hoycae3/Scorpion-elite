@@ -1537,19 +1537,19 @@ def render_login_form():
                     st.markdown(f"<h4 style='color: #00ff88; text-align: center;'>🏠 {html.escape(str(home))}</h4>", unsafe_allow_html=True)
                     # Lista local
                     stats_list_l = [
-                        ("📅 PJ", pj_l, "#fff"),
-                        ("✅ Victorias", vic_l, "#00ff88"),
-                        ("🤝 Empates", emp_l, "#ffd700"),
-                        ("❌ Derrotas", der_l, "#ff6b6b"),
-                        ("⚽ Goles Favor", gf_l, "#fff"),
-                        ("⚽ Goles Contra", gc_l, "#fff"),
-                        ("📊 Diferencia", f"{gf_l - gc_l:+.0f}", "#00d4ff"),
-                        ("λ Local", f"{stats_local.get('lambda_local', 0):.2f}", "#00d4ff"),
+                        ("📅 PJ", pj_l, "black"),
+                        ("✅ Victorias", vic_l, "black"),
+                        ("🤝 Empates", emp_l, "black"),
+                        ("❌ Derrotas", der_l, "black"),
+                        ("⚽ Goles Favor", gf_l, "black"),
+                        ("⚽ Goles Contra", gc_l, "black"),
+                        ("📊 Diferencia", f"{gf_l - gc_l:+.0f}", "black"),
+                        ("λ Local", f"{stats_local.get('lambda_local', 0):.2f}", "black"),
                         (f"λ Ajustada {icono_ajuste_local}", f"{lambda_local_adj['lambda_ajustada']:.2f}", color_ajuste_local),
-                        ("🌽 Córners", f"⬆️{stats_local.get('corners_favor', 0)} ⬇️{stats_local.get('corners_contra', 0)}", "#00d4ff"),
-                        ("🟨 Amarillas", f"{prom_amarillas_l:.1f}", "#ffd700"),
-                        ("🔫 Tiros", f"{prom_tiros_l:.1f}", "#fff"),
-                        ("🎯 Tiros Arco", f"{prom_tiros_arco_l:.1f}", "#fff"),
+                        ("🌽 Córners", f"⬆️{stats_local.get('corners_favor', 0)} ⬇️{stats_local.get('corners_contra', 0)}", "black"),
+                        ("🟨 Amarillas", f"{prom_amarillas_l:.1f}", "black"),
+                        ("🔫 Tiros", f"{prom_tiros_l:.1f}", "black"),
+                        ("🎯 Tiros Arco", f"{prom_tiros_arco_l:.1f}", "black"),
                     ]
                     for label, val, color in stats_list_l:
                         st.markdown(f"<div style='display:flex; justify-content:space-between; padding:4px 10px; border-bottom:1px solid #333; font-size:14px;'><span>{label}</span><span style='color:{color}'>{val}</span></div>", unsafe_allow_html=True)
@@ -1558,19 +1558,19 @@ def render_login_form():
                     st.markdown(f"<h4 style='color: #ff6b6b; text-align: center;'>✈️ {html.escape(str(away))}</h4>", unsafe_allow_html=True)
                     # Lista visita
                     stats_list_v = [
-                        ("📅 PJ", pj_v, "#fff"),
-                        ("✅ Victorias", vic_v, "#00ff88"),
-                        ("🤝 Empates", emp_v, "#ffd700"),
-                        ("❌ Derrotas", der_v, "#ff6b6b"),
-                        ("⚽ Goles Favor", gf_v, "#fff"),
-                        ("⚽ Goles Contra", gc_v, "#fff"),
-                        ("📊 Diferencia", f"{gf_v - gc_v:+.0f}", "#00d4ff"),
-                        ("λ Visitante", f"{stats_visitante.get('lambda_visitante', 0):.2f}", "#00d4ff"),
+                        ("📅 PJ", pj_v, "black"),
+                        ("✅ Victorias", vic_v, "black"),
+                        ("🤝 Empates", emp_v, "black"),
+                        ("❌ Derrotas", der_v, "black"),
+                        ("⚽ Goles Favor", gf_v, "black"),
+                        ("⚽ Goles Contra", gc_v, "black"),
+                        ("📊 Diferencia", f"{gf_v - gc_v:+.0f}", "black"),
+                        ("λ Visitante", f"{stats_visitante.get('lambda_visitante', 0):.2f}", "black"),
                         (f"λ Ajustada {icono_ajuste_vis}", f"{lambda_visitante_adj['lambda_ajustada']:.2f}", color_ajuste_vis),
-                        ("🌽 Córners", f"⬆️{stats_visitante.get('corners_favor', 0)} ⬇️{stats_visitante.get('corners_contra', 0)}", "#00d4ff"),
-                        ("🟨 Amarillas", f"{prom_amarillas_v:.1f}", "#ffd700"),
-                        ("🔫 Tiros", f"{prom_tiros_v:.1f}", "#fff"),
-                        ("🎯 Tiros Arco", f"{prom_tiros_arco_v:.1f}", "#fff"),
+                        ("🌽 Córners", f"⬆️{stats_visitante.get('corners_favor', 0)} ⬇️{stats_visitante.get('corners_contra', 0)}", "black"),
+                        ("🟨 Amarillas", f"{prom_amarillas_v:.1f}", "black"),
+                        ("🔫 Tiros", f"{prom_tiros_v:.1f}", "black"),
+                        ("🎯 Tiros Arco", f"{prom_tiros_arco_v:.1f}", "black"),
                     ]
                     for label, val, color in stats_list_v:
                         st.markdown(f"<div style='display:flex; justify-content:space-between; padding:4px 10px; border-bottom:1px solid #333; font-size:14px;'><span>{label}</span><span style='color:{color}'>{val}</span></div>", unsafe_allow_html=True)
