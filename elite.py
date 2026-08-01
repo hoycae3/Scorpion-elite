@@ -201,6 +201,8 @@ def db_login(password):
         return None
 if "logged" not in st.session_state:
     st.session_state.logged = False
+if "page" not in st.session_state:
+    st.session_state.page = "VIP"
 if "show_login" not in st.session_state:
     st.session_state.show_login = False
 def render_public_landing():
