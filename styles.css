@@ -468,7 +468,7 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
     text-align: center !important;
     min-width: 70px !important;
     max-width: 90px !important;
-    margin: 0 2px !important;
+    margin: 0 !important;
 }
 
 .stMetric > div {
@@ -479,11 +479,16 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
     align-items: center !important;
 }
 
-/* Contenedor de las columnas de métricas centrado */
+/* Contenedor de las columnas de métricas - pegadas */
 div[data-testid="stHorizontalBlock"] {
     justify-content: center !important;
-    display: flex !important;
     gap: 0 !important;
+    padding: 0 !important;
+}
+
+div[data-testid="stHorizontalBlock"] > div {
+    margin: 0 !important;
+    padding: 0 !important;
 }
     min-height: auto !important;
     height: auto !important;
