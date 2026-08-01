@@ -853,9 +853,9 @@ def render_login_form():
 
                         st.markdown(f"📊 Ya tienes: **{len(partidos_existentes)}** partidos, **{len(equipos_existentes)}** equipos")
 
-                        # Ventana de 3 días desde MAÑANA (no incluye hoy)
-                        fecha_inicio = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
-                        fecha_fin = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
+                        # Ventana de 7 días: HOY hasta HOY + 6 (7 días totales)
+                        fecha_inicio = hoy_str
+                        fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
                         st.info(f"📡 Buscando partidos: {fecha_inicio} al {fecha_fin}")
 
                         LIGAS = [
