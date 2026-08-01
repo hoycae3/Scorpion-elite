@@ -1034,24 +1034,24 @@ def render_login_form():
                                             # Buscar stats
                                             resp_st = requests.get(f"{API_URL}/teams/statistics", headers=headers, params={'team': tid, 'league': 140, 'season': season}, timeout=10)
                                             if resp_st.status_code == 200:
-                                                st = resp_st.json().get('response', {})
-                                                if st:
-                                                    gf = st.get('goals', {}).get('for', {}).get('total', 0) or 0
-                                                    gc = st.get('goals', {}).get('against', {}).get('total', 0) or 0
-                                                    gf_h = st.get('goals', {}).get('for', {}).get('home', 0) or 0
-                                                    gf_a = st.get('goals', {}).get('for', {}).get('away', 0) or 0
-                                                    gc_h = st.get('goals', {}).get('against', {}).get('home', 0) or 0
-                                                    gc_a = st.get('goals', {}).get('against', {}).get('away', 0) or 0
-                                                    pj_h = st.get('fixtures', {}).get('played', {}).get('home', 1) or 1
-                                                    pj_a = st.get('fixtures', {}).get('played', {}).get('away', 1) or 1
-                                                    pj_t = st.get('fixtures', {}).get('played', {}).get('total', 0) or 1
-                                                    wins = st.get('fixtures', {}).get('wins', {}).get('total', 0) or 0
-                                                    draws = st.get('fixtures', {}).get('draws', {}).get('total', 0) or 0
-                                                    loses = st.get('fixtures', {}).get('loses', {}).get('total', 0) or 0
+                                                stats_data = resp_st.json().get('response', {})
+                                                if stats_data:
+                                                    gf = stats_data.get('goals', {}).get('for', {}).get('total', 0) or 0
+                                                    gc = stats_data.get('goals', {}).get('against', {}).get('total', 0) or 0
+                                                    gf_h = stats_data.get('goals', {}).get('for', {}).get('home', 0) or 0
+                                                    gf_a = stats_data.get('goals', {}).get('for', {}).get('away', 0) or 0
+                                                    gc_h = stats_data.get('goals', {}).get('against', {}).get('home', 0) or 0
+                                                    gc_a = stats_data.get('goals', {}).get('against', {}).get('away', 0) or 0
+                                                    pj_h = stats_data.get('fixtures', {}).get('played', {}).get('home', 1) or 1
+                                                    pj_a = stats_data.get('fixtures', {}).get('played', {}).get('away', 1) or 1
+                                                    pj_t = stats_data.get('fixtures', {}).get('played', {}).get('total', 0) or 1
+                                                    wins = stats_data.get('fixtures', {}).get('wins', {}).get('total', 0) or 0
+                                                    draws = stats_data.get('fixtures', {}).get('draws', {}).get('total', 0) or 0
+                                                    loses = stats_data.get('fixtures', {}).get('loses', {}).get('total', 0) or 0
                                                     
                                                     eq_data = {
                                                         'equipo': eq_nombre,
-                                                        'liga': eq_liga or st.get('league', {}).get('name', ''),
+                                                        'liga': eq_liga or stats_data.get('league', {}).get('name', ''),
                                                         'temporada': f'{season}-{season+1}',
                                                         'partidos_jugados': pj_t,
                                                         'victorias': wins,
@@ -1061,7 +1061,7 @@ def render_login_form():
                                                         'goles_contra': gc,
                                                         'lambda_local': round((gf_h + gc_a) / pj_h / 2, 2),
                                                         'lambda_visitante': round((gf_a + gc_h) / pj_a / 2, 2),
-                                                        'ultimos_5_partidos': list(st.get('form', '') or '')[:5],
+                                                        'ultimos_5_partidos': list(stats_data.get('form', '') or '')[:5],
                                                     }
                                                     client.table('equipos_stats').upsert(eq_data, ignore_duplicates=True).execute()
                                                     total_equipos += 1
