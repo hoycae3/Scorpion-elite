@@ -1278,8 +1278,8 @@ def render_login_form():
                     )
                     
                     # Agregar fixture_id si existe en el partido seleccionado
-                    if selected_match and selected_match.get('fixture_id'):
-                        result['fixture_id'] = selected_match.get('fixture_id')
+                    if 'selected_match_data' in st.session_state and st.session_state.selected_match_data and st.session_state.selected_match_data.get('fixture_id'):
+                        result['fixture_id'] = st.session_state.selected_match_data.get('fixture_id')
                     
                     st.session_state.analysis_result = result
                     st.session_state.home = local_nombre
