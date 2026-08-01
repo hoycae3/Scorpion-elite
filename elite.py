@@ -1573,20 +1573,13 @@ def render_login_form():
                     col_forma1, col_forma2 = st.columns(2)
                     
                     with col_forma1:
-                        st.markdown(f"**{home} - Últimos 5**")
-                        if ultimos_local:
-                            for i, partido in enumerate(ultimos_local[:5]):
-                                resultado = partido.get('resultado', '?')
-                                resultado_icon = {'V': '🟢', 'E': '🟡', 'D': '🔴'}.get(resultado, '⚪')
-                                marcador = f"{partido.get('goles_favor', 0)}-{partido.get('goles_contra', 0)}"
-                                rival = partido.get('rival', '?')
-                                corners = partido.get('corners', 0)
-                                tarjetas = partido.get('tarjetas', 0)
-                                st.markdown(f"&nbsp;&nbsp;{resultado_icon} vs {rival} ({marcador}) | 🌽{corners} 🟨{tarjetas}")
-                        else:
-                            st.info("Sin datos de forma reciente")
-                    
+                        # Forma (simplificado)
+                        forma_local = "".join(["🟢" if r == "W" else "🔴" if r == "L" else "🟡" for r in (ultimos_local if isinstance(ultimos_local, list) else [])[:5]])
+                        st.markdown(forma_local if forma_local else "Sin datos")
                     with col_forma2:
+                        # Forma (simplificado)
+                        forma_away = "".join(["🟢" if r == "W" else "🔴" if r == "L" else "🟡" for r in (ultimos_visitante if isinstance(ultimos_visitante, list) else [])[:5]])
+                        st.markdown(forma_away if forma_away else "Sin datos")
                         st.markdown(f"**{away} - Últimos 5**")
                         if ultimos_visitante:
                             for i, partido in enumerate(ultimos_visitante[:5]):
