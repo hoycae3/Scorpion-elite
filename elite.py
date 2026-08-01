@@ -297,7 +297,7 @@ def render_public_landing():
     with col_btn2:
         if st.button("🔐 Acceder", use_container_width=True, type="primary"):
             st.session_state.show_login = True
-            pass  # st.rerun() removido
+            st.rerun()
 
     # --- KPIs EN VIVO ---
     st.markdown("##### 📊 Métricas")
@@ -381,7 +381,7 @@ def render_public_landing():
         # Botón para volver
         if st.button("← Volver", key="volver_partidos"):
             st.session_state.preview_partido = None
-            pass  # st.rerun() removido
+            st.rerun()
         
         st.markdown("---")
         
@@ -605,14 +605,14 @@ def render_login_form():
                         st.session_state.show_login = False
                         nombre = user.get('nombre', password[:20])
                         st.success(f"¡Bienvenido!")
-                        pass  # st.rerun() removido
+                        st.rerun()
                     else:
                         st.error("❌ Contraseña incorrecta")
 
         with col_cancel:
             if st.button("← Volver", use_container_width=True):
                 st.session_state.show_login = False
-                pass  # st.rerun() removido
+                st.rerun()
 
         st.stop()
 
@@ -633,7 +633,7 @@ def render_login_form():
             st.session_state.logged = False
             st.session_state.user_data = None
             st.session_state.is_admin = False
-            pass  # st.rerun() removido
+            st.rerun()
     
     # Menú horizontal arriba - 根据用户类型显示
     st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
@@ -665,7 +665,7 @@ def render_login_form():
             is_active = st.session_state.page == page
             if st.button(label, use_container_width=True, type="primary" if is_active else "secondary"):
                 st.session_state.page = page
-                pass  # st.rerun() removido
+                st.rerun()
     
     st.markdown("---")
 
@@ -818,13 +818,13 @@ def render_login_form():
                     st.session_state.api_requests_today = 0
                     st.success(f"✅ Limpiado: {num_p} partidos y {num_c} cuotas")
                     time.sleep(2)
-                    pass  # st.rerun() removido
+                    st.rerun()
                 except Exception as e:
                     st.error(f"❌ Error: {e}")
         
         with col_btn2:
             if st.button("🔄 Sincronizar", type="primary", use_container_width=True):
-                with st.spinner("🔄 Sincronizando..."):
+                with st.spinner("Guardando..."):
                     try:
                         client = get_client()
                         if not client:
@@ -1187,7 +1187,7 @@ def render_login_form():
                         st.session_state.selected_local = equipo_local
                         st.session_state.selected_away = equipo_visitante
                         st.session_state.page = "Analizador"
-                        pass  # st.rerun() removido
+                        st.rerun()
         
     # Página: Analizador
     elif st.session_state.page == "Analizador":
@@ -1206,7 +1206,7 @@ def render_login_form():
             
             if st.button("📋 Ir a Partidos", type="primary"):
                 st.session_state.page = "Partidos"
-                pass  # st.rerun() removido
+                st.rerun()
             
             st.stop()  # Terminar aquí
             
@@ -2141,7 +2141,7 @@ def render_login_form():
             
             # Botón recargar
             if st.button("🔄 Recargar Lista"):
-                pass  # st.rerun() removido
+                st.rerun()
             
             usuarios = db_todos()
             
@@ -2197,7 +2197,7 @@ def render_login_form():
                                         if nueva_pass and len(nueva_pass) >= 4:
                                             if db_cambiar_password(clave_id, nueva_pass):
                                                 st.success("✅ Contraseña cambiada")
-                                                pass  # st.rerun() removido
+                                                st.rerun()
                                             else:
                                                 st.error("❌ Error")
                                         else:
@@ -2210,7 +2210,7 @@ def render_login_form():
                                     if st.button("📦 Cambiar Plan", key=f"btn_plan_{clave_id}"):
                                         if db_actualizar_plan(clave_id, plan_nuevo if plan_nuevo != "elite" else "elite", dias_nuevos):
                                             st.success(f"✅ Plan cambiado a {plan_nuevo.upper()}")
-                                            pass  # st.rerun() removido
+                                            st.rerun()
                                         else:
                                             st.error("❌ Error")
                                 with col_c:
@@ -2218,7 +2218,7 @@ def render_login_form():
                                     if st.button("🗑️ Eliminar", key=f"btn_del_{clave_id}", type="primary"):
                                         if db_eliminar_usuario(clave_id):
                                             st.success("✅ Eliminada")
-                                            pass  # st.rerun() removido
+                                            st.rerun()
                                         else:
                                             st.error("❌ No se pudo eliminar")
                             else:
@@ -2533,7 +2533,7 @@ def render_login_form():
                                     'acertado_remates': acertado_remates,
                                 }).eq('id', pick_id).execute()
                                 st.success("✅ Resultado guardado! La calibración se actualiza automáticamente.")
-                                pass  # st.rerun() removido
+                                st.rerun()
                             except Exception as e:
                                 st.error(f"Error: {str(e)[:50]}")
             else:
@@ -2614,7 +2614,7 @@ def render_login_form():
                     except:
                         pass
                     st.success("Bankroll reiniciado")
-                    pass  # st.rerun() removido
+                    st.rerun()
                 
                 st.markdown("---")
                 
@@ -2760,7 +2760,7 @@ def render_login_form():
                                 'resultado': resultado_val
                             }).execute()
                             st.success("✅ Apuesta agregada")
-                            pass  # st.rerun() removido
+                            st.rerun()
                         except Exception as e:
                             st.error(f"Error: {e}")
             
@@ -2824,7 +2824,7 @@ def render_login_form():
                                         'ganancia': ganancia_new
                                     }).eq('id', a.get('id')).execute()
                                     st.success("Actualizado")
-                                    pass  # st.rerun() removido
+                                    st.rerun()
                                 except Exception as e:
                                     st.error(f"Error: {e}")
                         
@@ -2967,7 +2967,7 @@ def render_login_form():
                                 try:
                                     client.table('alertas').update({'leida': True}).eq('id', alerta.get('id')).execute()
                                     st.success("Marcada como leída")
-                                    pass  # st.rerun() removido
+                                    st.rerun()
                                 except: pass
                 else:
                     st.info("📭 No hay alertas.")
