@@ -14,11 +14,16 @@ CREATE TABLE IF NOT EXISTS partidos (
     hora_utc VARCHAR(10),
     pais VARCHAR(100),
     liga VARCHAR(255),
+    liga_id BIGINT,
     equipo_local VARCHAR(255) NOT NULL,
     equipo_visitante VARCHAR(255) NOT NULL,
+    logo_local VARCHAR(500),
+    logo_visitante VARCHAR(500),
     goles_local INTEGER,
     goles_visitante INTEGER,
     estado VARCHAR(50) DEFAULT 'programado',
+    team_id_local BIGINT,
+    team_id_visitante BIGINT,
     actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
