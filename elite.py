@@ -95,7 +95,7 @@ def get_client():
     return get_supabase_client()
 
 # ══════════════════════════════════════════════════════════
-# SISTEMA DE USUARIOS (SQLite local) - Solo hash bcrypt
+# SISTEMA DE USUARIOS (Supabase) - Solo hash bcrypt
 # ══════════════════════════════════════════════════════════
 
 def hash_password(password: str) -> str:
