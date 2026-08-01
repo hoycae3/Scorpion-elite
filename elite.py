@@ -1005,7 +1005,7 @@ def render_login_form():
             partidos_db = []
         
         if partidos_db:
-            st.success(f"✅ {len(partidos_db)} partidos de Supabase")
+            st.markdown(f"<span style='color:black;font-weight:bold'>✅ {len(partidos_db)} partidos de Supabase</span>", unsafe_allow_html=True)
             partidos = partidos_db
         else:
             st.markdown("📭 **No hay partidos.** Clic en 🔄 Sincronizar para obtener partidos.")
@@ -1146,8 +1146,8 @@ def render_login_form():
         
         client = get_client()
         
-        # Si no hay partido seleccionado, mostrar mensaje
-        if not st.session_state.selected_match_data:
+        # Si no hay partido seleccionado, mostrar mensaje (solo si tampoco hay selected_local)
+        if not st.session_state.selected_match_data and not ('selected_local' in st.session_state and 'selected_away' in st.session_state):
             st.info("🎯 Ve a la página **Partidos** para seleccionar un partido y analizarlo.")
             st.info("📍 También puedes analizar desde el preview en la página principal.")
             
