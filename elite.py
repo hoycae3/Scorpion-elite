@@ -823,8 +823,8 @@ def render_login_form():
                     st.error(f"❌ Error: {e}")
         
         with col_btn2:
-            if st.button("🔄 Sincronizar", type="primary", use_container_width=True):
-                with st.spinner("🔄 Verificando caché..."):
+            if st.button("🔄 Sincronizar Todo", type="primary", use_container_width=True):
+                with st.spinner("🔄 Sincronizando partidos y estadísticas..."):
                     try:
                         client = get_client()
                         if not client:
@@ -834,309 +834,166 @@ def render_login_form():
                         API_URL = "https://v3.football.api-sports.io"
                         API_KEY = "e3926f829cd848f4b2b54d722ca29701"
                         headers = {'x-apisports-key': API_KEY}
+
                         season = 2026
                         hoy = datetime.now(timezone(timedelta(hours=-5))).date()
                         hoy_str = hoy.strftime('%Y-%m-%d')
+                        fecha_hasta_7 = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
 
-                        # Verificar caché
-                        if 'last_sync_date' not in st.session_state:
-                            st.session_state.last_sync_date = None
-                        ultima_sync = st.session_state.last_sync_date
-                        st.markdown(f"📅 **Última sync:** {ultima_sync or 'Primera vez'}")
+                        LIGAS = [
+                            # TORNEOS INTERNACIONALES
+                            (2, "Champions League"), (3, "Europa League"), (848, "Conf League"),
+                            (13, "Libertadores"), (11, "Sudamericana"), (16, "CONCACAF CL"),
+                            # ESPAÑA
+                            (140, "La Liga"), (141, "Segunda División"),
+                            # INGLATERRA
+                            (39, "Premier League"), (40, "Championship"), (41, "League One"), (42, "League Two"),
+                            # ALEMANIA
+                            (78, "Bundesliga"), (79, "2.Bundesliga"),
+                            # ITALIA
+                            (135, "Serie A Italia"), (136, "Serie B Italia"),
+                            # FRANCIA
+                            (61, "Ligue 1"), (62, "Ligue 2"),
+                            # PORTUGAL
+                            (94, "Primeira Liga"),
+                            # HOLANDA
+                            (88, "Eredivisie"),
+                            # BÉLGICA
+                            (144, "Jupiler Pro"),
+                            # TURQUÍA
+                            (203, "Süper Lig"), (204, "1. Lig"),
+                            # ESCOCIA
+                            (179, "Scottish Premiership"),
+                            # BRASIL
+                            (71, "Serie A Brasil"), (72, "Serie B Brasil"),
+                            # ARGENTINA
+                            (128, "Liga Argentina"),
+                            # COLOMBIA
+                            (239, "Primera A Colombia"),
+                            # PARAGUAY
+                            (250, "Division Paraguay"),
+                            # ECUADOR
+                            (242, "Liga Pro Ecuador"),
+                            # URUGUAY
+                            (268, "Primera Uruguay"),
+                            # CHILE
+                            (265, "Primera Chile"),
+                            # PERÚ
+                            (281, "Liga 1 Perú"),
+                            # USA/MÉXICO
+                            (253, "MLS"), (262, "Liga MX"),
+                            # ARABIA SAUDITA
+                            (307, "Saudi Pro League"),
+                            # EGIPTO
+                            (233, "Premier Egypt"),
+                            # JAPÓN
+                            (98, "J1 League"),
+                            # COREA
+                            (292, "K League 1"),
+                        ]
 
-                        necesita_sync = (ultima_sync is None or str(ultima_sync) != str(hoy_str))
+                        total_partidos = 0
+                        total_equipos = 0
+                        errores = 0
 
-                        if necesita_sync:
-                            st.info("📡 Sincronizando ventana: HOY + 2 días...")
+                        progress_bar = st.progress(0)
+                        status_text = st.empty()
 
-                            fecha_hasta = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
-
-                            LIGAS = [
-                                (2, "Champions"), (3, "Europa"), (848, "Conf"),
-                                (13, "Libertadores"), (11, "Sudamericana"),
-                                (140, "La Liga"), (141, "Segunda"),
-                                (39, "Premier"), (40, "Championship"), (41, "League One"), (42, "League Two"),
-                                (78, "Bundesliga"), (79, "2.Bundesliga"),
-                                (135, "Serie A IT"), (136, "Serie B IT"),
-                                (61, "Ligue 1"), (62, "Ligue 2"),
-                                (94, "Primeira"), (88, "Eredivisie"), (144, "Jupiler"),
-                                (203, "Süper Lig"), (204, "1.Lig"), (179, "Scottish"),
-                                (71, "Serie A BR"), (72, "Serie B BR"), (128, "Liga Argentina"),
-                                (239, "Colombia"), (250, "Paraguay"), (242, "Ecuador"),
-                                (268, "Uruguay"), (265, "Chile"), (281, "Peru"),
-                                (253, "MLS"), (262, "Liga MX"), (307, "Saudi"),
-                                (233, "Egypt"), (98, "J1 League"), (292, "K League"),
-                            ]
-
-                            total_partidos = 0
-                            total_equipos = 0
-                            equipos_unicos = set()
-
-                            progress = st.progress(0)
-                            status = st.empty()
-
-                            # Guardar partidos y recopilar equipos
-                            for idx, (liga_id, liga_nombre) in enumerate(LIGAS):
-                                status.text(f"📊 {liga_nombre}...")
-                                progress.progress((idx + 1) / len(LIGAS))
-
-                                params = {'league': liga_id, 'season': season, 'from': hoy_str, 'to': fecha_hasta}
-                                try:
-                                    resp = requests.get(f"{API_URL}/fixtures", headers=headers, params=params, timeout=15)
-                                    if resp.status_code == 200:
-                                        for f in resp.json().get('response', []) or []:
-                                            fix = f.get('fixture', {})
-                                            teams = f.get('teams', {})
-                                            league = f.get('league', {})
-
-                                            partido = {
-                                                'fixture_id': fix.get('id'),
-                                                'fecha': fix.get('date', '')[:10],
-                                                'hora': fix.get('date', '')[11:16],
-                                                'liga': league.get('name', ''),
-                                                'equipo_local': teams.get('home', {}).get('name', ''),
-                                                'equipo_visitante': teams.get('away', {}).get('name', ''),
-                                            }
-
-                                            try:
-                                                client.table('partidos').upsert(partido, on_conflict='fixture_id').execute()
-                                                total_partidos += 1
-                                            except: pass
-
-                                            for t in ['home', 'away']:
-                                                team = teams.get(t, {})
-                                                if team.get('id'):
-                                                    equipos_unicos.add((team.get('id'), team.get('name', ''), liga_id, league.get('name', '')))
-                                except: pass
-
-                            progress.empty()
-                            status.empty()
-                            st.success(f"✅ {total_partidos} partidos guardados")
-                            st.info(f"🔍 Stats de {len(equipos_unicos)} equipos...")
-
-                            # Obtener stats de equipos únicos
-                            progress2 = st.progress(0)
-                            for idx, (team_id, team_name, liga_id, liga_nombre) in enumerate(equipos_unicos):
-                                progress2.progress((idx + 1) / len(equipos_unicos))
-                                if not team_name or not team_id: continue
-
-                                try:
-                                    resp_t = requests.get(f"{API_URL}/teams/statistics",
-                                        headers=headers, params={'team': team_id, 'league': liga_id, 'season': season}, timeout=10)
-                                    if resp_t.status_code == 200:
-                                        s = resp_t.json().get('response', {})
-                                        if s:
-                                            gf = s.get('goals', {}).get('for', {}).get('total', 0) or 0
-                                            gc = s.get('goals', {}).get('against', {}).get('total', 0) or 0
-                                            pj = s.get('fixtures', {}).get('played', {}).get('total', 1) or 1
-                                            wins = s.get('fixtures', {}).get('wins', {}).get('total', 0) or 0
-                                            draws = s.get('fixtures', {}).get('draws', {}).get('total', 0) or 0
-                                            loses = s.get('fixtures', {}).get('loses', {}).get('total', 0) or 0
-
-                                            eq_data = {
-                                                'equipo': team_name,
-                                                'api_id': team_id,
-                                                'liga': liga_nombre,
-                                                'temporada': f'{season}-{season+1}',
-                                                'partidos_jugados': pj,
-                                                'victorias': wins,
-                                                'empates': draws,
-                                                'derrotas': loses,
-                                                'goles_favor': gf,
-                                                'goles_contra': gc,
-                                            }
-
-                                            client.table('equipos_stats').upsert(eq_data, ignore_duplicates=True).execute()
-                                            total_equipos += 1
-                                except: pass
-
-                            progress2.empty()
-
-                            # Guardar fecha sync
-                            st.session_state.last_sync_date = str(hoy_str)
-
-                            st.success(f"✅ **COMPLETO!**")
-                            st.markdown(f"📊 Partidos: **{total_partidos}** | Equipos: **{total_equipos}**")
-                            time.sleep(2)
-                            st.rerun()
-                        else:
-                            st.success("✅ **Caché activa - ya sincronizado hoy**")
-                            st.info("💡 Mañana se actualizará automáticamente")
-                            time.sleep(2)
-                            st.rerun()
-
-                    except Exception as e:
-                        st.error(f"❌ Error: {e}")
-
-                        # ═══════════════════════════════════════════════════════
-                        # CASO 1: PRIMERA VEZ O DÍA NUEVO → DESCARGAR 3 DÍAS
-                        # ═══════════════════════════════════════════════════════
-                        necesita_sync = (ultima_sync is None or str(ultima_sync) != str(hoy_str))
-                        
-                        if necesita_sync:
-                            st.info("📡 Sincronizando equipos (ventana: hoy + 2 días)...")
+                        for idx, (liga_id, liga_nombre) in enumerate(LIGAS):
+                            status_text.text(f"📊 {liga_nombre}...")
+                            progress_bar.progress((idx + 1) / len(LIGAS))
                             
-                            # Rango: hoy hasta pasado mañana
-                            fecha_hasta = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
-                            
-                            LIGAS = [
-                                (2, "Champions League"), (3, "Europa League"), (848, "Conf League"),
-                                (13, "Libertadores"), (11, "Sudamericana"), (16, "CONCACAF CL"),
-                                (140, "La Liga"), (141, "Segunda División"),
-                                (39, "Premier League"), (40, "Championship"), (41, "League One"), (42, "League Two"),
-                                (78, "Bundesliga"), (79, "2.Bundesliga"),
-                                (135, "Serie A Italia"), (136, "Serie B Italia"),
-                                (61, "Ligue 1"), (62, "Ligue 2"),
-                                (94, "Primeira Liga"), (88, "Eredivisie"), (144, "Jupiler Pro"),
-                                (203, "Süper Lig"), (204, "1. Lig"), (179, "Scottish Premiership"),
-                                (71, "Serie A Brasil"), (72, "Serie B Brasil"), (128, "Liga Argentina"),
-                                (239, "Primera A Colombia"), (250, "Division Paraguay"), (242, "Liga Pro Ecuador"),
-                                (268, "Primera Uruguay"), (265, "Primera Chile"), (281, "Liga 1 Perú"),
-                                (253, "MLS"), (262, "Liga MX"), (307, "Saudi Pro League"),
-                                (233, "Premier Egypt"), (98, "J1 League"), (292, "K League 1"),
-                            ]
-                            
-                            total_partidos = 0
-                            total_equipos = 0
-                            equipos_unicos = set()
-                            
-                            progress_bar = st.progress(0)
-                            status_text = st.empty()
-                            
-                            # Primero: Guardar partidos de todas las ligas
-                            for idx, (liga_id, liga_nombre) in enumerate(LIGAS):
-                                status_text.text(f"📊 {liga_nombre}...")
-                                progress_bar.progress((idx + 1) / len(LIGAS))
+                            params = {'league': liga_id, 'season': season, 'from': hoy_str, 'to': fecha_hasta_7}
+                            try:
+                                resp = requests.get(f"{API_URL}/fixtures", headers=headers, params=params, timeout=15)
                                 
-                                params = {'league': liga_id, 'season': season, 'from': hoy_str, 'to': fecha_hasta}
-                                try:
-                                    resp = requests.get(f"{API_URL}/fixtures", headers=headers, params=params, timeout=15)
-                                    if resp.status_code == 200:
-                                        fixtures = resp.json().get('response', []) or []
-                                        for f in fixtures:
-                                            fix = f.get('fixture', {})
-                                            teams = f.get('teams', {})
-                                            league = f.get('league', {})
-                                            fix_id = fix.get('id')
-                                            
-                                            partido_data = {
-                                                'fixture_id': fix_id,
-                                                'fecha': fix.get('date', '')[:10],
-                                                'hora': fix.get('date', '')[11:16],
-                                                'liga': league.get('name', ''),
-                                                'equipo_local': teams.get('home', {}).get('name', ''),
-                                                'equipo_visitante': teams.get('away', {}).get('name', ''),
-                                            }
-                                            
-                                            try:
-                                                client.table('partidos').upsert(partido_data, on_conflict='fixture_id').execute()
-                                                total_partidos += 1
-                                            except: pass
-                                            
-                                            # Recopilar equipos únicos
-                                            for t in ['home', 'away']:
-                                                team = teams.get(t, {})
-                                                if team.get('id'):
-                                                    equipos_unicos.add((team.get('id'), team.get('name', ''), liga_id, league.get('name', '')))
+                                if resp.status_code == 200:
+                                    data = resp.json()
+                                    fixtures = data.get('response', []) or []
                                     
-                                    elif resp.status_code == 403:
-                                        st.warning(f"⚠️ Límite API en {liga_nombre}")
-                                except: pass
-                            
-                            progress_bar.empty()
-                            status_text.empty()
-                            
-                            st.success(f"✅ {total_partidos} partidos guardados")
-                            st.info(f"🔍 Buscando stats de {len(equipos_unicos)} equipos únicos...")
-                            
-                            # Segundo: Obtener stats de cada equipo único (NO repetir)
-                            progress_bar2 = st.progress(0)
-                            for idx, (team_id, team_name, liga_id, liga_nombre) in enumerate(equipos_unicos):
-                                progress_bar2.progress((idx + 1) / len(equipos_unicos))
-                                
-                                if not team_name or not team_id:
-                                    continue
-                                    
-                                resp_team = requests.get(
-                                    f"{API_URL}/teams/statistics",
-                                    headers=headers,
-                                    params={'team': team_id, 'league': liga_id, 'season': season},
-                                    timeout=10
-                                )
-                                
-                                if resp_team.status_code == 200:
-                                    stats = resp_team.json().get('response', {})
-                                    if stats:
-                                        gf = stats.get('goals', {}).get('for', {}).get('total', 0) or 0
-                                        gc = stats.get('goals', {}).get('against', {}).get('total', 0) or 0
-                                        gf_h = stats.get('goals', {}).get('for', {}).get('home', 0) or 0
-                                        gf_a = stats.get('goals', {}).get('for', {}).get('away', 0) or 0
-                                        gc_h = stats.get('goals', {}).get('against', {}).get('home', 0) or 0
-                                        gc_a = stats.get('goals', {}).get('against', {}).get('away', 0) or 0
-                                        pj_h = stats.get('fixtures', {}).get('played', {}).get('home', 1) or 1
-                                        pj_a = stats.get('fixtures', {}).get('played', {}).get('away', 1) or 1
-                                        pj_t = stats.get('fixtures', {}).get('played', {}).get('total', 0) or 1
-                                        
-                                        wins = stats.get('fixtures', {}).get('wins', {}).get('total', 0) or 0
-                                        draws = stats.get('fixtures', {}).get('draws', {}).get('total', 0) or 0
-                                        loses = stats.get('fixtures', {}).get('loses', {}).get('total', 0) or 0
-                                        
-                                        equipo_data = {
-                                            'equipo': team_name,
-                                            'api_id': team_id,
-                                            'liga': liga_nombre,
-                                            'temporada': f'{season}-{season+1}',
-                                            'partidos_jugados': pj_t,
-                                            'victorias': wins,
-                                            'empates': draws,
-                                            'derrotas': loses,
-                                            'goles_favor': gf,
-                                            'goles_contra': gc,
-                                            'lambda_local': round((gf_h + gc_a) / pj_h / 2, 2) if pj_h > 0 else 1.5,
-                                            'lambda_visitante': round((gf_a + gc_h) / pj_a / 2, 2) if pj_a > 0 else 1.2,
-                                            'ultimos_5_partidos': list(stats.get('form', '') or '')[:5],
+                                    for f in fixtures:
+                                        fix = f.get('fixture', {})
+                                        teams = f.get('teams', {})
+                                        league = f.get('league', {})
+                                        fix_id = fix.get('id')
+
+                                        partido_data = {
+                                            'fixture_id': fix_id,
+                                            'fecha': fix.get('date', '')[:10],
+                                            'hora': fix.get('date', '')[11:16],
+                                            'liga': league.get('name', ''),
+                                            'equipo_local': teams.get('home', {}).get('name', ''),
+                                            'equipo_visitante': teams.get('away', {}).get('name', ''),
                                         }
                                         
                                         try:
-                                            client.table('equipos_stats').upsert(equipo_data, ignore_duplicates=True).execute()
-                                            total_equipos += 1
+                                            client.table('partidos').upsert(partido_data, on_conflict='fixture_id').execute()
+                                            total_partidos += 1
                                         except: pass
-                            
-                            progress_bar2.empty()
-                            
-                            # Guardar fecha en session_state
-                            st.session_state.last_sync_date = str(hoy_str)
-                            
-                            st.success(f"✅ **Sincronización completa!**")
-                            st.markdown(f"📊 Partidos: **{total_partidos}** | Equipos únicos: **{total_equipos}**")
-                            time.sleep(2)
-                            st.rerun()
-                        
-                        else:
-                            # ═══════════════════════════════════════════════════════
-                            # CASO 2: YA SINCRONIZADO HOY → USAR CACHÉ
-                            # ═══════════════════════════════════════════════════════
-                            st.success("✅ **Datos ya están sincronizados (caché activa)**")
-                            
-                            # Verificar cuántos partidos hay
-                            try:
-                                resp = client.table('partidos').select('fixture_id', count='exact').execute()
-                                num_partidos = len(resp.data) if resp.data else 0
-                                resp_eq = client.table('equipos_stats').select('equipo', count='exact').execute()
-                                num_equipos = len(resp_eq.data) if resp_eq.data else 0
-                                st.markdown(f"📊 En caché: **{num_partidos}** partidos | **{num_equipos}** equipos")
-                            except:
-                                pass
-                            
-                            st.info("💡 Usa el botón de nuevo mañana para actualizar")
-                            time.sleep(3)
-                            st.rerun()
+
+                                        for tipo in ['home', 'away']:
+                                            team = teams.get(tipo, {})
+                                            team_name = team.get('name', '')
+                                            team_id_api = team.get('id', 0)
+                                            
+                                            if team_name and team_id_api:
+                                                resp_team = requests.get(
+                                                    f"{API_URL}/teams/statistics",
+                                                    headers=headers,
+                                                    params={'team': team_id_api, 'league': liga_id, 'season': season},
+                                                    timeout=10
+                                                )
+                                                
+                                                if resp_team.status_code == 200:
+                                                    stats = resp_team.json().get('response', {})
+                                                    if stats:
+                                                        gf = stats.get('goals', {}).get('for', {}).get('total', 0) or 0
+                                                        gc = stats.get('goals', {}).get('against', {}).get('total', 0) or 0
+                                                        gf_h = stats.get('goals', {}).get('for', {}).get('home', 0) or 0
+                                                        gf_a = stats.get('goals', {}).get('for', {}).get('away', 0) or 0
+                                                        gc_h = stats.get('goals', {}).get('against', {}).get('home', 0) or 0
+                                                        gc_a = stats.get('goals', {}).get('against', {}).get('away', 0) or 0
+                                                        pj_h = stats.get('fixtures', {}).get('played', {}).get('home', 1) or 1
+                                                        pj_a = stats.get('fixtures', {}).get('played', {}).get('away', 1) or 1
+                                                        pj_t = stats.get('fixtures', {}).get('played', {}).get('total', 0) or 1
+
+                                                        wins = stats.get('fixtures', {}).get('wins', {}).get('total', 0) or 0
+                                                        draws = stats.get('fixtures', {}).get('draws', {}).get('total', 0) or 0
+                                                        loses = stats.get('fixtures', {}).get('loses', {}).get('total', 0) or 0
+
+                                                        equipo_data = {
+                                                            'equipo': team_name,
+                                                            'liga': league.get('name', ''),
+                                                            'temporada': f'{season}-{season+1}',
+                                                            'partidos_jugados': pj_t,
+                                                            'victorias': wins,
+                                                            'empates': draws,
+                                                            'derrotas': loses,
+                                                            'goles_favor': gf,
+                                                            'goles_contra': gc,
+                                                            'lambda_local': round((gf_h + gc_a) / pj_h / 2, 2),
+                                                            'lambda_visitante': round((gf_a + gc_h) / pj_a / 2, 2),
+                                                            'ultimos_5_partidos': list(stats.get('form', '') or '')[:5],
+                                                        }
+                                                        
+                                                        try:
+                                                            client.table('equipos_stats').upsert(equipo_data, ignore_duplicates=True).execute()
+                                                            total_equipos += 1
+                                                        except: pass
+                                elif resp.status_code == 403:
+                                    errores += 1
+                            except: errores += 1
+
+                        progress_bar.empty()
+                        status_text.empty()
+
+                        st.success(f"✅ **Sincronización completa!**")
+                        st.markdown(f"📊 Partidos: **{total_partidos}** | Equipos: **{total_equipos}** | Errores: **{errores}**")
+                        time.sleep(2)
+                        st.rerun()
 
                     except Exception as e:
                         st.error(f"❌ Error: {e}")
-                        import traceback
-                        st.code(traceback.format_exc())
-
 
         with col_info:
             st.markdown(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/999")
