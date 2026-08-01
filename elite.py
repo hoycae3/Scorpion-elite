@@ -1010,16 +1010,28 @@ def render_login_form():
                         st.info("📊 Buscando stats de equipos...")
                         todos_partidos = client.table('partidos').select('*').execute()
                         
+                        # Mapeo de nombre de liga a liga_id
+                        LIGAS_MAP_REVERSE = {nombre: lid for lid, nombre in LIGAS}
+                        
+                        # Guardar equipos con su liga_id correcto: {equipo: (liga_nombre, liga_id)}
                         equipos_unicos = {}
+                        
                         for p in todos_partidos.data:
                             local = p.get('equipo_local', '')
                             visitante = p.get('equipo_visitante', '')
-                            if local: equipos_unicos[local] = p.get('liga', '')
-                            if visitante: equipos_unicos[visitante] = p.get('liga', '')
+                            liga_nombre = p.get('liga', '')
+                            # Intentar obtener liga_id de la tabla o buscar por nombre
+                            liga_id_partido = p.get('liga_id') or LIGAS_MAP_REVERSE.get(liga_nombre)
+                            
+                            if local:
+                                equipos_unicos[local] = (liga_nombre, liga_id_partido)
+                            
+                            if visitante:
+                                equipos_unicos[visitante] = (liga_nombre, liga_id_partido)
                         
                         st.info(f"🔍 {len(equipos_unicos)} equipos a buscar...")
                         
-                        for idx, (eq_nombre, eq_liga) in enumerate(equipos_unicos.items()):
+                        for idx, (eq_nombre, (eq_liga_nombre, eq_liga_id)) in enumerate(equipos_unicos.items()):
                             if idx % 5 == 0:
                                 progress_bar.progress(0.5 + (idx / len(equipos_unicos) * 0.5))
                                 status_text.text(f"📊 Equipo {idx+1}/{len(equipos_unicos)}: {eq_nombre}")
@@ -1031,8 +1043,8 @@ def render_login_form():
                                     for t in resp_s.json().get('response', []):
                                         if t.get('team', {}).get('name') == eq_nombre:
                                             tid = t.get('team', {}).get('id')
-                                            # Buscar stats con la liga correcta
-                                            resp_st = requests.get(f"{API_URL}/teams/statistics", headers=headers, params={'team': tid, 'league': liga_id, 'season': season}, timeout=10)
+                                            # Buscar stats con la liga_id correcta del partido
+                                            resp_st = requests.get(f"{API_URL}/teams/statistics", headers=headers, params={'team': tid, 'league': eq_liga_id, 'season': season}, timeout=10)
                                             if resp_st.status_code == 200:
                                                 stats_data = resp_st.json().get('response', {})
                                                 if stats_data:
@@ -1051,7 +1063,7 @@ def render_login_form():
                                                     
                                                     eq_data = {
                                                         'equipo': eq_nombre,
-                                                        'liga': eq_liga or stats_data.get('league', {}).get('name', ''),
+                                                        'liga': eq_liga_nombre or stats_data.get('league', {}).get('name', ''),
                                                         'temporada': f'{season}-{season+1}',
                                                         'partidos_jugados': pj_t,
                                                         'victorias': wins,
