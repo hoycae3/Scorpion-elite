@@ -914,6 +914,45 @@ def render_login_form():
                                         st.warning("⚠️ Sin stats")
                                 else:
                                     st.error(f"❌ Error stats: {resp_team.status_code}")
+                            
+                            # También guardar equipo visitante
+                            team_away = teams.get('away', {})
+                            team_away_name = team_away.get('name', '')
+                            team_away_id = team_away.get('id', 0)
+                            
+                            if team_away_name and team_away_id:
+                                st.markdown(f"**Stats visitante: {team_away_name}**")
+                                resp_away = requests.get(
+                                    f"{API_URL}/teams/statistics",
+                                    headers=headers,
+                                    params={'team': team_away_id, 'league': 253, 'season': season},
+                                    timeout=15
+                                )
+                                if resp_away.status_code == 200:
+                                    stats_a = resp_away.json().get('response', {})
+                                    if stats_a:
+                                        equip_away_data = {
+                                            'equipo': team_away_name,
+                                            'liga': league.get('name', ''),
+                                            'temporada': f'{season}-{season+1}',
+                                            'partidos_jugados': stats_a.get('fixtures', {}).get('played', {}).get('total', 0),
+                                            'victorias': stats_a.get('fixtures', {}).get('wins', {}).get('total', 0),
+                                            'empates': stats_a.get('fixtures', {}).get('draws', {}).get('total', 0),
+                                            'derrotas': stats_a.get('fixtures', {}).get('loses', {}).get('total', 0),
+                                            'goles_favor': stats_a.get('goals', {}).get('for', {}).get('total', {}).get('total', 0),
+                                            'goles_contra': stats_a.get('goals', {}).get('against', {}).get('total', {}).get('total', 0),
+                                        }
+                                        try:
+                                            client.table('equipos_stats').insert(equip_away_data).execute()
+                                            st.success(f"✅ {team_away_name} guardado")
+                                        except:
+                                            client.table('equipos_stats').update(equip_away_data).eq('equipo', team_away_name).eq('temporada', equip_away_data['temporada']).execute()
+                                            st.success(f"✅ {team_away_name} actualizado")
+                                    else:
+                                        st.warning("⚠️ Sin stats visitante")
+                                else:
+                                    st.error(f"❌ Error visitante: {resp_away.status_code}")
+                            
                             st.rerun()
                     else:
                         st.error(f"❌ API error: {resp.status_code}")
