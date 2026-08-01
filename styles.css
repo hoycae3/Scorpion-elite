@@ -461,28 +461,21 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
 
 /* KPI Cards */
 .stMetric {
-    min-height: auto !important;
-    height: auto !important;
     background: var(--bg-card) !important;
-    min-height: auto !important;
-    height: auto !important;
     border: 1px solid var(--border-color) !important;
-    min-height: auto !important;
-    height: auto !important;
     border-radius: 4px !important;
-    min-height: auto !important;
-    height: auto !important;
-    padding: 15px !important;
-    min-height: auto !important;
-    height: auto !important;
-    min-height: auto !important;
-    height: auto !important;
+    padding: 6px 10px !important;
+    min-height: 50px !important;
+    height: 50px !important;
+    width: 100% !important;
+    max-width: 130px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
 }
     min-height: auto !important;
     height: auto !important;
-
-/* ══════════════════════════════════════════════════════════ */
-/* STYLES ADICIONALES - #57DBC5 Alto Contraste       */
 /* ══════════════════════════════════════════════════════════ */
 
 /* Página completa */
