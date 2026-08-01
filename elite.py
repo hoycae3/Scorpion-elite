@@ -1035,7 +1035,7 @@ def render_login_form():
                     st.rerun()
 
         with col_info:
-            st.info(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/999")
+            st.markdown(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/999")
         
         # ═══════════════════════════════════════════════════════════════
         # MOSTRAR PARTIDOS (AGRUPADOS POR LIGA)

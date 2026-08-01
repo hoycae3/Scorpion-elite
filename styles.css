@@ -712,3 +712,9 @@ div[data-testid="stAlert"] {
     background: transparent !important;
     border: none !important;
 }
+
+/* Info de fecha/requests - texto negro sin recuadro */
+div[data-testid="stHorizontalBlock"]:has([data-testid="stMarkdownContainer"]) p {
+    color: #000000 !important;
+    font-size: 14px !important;
+}
