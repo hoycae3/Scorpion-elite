@@ -821,6 +821,11 @@ def render_login_form():
                         262, 253, 16, 307, 98, 292
                     ]
                     
+                    current_year = datetime.now().year
+                    # Temporada actual (agosto-diciembre = year, enero-julio = year-1)
+                    current_month = datetime.now().month
+                    season = current_year if current_month >= 8 else current_year - 1
+                    
                     hoy = datetime.now(timezone(timedelta(hours=-5))).date()
                     TZ = timezone(timedelta(hours=-5))
                     hoy_str = hoy.strftime('%Y-%m-%d')
@@ -885,7 +890,7 @@ def render_login_form():
                             buscar_desde = hoy_str
                         
                         # Consultar API
-                        params = {'league': liga_id, 'season': 2024, 'from': buscar_desde, 'to': fecha_hasta_7}
+                        params = {'league': liga_id, 'season': season, 'from': buscar_desde, 'to': fecha_hasta_7}
                         try:
                             resp = requests.get(f"{API_URL}/fixtures", headers=headers, params=params, timeout=15)
                             st.session_state.api_requests_today += 1
