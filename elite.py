@@ -246,6 +246,8 @@ def db_login(password):
 # ══════════════════════════════════════════════════════════
 if "logged" not in st.session_state:
     st.session_state.logged = False
+if "show_login" not in st.session_state:
+    st.session_state.show_login = False
 if "df_partidos" not in st.session_state:
     st.session_state.df_partidos = None
 if "page" not in st.session_state:
@@ -573,9 +575,6 @@ def render_login_form():
     """Renderiza el formulario de login con solo contraseña"""
     
     # Toggle para mostrar/ocultar login
-    if "show_login" not in st.session_state:
-        st.session_state.show_login = False
-    
     # Si no está logueado
     if not st.session_state.logged:
         
