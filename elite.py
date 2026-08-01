@@ -858,11 +858,51 @@ def render_login_form():
                             st.markdown("**Guardando en Supabase...**")
                             result = client.table('partidos').upsert(partido_data, on_conflict='fixture_id').execute()
                             
-                            st.success(f"✅ Resultado: {result.data}")
+                            st.success(f"✅ Partido guardado")
+                            
+                            # Guardar stats del equipo local
+                            team_local = teams.get('home', {})
+                            team_name = team_local.get('name', '')
+                            team_id_api = team_local.get('id', 0)
+                            
+                            if team_name and team_id_api:
+                                st.markdown(f"**Stats: {team_name}**")
+                                resp_team = requests.get(
+                                    f"{API_URL}/teams/statistics",
+                                    headers=headers,
+                                    params={'team': team_id_api, 'league': 253, 'season': season},
+                                    timeout=15
+                                )
+                                if resp_team.status_code == 200:
+                                    stats = resp_team.json().get('response', {})
+                                    if stats:
+                                        played = stats.get('fixtures', {}).get('played', {}).get('total', 0)
+                                        wins = stats.get('fixtures', {}).get('wins', {}).get('total', 0)
+                                        draws = stats.get('fixtures', {}).get('draws', {}).get('total', 0)
+                                        loses = stats.get('fixtures', {}).get('loses', {}).get('total', 0)
+                                        goals_for = stats.get('goals', {}).get('for', {}).get('total', {}).get('total', 0)
+                                        goals_against = stats.get('goals', {}).get('against', {}).get('total', {}).get('total', 0)
+                                        equipo_data = {
+                                            'equipo': team_name,
+                                            'liga': league.get('name', ''),
+                                            'partidos_jugados': played,
+                                            'victorias': wins,
+                                            'empates': draws,
+                                            'derrotas': loses,
+                                            'goles_favor': goals_for,
+                                            'goles_contra': goals_against,
+                                        }
+                                        st.json(equipo_data)
+                                        st.markdown("**Guardando equipo...**")
+                                        result_eq = client.table('equipos_stats').upsert(equipo_data, on_conflict='equipo').execute()
+                                        st.success(f"✅ Equipo guardado")
+                                    else:
+                                        st.warning("⚠️ Sin stats")
+                                else:
+                                    st.error(f"❌ Error stats: {resp_team.status_code}")
                             st.rerun()
                     else:
                         st.error(f"❌ API error: {resp.status_code}")
-                        
                 except Exception as e:
                     st.error(f"❌ Error: {e}")
                     import traceback
