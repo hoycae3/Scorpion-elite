@@ -933,7 +933,7 @@ def render_login_form():
                             status_text.text(f"📊 {liga_nombre}...")
                             progress_bar.progress((idx + 1) / len(LIGAS))
                             
-                            params = {'league': liga_id, 'season': season, 'from': hoy_str, 'to': fecha_hasta_7}
+                            params = {'league': liga_id, 'season': season, 'from': hoy_str, 'to': fecha_fin}
                             try:
                                 resp = requests.get(f"{API_URL}/fixtures", headers=headers, params=params, timeout=15)
                                 
