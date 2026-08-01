@@ -834,10 +834,16 @@ def render_login_form():
                         API_URL = "https://v3.football.api-sports.io"
                         API_KEY = "e3926f829cd848f4b2b54d722ca29701"
                         headers = {'x-apisports-key': API_KEY}
-                        season = 2026
                         hoy = datetime.now(timezone(timedelta(hours=-5))).date()
                         hoy_str = hoy.strftime('%Y-%m-%d')
-                        fecha_fin_deseada = hoy + timedelta(days=6)
+                        
+                        # Calcular temporada dinámicamente
+                        # Ago-Dic 2025 → Season 2025, Ene-Jul 2026 → Season 2025
+                        season = hoy.year if hoy.month >= 8 else hoy.year - 1
+                        
+                        # Si estamos en pretemporada (agos-agos), probar también temporada anterior
+                        season_anterior = season - 1
+                        st.markdown(f"⚽ Temporada: **{season}** | Pretemporada: {hoy.month in [7, 8]}")
 
                         # Obtener partidos existentes y la última fecha
                         partidos_existentes = set()
@@ -860,6 +866,7 @@ def render_login_form():
                         st.markdown(f"📊 Ya tienes: **{len(partidos_existentes)}** partidos, **{len(equipos_existentes)}** equipos")
 
                         # Lógica optimizada: solo buscar si falta cobertura de 7 días
+                        fecha_fin_deseada = hoy + timedelta(days=6)
                         buscar_partidos = True
                         if ultima_fecha and ultima_fecha >= fecha_fin_deseada:
                             buscar_partidos = False
@@ -1119,9 +1126,10 @@ def render_login_form():
                     API_URL = "https://v3.football.api-sports.io"
                     API_KEY = "e3926f829cd848f4b2b54d722ca29701"
                     headers = {'x-apisports-key': API_KEY}
-                    season = 2026
                     hoy = datetime.now(timezone(timedelta(hours=-5))).date()
                     hoy_str = hoy.strftime('%Y-%m-%d')
+                    # Calcular temporada dinámicamente
+                    season = hoy.year if hoy.month >= 8 else hoy.year - 1
 
                     progress_bar = st.progress(0)
                     status_text = st.empty()
