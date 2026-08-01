@@ -850,8 +850,6 @@ def render_login_form():
                                 'liga': league.get('name', ''),
                                 'equipo_local': teams.get('home', {}).get('name', ''),
                                 'equipo_visitante': teams.get('away', {}).get('name', ''),
-                                'goles_local': goals.get('home'),
-                                'goles_visitante': goals.get('away'),
                             }
                             
                             st.write("**Datos a guardar:**")
