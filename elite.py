@@ -880,55 +880,110 @@ def render_login_form():
                             st.info(f"📡 Buscando partidos: {fecha_inicio} al {fecha_fin}")
 
                         LIGAS = [
-                            # TORNEOS INTERNACIONALES
-                            (2, "Champions League"), (3, "Europa League"), (848, "Conf League"),
-                            (13, "Libertadores"), (11, "Sudamericana"), (16, "CONCACAF CL"),
-                            # ESPAÑA
-                            (140, "La Liga"), (141, "Segunda División"),
-                            # INGLATERRA
-                            (39, "Premier League"), (40, "Championship"), (41, "League One"), (42, "League Two"),
-                            # ALEMANIA
-                            (78, "Bundesliga"), (79, "2.Bundesliga"),
-                            # ITALIA
-                            (135, "Serie A Italia"), (136, "Serie B Italia"),
-                            # FRANCIA
-                            (61, "Ligue 1"), (62, "Ligue 2"),
-                            # PORTUGAL
-                            (94, "Primeira Liga"),
-                            # HOLANDA
-                            (88, "Eredivisie"),
-                            # BÉLGICA
-                            (144, "Jupiler Pro"),
-                            # TURQUÍA
-                            (203, "Süper Lig"), (204, "1. Lig"),
-                            # ESCOCIA
-                            (179, "Scottish Premiership"),
-                            # BRASIL
-                            (71, "Serie A Brasil"), (72, "Serie B Brasil"),
-                            # ARGENTINA
-                            (128, "Liga Argentina"),
-                            # COLOMBIA
-                            (239, "Primera A Colombia"),
-                            # PARAGUAY
-                            (250, "Division Paraguay"),
-                            # ECUADOR
-                            (242, "Liga Pro Ecuador"),
-                            # URUGUAY
-                            (268, "Primera Uruguay"),
-                            # CHILE
-                            (265, "Primera Chile"),
-                            # PERÚ
-                            (281, "Liga 1 Perú"),
-                            # USA/MÉXICO
-                            (253, "MLS"), (262, "Liga MX"),
-                            # ARABIA SAUDITA
-                            (307, "Saudi Pro League"),
-                            # EGIPTO
-                            (233, "Premier Egypt"),
-                            # JAPÓN
-                            (98, "J1 League"),
-                            # COREA
-                            (292, "K League 1"),
+                            # 🏆 TORNEOS INTERNACIONALES
+                            {"id": 2, "name": "UEFA Champions League", "pais": "Mundial"},
+                            {"id": 3, "name": "UEFA Europa League", "pais": "Mundial"},
+                            {"id": 848, "name": "UEFA Europa Conference League", "pais": "Mundial"},
+                            {"id": 13, "name": "Copa Libertadores", "pais": "Mundial"},
+                            {"id": 11, "name": "Copa Sudamericana", "pais": "Mundial"},
+                            {"id": 541, "name": "CONMEBOL Recopa", "pais": "Mundial"},
+                            {"id": 15, "name": "FIFA Club World Cup", "pais": "Mundial"},
+                            {"id": 16, "name": "CONCACAF Champions League", "pais": "Mundial"},
+                            {"id": 17, "name": "AFC Champions League", "pais": "Mundial"},
+                            
+                            # 🇪🇸 ESPAÑA
+                            {"id": 140, "name": "La Liga", "pais": "España"},
+                            {"id": 141, "name": "Segunda División", "pais": "España"},
+                            
+                            # 🏴󠁧󠁢󠁥󠁮󠁧󠁿 INGLATERRA
+                            {"id": 39, "name": "Premier League", "pais": "Inglaterra"},
+                            {"id": 40, "name": "Championship", "pais": "Inglaterra"},
+                            {"id": 41, "name": "League One", "pais": "Inglaterra"},
+                            {"id": 42, "name": "League Two", "pais": "Inglaterra"},
+                            
+                            # 🇩🇪 ALEMANIA
+                            {"id": 78, "name": "Bundesliga", "pais": "Alemania"},
+                            {"id": 79, "name": "2. Bundesliga", "pais": "Alemania"},
+                            
+                            # 🇮🇹 ITALIA
+                            {"id": 135, "name": "Serie A", "pais": "Italia"},
+                            {"id": 136, "name": "Serie B", "pais": "Italia"},
+                            
+                            # 🇫🇷 FRANCIA
+                            {"id": 61, "name": "Ligue 1", "pais": "Francia"},
+                            {"id": 62, "name": "Ligue 2", "pais": "Francia"},
+                            
+                            # 🇵🇹 PORTUGAL
+                            {"id": 94, "name": "Primeira Liga", "pais": "Portugal"},
+                            
+                            # 🇳🇱 HOLANDA
+                            {"id": 88, "name": "Eredivisie", "pais": "Holanda"},
+                            
+                            # 🇧🇪 BÉLGICA
+                            {"id": 144, "name": "Jupiler Pro League", "pais": "Bélgica"},
+                            
+                            # 🇹🇷 TURQUÍA
+                            {"id": 203, "name": "Süper Lig", "pais": "Turquía"},
+                            {"id": 204, "name": "1. Lig", "pais": "Turquía"},
+                            
+                            # 🏴󠁧󠁢󠁳󠁣󠁴󠁿 ESCOCIA
+                            {"id": 179, "name": "Scottish Premiership", "pais": "Escocia"},
+                            {"id": 180, "name": "Championship Scotland", "pais": "Escocia"},
+                            
+                            # 🇧🇷 BRASIL
+                            {"id": 71, "name": "Serie A Brasil", "pais": "Brasil"},
+                            {"id": 72, "name": "Serie B Brasil", "pais": "Brasil"},
+                            {"id": 75, "name": "Serie C Brasil", "pais": "Brasil"},
+                            
+                            # 🇦🇷 ARGENTINA
+                            {"id": 128, "name": "Liga Profesional Argentina", "pais": "Argentina"},
+                            {"id": 129, "name": "Primera Nacional", "pais": "Argentina"},
+                            {"id": 131, "name": "Primera B Metropolitana", "pais": "Argentina"},
+                            
+                            # 🇨🇴 COLOMBIA
+                            {"id": 239, "name": "Primera A Colombia", "pais": "Colombia"},
+                            {"id": 240, "name": "Primera B Colombia", "pais": "Colombia"},
+                            
+                            # 🇵🇾 PARAGUAY
+                            {"id": 250, "name": "Division Profesional Paraguay", "pais": "Paraguay"},
+                            {"id": 251, "name": "Division Intermedia Paraguay", "pais": "Paraguay"},
+                            
+                            # 🇪🇨 ECUADOR
+                            {"id": 242, "name": "Liga Pro Ecuador", "pais": "Ecuador"},
+                            {"id": 243, "name": "Liga Pro Serie B Ecuador", "pais": "Ecuador"},
+                            
+                            # 🇺🇾 URUGUAY
+                            {"id": 268, "name": "Primera División Uruguay", "pais": "Uruguay"},
+                            {"id": 269, "name": "Segunda División Uruguay", "pais": "Uruguay"},
+                            
+                            # 🇨🇱 CHILE
+                            {"id": 265, "name": "Primera División Chile", "pais": "Chile"},
+                            {"id": 266, "name": "Primera B Chile", "pais": "Chile"},
+                            
+                            # 🇵🇪 PERÚ
+                            {"id": 281, "name": "Liga 1 Peru", "pais": "Perú"},
+                            {"id": 282, "name": "Liga 2 Peru", "pais": "Perú"},
+                            
+                            # 🇺🇸🇨🇦 USA / CANADÁ
+                            {"id": 253, "name": "MLS", "pais": "USA"},
+                            {"id": 255, "name": "USL Championship", "pais": "USA"},
+                            {"id": 909, "name": "MLS Next Pro", "pais": "USA"},
+                            
+                            # 🇲🇽 MÉXICO
+                            {"id": 262, "name": "Liga MX", "pais": "México"},
+                            {"id": 263, "name": "Liga de Expansión MX", "pais": "México"},
+                            
+                            # 🇸🇦 ARABIA SAUDITA
+                            {"id": 307, "name": "Saudi Pro League", "pais": "Arabia Saudita"},
+                            
+                            # 🇪🇬 EGIPTO
+                            {"id": 233, "name": "Premier League Egypt", "pais": "Egipto"},
+                            
+                            # 🇯🇵 JAPÓN
+                            {"id": 98, "name": "J1 League", "pais": "Japón"},
+                            
+                            # 🇰🇷 COREA DEL SUR
+                            {"id": 292, "name": "K League 1", "pais": "Corea del Sur"},
                         ]
 
                         total_partidos = 0
@@ -941,7 +996,9 @@ def render_login_form():
                         # Solo buscar partidos si es necesario
                         if buscar_partidos:
                             st.info("📥 Descargando partidos nuevos...")
-                            for idx, (liga_id, liga_nombre) in enumerate(LIGAS):
+                            for idx, liga in enumerate(LIGAS):
+                                liga_id = liga['id']
+                                liga_nombre = liga['name']
                                 status_text.text(f"📊 {liga_nombre}...")
                                 progress_bar.progress((idx + 1) / len(LIGAS))
                                 
@@ -1274,9 +1331,110 @@ def render_login_form():
 
 
                     LIGAS = [
-                        (140, "La Liga"), (39, "Premier League"), (78, "Bundesliga"),
-                        (135, "Serie A"), (61, "Ligue 1"), (253, "MLS"), (262, "Liga MX"),
-                        (2, "Champions League"), (13, "Libertadores"),
+                        # 🏆 TORNEOS INTERNACIONALES
+                        {"id": 2, "name": "UEFA Champions League", "pais": "Mundial"},
+                        {"id": 3, "name": "UEFA Europa League", "pais": "Mundial"},
+                        {"id": 848, "name": "UEFA Europa Conference League", "pais": "Mundial"},
+                        {"id": 13, "name": "Copa Libertadores", "pais": "Mundial"},
+                        {"id": 11, "name": "Copa Sudamericana", "pais": "Mundial"},
+                        {"id": 541, "name": "CONMEBOL Recopa", "pais": "Mundial"},
+                        {"id": 15, "name": "FIFA Club World Cup", "pais": "Mundial"},
+                        {"id": 16, "name": "CONCACAF Champions League", "pais": "Mundial"},
+                        {"id": 17, "name": "AFC Champions League", "pais": "Mundial"},
+                        
+                        # 🇪🇸 ESPAÑA
+                        {"id": 140, "name": "La Liga", "pais": "España"},
+                        {"id": 141, "name": "Segunda División", "pais": "España"},
+                        
+                        # 🏴󠁧󠁢󠁥󠁮󠁧󠁿 INGLATERRA
+                        {"id": 39, "name": "Premier League", "pais": "Inglaterra"},
+                        {"id": 40, "name": "Championship", "pais": "Inglaterra"},
+                        {"id": 41, "name": "League One", "pais": "Inglaterra"},
+                        {"id": 42, "name": "League Two", "pais": "Inglaterra"},
+                        
+                        # 🇩🇪 ALEMANIA
+                        {"id": 78, "name": "Bundesliga", "pais": "Alemania"},
+                        {"id": 79, "name": "2. Bundesliga", "pais": "Alemania"},
+                        
+                        # 🇮🇹 ITALIA
+                        {"id": 135, "name": "Serie A", "pais": "Italia"},
+                        {"id": 136, "name": "Serie B", "pais": "Italia"},
+                        
+                        # 🇫🇷 FRANCIA
+                        {"id": 61, "name": "Ligue 1", "pais": "Francia"},
+                        {"id": 62, "name": "Ligue 2", "pais": "Francia"},
+                        
+                        # 🇵🇹 PORTUGAL
+                        {"id": 94, "name": "Primeira Liga", "pais": "Portugal"},
+                        
+                        # 🇳🇱 HOLANDA
+                        {"id": 88, "name": "Eredivisie", "pais": "Holanda"},
+                        
+                        # 🇧🇪 BÉLGICA
+                        {"id": 144, "name": "Jupiler Pro League", "pais": "Bélgica"},
+                        
+                        # 🇹🇷 TURQUÍA
+                        {"id": 203, "name": "Süper Lig", "pais": "Turquía"},
+                        {"id": 204, "name": "1. Lig", "pais": "Turquía"},
+                        
+                        # 🏴󠁧󠁢󠁳󠁣󠁴󠁿 ESCOCIA
+                        {"id": 179, "name": "Scottish Premiership", "pais": "Escocia"},
+                        {"id": 180, "name": "Championship Scotland", "pais": "Escocia"},
+                        
+                        # 🇧🇷 BRASIL
+                        {"id": 71, "name": "Serie A Brasil", "pais": "Brasil"},
+                        {"id": 72, "name": "Serie B Brasil", "pais": "Brasil"},
+                        {"id": 75, "name": "Serie C Brasil", "pais": "Brasil"},
+                        
+                        # 🇦🇷 ARGENTINA
+                        {"id": 128, "name": "Liga Profesional Argentina", "pais": "Argentina"},
+                        {"id": 129, "name": "Primera Nacional", "pais": "Argentina"},
+                        {"id": 131, "name": "Primera B Metropolitana", "pais": "Argentina"},
+                        
+                        # 🇨🇴 COLOMBIA
+                        {"id": 239, "name": "Primera A Colombia", "pais": "Colombia"},
+                        {"id": 240, "name": "Primera B Colombia", "pais": "Colombia"},
+                        
+                        # 🇵🇾 PARAGUAY
+                        {"id": 250, "name": "Division Profesional Paraguay", "pais": "Paraguay"},
+                        {"id": 251, "name": "Division Intermedia Paraguay", "pais": "Paraguay"},
+                        
+                        # 🇪🇨 ECUADOR
+                        {"id": 242, "name": "Liga Pro Ecuador", "pais": "Ecuador"},
+                        {"id": 243, "name": "Liga Pro Serie B Ecuador", "pais": "Ecuador"},
+                        
+                        # 🇺🇾 URUGUAY
+                        {"id": 268, "name": "Primera División Uruguay", "pais": "Uruguay"},
+                        {"id": 269, "name": "Segunda División Uruguay", "pais": "Uruguay"},
+                        
+                        # 🇨🇱 CHILE
+                        {"id": 265, "name": "Primera División Chile", "pais": "Chile"},
+                        {"id": 266, "name": "Primera B Chile", "pais": "Chile"},
+                        
+                        # 🇵🇪 PERÚ
+                        {"id": 281, "name": "Liga 1 Peru", "pais": "Perú"},
+                        {"id": 282, "name": "Liga 2 Peru", "pais": "Perú"},
+                        
+                        # 🇺🇸🇨🇦 USA / CANADÁ
+                        {"id": 253, "name": "MLS", "pais": "USA"},
+                        {"id": 255, "name": "USL Championship", "pais": "USA"},
+                        {"id": 909, "name": "MLS Next Pro", "pais": "USA"},
+                        
+                        # 🇲🇽 MÉXICO
+                        {"id": 262, "name": "Liga MX", "pais": "México"},
+                        {"id": 263, "name": "Liga de Expansión MX", "pais": "México"},
+                        
+                        # 🇸🇦 ARABIA SAUDITA
+                        {"id": 307, "name": "Saudi Pro League", "pais": "Arabia Saudita"},
+                        
+                        # 🇪🇬 EGIPTO
+                        {"id": 233, "name": "Premier League Egypt", "pais": "Egipto"},
+                        
+                        # 🇯🇵 JAPÓN
+                        {"id": 98, "name": "J1 League", "pais": "Japón"},
+                        
+                        # 🇰🇷 COREA DEL SUR
+                        {"id": 292, "name": "K League 1", "pais": "Corea del Sur"},
                     ]
 
                     # ═══════════════════════════════════════════════════════
@@ -1306,7 +1464,9 @@ def render_login_form():
                         # Guardar como {nombre_equipo: (liga_nombre, liga_id)}
                         equipos_por_buscar = {}
 
-                        for idx, (liga_id, liga_nombre) in enumerate(LIGAS):
+                        for idx, liga in enumerate(LIGAS):
+                            liga_id = liga['id']
+                            liga_nombre = liga['name']
                             status_text.text(f"📊 {liga_nombre}...")
                             progress_bar.progress((idx + 1) / len(LIGAS) * 0.2)
                             params = {'league': liga_id, 'season': season, 'from': fecha_inicio, 'to': fecha_fin}
@@ -1335,7 +1495,9 @@ def render_login_form():
                         # Guardar como {nombre_equipo: (liga_nombre, liga_id)}
                         equipos_por_buscar = {}
 
-                        for idx, (liga_id, liga_nombre) in enumerate(LIGAS):
+                        for idx, liga in enumerate(LIGAS):
+                            liga_id = liga['id']
+                            liga_nombre = liga['name']
                             status_text.text(f"📊 {liga_nombre}...")
                             progress_bar.progress((idx + 1) / len(LIGAS) * 0.2)
                             params = {'league': liga_id, 'season': season, 'from': fecha_inicio, 'to': fecha_fin}
