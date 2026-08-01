@@ -395,6 +395,11 @@ def render_public_landing():
                 stats_local = local_resp.data[0] if local_resp.data else None
                 stats_visit = visit_resp.data[0] if visit_resp.data else None
                 
+                # DEBUG - ver qué equipos se encuentran
+                st.write(f"🔍 Buscando: '{local}' y '{visitante}'")
+                st.write(f"🔍 Local en BD: {[e['equipo'] for e in local_resp.data] if local_resp.data else 'No encontrado'}")
+                st.write(f"🔍 Visitante en BD: {[e['equipo'] for e in visit_resp.data] if visit_resp.data else 'No encontrado'}")
+                
                 if stats_local and stats_visit:
                     col1, col2 = st.columns(2)
                     with col1:
