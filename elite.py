@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import os
-import sqlite3
 # Mapeo de league_id por nombre de liga
 LIGAS_MAP = {
     'Premier League': 39,
@@ -75,7 +74,6 @@ if not SUPABASE_KEY:
 
 # Base de datos persistente en el directorio de la aplicación
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(APP_DIR, "scorpion_users.db")
 
 # ══════════════════════════════════════════════════════════
 # CLIENTE SUPABASE UNIFICADO con @st.cache_resource
@@ -114,15 +112,6 @@ def verify_password(password: str, hashed: str) -> bool:
 def get_hoy():
     return str(datetime.now(timezone(timedelta(hours=-5))).date())
 
-    """Obtiene usuario por ID"""
-    try:
-        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
-            conn.row_factory = sqlite3.Row
-            r = conn.execute("SELECT * FROM usuarios WHERE id=?", (user_id,)).fetchone()
-            return dict(r) if r else None
-    except Exception as e:
-        logger.error(f"Error en db_get_by_id: {e}")
-        return None
 
 def db_todos():
     """Obtiene todos los usuarios"""
@@ -132,15 +121,6 @@ def db_todos():
     try:
         resp = client.table('usuarios').select('id, nombre, plan, dias, activo, es_admin, creado_at').execute()
         return resp.data if resp.data else []
-    except Exception as e:
-        logger.error(f"Error en db_todos: {e}")
-        return []
-    """Obtiene todos los usuarios (sin password_hash para seguridad)"""
-    try:
-        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
-            conn.row_factory = sqlite3.Row
-            r = conn.execute("SELECT id, nombre, plan, dias, activo, es_admin, creado FROM usuarios ORDER BY id ASC").fetchall()
-            return [dict(x) for x in r]
     except Exception as e:
         logger.error(f"Error en db_todos: {e}")
         return []
@@ -165,20 +145,6 @@ def db_crear_usuario(password, nombre, plan, dias):
     except Exception as e:
         logger.error(f"Error en db_crear_usuario: {e}")
         return False
-    """Crea un nuevo usuario con password hasheado (bcrypt)"""
-    pwd_hash = hash_password(password)
-    try:
-        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
-            conn.execute("""INSERT INTO usuarios (password_hash, nombre, plan, fecha_inicio, dias, activo)
-                          VALUES (?, ?, ?, ?, ?, 1)""",
-                        (pwd_hash, nombre, plan, get_hoy(), dias))
-            conn.commit()
-            return True
-    except sqlite3.IntegrityError:
-        return False
-    except Exception as e:
-        logger.error(f"Error en db_crear_usuario: {e}")
-        return False
 
 def db_cambiar_password(user_id, password):
     """Cambia password de usuario"""
@@ -189,16 +155,6 @@ def db_cambiar_password(user_id, password):
         pwd_hash = hash_password(password)
         client.table('usuarios').update({'password_hash': pwd_hash}).eq('id', user_id).execute()
         return True
-    except Exception as e:
-        logger.error(f"Error en db_cambiar_password: {e}")
-        return False
-    """Cambia password de usuario (bcrypt)"""
-    pwd_hash = hash_password(password)
-    try:
-        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
-            conn.execute("UPDATE usuarios SET password_hash=? WHERE id=?", (pwd_hash, user_id))
-            conn.commit()
-            return True
     except Exception as e:
         logger.error(f"Error en db_cambiar_password: {e}")
         return False
@@ -214,21 +170,8 @@ def db_eliminar_usuario(user_id):
     except Exception as e:
         logger.error(f"Error en db_eliminar_usuario: {e}")
         return False
-    """Elimina un usuario"""
-    try:
-        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
-            conn.execute("DELETE FROM usuarios WHERE id=? AND es_admin=0", (user_id,))
-            conn.commit()
-            return conn.total_changes > 0
-    except Exception as e:
-        logger.error(f"Error en db_eliminar_usuario: {e}")
-        return False
 
 def db_actualizar_plan(user_id, plan, dias):
-    """Actualiza plan de usuario"""
-    client = get_client()
-    if not client:
-        return False
     try:
         client.table('usuarios').update({
             'plan': plan,
@@ -236,16 +179,6 @@ def db_actualizar_plan(user_id, plan, dias):
             'fecha_inicio': get_hoy()
         }).eq('id', user_id).execute()
         return True
-    except Exception as e:
-        logger.error(f"Error en db_actualizar_plan: {e}")
-        return False
-    """Actualiza plan de usuario"""
-    try:
-        with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
-            conn.execute("UPDATE usuarios SET plan=?, dias=?, fecha_inicio=? WHERE id=?", 
-                        (plan, dias, get_hoy(), user_id))
-            conn.commit()
-            return True
     except Exception as e:
         logger.error(f"Error en db_actualizar_plan: {e}")
         return False
