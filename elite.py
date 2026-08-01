@@ -871,7 +871,7 @@ def render_login_form():
                     import traceback
                     st.code(traceback.format_exc())
 
-        with col_info:        with col_info:
+        with col_info:
             st.markdown(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/999")
         
         # ═══════════════════════════════════════════════════════════════
