@@ -1205,10 +1205,9 @@ def render_login_form():
                     if st.button("🎯", key=f"match_{p.get('id')}", help=f"Analizar {local} VS {visitante}", use_container_width=True):
                         selected_match = p
                         st.session_state.selected_match_data = selected_match
-        elif not equipos_disponibles:
-            st.warning("⚠️ No hay partidos ni equipos guardados. Sube un Excel y busca los equipos.")
         
         # Mostrar equipos disponibles
+        equipos_disponibles = []
         if not equipos_disponibles:
             st.warning("⚠️ No hay equipos guardados. Ve a 'Estadísticas' para agregar equipos.")
         
