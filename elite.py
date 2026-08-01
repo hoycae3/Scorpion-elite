@@ -1077,6 +1077,117 @@ def render_login_form():
                 except Exception as e:
                         st.error(f"❌ Error: {e}")
 
+        with col_btn3:
+            if st.button("👥 Equipos", type="secondary", use_container_width=True):
+                st.info("👥 Buscando stats de equipos de mañana y pasado...")
+                try:
+                    client = get_client()
+                    if not client:
+                        st.error("❌ No se pudo conectar a Supabase")
+                        st.stop()
+
+                    API_URL = "https://v3.football.api-sports.io"
+                    API_KEY = "e3926f829cd848f4b2b54d722ca29701"
+                    headers = {'x-apisports-key': API_KEY}
+                    season = 2026
+                    hoy = datetime.now(timezone(timedelta(hours=-5))).date()
+
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+
+                    # Buscar partidos de MAÑANA y PASADO MAÑANA
+                    fecha_inicio = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
+                    fecha_fin = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
+                    
+                    st.info(f"📡 Equipos de partidos: {fecha_inicio} al {fecha_fin}")
+
+                    LIGAS = [
+                        (140, "La Liga"), (39, "Premier League"), (78, "Bundesliga"),
+                        (135, "Serie A"), (61, "Ligue 1"), (253, "MLS"), (262, "Liga MX"),
+                        (2, "Champions League"), (13, "Libertadores"),
+                    ]
+
+                    equipos_unicos = {}
+
+                    # PASO 1: Descargar partidos de los 2 días y extraer equipos
+                    for idx, (liga_id, liga_nombre) in enumerate(LIGAS):
+                        status_text.text(f"📊 {liga_nombre}...")
+                        progress_bar.progress((idx + 1) / len(LIGAS) * 0.3)
+
+                        params = {'league': liga_id, 'season': season, 'from': fecha_inicio, 'to': fecha_fin}
+                        try:
+                            resp = requests.get(f"{API_URL}/fixtures", headers=headers, params=params, timeout=15)
+                            if resp.status_code == 200:
+                                fixtures = resp.json().get('response', []) or []
+                                for f in fixtures:
+                                    teams = f.get('teams', {})
+                                    local = teams.get('home', {}).get('name', '')
+                                    visitante = teams.get('away', {}).get('name', '')
+                                    if local: equipos_unicos[local] = f.get('league', {}).get('name', '')
+                                    if visitante: equipos_unicos[visitante] = f.get('league', {}).get('name', '')
+                        except: pass
+
+                    # PASO 2: Buscar stats de los equipos únicos
+                    if equipos_unicos:
+                        st.info(f"🔍 {len(equipos_unicos)} equipos. Buscando stats...")
+                        total_equipos = 0
+
+                        for idx, (eq_nombre, eq_liga) in enumerate(equipos_unicos.items()):
+                            progress_bar.progress(0.3 + (idx / len(equipos_unicos) * 0.7))
+                            status_text.text(f"📊 {idx+1}/{len(equipos_unicos)}: {eq_nombre}")
+
+                            try:
+                                resp_s = requests.get(f"{API_URL}/teams", headers=headers, params={'search': eq_nombre}, timeout=10)
+                                if resp_s.status_code == 200:
+                                    for t in resp_s.json().get('response', []):
+                                        if t.get('team', {}).get('name') == eq_nombre:
+                                            tid = t.get('team', {}).get('id')
+                                            resp_st = requests.get(f"{API_URL}/teams/statistics", headers=headers, params={'team': tid, 'league': 140, 'season': season}, timeout=10)
+                                            if resp_st.status_code == 200:
+                                                st_eq = resp_st.json().get('response', {})
+                                                if st_eq:
+                                                    gf = st_eq.get('goals', {}).get('for', {}).get('total', 0) or 0
+                                                    gc = st_eq.get('goals', {}).get('against', {}).get('total', 0) or 0
+                                                    gf_h = st_eq.get('goals', {}).get('for', {}).get('home', 0) or 0
+                                                    gf_a = st_eq.get('goals', {}).get('for', {}).get('away', 0) or 0
+                                                    gc_h = st_eq.get('goals', {}).get('against', {}).get('home', 0) or 0
+                                                    gc_a = st_eq.get('goals', {}).get('against', {}).get('away', 0) or 0
+                                                    pj_h = st_eq.get('fixtures', {}).get('played', {}).get('home', 1) or 1
+                                                    pj_a = st_eq.get('fixtures', {}).get('played', {}).get('away', 1) or 1
+                                                    pj_t = st_eq.get('fixtures', {}).get('played', {}).get('total', 0) or 1
+                                                    wins = st_eq.get('fixtures', {}).get('wins', {}).get('total', 0) or 0
+                                                    draws = st_eq.get('fixtures', {}).get('draws', {}).get('total', 0) or 0
+                                                    loses = st_eq.get('fixtures', {}).get('loses', {}).get('total', 0) or 0
+
+                                                    eq_data = {
+                                                        'equipo': eq_nombre,
+                                                        'liga': eq_liga or st_eq.get('league', {}).get('name', ''),
+                                                        'temporada': f'{season}-{season+1}',
+                                                        'partidos_jugados': pj_t,
+                                                        'victorias': wins,
+                                                        'empates': draws,
+                                                        'derrotas': loses,
+                                                        'goles_favor': gf,
+                                                        'goles_contra': gc,
+                                                        'lambda_local': round((gf_h + gc_a) / pj_h / 2, 2),
+                                                        'lambda_visitante': round((gf_a + gc_h) / pj_a / 2, 2),
+                                                        'ultimos_5_partidos': list(st_eq.get('form', '') or '')[:5],
+                                                    }
+                                                    client.table('equipos_stats').upsert(eq_data, ignore_duplicates=True).execute()
+                                                    total_equipos += 1
+                                            break
+                            except: pass
+
+                        progress_bar.empty()
+                        status_text.empty()
+                        st.success(f"✅ EQUIPOS GUARDADOS: {total_equipos}")
+                    else:
+                        progress_bar.empty()
+                        st.warning("📅 Sin partidos para esos días")
+
+                except Exception as e:
+                    st.error(f"❌ Error: {e}")
+
         with col_info:
             st.markdown(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/999")
         
