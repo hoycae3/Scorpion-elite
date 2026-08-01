@@ -1051,7 +1051,7 @@ def render_login_form():
             st.success(f"✅ {len(partidos_db)} partidos de Supabase")
             partidos = partidos_db
         else:
-            st.warning("📭 No hay partidos. Clic en '🔄 Buscar' para obtener partidos.")
+            st.markdown("📭 **No hay partidos.** Clic en 🔄 Sincronizar para obtener partidos.")
             partidos = []
         
         # Filtro por período

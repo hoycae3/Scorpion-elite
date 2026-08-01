@@ -665,3 +665,50 @@ a {
 .stMetric {
     margin: 0 auto !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ELEMENTOS STREAMLIT - Fondo blanco con texto negro
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Warning - fondo amarillo suave con texto negro */
+.stWarning {
+    background-color: #FFF9E6 !important;
+    border-left: 4px solid #FFD700 !important;
+    color: #000000 !important;
+    border-radius: 6px !important;
+}
+
+/* Info - fondo cyan suave con texto negro */
+.stInfo {
+    background-color: #E6F7FF !important;
+    border-left: 4px solid #00D4FF !important;
+    color: #000000 !important;
+    border-radius: 6px !important;
+}
+
+/* Success - fondo verde suave con texto negro */
+.stSuccess {
+    background-color: #E6FFE6 !important;
+    border-left: 4px solid #00AA00 !important;
+    color: #000000 !important;
+    border-radius: 6px !important;
+}
+
+/* Error - fondo rojo suave con texto negro */
+.stError {
+    background-color: #FFE6E6 !important;
+    border-left: 4px solid #FF4444 !important;
+    color: #000000 !important;
+    border-radius: 6px !important;
+}
+
+/* Contenedor de elementos Streamlit */
+.element-container {
+    background: transparent !important;
+}
+
+/* Quitar fondo de streamlit alerts */
+div[data-testid="stAlert"] {
+    background: transparent !important;
+    border: none !important;
+}
