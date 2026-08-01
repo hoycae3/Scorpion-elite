@@ -226,34 +226,16 @@ def db_actualizar_plan(user_id, plan, dias):
         return False
 
 def db_login(password):
-    """Verifica password con bcrypt y retorna usuario"""
-    # Usar Supabase para login (más confiable en producción)
-    try:
-        client = get_supabase_client()
-        resp = client.table('usuarios').select('*').eq('activo', True).execute()
-        
-        if resp.data:
-            for usuario in resp.data:
-                # Verificar con bcrypt
-                pwd_hash = usuario.get('password_hash', '')
-                if verify_password(password, pwd_hash):
-                    return usuario
-        return None
-    except Exception as e:
-        logger.error(f"Error en db_login: {e}")
-        # Fallback a SQLite local si Supabase falla
-        init_db()
-        try:
-            with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
-                conn.row_factory = sqlite3.Row
-                usuarios = conn.execute("SELECT * FROM usuarios WHERE activo=1").fetchall()
-                for usuario in usuarios:
-                    if verify_password(password, usuario['password_hash']):
-                        return dict(usuario)
-                return None
-        except Exception as e2:
-            logger.error(f"Error en db_login fallback: {e2}")
-            return None
+    """Verifica password directo con ADMIN_PASSWORD de entorno (Secrets)"""
+    # Comparación directa con la contraseña en Secrets - NO usa BD
+    if password == ADMIN_PASSWORD:
+        return {
+            'nombre': 'Administrador',
+            'plan': 'admin',
+            'es_admin': True,
+            'dias': 36500
+        }
+    return None
 
 # ══════════════════════════════════════════════════════════
 # SESSION STATE
