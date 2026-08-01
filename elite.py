@@ -819,10 +819,10 @@ def render_login_form():
                     # Determinar temporada más reciente disponible
                     # La API tiene season=2024 que cubre 2024-2025 (hasta mayo 2025)
                     # Buscar partidos futuros desde la temporada disponible
-                    season = 2024
+                    season = 2026
                     hoy = datetime.now(timezone(timedelta(hours=-5))).date()
                     # Buscar desde inicio de temporada hasta 7 días adelante
-                    fecha_desde_temporada = '2024-08-01'  # Inicio temporada
+                    fecha_desde_temporada = hoy.strftime('%Y-%m-%d')  # Hoy
                     fecha_hasta_7 = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
                     hoy_str = fecha_desde_temporada
                     
