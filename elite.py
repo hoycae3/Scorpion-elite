@@ -1014,6 +1014,8 @@ def render_login_form():
                                                                 client.table('equipos_stats').upsert(equipo_data, ignore_duplicates=True).execute()
                                                                 total_equipos += 1
                                                             except: pass
+                                        # Cerrar el if de fecha_equipos_fin
+                                        # (se cierra automáticamente con la indentación)
                                 elif resp.status_code == 403:
                                     errores += 1
                             except: errores += 1
