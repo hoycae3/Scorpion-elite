@@ -823,7 +823,7 @@ def render_login_form():
                     hoy = datetime.now(timezone(timedelta(hours=-5))).date()
                     # Buscar desde inicio de temporada hasta 7 días adelante
                     fecha_desde_temporada = hoy.strftime('%Y-%m-%d')  # Hoy
-                    fecha_hasta_7 = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
+                    fecha_hasta_7 = (hoy + timedelta(days=30)).strftime('%Y-%m-%d')
                     hoy_str = fecha_desde_temporada
                     
                     st.markdown("### 🔄 Sincronizando...")
