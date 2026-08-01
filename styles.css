@@ -474,9 +474,9 @@ h1, h2, h3, h4 { color: var(--text-primary) !important; }
     
     text-align: center !important;
     
-    min-width: 70px !important;
+    min-width: 140px !important;
     
-    max-width: 90px !important;
+    max-width: 180px !important;
     
     margin: 0 !important;
     
