@@ -1108,10 +1108,13 @@ def render_login_form():
                         partidos_por_actualizar = [p for p in resp_part.data if p.get('fecha') in [fecha_ayer, fecha_antier]]
                         
                         if partidos_por_actualizar:
-                            st.info(f"📊 {len(partidos_por_actualizar)} partidos jugados - actualizando...")
+                            st.info(f"📊 {len(partidos_por_actualizar)} partidos jugados - actualizando stats...")
                             
                             for p in partidos_por_actualizar:
                                 fix_id = p.get('fixture_id')
+                                eq_local = p.get('equipo_local', '')
+                                eq_visitante = p.get('equipo_visitante', '')
+                                
                                 if fix_id:
                                     try:
                                         resp_fix = requests.get(f"{API_URL}/fixtures", headers=headers, params={'id': fix_id}, timeout=10)
@@ -1121,23 +1124,115 @@ def render_login_form():
                                                 f_data = data[0]
                                                 goals = f_data.get('goals', {})
                                                 status = f_data.get('fixture', {}).get('status', {}).get('short', '')
+                                                stats_api = f_data.get('statistics', [])
                                                 
-                                                update_data = {}
-                                                gl = goals.get('home')
-                                                gv = goals.get('away')
-                                                if gl is not None:
-                                                    update_data['goles_local'] = gl
-                                                if gv is not None:
-                                                    update_data['goles_visitante'] = gv
+                                                gl = goals.get('home') or 0
+                                                gv = goals.get('away') or 0
+                                                
+                                                # Actualizar marcador
+                                                update_partido = {}
+                                                if goals.get('home') is not None:
+                                                    update_partido['goles_local'] = gl
+                                                if goals.get('away') is not None:
+                                                    update_partido['goles_visitante'] = gv
                                                 if status:
-                                                    update_data['estado'] = status
+                                                    update_partido['estado'] = status
                                                 
-                                                if update_data:
-                                                    client.table('partidos').update(update_data).eq('fixture_id', fix_id).execute()
+                                                if update_partido:
+                                                    client.table('partidos').update(update_partido).eq('fixture_id', fix_id).execute()
+                                                
+                                                # Si terminó, actualizar stats de equipos
+                                                if status == 'FT' and eq_local and eq_visitante:
+                                                    local_stats = {}
+                                                    visitante_stats = {}
+                                                    
+                                                    for stat in stats_api:
+                                                        stat_type = str(stat.get('type', ''))
+                                                        local_val = stat.get('home') or 0
+                                                        visit_val = stat.get('away') or 0
+                                                        
+                                                        if 'Shot' in stat_type and 'On' not in stat_type:
+                                                            local_stats['tiros'] = local_val
+                                                            visitante_stats['tiros'] = visit_val
+                                                        elif 'Shot' in stat_type and 'On' in stat_type:
+                                                            local_stats['tiros_arco'] = local_val
+                                                            visitante_stats['tiros_arco'] = visit_val
+                                                        elif 'Corner' in stat_type:
+                                                            local_stats['corners'] = local_val
+                                                            visitante_stats['corners'] = visit_val
+                                                        elif 'Yellow' in stat_type:
+                                                            local_stats['amarillas'] = local_val
+                                                            visitante_stats['amarillas'] = visit_val
+                                                        elif 'Red' in stat_type:
+                                                            local_stats['rojas'] = local_val
+                                                            visitante_stats['rojas'] = visit_val
+                                                    
+                                                    # Actualizar equipo LOCAL
+                                                    try:
+                                                        resp_eq = client.table('equipos_stats').select('*').eq('equipo', eq_local).execute()
+                                                        if resp_eq.data:
+                                                            eq = resp_eq.data[0]
+                                                            pj = (eq.get('partidos_jugados') or 0) + 1
+                                                            
+                                                            update_eq = {
+                                                                'partidos_jugados': pj,
+                                                                'goles_favor': (eq.get('goles_favor') or 0) + gl,
+                                                                'goles_contra': (eq.get('goles_contra') or 0) + gv,
+                                                                'promedio_tiros': round(((eq.get('promedio_tiros') or 0) * (pj-1) + local_stats.get('tiros', 0)) / pj, 2),
+                                                                'promedio_tiros_arco': round(((eq.get('promedio_tiros_arco') or 0) * (pj-1) + local_stats.get('tiros_arco', 0)) / pj, 2),
+                                                                'corners_favor': round(((eq.get('corners_favor') or 0) * (pj-1) + local_stats.get('corners', 0)) / pj, 2),
+                                                                'promedio_amarillas': round(((eq.get('promedio_amarillas') or 0) * (pj-1) + local_stats.get('amarillas', 0)) / pj, 2),
+                                                                'promedio_rojas': round(((eq.get('promedio_rojas') or 0) * (pj-1) + local_stats.get('rojas', 0)) / pj, 2),
+                                                            }
+                                                            
+                                                            ult5 = eq.get('ultimos_5_partidos') or []
+                                                            ult5.insert(0, 'W' if gl > gv else ('D' if gl == gv else 'L'))
+                                                            update_eq['ultimos_5_partidos'] = ult5[:5]
+                                                            
+                                                            if gl > gv:
+                                                                update_eq['victorias'] = (eq.get('victorias') or 0) + 1
+                                                            elif gl == gv:
+                                                                update_eq['empates'] = (eq.get('empates') or 0) + 1
+                                                            else:
+                                                                update_eq['derrotas'] = (eq.get('derrotas') or 0) + 1
+                                                            
+                                                            client.table('equipos_stats').update(update_eq).eq('equipo', eq_local).execute()
+                                                    except: pass
+                                                    
+                                                    # Actualizar equipo VISITANTE
+                                                    try:
+                                                        resp_eq = client.table('equipos_stats').select('*').eq('equipo', eq_visitante).execute()
+                                                        if resp_eq.data:
+                                                            eq = resp_eq.data[0]
+                                                            pj = (eq.get('partidos_jugados') or 0) + 1
+                                                            
+                                                            update_eq = {
+                                                                'partidos_jugados': pj,
+                                                                'goles_favor': (eq.get('goles_favor') or 0) + gv,
+                                                                'goles_contra': (eq.get('goles_contra') or 0) + gl,
+                                                                'promedio_tiros': round(((eq.get('promedio_tiros') or 0) * (pj-1) + visitante_stats.get('tiros', 0)) / pj, 2),
+                                                                'promedio_tiros_arco': round(((eq.get('promedio_tiros_arco') or 0) * (pj-1) + visitante_stats.get('tiros_arco', 0)) / pj, 2),
+                                                                'corners_favor': round(((eq.get('corners_favor') or 0) * (pj-1) + visitante_stats.get('corners', 0)) / pj, 2),
+                                                                'promedio_amarillas': round(((eq.get('promedio_amarillas') or 0) * (pj-1) + visitante_stats.get('amarillas', 0)) / pj, 2),
+                                                                'promedio_rojas': round(((eq.get('promedio_rojas') or 0) * (pj-1) + visitante_stats.get('rojas', 0)) / pj, 2),
+                                                            }
+                                                            
+                                                            ult5 = eq.get('ultimos_5_partidos') or []
+                                                            ult5.insert(0, 'W' if gv > gl else ('D' if gv == gl else 'L'))
+                                                            update_eq['ultimos_5_partidos'] = ult5[:5]
+                                                            
+                                                            if gv > gl:
+                                                                update_eq['victorias'] = (eq.get('victorias') or 0) + 1
+                                                            elif gv == gl:
+                                                                update_eq['empates'] = (eq.get('empates') or 0) + 1
+                                                            else:
+                                                                update_eq['derrotas'] = (eq.get('derrotas') or 0) + 1
+                                                            
+                                                            client.table('equipos_stats').update(update_eq).eq('equipo', eq_visitante).execute()
+                                                    except: pass
                                     except: pass
                     except: pass
 
-                    status_text = st.empty()
 
                     LIGAS = [
                         (140, "La Liga"), (39, "Premier League"), (78, "Bundesliga"),
