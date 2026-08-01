@@ -1094,6 +1094,7 @@ def render_login_form():
                     hoy_str = hoy.strftime('%Y-%m-%d')
 
                     progress_bar = st.progress(0)
+                    status_text = st.empty()
 
                     # ═══════════════════════════════════════════════════════
                     # PASO 0: ACTUALIZAR PARTIDOS JUGADOS (HOY-1 y HOY-2)
