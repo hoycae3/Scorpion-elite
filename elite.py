@@ -342,13 +342,13 @@ def render_public_landing():
     col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
 
     with col_kpi1:
-        st.metric("Aciertos", f"{pct_aciertos}%", f"{aciertos}/{total_picks}")
+        st.metric("Aciertos", f"{pct_aciertos}%", f"{aciertos} de {total_picks}")
 
     with col_kpi2:
         st.metric("Pronósticos", f"{total_picks:,}", f"{total_equipos} equipos")
 
     with col_kpi3:
-        st.metric("Rentab.", f"{yield_pct:+.1f}%", "")
+        st.metric("Rentabilidad", f"{yield_pct:+.1f}%", "")
 
     # Estado para análisis preview
     if "preview_partido" not in st.session_state:
