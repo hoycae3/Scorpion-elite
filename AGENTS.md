@@ -416,3 +416,31 @@ curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploy
 # Restaurar a estado funcional conocido
 git checkout 2dbf812 -- elite.py
 ```
+
+### 2026-08-01 - Sesión Corrección Sincronizar
+
+| Cambio | Descripción |
+|--------|-------------|
+| **Temporada dinámica** | `season = 2026` hardcodeado → cálculo automático (mes >= 8 → año actual, sino año-1) |
+| **Ventana 7 días** | Cambiado de 2 a 7 días (HOY → HOY+6) |
+| **Mostrar info** | Ahora muestra: "⚽ Temporada: 2026 \| Pretemporada: True/False" |
+| **Botones corregidos** | Sincronizar y Equipos usan el mismo cálculo dinámico |
+
+**Problema resuelto:** Si BD vacía, ahora busca con la temporada correcta (no siempre 2026).
+
+**Nota:** En pretemporada (agos-feb) no habrá partidos de liga - es normal.
+
+### 2026-08-01 - Sesión Lista Completa de Ligas
+
+| Cambio | Descripción |
+|--------|-------------|
+| **55 ligas** | Reemplazada lista corta (35) con completa (55 ligas) |
+| **Formato unificado** | Ambos botones usan diccionarios con `id`, `name`, `pais` |
+| **Cobertura** | Internacionales + Europa + Latinoamérica + USA/Canadá + Asia |
+
+**Ligas incluidas:**
+- 🏆 9 torneos internacionales (Champions, Libertadores, etc.)
+- 🇪🇺 19 ligas europeas (La Liga, Premier, Bundesliga, Serie A, etc.)
+- 🇧🇷 3 Brasil, 🇦🇷 3 Argentina, 🇨🇴 2 Colombia, etc.
+- 🇺🇸 3 USA, 🇲🇽 2 México
+- 🇯🇵 Japón, 🇰🇷 Corea, 🇸🇦 Arabia, 🇪🇬 Egipto
