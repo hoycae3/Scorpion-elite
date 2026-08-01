@@ -1008,8 +1008,7 @@ def render_login_form():
                                                             'ultimos_5_partidos': list(stats.get('form', '') or '')[:5],
                                                         }
                                                         
-                                                        # Solo guardar si es equipo nuevo
-                                                        if team_name not in equipos_existentes:
+                                                        # Siempre buscar y guardar/actualizar stats
                                                             try:
                                                                 client.table('equipos_stats').upsert(equipo_data, ignore_duplicates=True).execute()
                                                                 total_equipos += 1
