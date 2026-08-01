@@ -895,8 +895,16 @@ def render_login_form():
                                         }
                                         st.json(equipo_data)
                                         st.markdown("**Guardando equipo...**")
-                                        result_eq = client.table('equipos_stats').upsert(equipo_data, on_conflict='equipo').execute()
-                                        st.success(f"✅ Equipo guardado")
+                                        try:
+                                            result_eq = client.table('equipos_stats').insert(equipo_data).execute()
+                                            st.success("✅ Equipo insertado")
+                                        except Exception as eq_err:
+                                            if 'duplicate' in str(eq_err).lower():
+                                                # Ya existe, actualizar
+                                                client.table('equipos_stats').update(equipo_data).eq('equipo', team_name).eq('temporada', equipo_data['temporada']).execute()
+                                                st.success("✅ Equipo actualizado")
+                                            else:
+                                                st.error(f"❌ Error equipo: {eq_err}")
                                     else:
                                         st.warning("⚠️ Sin stats")
                                 else:
