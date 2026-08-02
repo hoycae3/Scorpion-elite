@@ -1004,7 +1004,7 @@ def render_login_form():
                                                                     'ultimos_5_partidos': list(stats.get('form', '') or '')[:5],
                                                                 }
                                                                 
-                                                                client.table('equipos_stats').upsert(equipo_data, ignore_duplicates=True).execute()
+                                                                client.table('equipos_stats').upsert(equipo_data).execute()
                                                                 total_equipos += 1
                                                                 equipos_existentes.add(team_name)
                                                     except: pass
@@ -1037,61 +1037,80 @@ def render_login_form():
                                 equipos_unicos[visitante] = (liga_nombre, liga_id_partido)
                         
                         st.info(f"🔍 {len(equipos_unicos)} equipos a buscar...")
+                        errores_equipos = 0
+                        encontrados = 0
                         
                         for idx, (eq_nombre, (eq_liga_nombre, eq_liga_id)) in enumerate(equipos_unicos.items()):
                             if idx % 5 == 0:
                                 progress_bar.progress(0.5 + (idx / len(equipos_unicos) * 0.5))
                                 status_text.text(f"📊 Equipo {idx+1}/{len(equipos_unicos)}: {eq_nombre}")
                             
+                            # Skip si no tiene liga_id válido
+                            if not eq_liga_id:
+                                errores_equipos += 1
+                                continue
+                            
                             try:
                                 # Buscar equipo en API
                                 resp_s = requests.get(f"{API_URL}/teams", headers=headers, params={'search': eq_nombre}, timeout=10)
                                 if resp_s.status_code == 200:
-                                    for t in resp_s.json().get('response', []):
+                                    datos_equipos = resp_s.json().get('response', []) or []
+                                    equipo_encontrado = None
+                                    for t in datos_equipos:
                                         if t.get('team', {}).get('name') == eq_nombre:
-                                            tid = t.get('team', {}).get('id')
-                                            # Buscar stats con la liga_id correcta del partido
-                                            resp_st = requests.get(f"{API_URL}/teams/statistics", headers=headers, params={'team': tid, 'league': eq_liga_id, 'season': season}, timeout=10)
-                                            if resp_st.status_code == 200:
-                                                stats_data = resp_st.json().get('response', {})
-                                                if stats_data:
-                                                    gf = stats_data.get('goals', {}).get('for', {}).get('total', 0) or 0
-                                                    gc = stats_data.get('goals', {}).get('against', {}).get('total', 0) or 0
-                                                    gf_h = stats_data.get('goals', {}).get('for', {}).get('home', 0) or 0
-                                                    gf_a = stats_data.get('goals', {}).get('for', {}).get('away', 0) or 0
-                                                    gc_h = stats_data.get('goals', {}).get('against', {}).get('home', 0) or 0
-                                                    gc_a = stats_data.get('goals', {}).get('against', {}).get('away', 0) or 0
-                                                    pj_h = stats_data.get('fixtures', {}).get('played', {}).get('home', 1) or 1
-                                                    pj_a = stats_data.get('fixtures', {}).get('played', {}).get('away', 1) or 1
-                                                    pj_t = stats_data.get('fixtures', {}).get('played', {}).get('total', 0) or 1
-                                                    wins = stats_data.get('fixtures', {}).get('wins', {}).get('total', 0) or 0
-                                                    draws = stats_data.get('fixtures', {}).get('draws', {}).get('total', 0) or 0
-                                                    loses = stats_data.get('fixtures', {}).get('loses', {}).get('total', 0) or 0
-                                                    
-                                                    eq_data = {
-                                                        'equipo': eq_nombre,
-                                                        'liga': eq_liga_nombre or stats_data.get('league', {}).get('name', ''),
-                                                        'temporada': f'{season}-{season+1}',
-                                                        'partidos_jugados': pj_t,
-                                                        'victorias': wins,
-                                                        'empates': draws,
-                                                        'derrotas': loses,
-                                                        'goles_favor': gf,
-                                                        'goles_contra': gc,
-                                                        'lambda_local': round((gf_h + gc_a) / pj_h / 2, 2),
-                                                        'lambda_visitante': round((gf_a + gc_h) / pj_a / 2, 2),
-                                                        'ultimos_5_partidos': list(stats_data.get('form', '') or '')[:5],
-                                                    }
-                                                    client.table('equipos_stats').upsert(eq_data, ignore_duplicates=True).execute()
-                                                    total_equipos += 1
+                                            equipo_encontrado = t.get('team', {})
                                             break
-                            except: pass
+                                    
+                                    if not equipo_encontrado:
+                                        errores_equipos += 1
+                                        continue
+                                        
+                                    tid = equipo_encontrado.get('id')
+                                    
+                                    # Buscar stats con la liga_id correcta del partido
+                                    resp_st = requests.get(f"{API_URL}/teams/statistics", headers=headers, params={'team': tid, 'league': eq_liga_id, 'season': season}, timeout=10)
+                                    if resp_st.status_code == 200:
+                                        stats_data = resp_st.json().get('response', {})
+                                        if stats_data:
+                                            gf = stats_data.get('goals', {}).get('for', {}).get('total', 0) or 0
+                                            gc = stats_data.get('goals', {}).get('against', {}).get('total', 0) or 0
+                                            gf_h = stats_data.get('goals', {}).get('for', {}).get('home', 0) or 0
+                                            gf_a = stats_data.get('goals', {}).get('for', {}).get('away', 0) or 0
+                                            gc_h = stats_data.get('goals', {}).get('against', {}).get('home', 0) or 0
+                                            gc_a = stats_data.get('goals', {}).get('against', {}).get('away', 0) or 0
+                                            pj_h = stats_data.get('fixtures', {}).get('played', {}).get('home', 1) or 1
+                                            pj_a = stats_data.get('fixtures', {}).get('played', {}).get('away', 1) or 1
+                                            pj_t = stats_data.get('fixtures', {}).get('played', {}).get('total', 0) or 1
+                                            wins = stats_data.get('fixtures', {}).get('wins', {}).get('total', 0) or 0
+                                            draws = stats_data.get('fixtures', {}).get('draws', {}).get('total', 0) or 0
+                                            loses = stats_data.get('fixtures', {}).get('loses', {}).get('total', 0) or 0
+                                            
+                                            eq_data = {
+                                                'equipo': eq_nombre,
+                                                'liga': eq_liga_nombre or stats_data.get('league', {}).get('name', ''),
+                                                'temporada': f'{season}-{season+1}',
+                                                'partidos_jugados': pj_t,
+                                                'victorias': wins,
+                                                'empates': draws,
+                                                'derrotas': loses,
+                                                'goles_favor': gf,
+                                                'goles_contra': gc,
+                                                'lambda_local': round((gf_h + gc_a) / pj_h / 2, 2),
+                                                'lambda_visitante': round((gf_a + gc_h) / pj_a / 2, 2),
+                                                'ultimos_5_partidos': list(stats_data.get('form', '') or '')[:5],
+                                            }
+                                            client.table('equipos_stats').upsert(eq_data).execute()
+                                            total_equipos += 1
+                                            encontrados += 1
+                            except Exception as e:
+                                logger.error(f"Error guardando {eq_nombre}: {e}")
+                                errores_equipos += 1
 
                         progress_bar.empty()
                         status_text.empty()
 
                         st.success(f"✅ GUARDADO!")
-                        st.markdown(f"📊 **Partidos:** {total_partidos} | **Estadísticas equipos guardadas:** {total_equipos}")
+                        st.markdown(f"📊 Partidos: {total_partidos} | Equipos: {total_equipos} | Errores: {errores_equipos}")
 
                 except Exception as e:
                         st.error(f"❌ Error: {e}")
@@ -1491,7 +1510,7 @@ def render_login_form():
                                                         'lambda_visitante': round((gf_a + gc_h) / pj_a / 2, 2),
                                                         'ultimos_5_partidos': list(st_eq.get('form', '') or '')[:5],
                                                     }
-                                                    client.table('equipos_stats').upsert(eq_data, ignore_duplicates=True).execute()
+                                                    client.table('equipos_stats').upsert(eq_data).execute()
                                                     if eq_nombre in equipos_faltan:
                                                         total_guardados += 1
                                                     else:
