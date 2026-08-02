@@ -767,8 +767,8 @@ def render_login_form():
                     
                     # Calcular temporada dinámicamente: Ago-Dic → season actual, Ene-Jul → season anterior
                     season = hoy.year if hoy.month >= 8 else hoy.year - 1
-                    # Para estadísticas usar temporada anterior (las stats de 2026 no existen aún)
-                    season_stats = season - 1
+                    # Usar la misma temporada para stats (la API ya tiene stats de la temporada actual)
+                    season_stats = season
                     st.markdown(f"⚽ **Temporada partidos:** {season} | **Temporada stats:** {season_stats}")
 
                     # ═══════════════════════════════════════════════════════════════
