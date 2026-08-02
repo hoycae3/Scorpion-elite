@@ -115,13 +115,18 @@ def migrate_team_id_column():
         if conn_url:
             conn = psycopg2.connect(conn_url)
             cur = conn.cursor()
+            # Agregar columnas a equipos_stats
             cur.execute('ALTER TABLE equipos_stats ADD COLUMN IF NOT EXISTS team_id BIGINT;')
+            # Agregar columnas a partidos si no existen
+            cur.execute('ALTER TABLE partidos ADD COLUMN IF NOT EXISTS liga_id BIGINT;')
+            cur.execute('ALTER TABLE partidos ADD COLUMN IF NOT EXISTS team_id_local BIGINT;')
+            cur.execute('ALTER TABLE partidos ADD COLUMN IF NOT EXISTS team_id_visitante BIGINT;')
             conn.commit()
             cur.close()
             conn.close()
-            logger.info("✅ Columna team_id agregada a equipos_stats")
+            logger.info("✅ Migration completada: team_id, liga_id, team_id_local, team_id_visitante")
     except Exception as e:
-        logger.warning(f"No se pudo agregar columna team_id: {e}")
+        logger.warning(f"Migration error: {e}")
 
 # ══════════════════════════════════════════════════════════
 # SISTEMA DE USUARIOS (Supabase) - Solo hash bcrypt
