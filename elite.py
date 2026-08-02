@@ -995,6 +995,7 @@ def render_login_form():
 
                                                                 equipo_data = {
                                                                     'equipo': team_name,
+                                                                    'team_id': team_id_api,
                                                                     'liga': league.get('name', ''),
                                                                     'temporada': f'{season}-{season+1}',
                                                                     'partidos_jugados': pj_t,
@@ -1008,7 +1009,7 @@ def render_login_form():
                                                                     'ultimos_5_partidos': list(stats.get('form', '') or '')[:5],
                                                                 }
                                                                 
-                                                                client.table('equipos_stats').upsert(equipo_data, ignore_duplicates=True).execute()
+                                                                client.table('equipos_stats').upsert(equipo_data).execute()
                                                                 total_equipos += 1
                                                                 equipos_existentes.add(team_name)
                                                     except: pass
@@ -1086,7 +1087,7 @@ def render_login_form():
                                                         'lambda_visitante': round((gf_a + gc_h) / pj_a / 2, 2),
                                                         'ultimos_5_partidos': list(stats_data.get('form', '') or '')[:5],
                                                     }
-                                                    client.table('equipos_stats').upsert(eq_data, ignore_duplicates=True).execute()
+                                                    client.table('equipos_stats').upsert(eq_data).execute()
                                                     total_equipos += 1
                                             break
                             except: pass
@@ -1495,7 +1496,7 @@ def render_login_form():
                                                         'lambda_visitante': round((gf_a + gc_h) / pj_a / 2, 2),
                                                         'ultimos_5_partidos': list(st_eq.get('form', '') or '')[:5],
                                                     }
-                                                    client.table('equipos_stats').upsert(eq_data, ignore_duplicates=True).execute()
+                                                    client.table('equipos_stats').upsert(eq_data).execute()
                                                     if eq_nombre in equipos_faltan:
                                                         total_guardados += 1
                                                     else:
