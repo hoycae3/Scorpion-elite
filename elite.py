@@ -911,25 +911,25 @@ def render_login_form():
                                             client.table('partidos').upsert(partido_data, on_conflict='fixture_id').execute()
                                             partidos_guardados += 1
                                         except: pass
-                                    
-                                    # Agregar equipos a la colección única (SOLO con team_id)
-                                    if team_id_local:
-                                        equipos_unicos[team_id_local] = {
-                                            'team_id': team_id_local,
-                                            'team_name': equipo_local,
-                                            'league_id': liga_id,
-                                            'league_name': liga_nombre,
-                                            'season': season
-                                        }
-                                    
-                                    if team_id_visitante:
-                                        equipos_unicos[team_id_visitante] = {
-                                            'team_id': team_id_visitante,
-                                            'team_name': equipo_visitante,
-                                            'league_id': liga_id,
-                                            'league_name': liga_nombre,
-                                            'season': season
-                                        }
+                                        
+                                        # Agregar equipos SOLO de partidos nuevos
+                                        if team_id_local:
+                                            equipos_unicos[team_id_local] = {
+                                                'team_id': team_id_local,
+                                                'team_name': equipo_local,
+                                                'league_id': liga_id,
+                                                'league_name': liga_nombre,
+                                                'season': season
+                                            }
+                                        
+                                        if team_id_visitante:
+                                            equipos_unicos[team_id_visitante] = {
+                                                'team_id': team_id_visitante,
+                                                'team_name': equipo_visitante,
+                                                'league_id': liga_id,
+                                                'league_name': liga_nombre,
+                                                'season': season
+                                            }
                                         
                         except Exception as e:
                             # Si falla una liga, continuar con la siguiente
