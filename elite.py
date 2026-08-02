@@ -947,7 +947,12 @@ def render_login_form():
                                                 'hora': fix.get('date', '')[11:16],
                                                 'liga': league.get('name', ''),
                                                 'equipo_local': teams.get('home', {}).get('name', ''),
+                                                'equipo_local': teams.get('home', {}).get('name', ''),
                                                 'equipo_visitante': teams.get('away', {}).get('name', ''),
+                                                'liga_id': league.get('id'),
+                                                'pais': league.get('country', ''),
+                                                'team_id_local': teams.get('home', {}).get('id'),
+                                                'team_id_visitante': teams.get('away', {}).get('id'),
                                             }
                                             
                                             # Solo guardar si es partido nuevo
