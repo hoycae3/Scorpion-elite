@@ -85,7 +85,14 @@ def get_supabase_client():
         logger.warning("SUPABASE_URL o SUPABASE_KEY no están configurados")
         return None
     try:
-        return create_client(SUPABASE_URL, SUPABASE_KEY)
+        client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        # Verificar/crear columna team_id en equipos_stats
+        try:
+            client.table('equipos_stats').select('team_id').limit(1).execute()
+        except:
+            # La columna no existe, intentar crear mediante RPC
+            logger.info("Verificando columna team_id en equipos_stats...")
+        return client
     except Exception as e:
         logger.error(f"Error al crear cliente Supabase: {e}")
         return None
@@ -93,6 +100,28 @@ def get_supabase_client():
 def get_client():
     """Función de compatibilidad - retorna cliente de Supabase"""
     return get_supabase_client()
+
+def migrate_team_id_column():
+    """Migra la columna team_id a la tabla equipos_stats si no existe"""
+    import psycopg2
+    import os
+    try:
+        # Obtener connection string de las variables de entorno de Render
+        conn_url = os.getenv('DATABASE_URL', '')
+        if not conn_url:
+            # Intentar construir desde SUPABASE_URL
+            conn_url = f"postgresql://postgres:{os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')}@db.jjtifureeygvygxtpuku.supabase.co:5432/postgres"
+        
+        if conn_url:
+            conn = psycopg2.connect(conn_url)
+            cur = conn.cursor()
+            cur.execute('ALTER TABLE equipos_stats ADD COLUMN IF NOT EXISTS team_id BIGINT;')
+            conn.commit()
+            cur.close()
+            conn.close()
+            logger.info("✅ Columna team_id agregada a equipos_stats")
+    except Exception as e:
+        logger.warning(f"No se pudo agregar columna team_id: {e}")
 
 # ══════════════════════════════════════════════════════════
 # SISTEMA DE USUARIOS (Supabase) - Solo hash bcrypt
@@ -751,6 +780,9 @@ def render_login_form():
             if st.button("🔄 Sincronizar", type="primary", use_container_width=True):
                 st.info("🔄 Iniciando sincronización...")
                 try:
+                    # Migrar columna team_id si no existe
+                    migrate_team_id_column()
+                    
                     # ═══════════════════════════════════════════════════════════════
                     # CONFIGURACIÓN INICIAL
                     # ═══════════════════════════════════════════════════════════════

@@ -42,6 +42,7 @@ CREATE POLICY "partidos_all" ON partidos FOR ALL USING (true) WITH CHECK (true);
 CREATE TABLE IF NOT EXISTS equipos_stats (
     id BIGSERIAL PRIMARY KEY,
     equipo VARCHAR(255) NOT NULL,
+    team_id BIGINT,
     pais VARCHAR(100),
     liga VARCHAR(255),
     temporada VARCHAR(50) DEFAULT '2024-25',
