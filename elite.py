@@ -1053,7 +1053,10 @@ def render_login_form():
                                 
                                 if resp_team.status_code == 200:
                                     stats = resp_team.json().get('response', {})
-                                    if stats and stats.get('partidos', {}).get('jugados', {}).get('total', 0) > 0:
+                                    pj_total = stats.get('partidos', {}).get('jugados', {}).get('total', 0) if stats else 0
+                                    if idx == 0:
+                                        st.warning(f"DEBUG validation: stats_exists={bool(stats)}, pj_total={pj_total}")
+                                    if stats and pj_total > 0:
                                         # Extraer estadísticas (API devuelve en español)
                                         partidos_data = stats.get('partidos', {})
                                         goles_data = stats.get('goles', {})
