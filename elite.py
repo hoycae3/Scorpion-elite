@@ -1,6 +1,38 @@
 import streamlit as st
 import pandas as pd
 import os
+
+# ══════════════════════════════════════════════════════════
+# 🎨 SISTEMA DE DISEÑO - COLORES Y ESTILOS
+# ══════════════════════════════════════════════════════════
+# Colores principales (coinciden con styles.css)
+COLORS = {
+    'victoria': '#22c55e',     # Verde éxito
+    'derrota': '#ef4444',       # Rojo error
+    'empate': '#eab308',        # Amarillo
+    'primary': '#00d4aa',       # Cyan/acento
+    'local': '#00ff88',         # Verde brillante
+    'visitante': '#ff6b6b',     # Rojo suave
+    'hora': '#ffd700',          # Dorado
+    'bg_dark': '#0f172a',       # Fondo oscuro
+    'bg_card': '#1e293b',       # Fondo cards
+    'bg_header': '#121824',     # Fondo headers
+    'text': '#f8fafc',          # Texto principal
+    'text_secondary': '#94a3b8', # Texto secundario
+}
+
+# Función helper para formatear colores en HTML
+def css(color_key, extra=''):
+    """Retorna estilo CSS inline con el color de COLORS"""
+    return f"color:{COLORS.get(color_key, '#fff')};{extra}"
+
+# CSS global cargado desde archivo
+try:
+    with open('styles.css', 'r') as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+except:
+    pass
+
 # Mapeo de league_id por nombre de liga
 LIGAS_MAP = {
     'Premier League': 39,
@@ -371,7 +403,7 @@ def render_public_landing():
                         st.markdown(f"**🏠 {local}**")
                         forma_l = stats_local.get('forma', 'N/A')
                         if forma_l and forma_l != 'N/A':
-                            forma_html = ''.join([{'W': '<span style="color:#22c55e">W</span>', 'L': '<span style="color:#ef4444">L</span>', 'D': '<span style="color:#eab308">D</span>'}.get(c, c) for c in str(forma_l)])
+                            forma_html = ''.join([{'W': '<span class="se-result-w">W</span>', 'L': '<span class="se-result-l">L</span>', 'D': '<span class="se-result-d">D</span>'}.get(c, c) for c in str(forma_l)])
                             st.markdown(f"**Forma:** {forma_html}", unsafe_allow_html=True)
                         else:
                             st.markdown(f"**Forma:** N/A")
@@ -383,7 +415,7 @@ def render_public_landing():
                         st.markdown(f"**✈️ {visitante}**")
                         forma_v = stats_visit.get('forma', 'N/A')
                         if forma_v and forma_v != 'N/A':
-                            forma_html = ''.join([{'W': '<span style="color:#22c55e">W</span>', 'L': '<span style="color:#ef4444">L</span>', 'D': '<span style="color:#eab308">D</span>'}.get(c, c) for c in str(forma_v)])
+                            forma_html = ''.join([{'W': '<span class="se-result-w">W</span>', 'L': '<span class="se-result-l">L</span>', 'D': '<span class="se-result-d">D</span>'}.get(c, c) for c in str(forma_v)])
                             st.markdown(f"**Forma:** {forma_html}", unsafe_allow_html=True)
                         else:
                             st.markdown(f"**Forma:** N/A")
@@ -487,41 +519,30 @@ def render_public_landing():
     st.markdown("### 💰 Planes y Precios")
 
     st.markdown("""
-    <style>
-    .price-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-    .price-table th, .price-table td { padding: 12px 15px; text-align: center; border: 1px solid #E2E8F0; }
-    .price-table th { background: #121824; color: #1e293b; font-weight: 600; }
-    .price-table tr:nth-child(even) { background: rgba(240, 253, 250, 0.5); }
-    .price-table .popular { background: rgba(14, 116, 144, 0.1) !important; border: 2px solid #0e7490; }
-    .price-table .popular-tag { background: #0e7490; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-    .price-table .duration { color: #1e293b; font-size: 13px; }
-    .price-table .price { color: #1e293b; font-size: 18px; font-weight: bold; }
-    </style>
-    
-    <table class="price-table">
+    <table class="se-price-table">
         <tr>
             <th>Duración</th>
             <th>Precio (USD)</th>
             <th>Etiqueta</th>
         </tr>
         <tr>
-            <td class="duration">24 Horas</td>
-            <td class="price">$3.99</td>
+            <td class="se-duration">24 Horas</td>
+            <td class="se-price">$3.99</td>
             <td>Pase 1 Día</td>
         </tr>
         <tr>
-            <td class="duration">7 Días</td>
-            <td class="price">$9.99</td>
+            <td class="se-duration">7 Días</td>
+            <td class="se-price">$9.99</td>
             <td>Pase 1 Semana</td>
         </tr>
         <tr class="popular">
-            <td class="duration">30 Días <span class="popular-tag">MÁS POPULAR 🔥</span></td>
-            <td class="price">$24.99</td>
+            <td class="se-duration">30 Días <span class="se-badge se-badge-hot">MÁS POPULAR 🔥</span></td>
+            <td class="se-price">$24.99</td>
             <td>Plan 1 Mes</td>
         </tr>
         <tr>
-            <td class="duration">365 Días <span style="background: #10B981; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">AHORRA 36%</span></td>
-            <td class="price">$189.99</td>
+            <td class="se-duration">365 Días <span class="se-badge se-badge-success">AHORRA 36%</span></td>
+            <td class="se-price">$189.99</td>
             <td>Plan 1 Año</td>
         </tr>
     </table>
@@ -1776,17 +1797,17 @@ def render_login_form():
             # Header de la tabla con colores
             cols_header = st.columns([1.5, 2, 2, 0.7, 1, 0.6])
             with cols_header[0]:
-                st.markdown("**<span style='color:#00d4aa'>📅 Fecha</span>**", unsafe_allow_html=True)
+                st.markdown("**<span class='se-text-primary'>📅 Fecha</span>**", unsafe_allow_html=True)
             with cols_header[1]:
-                st.markdown("**<span style='color:#00d4aa'>🏠 Local</span>**", unsafe_allow_html=True)
+                st.markdown("**<span class='se-text-primary'>🏠 Local</span>**", unsafe_allow_html=True)
             with cols_header[2]:
-                st.markdown("**<span style='color:#00d4aa'>✈️ Visitante</span>**", unsafe_allow_html=True)
+                st.markdown("**<span class='se-text-primary'>✈️ Visitante</span>**", unsafe_allow_html=True)
             with cols_header[3]:
-                st.markdown("**<span style='color:#00d4aa'>⏰ Hora</span>**", unsafe_allow_html=True)
+                st.markdown("**<span class='se-text-primary'>⏰ Hora</span>**", unsafe_allow_html=True)
             with cols_header[4]:
-                st.markdown("**<span style='color:#00d4aa'>🌍 País</span>**", unsafe_allow_html=True)
+                st.markdown("**<span class='se-text-primary'>🌍 País</span>**", unsafe_allow_html=True)
             with cols_header[5]:
-                st.markdown("**<span style='color:#00d4aa'>🎯</span>**", unsafe_allow_html=True)
+                st.markdown("**<span class='se-text-primary'>🎯</span>**", unsafe_allow_html=True)
             
             st.markdown("---")
             
@@ -1805,15 +1826,15 @@ def render_login_form():
                     fecha_mostrar = str(fecha)[:10] if fecha else "N/A"
                     st.markdown(f"<span style='color:#ffffff; font-size:13px'>📅 {html.escape(fecha_mostrar)}</span>", unsafe_allow_html=True)
                 with cols_row[1]:
-                    st.markdown(f"<span style='color:#00ff88; font-size:13px'>🏠 **{html.escape(str(local) if local else '?')}**</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span class='se-match-local'>🏠 **{html.escape(str(local) if local else '?')}**</span>", unsafe_allow_html=True)
                 with cols_row[2]:
-                    st.markdown(f"<span style='color:#ff6b6b; font-size:13px'>✈️ **{html.escape(str(visitante) if visitante else '?')}**</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span class='se-match-visitante'>✈️ **{html.escape(str(visitante) if visitante else '?')}**</span>", unsafe_allow_html=True)
                 with cols_row[3]:
                     hora_mostrar = str(hora)[:5] if hora else "N/A"
-                    st.markdown(f"<span style='color:#ffd700; font-size:13px'>⏰ {html.escape(hora_mostrar)}</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span class='se-match-hora'>⏰ {html.escape(hora_mostrar)}</span>", unsafe_allow_html=True)
                 with cols_row[4]:
                     pais_str = str(pais)[:6] if pais else "N/A"
-                    st.markdown(f"<span style='color:#00d4aa; font-size:13px'>{emoji} {html.escape(pais_str)}</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span class='se-text-primary'>{emoji} {html.escape(pais_str)}</span>", unsafe_allow_html=True)
                 with cols_row[5]:
                     if st.button("🎯", key=f"match_{p.get('id')}", help=f"Analizar {local} VS {visitante}", use_container_width=True):
                         selected_match = p
@@ -2131,7 +2152,7 @@ def render_login_form():
                 sp1, col_local, col_visita, sp2 = st.columns([1, 1, 1, 1])
                 
                 with col_local:
-                    st.markdown(f"<h4 style='color: #00ff88; text-align: center;'>🏠 {html.escape(str(home))}</h4>", unsafe_allow_html=True)
+                    st.markdown(f"<h4 class='se-match-local' style='text-align: center;'>🏠 {html.escape(str(home))}</h4>", unsafe_allow_html=True)
                     # Lista local
                     stats_list_l = [
                         ("📅 PJ", pj_l, "black"),
@@ -2152,7 +2173,7 @@ def render_login_form():
                         st.markdown(f"<div style='display:flex; justify-content:space-between; padding:4px 10px; border-bottom:1px solid #333; font-size:14px;'><span>{label}</span><span style='color:{color}'>{val}</span></div>", unsafe_allow_html=True)
                 
                 with col_visita:
-                    st.markdown(f"<h4 style='color: #ff6b6b; text-align: center;'>✈️ {html.escape(str(away))}</h4>", unsafe_allow_html=True)
+                    st.markdown(f"<h4 class='se-match-visitante' style='text-align: center;'>✈️ {html.escape(str(away))}</h4>", unsafe_allow_html=True)
                     # Lista visita
                     stats_list_v = [
                         ("📅 PJ", pj_v, "black"),
