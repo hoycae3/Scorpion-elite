@@ -1840,11 +1840,6 @@ def render_login_form():
                         selected_match = p
                         st.session_state.selected_match_data = selected_match
         
-        # Mostrar equipos disponibles
-        equipos_disponibles = []
-        if not equipos_disponibles:
-            st.warning("⚠️ No hay equipos guardados. Ve a 'Estadísticas' para agregar equipos.")
-        
         # Si hay un partido seleccionado, hacer análisis automático
         if st.session_state.selected_match_data:
             p = st.session_state.selected_match_data
@@ -1925,9 +1920,7 @@ def render_login_form():
                     st.session_state.remates_over_prob = min(90, max(10, 50 + (remates_total - 24) * 2))
                     st.session_state.tarjetas_over_prob = min(90, max(10, 50 + (tarjetas_total - 6) * 5))
             else:
-                st.warning(f"⚠️ No se encontraron estadísticas para {local_nombre} o {visitante_nombre}")
-                st.info("💡 Ve a 'Estadísticas' para buscar los equipos primero.")
-                st.stop()  # No continuar
+                st.stop()  # No continuar si no hay stats
         
         
         
@@ -2241,9 +2234,7 @@ def render_login_form():
             
             predicciones_act = st.session_state.get('predicciones_actuales', {})
             
-            if not predicciones_act:
-                st.info("💡 Analiza un partido primero")
-            else:
+            if predicciones_act:
                 col_btn, col_info = st.columns([1, 3])
                 with col_btn:
                     if st.button("💾 GUARDAR PARTIDO", type="primary", use_container_width=True):
