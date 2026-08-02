@@ -1054,8 +1054,7 @@ def render_login_form():
                                 if resp_team.status_code == 200:
                                     stats = resp_team.json().get('response', {})
                                     pj_total = stats.get('partidos', {}).get('jugados', {}).get('total', 0) if stats else 0
-                                    if idx == 0:
-                                        st.warning(f"DEBUG validation: stats_exists={bool(stats)}, pj_total={pj_total}")
+                                    st.warning(f"DEBUG validation: stats_exists={bool(stats)}, pj_total={pj_total}")
                                     if stats and pj_total > 0:
                                         # Extraer estadísticas (API devuelve en español)
                                         partidos_data = stats.get('partidos', {})
@@ -1182,8 +1181,7 @@ def render_login_form():
                                     stats = resp_team.json().get('response', {})
                                     
                                     # DEBUG: mostrar stats del primer equipo
-                                    if idx == 0:
-                                        st.warning(f"DEBUG stats: {stats}")
+                                    st.warning(f"DEBUG stats: {stats}")
                                     
                                     # Validar que la respuesta tenga datos
                                     if stats and stats.get('partidos', {}).get('jugados', {}).get('total', 0) > 0:
