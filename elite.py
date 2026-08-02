@@ -939,7 +939,114 @@ def render_login_form():
                     status_text.empty()
                     
                     # ═══════════════════════════════════════════════════════════════
-                    # PASO 2: MOSTRAR RESUMEN DE PARTIDOS
+                    # PASO 5: ACTUALIZAR EQUIPOS QUE JUGARON AYER
+                    # ═══════════════════════════════════════════════════════════════
+                    ayer = (hoy - timedelta(days=1)).strftime('%Y-%m-%d')
+                    st.info(f"🔄 **PASO 5:** Verificando equipos que jugaron el **{ayer}**...")
+                    
+                    # Buscar partidos de ayer
+                    equipos_ayer = {}
+                    try:
+                        resp_ayer = client.table('partidos').select('*').eq('fecha', ayer).execute()
+                        if resp_ayer.data:
+                            st.markdown(f"📅 **{len(resp_ayer.data)}** partidos encontraron ayer")
+                            for p in resp_ayer.data:
+                                team_id_local = p.get('team_id_local')
+                                team_id_visitante = p.get('team_id_visitante')
+                                equipo_local = p.get('equipo_local', '')
+                                equipo_visitante = p.get('equipo_visitante', '')
+                                liga_nombre = p.get('liga', '')
+                                liga_id = p.get('liga_id')
+                                
+                                if team_id_local:
+                                    equipos_ayer[team_id_local] = {
+                                        'team_id': team_id_local,
+                                        'team_name': equipo_local,
+                                        'league_id': liga_id,
+                                        'league_name': liga_nombre,
+                                        'season': season
+                                    }
+                                if team_id_visitante:
+                                    equipos_ayer[team_id_visitante] = {
+                                        'team_id': team_id_visitante,
+                                        'team_name': equipo_visitante,
+                                        'league_id': liga_id,
+                                        'league_name': liga_nombre,
+                                        'season': season
+                                    }
+                        else:
+                            st.markdown(f"📅 No hay partidos programados para ayer")
+                    except Exception as e:
+                        st.warning(f"⚠️ Error buscando partidos de ayer: {e}")
+                    
+                    # Si hay equipos que jugaron ayer, actualizar sus stats
+                    equipos_actualizados = 0
+                    if equipos_ayer:
+                        st.info(f"🔄 Actualizando {len(equipos_ayer)} equipos que jugaron ayer...")
+                        
+                        progress_ayer = st.progress(0)
+                        status_ayer = st.empty()
+                        
+                        for idx, (tid, equipo) in enumerate(equipos_ayer.items()):
+                            team_id = equipo['team_id']
+                            team_name = equipo['team_name']
+                            league_id = equipo['league_id']
+                            season_eq = equipo['season']
+                            
+                            status_ayer.text(f"🔄 {idx+1}/{len(equipos_ayer)}: {team_name}")
+                            progress_ayer.progress((idx + 1) / len(equipos_ayer))
+                            
+                            try:
+                                resp_team = requests.get(
+                                    f"{API_URL}/teams/statistics",
+                                    headers=headers,
+                                    params={'team': team_id, 'league': league_id, 'season': season_eq},
+                                    timeout=10
+                                )
+                                
+                                if resp_team.status_code == 200:
+                                    stats = resp_team.json().get('response', {})
+                                    if stats and stats.get('fixtures', {}).get('played', {}).get('total', 0) > 0:
+                                        gf = stats.get('goals', {}).get('for', {}).get('total', 0) or 0
+                                        gc = stats.get('goals', {}).get('against', {}).get('total', 0) or 0
+                                        gf_h = stats.get('goals', {}).get('for', {}).get('home', 0) or 0
+                                        gf_a = stats.get('goals', {}).get('for', {}).get('away', 0) or 0
+                                        gc_h = stats.get('goals', {}).get('against', {}).get('home', 0) or 0
+                                        gc_a = stats.get('goals', {}).get('against', {}).get('away', 0) or 0
+                                        pj_h = stats.get('fixtures', {}).get('played', {}).get('home', 1) or 1
+                                        pj_a = stats.get('fixtures', {}).get('played', {}).get('away', 1) or 1
+                                        pj_t = stats.get('fixtures', {}).get('played', {}).get('total', 0) or 1
+                                        wins = stats.get('fixtures', {}).get('wins', {}).get('total', 0) or 0
+                                        draws = stats.get('fixtures', {}).get('draws', {}).get('total', 0) or 0
+                                        loses = stats.get('fixtures', {}).get('loses', {}).get('total', 0) or 0
+                                        
+                                        equipo_data = {
+                                            'equipo': team_name,
+                                            'team_id': team_id,
+                                            'liga': stats.get('league', {}).get('name', equipo['league_name']),
+                                            'temporada': f'{season_eq}-{season_eq+1}',
+                                            'partidos_jugados': pj_t,
+                                            'victorias': wins,
+                                            'empates': draws,
+                                            'derrotas': loses,
+                                            'goles_favor': gf,
+                                            'goles_contra': gc,
+                                            'lambda_local': round((gf_h + gc_a) / pj_h / 2, 2) if pj_h > 0 else 1.0,
+                                            'lambda_visitante': round((gf_a + gc_h) / pj_a / 2, 2) if pj_a > 0 else 1.0,
+                                            'ultimos_5_partidos': list(stats.get('form', '') or '')[:5],
+                                        }
+                                        
+                                        client.table('equipos_stats').upsert(equipo_data).execute()
+                                        equipos_actualizados += 1
+                            except:
+                                continue
+                        
+                        progress_ayer.empty()
+                        status_ayer.empty()
+                        st.success(f"✅ **{equipos_actualizados}** equipos actualizados (jugaron ayer)")
+                    
+                    # ═══════════════════════════════════════════════════════════════
+                    # PASO 3: MOSTRAR RESUMEN DE PARTIDOS
                     # ═══════════════════════════════════════════════════════════════
                     st.success(f"✅ **PASO 1 COMPLETADO**")
                     st.markdown(f"""
@@ -947,13 +1054,14 @@ def render_login_form():
                     - 🏆 **Ligas procesadas:** {ligas_procesadas}
                     - 📅 **Partidos guardados:** {partidos_guardados}
                     - 👥 **Equipos únicos encontrados:** {len(equipos_unicos)}
+                    - 🔄 **Equipos actualizados (ayer):** {equipos_actualizados}
                     """)
                     
                     # ═══════════════════════════════════════════════════════════════
-                    # PASO 3: DESCARGAR ESTADÍSTICAS DE EQUIPOS ÚNICOS
+                    # PASO 5: DESCARGAR ESTADÍSTICAS DE EQUIPOS ÚNICOS
                     # ═══════════════════════════════════════════════════════════════
                     if len(equipos_unicos) > 0:
-                        st.info("📊 **PASO 2:** Descargando estadísticas de equipos...")
+                        st.info("📊 **PASO 5:** Descargando estadísticas de equipos...")
                         
                         # Obtener equipos que ya tienen stats
                         equipos_stats_existentes = set()
@@ -999,7 +1107,7 @@ def render_login_form():
                                 )
                                 
                                 # ═══════════════════════════════════════════════════════
-                                # PASO 4: VALIDAR RESPUESTA
+                                # PASO 5: VALIDAR RESPUESTA
                                 # ═══════════════════════════════════════════════════════
                                 if resp_team.status_code == 200:
                                     stats = resp_team.json().get('response', {})
@@ -1419,7 +1527,7 @@ def render_login_form():
                             except: pass
 
                     # ═══════════════════════════════════════════════════════
-                    # PASO 2: Filtrar y buscar stats de equipos
+                    # PASO 5: Filtrar y buscar stats de equipos
                     # ═══════════════════════════════════════════════════════
                     equipos_faltan = {k: v for k, v in equipos_por_buscar.items() if k not in equipos_en_bd}
 
