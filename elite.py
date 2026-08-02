@@ -438,16 +438,29 @@ def render_public_landing():
             st.markdown("###### Partidos Destacados")
             st.caption("Preview gratuito - Accede con tu cuenta para análisis completo")
             
-            for i, partido in enumerate(partidos_aleatorios, 1):
+            # Crear botones clicables para cada partido
+            cols = st.columns(2)
+            
+            for i, partido in enumerate(partidos_aleatorios):
                 # Variables del partido
                 local = partido.get('equipo_local', 'Local')
                 visitante = partido.get('equipo_visitante', 'Visitante')
                 liga = partido.get('liga', '')
                 hora = partido.get('hora', '')
-
-                # Partido en una línea
-                st.markdown(f"**{i}.** **{local}** VS **{visitante}**  ·  {hora} {liga}")
-                st.markdown("")
+                fixture_id = partido.get('fixture_id', 0)
+                
+                with cols[i % 2]:
+                    # Guardar el partido en session_state y navegar
+                    st.session_state['partido_seleccionado'] = partido
+                    
+                    # Botón clicable
+                    if st.button(f"⚽ {local} vs {visitante}", key=f"partido_{fixture_id}", use_container_width=True):
+                        st.session_state['partido_seleccionado'] = partido
+                        st.session_state['show_analizador'] = True
+                        st.query_params["page"] = "analizador"
+                        st.rerun()
+                    
+                    st.caption(f"📅 {hora} | {liga}")
             
             st.caption("🔐 Accede con tu cuenta para ver todos los partidos y análisis completo con 4 modelos matemáticos.")
         else:
