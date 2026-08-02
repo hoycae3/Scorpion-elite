@@ -1,1 +1,565 @@
-/* Scorpion Elite - CSS Minimalista */
+/* Scorpion Elite - Sistema de Diseño Centralizado */
+/* Actualizado: 2026-08-01 */
+
+/* ============================================
+   🎨 VARIABLES CSS - COLORES PRINCIPALES
+   ============================================ */
+:root {
+    /* Colores de resultado */
+    --color-victoria: #22c55e;
+    --color-derrota: #ef4444;
+    --color-empate: #eab308;
+    
+    /* Colores de acento */
+    --color-primary: #00d4aa;
+    --color-primary-dark: #00a88a;
+    --color-secondary: #6366f1;
+    
+    /* Colores de equipo */
+    --color-local: #00ff88;
+    --color-visitante: #ff6b6b;
+    --color-hora: #ffd700;
+    
+    /* Colores de fondo */
+    --bg-dark: #0f172a;
+    --bg-card: #1e293b;
+    --bg-header: #121824;
+    --bg-hover: #334155;
+    
+    /* Colores de texto */
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    
+    /* Bordes y sombras */
+    --border-color: #334155;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+    
+    /* Espaciado */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    
+    /* Bordes redondeados */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-full: 9999px;
+    
+    /* Transiciones */
+    --transition-fast: 150ms ease;
+    --transition-normal: 300ms ease;
+}
+
+/* ============================================
+   🔤 TIPOGRAFÍA
+   ============================================ */
+.se-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.se-subtitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.se-text {
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.se-small {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+/* ============================================
+   🏷️ BADGES Y TAGS
+   ============================================ */
+.se-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.se-badge-success {
+    background: var(--color-victoria);
+    color: white;
+}
+
+.se-badge-danger {
+    background: var(--color-derrota);
+    color: white;
+}
+
+.se-badge-warning {
+    background: var(--color-empate);
+    color: black;
+}
+
+.se-badge-primary {
+    background: var(--color-primary);
+    color: var(--bg-dark);
+}
+
+.se-badge-popular {
+    background: var(--color-primary-dark);
+    color: white;
+}
+
+.se-badge-hot {
+    background: #ef4444;
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+/* ============================================
+   📦 CARDS
+   ============================================ */
+.se-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.se-card-hover {
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.se-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.se-card-header {
+    background: var(--bg-header);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.se-card-body {
+    padding: var(--spacing-md);
+}
+
+/* ============================================
+   📊 TABLAS
+   ============================================ */
+.se-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.se-table th {
+    background: var(--bg-header);
+    color: var(--color-primary);
+    font-weight: 600;
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-align: left;
+    border-bottom: 2px solid var(--color-primary);
+}
+
+.se-table td {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.se-table tr:hover td {
+    background: var(--bg-hover);
+}
+
+/* Tabla de partidos */
+.se-match-row {
+    transition: background var(--transition-fast);
+}
+
+.se-match-row:hover {
+    background: var(--bg-hover);
+}
+
+.se-match-local {
+    color: var(--color-local);
+    font-weight: 600;
+}
+
+.se-match-visitante {
+    color: var(--color-visitante);
+    font-weight: 600;
+}
+
+.se-match-hora {
+    color: var(--color-hora);
+    font-weight: 600;
+}
+
+/* ============================================
+   🎯 RESULTADOS W/L/D
+   ============================================ */
+.se-result-w {
+    color: var(--color-victoria);
+    font-weight: 700;
+}
+
+.se-result-l {
+    color: var(--color-derrota);
+    font-weight: 700;
+}
+
+.se-result-d {
+    color: var(--color-empate);
+    font-weight: 700;
+}
+
+.se-forma {
+    display: inline-flex;
+    gap: 2px;
+}
+
+.se-forma-item {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    font-size: 0.75rem;
+}
+
+/* ============================================
+   📈 MÉTRICAS Y STATS
+   ============================================ */
+.se-stat-label {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.se-stat-value {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.se-stat-group {
+    display: grid;
+    gap: var(--spacing-md);
+}
+
+/* ============================================
+   💰 TABLA DE PRECIOS
+   ============================================ */
+.se-price-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: var(--spacing-lg) 0;
+}
+
+.se-price-table th {
+    background: var(--bg-header);
+    color: var(--text-primary);
+    font-weight: 600;
+    padding: var(--spacing-md);
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+
+.se-price-table td {
+    padding: var(--spacing-md);
+    text-align: center;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+}
+
+.se-price-table tr:nth-child(even) td {
+    background: rgba(0, 212, 170, 0.05);
+}
+
+.se-price-table .popular {
+    background: rgba(0, 212, 170, 0.1) !important;
+    border: 2px solid var(--color-primary) !important;
+}
+
+.se-duration {
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.se-price {
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+/* ============================================
+   🖼️ BOTONES
+   ============================================ */
+.se-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: none;
+}
+
+.se-btn-primary {
+    background: var(--color-primary);
+    color: var(--bg-dark);
+}
+
+.se-btn-primary:hover {
+    background: var(--color-primary-dark);
+}
+
+.se-btn-secondary {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.se-btn-secondary:hover {
+    background: var(--bg-hover);
+}
+
+.se-btn-match {
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-header) 100%);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-sm) var(--spacing-md);
+    width: 100%;
+    text-align: left;
+}
+
+.se-btn-match:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 10px rgba(0, 212, 170, 0.3);
+}
+
+/* ============================================
+   📱 COMPONENTES ESPECIALES
+   ============================================ */
+
+/* KPI Card */
+.se-kpi {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    text-align: center;
+}
+
+.se-kpi-label {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    margin-bottom: var(--spacing-xs);
+}
+
+.se-kpi-value {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+/* Progress Bar */
+.se-progress {
+    background: var(--bg-hover);
+    border-radius: var(--radius-full);
+    height: 8px;
+    overflow: hidden;
+}
+
+.se-progress-bar {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width var(--transition-normal);
+}
+
+.se-progress-success {
+    background: var(--color-victoria);
+}
+
+.se-progress-warning {
+    background: var(--color-empate);
+}
+
+.se-progress-danger {
+    background: var(--color-derrota);
+}
+
+/* Panel de equipo */
+.se-team-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.se-team-header {
+    padding: var(--spacing-md);
+    text-align: center;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.se-team-local .se-team-header {
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, transparent 100%);
+    border-bottom: 2px solid var(--color-local);
+    color: var(--color-local);
+}
+
+.se-team-visitante .se-team-header {
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.2) 0%, transparent 100%);
+    border-bottom: 2px solid var(--color-visitante);
+    color: var(--color-visitante);
+}
+
+.se-team-stats {
+    padding: var(--spacing-md);
+}
+
+.se-stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--spacing-xs) 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.se-stat-row:last-child {
+    border-bottom: none;
+}
+
+/* Prediction Card */
+.se-prediction {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    text-align: center;
+}
+
+.se-prediction-header {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-sm);
+}
+
+.se-prediction-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.se-prediction-odds {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    margin-top: var(--spacing-xs);
+}
+
+.se-prediction-confidence {
+    margin-top: var(--spacing-sm);
+}
+
+/* Alert */
+.se-alert {
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    border-left: 4px solid;
+}
+
+.se-alert-info {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: var(--color-secondary);
+}
+
+.se-alert-success {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: var(--color-victoria);
+}
+
+.se-alert-warning {
+    background: rgba(234, 179, 8, 0.1);
+    border-color: var(--color-empate);
+}
+
+.se-alert-danger {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--color-derrota);
+}
+
+/* ============================================
+   🎬 ANIMACIONES
+   ============================================ */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.se-animate-fadeIn {
+    animation: fadeIn var(--transition-normal);
+}
+
+.se-animate-pulse {
+    animation: pulse 2s infinite;
+}
+
+/* ============================================
+   📱 RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+    .se-title { font-size: 1.25rem; }
+    .se-subtitle { font-size: 1rem; }
+    .se-stat-value { font-size: 1.25rem; }
+    .se-kpi-value { font-size: 1.25rem; }
+    .se-prediction-value { font-size: 1.5rem; }
+}
+
+/* ============================================
+   🔧 UTILIDADES
+   ============================================ */
+.se-text-center { text-align: center; }
+.se-text-right { text-align: right; }
+.se-text-primary { color: var(--color-primary); }
+.se-text-local { color: var(--color-local); }
+.se-text-visitante { color: var(--color-visitante); }
+.se-text-success { color: var(--color-victoria); }
+.se-text-danger { color: var(--color-derrota); }
+.se-text-warning { color: var(--color-empate); }
+.se-bg-dark { background: var(--bg-dark); }
+.se-bg-card { background: var(--bg-card); }
+.se-border { border: 1px solid var(--border-color); }
+.se-border-primary { border: 1px solid var(--color-primary); }
+.se-rounded { border-radius: var(--radius-md); }
+.se-shadow { box-shadow: var(--shadow-md); }
+.se-mt-1 { margin-top: var(--spacing-sm); }
+.se-mt-2 { margin-top: var(--spacing-md); }
+.se-mt-3 { margin-top: var(--spacing-lg); }
+.se-mb-1 { margin-bottom: var(--spacing-sm); }
+.se-mb-2 { margin-bottom: var(--spacing-md); }
+.se-mb-3 { margin-bottom: var(--spacing-lg); }
+.se-p-1 { padding: var(--spacing-sm); }
+.se-p-2 { padding: var(--spacing-md); }
+.se-p-3 { padding: var(--spacing-lg); }
