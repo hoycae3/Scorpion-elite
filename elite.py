@@ -825,21 +825,8 @@ def render_login_form():
                     fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
                     st.markdown(f"📅 Rango: **{fecha_inicio}** al **{fecha_fin}**")
                     
-                    # Bandera para modo prueba (solo Colombia) o producción (todas las ligas)
-                    # Cambiar a False cuando quieras todas las ligas
-                    MODO_PRUEBA = True
-                    
-                    # Lista de ligas a procesar
-                    if MODO_PRUEBA:
-                        # Solo liga colombiana para prueba
-                        LIGAS = [
-                            {"id": 239, "name": "Primera A Colombia"},
-                            {"id": 240, "name": "Primera B Colombia"},
-                        ]
-                        st.warning("🧪 **MODO PRUEBA** - Solo Liga Colombiana")
-                    else:
-                        # Todas las ligas
-                        LIGAS = [
+                    # ✅ MODO PRODUCCIÓN - Todas las ligas
+                    LIGAS = [
                             {"id": 2, "name": "UEFA Champions League"},
                             {"id": 3, "name": "UEFA Europa League"},
                             {"id": 848, "name": "UEFA Europa Conference League"},
