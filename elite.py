@@ -767,7 +767,9 @@ def render_login_form():
                     
                     # Calcular temporada dinámicamente: Ago-Dic → season actual, Ene-Jul → season anterior
                     season = hoy.year if hoy.month >= 8 else hoy.year - 1
-                    st.markdown(f"⚽ **Temporada:** {season}")
+                    # Para estadísticas usar temporada anterior (las stats de 2026 no existen aún)
+                    season_stats = season - 1
+                    st.markdown(f"⚽ **Temporada partidos:** {season} | **Temporada stats:** {season_stats}")
 
                     # ═══════════════════════════════════════════════════════════════
                     # PASO 1: DESCARGAR PARTIDOS (SIN ESTADÍSTICAS DE EQUIPOS)
@@ -919,7 +921,7 @@ def render_login_form():
                                                 'team_name': equipo_local,
                                                 'league_id': liga_id,
                                                 'league_name': liga_nombre,
-                                                'season': season
+                                                'season': season_stats  # Usar temporada con stats disponibles
                                             }
                                         
                                         if team_id_visitante:
@@ -928,7 +930,7 @@ def render_login_form():
                                                 'team_name': equipo_visitante,
                                                 'league_id': liga_id,
                                                 'league_name': liga_nombre,
-                                                'season': season
+                                                'season': season_stats  # Usar temporada con stats disponibles
                                             }
                                         
                         except Exception as e:
@@ -964,7 +966,7 @@ def render_login_form():
                                         'team_name': equipo_local,
                                         'league_id': liga_id,
                                         'league_name': liga_nombre,
-                                        'season': season
+                                        'season': season_stats
                                     }
                                 if team_id_visitante:
                                     equipos_ayer[team_id_visitante] = {
@@ -972,7 +974,7 @@ def render_login_form():
                                         'team_name': equipo_visitante,
                                         'league_id': liga_id,
                                         'league_name': liga_nombre,
-                                        'season': season
+                                        'season': season_stats
                                     }
                         else:
                             st.markdown(f"📅 No hay partidos programados para ayer")
