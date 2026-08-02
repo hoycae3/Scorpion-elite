@@ -1064,12 +1064,17 @@ def render_login_form():
                                         draws_data = partidos_data.get('empates', {})
                                         loses_data = partidos_data.get('derrotas', {})
 
-                                        gf = goles_data.get('a_favor', {}).get('total', {}).get('total', 0) or 0
-                                        gc = goles_data.get('contra', {}).get('total', {}).get('total', 0) or 0
-                                        gf_h = goles_data.get('a_favor', {}).get('total', {}).get('local', 0) or 0
-                                        gf_a = goles_data.get('a_favor', {}).get('total', {}).get('visitante', 0) or 0
-                                        gc_h = goles_data.get('contra', {}).get('total', {}).get('local', 0) or 0
-                                        gc_a = goles_data.get('contra', {}).get('total', {}).get('visitante', 0) or 0
+                                        # Manejar formatos mixtos: español (a_favor/contra) e inglés (un favor/against)
+                                        gf_data = goles_data.get('a_favor', {}) or goles_data.get('un favor', {}) or {}
+                                        gc_data = goles_data.get('contra', {}) or goles_data.get('against', {}) or {}
+                                        gf_total = gf_data.get('total', {}) or {}
+                                        gc_total = gc_data.get('total', {}) or {}
+                                        gf = gf_total.get('total', 0) or gf_total.get('local', 0) or gf_total.get('home', 0) or 0
+                                        gc = gc_total.get('total', 0) or gc_total.get('local', 0) or gc_total.get('home', 0) or 0
+                                        gf_h = gf_total.get('local', 0) or gf_total.get('home', 0) or 0
+                                        gf_a = gf_total.get('visitante', 0) or gf_total.get('away', 0) or 0
+                                        gc_h = gc_total.get('local', 0) or gc_total.get('home', 0) or 0
+                                        gc_a = gc_total.get('visitante', 0) or gc_total.get('away', 0) or 0
                                         pj_h = pj_data.get('local', 1) or 1
                                         pj_a = pj_data.get('visitante', 1) or 1
                                         pj_t = pj_data.get('total', 0) or 1
@@ -1194,12 +1199,17 @@ def render_login_form():
                                         draws_data = partidos_data.get('empates', {})
                                         loses_data = partidos_data.get('derrotas', {})
                                         
-                                        gf = goles_data.get('a_favor', {}).get('total', {}).get('total', 0) or 0
-                                        gc = goles_data.get('contra', {}).get('total', {}).get('total', 0) or 0
-                                        gf_h = goles_data.get('a_favor', {}).get('total', {}).get('local', 0) or 0
-                                        gf_a = goles_data.get('a_favor', {}).get('total', {}).get('visitante', 0) or 0
-                                        gc_h = goles_data.get('contra', {}).get('total', {}).get('local', 0) or 0
-                                        gc_a = goles_data.get('contra', {}).get('total', {}).get('visitante', 0) or 0
+                                        # Manejar formatos mixtos: español (a_favor/contra) e inglés (un favor/against)
+                                        gf_data = goles_data.get('a_favor', {}) or goles_data.get('un favor', {}) or {}
+                                        gc_data = goles_data.get('contra', {}) or goles_data.get('against', {}) or {}
+                                        gf_total = gf_data.get('total', {}) or {}
+                                        gc_total = gc_data.get('total', {}) or {}
+                                        gf = gf_total.get('total', 0) or gf_total.get('local', 0) or gf_total.get('home', 0) or 0
+                                        gc = gc_total.get('total', 0) or gc_total.get('local', 0) or gc_total.get('home', 0) or 0
+                                        gf_h = gf_total.get('local', 0) or gf_total.get('home', 0) or 0
+                                        gf_a = gf_total.get('visitante', 0) or gf_total.get('away', 0) or 0
+                                        gc_h = gc_total.get('local', 0) or gc_total.get('home', 0) or 0
+                                        gc_a = gc_total.get('visitante', 0) or gc_total.get('away', 0) or 0
                                         pj_h = pj_data.get('local', 1) or 1
                                         pj_a = pj_data.get('visitante', 1) or 1
                                         pj_t = pj_data.get('total', 0) or 1
@@ -1637,12 +1647,17 @@ def render_login_form():
                                                     draws_data = st_eq.get('partidos', {}).get('empates', {})
                                                     loses_data = st_eq.get('partidos', {}).get('derrotas', {})
                                                     
-                                                    gf = st_eq.get('goles', {}).get('a_favor', {}).get('total', {}).get('total', 0) or 0
-                                                    gc = st_eq.get('goles', {}).get('contra', {}).get('total', {}).get('total', 0) or 0
-                                                    gf_h = st_eq.get('goles', {}).get('a_favor', {}).get('total', {}).get('local', 0) or 0
-                                                    gf_a = st_eq.get('goles', {}).get('a_favor', {}).get('total', {}).get('visitante', 0) or 0
-                                                    gc_h = st_eq.get('goles', {}).get('contra', {}).get('total', {}).get('local', 0) or 0
-                                                    gc_a = st_eq.get('goles', {}).get('contra', {}).get('total', {}).get('visitante', 0) or 0
+                                                    # Manejar formatos mixtos
+                                                    gf_data = st_eq.get('goles', {}).get('a_favor', {}) or st_eq.get('goles', {}).get('un favor', {}) or {}
+                                                    gc_data = st_eq.get('goles', {}).get('contra', {}) or st_eq.get('goles', {}).get('against', {}) or {}
+                                                    gf_total = gf_data.get('total', {}) or {}
+                                                    gc_total = gc_data.get('total', {}) or {}
+                                                    gf = gf_total.get('total', 0) or gf_total.get('local', 0) or gf_total.get('home', 0) or 0
+                                                    gc = gc_total.get('total', 0) or gc_total.get('local', 0) or gc_total.get('home', 0) or 0
+                                                    gf_h = gf_total.get('local', 0) or gf_total.get('home', 0) or 0
+                                                    gf_a = gf_total.get('visitante', 0) or gf_total.get('away', 0) or 0
+                                                    gc_h = gc_total.get('local', 0) or gc_total.get('home', 0) or 0
+                                                    gc_a = gc_total.get('visitante', 0) or gc_total.get('away', 0) or 0
                                                     pj_h = pj_data.get('local', 1) or 1
                                                     pj_a = pj_data.get('visitante', 1) or 1
                                                     pj_t = pj_data.get('total', 0) or 1
