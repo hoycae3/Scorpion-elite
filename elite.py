@@ -920,21 +920,74 @@ def render_login_form():
 
                         # Solo buscar partidos si es necesario
                         if buscar_partidos:
+                            # PASO 1: Buscar TODOS los partidos del día sin filtro de liga
+                            st.info("🌍 Buscando partidos en TODAS las ligas...")
+                            params_global = {'date': fecha_inicio, 'timezone': 'America/Lima'}
+                            try:
+                                resp_global = requests.get(f"{API_URL}/fixtures", headers=headers, params=params_global, timeout=30)
+                                if resp_global.status_code == 200:
+                                    data_global = resp_global.json()
+                                    fixtures_global = data_global.get('response', []) or []
+                                    st.info(f"🌍 {len(fixtures_global)} partidos encontrados globalmente")
+                                    
+                                    for f in fixtures_global:
+                                        fix = f.get('fixture', {})
+                                        teams = f.get('teams', {})
+                                        league = f.get('league', {})
+                                        fix_id = fix.get('id')
+                                        
+                                        partido_data = {
+                                            'fixture_id': fix_id,
+                                            'fecha': fix.get('date', '')[:10],
+                                            'hora': fix.get('date', '')[11:16],
+                                            'liga': league.get('name', ''),
+                                            'equipo_local': teams.get('home', {}).get('name', ''),
+                                            'equipo_visitante': teams.get('away', {}).get('name', ''),
+                                            'liga_id': league.get('id'),
+                                            'pais': league.get('country', ''),
+                                            'team_id_local': teams.get('home', {}).get('id'),
+                                            'team_id_visitante': teams.get('away', {}).get('id'),
+                                        }
+                                        
+                                        if fix_id not in partidos_existentes:
+                                            try:
+                                                client.table('partidos').upsert(partido_data, on_conflict='fixture_id').execute()
+                                                total_partidos += 1
+                                            except: pass
+                                        
+                                        # Guardar equipos
+                                        for tipo in ['home', 'away']:
+                                            team = teams.get(tipo, {})
+                                            team_name = team.get('name', '')
+                                            team_id_api = team.get('id', 0)
+                                            if team_name and team_id_api:
+                                                try:
+                                                    eq_data = {
+                                                        'equipo': team_name,
+                                                        'liga': league.get('name', ''),
+                                                        'temporada': f'{season}-{season+1}',
+                                                        'team_id': team_id_api,
+                                                    }
+                                                    client.table('equipos_stats').upsert(eq_data).execute()
+                                                    total_equipos += 1
+                                                except: pass
+                            except Exception as e:
+                                st.warning(f"⚠️ Error búsqueda global: {e}")
+                            
+                            # PASO 2: Complementar con ligas específicas
                             st.info("📥 Descargando partidos nuevos...")
                             for idx, liga in enumerate(LIGAS):
                                 liga_id = liga['id']
                                 liga_nombre = liga['name']
                                 status_text.text(f"📊 {liga_nombre}...")
                                 progress_bar.progress((idx + 1) / len(LIGAS))
-                                
+
                                 params = {'league': liga_id, 'season': season, 'from': fecha_inicio, 'to': fecha_fin}
                                 try:
                                     resp = requests.get(f"{API_URL}/fixtures", headers=headers, params=params, timeout=15)
-                                    
                                     if resp.status_code == 200:
                                         data = resp.json()
                                         fixtures = data.get('response', []) or []
-                                        
                                         for f in fixtures:
                                             fix = f.get('fixture', {})
                                             teams = f.get('teams', {})
