@@ -1099,6 +1099,10 @@ def render_login_form():
                         
                         st.markdown(f"📊 Equipos con stats: **{len(equipos_stats_existentes)}** | Nuevos: **{len(equipos_nuevos)}**")
                         
+                        # DEBUG: mostrar primeros 3 equipos
+                        if len(equipos_nuevos) > 0:
+                            st.warning(f"DEBUG: Primeros equipos: {equipos_nuevos[:3]}")
+                        
                         for idx, equipo in enumerate(equipos_nuevos):
                             team_id = equipo['team_id']
                             team_name = equipo['team_name']
@@ -1107,6 +1111,10 @@ def render_login_form():
                             
                             status_text2.text(f"📊 {idx+1}/{len(equipos_nuevos)}: {team_name}")
                             progress_bar2.progress((idx + 1) / len(equipos_nuevos))
+                            
+                            # DEBUG: mostrar primer equipo
+                            if idx == 0:
+                                st.warning(f"DEBUG API call: team={team_id}, league={league_id}, season={season_eq}")
                             
                             try:
                                 # Llamada única a API por equipo
@@ -1121,11 +1129,19 @@ def render_login_form():
                                     timeout=10
                                 )
                                 
+                                # DEBUG: mostrar respuesta del primer equipo
+                                if idx == 0:
+                                    st.warning(f"DEBUG response: status={resp_team.status_code}")
+                                
                                 # ═══════════════════════════════════════════════════════
                                 # PASO 5: VALIDAR RESPUESTA
                                 # ═══════════════════════════════════════════════════════
                                 if resp_team.status_code == 200:
                                     stats = resp_team.json().get('response', {})
+                                    
+                                    # DEBUG: mostrar stats del primer equipo
+                                    if idx == 0:
+                                        st.warning(f"DEBUG stats: {stats}")
                                     
                                     # Validar que la respuesta tenga datos
                                     if stats and stats.get('fixtures', {}).get('played', {}).get('total', 0) > 0:
