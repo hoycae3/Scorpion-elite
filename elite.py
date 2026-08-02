@@ -461,8 +461,6 @@ def render_public_landing():
                         st.rerun()
                     
                     st.caption(f"📅 {hora} | {liga}")
-            
-            st.caption("🔐 Accede con tu cuenta para ver todos los partidos y análisis completo con 4 modelos matemáticos.")
         else:
             st.info("📭 No hay partidos cargados. Ve a la pestaña **Carga** para subir datos.")
 
