@@ -953,12 +953,9 @@ def render_login_form():
                                             'fecha': fix.get('date', '')[:10],
                                             'hora': fix.get('date', '')[11:16],
                                             'liga': league.get('name', ''),
-                                            'liga_id': league.get('id'),
                                             'pais': league.get('country', ''),
                                             'equipo_local': equipo_local,
                                             'equipo_visitante': equipo_visitante,
-                                            'team_id_local': team_id_local,
-                                            'team_id_visitante': team_id_visitante,
                                         }
                                         try:
                                             client.table('partidos').upsert(partido_data, on_conflict='fixture_id').execute()
@@ -1082,7 +1079,7 @@ def render_login_form():
                                         equipo_data = {
                                             'equipo': team_name,
                                             'team_id': team_id,
-                                            'liga': stats.get('liga', {}).get('nombre', equipo['league_name']),
+                                            'liga': stats.get('league', {}).get('name', equipo['league_name']),
                                             'temporada': f'{season_eq}-{season_eq+1}',
                                             'partidos_jugados': pj_t,
                                             'victorias': wins,
@@ -1211,7 +1208,7 @@ def render_login_form():
                                         equipo_data = {
                                             'equipo': team_name,
                                             'team_id': team_id,
-                                            'liga': stats.get('liga', {}).get('nombre', equipo['league_name']),
+                                            'liga': stats.get('league', {}).get('name', equipo['league_name']),
                                             'temporada': f'{season_eq}-{season_eq+1}',
                                             'partidos_jugados': pj_t,
                                             'victorias': wins,
