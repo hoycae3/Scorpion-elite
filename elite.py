@@ -966,20 +966,33 @@ def render_login_form():
                                     team_id_local = teams.get('home', {}).get('id')
                                     team_id_visitante = teams.get('away', {}).get('id')
                                     
-                                    # Guardar partido en BD (solo si es nuevo)
+                                    # Extraer score y estado
+                                    score = f.get('score', {}) or {}
+                                    goals = fix.get('score') or {}
+                                    estado = fix.get('status', {}).get('short', 'NS')
+                                    
+                                    # Score fulltime
+                                    score_local = score.get('fulltime', {}).get('home') or goals.get('home') or 0
+                                    score_visitante = score.get('fulltime', {}).get('away') or goals.get('away') or 0
+                                    
+                                    # Guardar/actualizar partido en BD (siempre, para actualizar score)
+                                    partido_data = {
+                                        'fixture_id': fix_id,
+                                        'fecha': fix.get('date', '')[:10],
+                                        'hora': fix.get('date', '')[11:16],
+                                        'liga': league.get('name', ''),
+                                        'liga_id': league.get('id'),
+                                        'pais': league.get('country', ''),
+                                        'equipo_local': equipo_local,
+                                        'equipo_visitante': equipo_visitante,
+                                        'team_id_local': team_id_local,
+                                        'team_id_visitante': team_id_visitante,
+                                        'score_local': score_local,
+                                        'score_visitante': score_visitante,
+                                        'estado': estado,
+                                    }
+                                    
                                     if fix_id not in partidos_existentes:
-                                        partido_data = {
-                                            'fixture_id': fix_id,
-                                            'fecha': fix.get('date', '')[:10],
-                                            'hora': fix.get('date', '')[11:16],
-                                            'liga': league.get('name', ''),
-                                            'liga_id': league.get('id'),
-                                            'pais': league.get('country', ''),
-                                            'equipo_local': equipo_local,
-                                            'equipo_visitante': equipo_visitante,
-                                            'team_id_local': team_id_local,
-                                            'team_id_visitante': team_id_visitante,
-                                        }
                                         try:
                                             client.table('partidos').upsert(partido_data, on_conflict='fixture_id').execute()
                                             partidos_guardados += 1
@@ -1196,6 +1209,7 @@ def render_login_form():
                         status_stats.empty()
                     
                     st.success(f"✅ **{equipos_stats_descargados}** equipos con stats actualizadas")
+                    st.session_state.sincronizacion_ok = True
                     
                     # ═══════════════════════════════════════════════════════════════
                     # RESUMEN FINAL
@@ -1239,6 +1253,22 @@ def render_login_form():
         if st.session_state.get('limpieza_equipos_ok'):
             st.success(f"✅ Equipos limpiados correctamente")
             st.session_state.limpieza_equipos_ok = False
+
+        # ═══════════════════════════════════════════════════════════════
+        # LIMPIEZA: Eliminar partidos de más de 7 días
+        # ═══════════════════════════════════════════════════════════════
+        if st.session_state.get('sincronizacion_ok'):
+            st.session_state.sincronizacion_ok = False
+            try:
+                client = get_client()
+                fecha_limite = (datetime.now(timezone(timedelta(hours=-5))) - timedelta(days=7)).strftime('%Y-%m-%d')
+                # Eliminar partidos de más de 7 días
+                resp_del = client.table('partidos').delete().lt('fecha', fecha_limite).execute()
+                eliminados = len(resp_del.data) if resp_del.data else 0
+                if eliminados > 0:
+                    st.info(f"🗑️ {eliminados} partidos antiguos eliminados")
+            except Exception as e:
+                pass
 
         with col_info:
             st.markdown(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/999")
