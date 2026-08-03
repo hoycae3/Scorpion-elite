@@ -64,7 +64,7 @@ def obtener_stats_partido(fixture_id, team_id, team_name, headers, API_URL):
         return None
 
 
-def obtener_ultimos_partidos_equipo(team_id, team_name, league_id, season, headers, API_URL, max_partidos=5):
+def obtener_ultimos_partidos_equipo(team_id, team_name, league_id, season, headers, API_URL, max_partidos=50):
     """
     Obtiene los últimos N partidos jugados de un equipo con sus estadísticas.
     """
