@@ -2000,7 +2000,7 @@ def render_login_form():
             es_empate_max = px > p1 and px > p2
             es_visita_max = p2 > p1 and p2 > px
             
-            col1, col2, col3 = st.columns([1.5, 1, 1.5])
+            col1, col2, col3 = st.columns([1.5, 1.2, 1.5])
             with col1:
                 clase = "caja-1x2 caja-local" if es_local_max else "caja-1x2"
                 st.markdown(f"""
@@ -2015,6 +2015,14 @@ def render_login_form():
                 <div class="{clase}">
                     <p class="etiqueta-equipo etiqueta-empate">🤝 Empate</p>
                     <p class="probabilidad">{px:.1f}%</p>
+                </div>
+                """, unsafe_allow_html=True)
+            with col3:
+                clase = "caja-1x2 caja-visita" if es_visita_max else "caja-1x2"
+                st.markdown(f"""
+                <div class="{clase}">
+                    <p class="etiqueta-equipo etiqueta-visita">✈️ {away}</p>
+                    <p class="probabilidad">{p2:.1f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
