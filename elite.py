@@ -1405,18 +1405,6 @@ def render_login_form():
                         badge_color = "#9ca3af"
                         tooltip = "No verificado"
 
-                    # Fila clickeable - al hacer clic analiza directo
-                    partido_info = {
-                        'equipo_local': equipo_local,
-                        'equipo_visitante': equipo_visitante,
-                        'liga': liga,
-                        'fecha': fecha,
-                        'hora': hora,
-                        'fixture_id': fix_id
-                    }
-                    
-                    if st.button(f"⚽ {equipo_local} vs {equipo_visitante}  🗓️ {hora}", key=f"match_{liga}_{i}", use_container_width=True):
-                        st.session_state.selected_local = equipo_local
                         st.session_state.selected_away = equipo_visitante
                         st.session_state.page = "Analizador"
         
