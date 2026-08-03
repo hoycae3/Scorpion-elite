@@ -1510,10 +1510,10 @@ def render_login_form():
                         corners_visitante=float(stats_visitante.get('promedio_corners_total', 0) or 0),
                         tarjetas_local=float(stats_local.get('promedio_tarjetas', 0) or 0),
                         tarjetas_visitante=float(stats_visitante.get('promedio_tarjetas', 0) or 0),
-                        tiros_local=float(stats_local.get('promedio_tiros', 0) or 0),
-                        tiros_visitante=float(stats_visitante.get('promedio_tiros', 0) or 0),
-                        tiros_arco_local=float(stats_local.get('promedio_tiros_arco', 0) or 0),
-                        tiros_arco_visitante=float(stats_visitante.get('promedio_tiros_arco', 0) or 0),
+                        tiros_local=float(stats_local.get('promedio_tiros', 13.0) or 0),
+                        tiros_visitante=float(stats_visitante.get('promedio_tiros', 13.0) or 0),
+                        tiros_arco_local=float(stats_local.get('promedio_tiros_arco', 4.5) or 0),
+                        tiros_arco_visitante=float(stats_visitante.get('promedio_tiros_arco', 4.5) or 0),
                         ultimos_5_local=[],
                         ultimos_5_visitante=[],
                     )
@@ -1650,29 +1650,33 @@ def render_login_form():
                         
                         # ★ USAR PROMEDIOS DINÁMICOS si están disponibles
                         if promedios_dinamicos_local:
-                            corners_l = promedios_dinamicos_local.get('promedio_corners', 10.0)
-                            tiros_l = promedios_dinamicos_local.get('promedio_tiros', 0)
-                            tiros_arco_l = promedios_dinamicos_local.get('promedio_tiros_arco', 0)
-                            amarillas_l = promedios_dinamicos_local.get('promedio_amarillas', 0)
+                            corners_l = promedios_dinamicos_local.get('promedio_corners', 5.5)
+                            tiros_l = promedios_dinamicos_local.get('promedio_tiros', 13.0)
+                            tiros_arco_l = promedios_dinamicos_local.get('promedio_tiros_arco', 4.5)
+                            amarillas_l = promedios_dinamicos_local.get('promedio_amarillas', 2.5)
                             partidos_total_l = promedios_dinamicos_local.get('partidos_total', 0)
                         else:
-                            corners_l = float(stats_local.get('promedio_corners_total', 0) or 0) or 0
-                            tiros_l = float(stats_local.get('promedio_tiros', 0) or 0) or 0
-                            tiros_arco_l = float(stats_local.get('promedio_tiros_arco', 0) or 0) or 0
-                            amarillas_l = float(stats_local.get('promedio_amarillas', 0) or 0) or 0
+                            # Estimar basado en lambda (goles esperados)
+                            lambda_est = lambda_base_local if lambda_base_local else 1.3
+                            corners_l = 5.5
+                            tiros_l = round(lambda_est * 4.5, 1)
+                            tiros_arco_l = round(lambda_est * 1.5, 1)
+                            amarillas_l = 2.5
                             partidos_total_l = 0
                         
                         if promedios_dinamicos_visitante:
-                            corners_v = promedios_dinamicos_visitante.get('promedio_corners', 10.0)
-                            tiros_v = promedios_dinamicos_visitante.get('promedio_tiros', 0)
-                            tiros_arco_v = promedios_dinamicos_visitante.get('promedio_tiros_arco', 0)
-                            amarillas_v = promedios_dinamicos_visitante.get('promedio_amarillas', 0)
+                            corners_v = promedios_dinamicos_visitante.get('promedio_corners', 5.5)
+                            tiros_v = promedios_dinamicos_visitante.get('promedio_tiros', 13.0)
+                            tiros_arco_v = promedios_dinamicos_visitante.get('promedio_tiros_arco', 4.5)
+                            amarillas_v = promedios_dinamicos_visitante.get('promedio_amarillas', 2.5)
                             partidos_total_v = promedios_dinamicos_visitante.get('partidos_total', 0)
                         else:
-                            corners_v = float(stats_visitante.get('promedio_corners_total', 0) or 0) or 0
-                            tiros_v = float(stats_visitante.get('promedio_tiros', 0) or 0) or 0
-                            tiros_arco_v = float(stats_visitante.get('promedio_tiros_arco', 0) or 0) or 0
-                            amarillas_v = float(stats_visitante.get('promedio_amarillas', 0) or 0) or 0
+                            # Estimar basado en lambda (goles esperados)
+                            lambda_est = lambda_base_visitante if lambda_base_visitante else 1.1
+                            corners_v = 5.5
+                            tiros_v = round(lambda_est * 4.5, 1)
+                            tiros_arco_v = round(lambda_est * 1.5, 1)
+                            amarillas_v = 2.5
                             partidos_total_v = 0
                         
                         # ★ OBTENER ÚLTIMOS 5 PARTIDOS de equipo_partidos_stats
@@ -1784,26 +1788,26 @@ def render_login_form():
                 
                 # ★ USAR PROMEDIOS DINÁMICOS si están disponibles (ponderación exponencial)
                 if promedios_dinamicos_local:
-                    prom_corners_l = promedios_dinamicos_local.get('promedio_corners', 10.0)
+                    prom_corners_l = promedios_dinamicos_local.get('promedio_corners', 5.5)
                     prom_amarillas_l = promedios_dinamicos_local.get('promedio_amarillas', 3.0)
-                    prom_tiros_l = promedios_dinamicos_local.get('promedio_tiros', 0)
-                    prom_tiros_arco_l = promedios_dinamicos_local.get('promedio_tiros_arco', 0)
+                    prom_tiros_l = promedios_dinamicos_local.get('promedio_tiros', 13.0)
+                    prom_tiros_arco_l = promedios_dinamicos_local.get('promedio_tiros_arco', 4.5)
                 else:
                     prom_corners_l = stats_local.get('promedio_corners_total', 10) or 10
-                    prom_amarillas_l = stats_local.get('promedio_amarillas', 0) or 0
-                    prom_tiros_l = stats_local.get('promedio_tiros', 0) or 0
-                    prom_tiros_arco_l = stats_local.get('promedio_tiros_arco', 0) or 0
+                    prom_amarillas_l = stats_local.get('promedio_amarillas', 2.5) or 0
+                    prom_tiros_l = stats_local.get('promedio_tiros', 13.0) or 0
+                    prom_tiros_arco_l = stats_local.get('promedio_tiros_arco', 4.5) or 0
                 
                 if promedios_dinamicos_visitante:
-                    prom_corners_v = promedios_dinamicos_visitante.get('promedio_corners', 10.0)
+                    prom_corners_v = promedios_dinamicos_visitante.get('promedio_corners', 5.5)
                     prom_amarillas_v = promedios_dinamicos_visitante.get('promedio_amarillas', 3.0)
-                    prom_tiros_v = promedios_dinamicos_visitante.get('promedio_tiros', 0)
-                    prom_tiros_arco_v = promedios_dinamicos_visitante.get('promedio_tiros_arco', 0)
+                    prom_tiros_v = promedios_dinamicos_visitante.get('promedio_tiros', 13.0)
+                    prom_tiros_arco_v = promedios_dinamicos_visitante.get('promedio_tiros_arco', 4.5)
                 else:
                     prom_corners_v = stats_visitante.get('promedio_corners_total', 10) or 10
-                    prom_amarillas_v = stats_visitante.get('promedio_amarillas', 0) or 0
-                    prom_tiros_v = stats_visitante.get('promedio_tiros', 0) or 0
-                    prom_tiros_arco_v = stats_visitante.get('promedio_tiros_arco', 0) or 0
+                    prom_amarillas_v = stats_visitante.get('promedio_amarillas', 2.5) or 0
+                    prom_tiros_v = stats_visitante.get('promedio_tiros', 13.0) or 0
+                    prom_tiros_arco_v = stats_visitante.get('promedio_tiros_arco', 4.5) or 0
                 
                 # Calcular promedios LOCAL (para PJ, victorias, etc - de equipos_stats)
                 pj_l = stats_local.get('partidos_jugados', 1) or 1
@@ -2046,16 +2050,16 @@ def render_login_form():
             st.markdown("##### 📊 Predicciones Adicionales (Modelo Matemático)")
             
             # Obtener datos del modelo matemático
-            ta_local = stats_local.get('promedio_amarillas', 0) if stats_local else 3
-            ta_visitante = stats_visitante.get('promedio_amarillas', 0) if stats_visitante else 3
+            ta_local = stats_local.get('promedio_amarillas', 2.5) if stats_local else 3
+            ta_visitante = stats_visitante.get('promedio_amarillas', 2.5) if stats_visitante else 3
             tarjetas_total = ta_local + ta_visitante
             
-            ti_local = stats_local.get('promedio_tiros', 0) if stats_local else 12
-            ti_visitante = stats_visitante.get('promedio_tiros', 0) if stats_visitante else 12
+            ti_local = stats_local.get('promedio_tiros', 13.0) if stats_local else 12
+            ti_visitante = stats_visitante.get('promedio_tiros', 13.0) if stats_visitante else 12
             remates_total = ti_local + ti_visitante
             
-            arco_local = stats_local.get('promedio_tiros_arco', 0) if stats_local else 4
-            arco_visitante = stats_visitante.get('promedio_tiros_arco', 0) if stats_visitante else 4
+            arco_local = stats_local.get('promedio_tiros_arco', 4.5) if stats_local else 4
+            arco_visitante = stats_visitante.get('promedio_tiros_arco', 4.5) if stats_visitante else 4
             arco_total = arco_local + arco_visitante
             
             # Obtener predicciones del modelo matemático
