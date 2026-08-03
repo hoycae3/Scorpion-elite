@@ -1402,7 +1402,9 @@ def render_login_form():
                         badge = "⚪"
                         badge_color = "#9ca3af"
                         tooltip = "No verificado"
-
+                    # Botón para analizar
+                    if st.button(f"⚽ {equipo_local} vs {equipo_visitante}  ⏰ {hora}", key=f"btn_{liga}_{i}", use_container_width=True):
+                        st.session_state.selected_local = equipo_local
                         st.session_state.selected_away = equipo_visitante
                         st.session_state.page = "Analizador"
         
