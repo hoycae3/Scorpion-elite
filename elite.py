@@ -1387,7 +1387,7 @@ def render_login_form():
                         st.session_state.selected_local = equipo_local
                         st.session_state.selected_away = equipo_visitante
                         st.session_state.page = "Analizador"
-                        st.rerun()
+                        # Sin rerun - la página se actualiza automáticamente
         
     # Página: Analizador
     elif st.session_state.page == "Analizador":
