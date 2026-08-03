@@ -1229,13 +1229,16 @@ def render_login_form():
                     if num_eq > 0 or num_ep > 0:
                         client.table('equipos_stats').delete().neq('equipo', '').execute()
                         client.table('equipo_partidos_stats').delete().neq('equipo', '').execute()
-                        st.success(f"✅ Limpiado: {num_eq} equipos + {num_ep} partidos stats")
+                        st.session_state.limpieza_equipos_ok = True
                     else:
                         st.info("ℹ️ No hay datos para limpiar")
-                    time.sleep(2)
-                    st.rerun()
                 except Exception as e:
                     st.error(f"❌ Error: {e}")
+
+        # Mostrar mensaje de limpieza si fue exitosa
+        if st.session_state.get('limpieza_equipos_ok'):
+            st.success(f"✅ Equipos limpiados correctamente")
+            st.session_state.limpieza_equipos_ok = False
 
         with col_info:
             st.markdown(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/999")
