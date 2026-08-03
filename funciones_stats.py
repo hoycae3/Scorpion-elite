@@ -155,10 +155,13 @@ def obtener_ultimos_partidos_equipo(team_id, team_name, league_id, season, heade
 def guardar_stats_equipo(client, team_id, equipo, partidos_stats):
     """
     Guarda las estadísticas de partidos de un equipo.
-    Mantiene solo los últimos 5 partidos (FIFO).
+    ★ NO borra partidos - acumula TODOS los partidos históricos.
+    La función calcular_promedios_equipo se encarga de ponderar.
     """
     try:
-        # Guardar cada partido
+        partidos_guardados = 0
+        
+        # Guardar cada partido (upsert no duplica)
         for ps in partidos_stats:
             data = {
                 'team_id': team_id,
@@ -182,31 +185,38 @@ def guardar_stats_equipo(client, team_id, equipo, partidos_stats):
             }
             
             client.table('equipo_partidos_stats').upsert(data, on_conflict='team_id,fixture_id').execute()
+            partidos_guardados += 1
         
-        # Mantener solo los últimos 5 partidos por equipo
-        # Obtener todos los partidos del equipo ordenados por fecha
-        resp = client.table('equipo_partidos_stats').select('id, fecha').eq('team_id', team_id).order('fecha', desc=True).execute()
-        
-        if resp.data and len(resp.data) > 5:
-            # Obtener los IDs de los partidos a eliminar (los más antiguos)
-            ids_a_borrar = [p['id'] for p in resp.data[5:]]
-            
-            # Eliminar los más antiguos
-            if ids_a_borrar:
-                client.table('equipo_partidos_stats').delete().in_('id', ids_a_borrar).execute()
-        
+        # ★ NO BORRAMOS NADA - Acumulamos todos los partidos
         return True
     
     except Exception as e:
         return False
 
 
-def calcular_promedios_equipo(client, team_id):
+def calcular_promedios_equipo(client, team_id, max_partidos=None):
     """
-    Calcula los promedios móviles de los últimos 5 partidos de un equipo.
+    Calcula promedios PONDERADOS de TODOS los partidos de un equipo.
+    
+    ★ USA TODOS LOS PARTIDOS DISPONIBLES
+    ★ Aplica decaimiento exponencial: partidos más recientes pesan más
+    ★ max_partidos limita a los N más recientes (None = todos)
+    
+    La ponderación exponencial: peso = decay^(posicion)
+    donde posición 0 = más reciente (peso = 1.0)
+          posición 1 = siguiente (peso = decay)
+          ...
     """
+    import math
+    
     try:
-        resp = client.table('equipo_partidos_stats').select('*').eq('team_id', team_id).order('fecha', desc=True).limit(5).execute()
+        # Obtener TODOS los partidos del equipo (sin límite)
+        query = client.table('equipo_partidos_stats').select('*').eq('team_id', team_id).order('fecha', desc=True)
+        
+        if max_partidos:
+            query = query.limit(max_partidos)
+        
+        resp = query.execute()
         
         if not resp.data:
             return None
@@ -217,18 +227,60 @@ def calcular_promedios_equipo(client, team_id):
         if n == 0:
             return None
         
-        # Calcular promedios
+        # Factor de decaimiento: partidos recientes pesan más
+        # decay = 0.9 significa que el partido N pesa 0.9^N vs el más reciente
+        # Ajustable: decay más bajo = más peso a lo reciente
+        decay = 0.92  # ~50% de peso al último tercio
+        
+        def weighted_avg(values, decay=0.92):
+            """Calcula promedio ponderado exponencialmente."""
+            if not values:
+                return 0
+            
+            n = len(values)
+            weights = [math.pow(decay, i) for i in range(n)]  # weights[0]=1.0 para más reciente
+            total_weight = sum(weights)
+            
+            if total_weight == 0:
+                return 0
+            
+            weighted_sum = sum(v * w for v, w in zip(values, weights))
+            return weighted_sum / total_weight
+        
+        # Calcular promedios ponderados
+        corners_vals = [p.get('corners', 0) for p in partidos]
+        tiros_vals = [p.get('tiros_totales', 0) for p in partidos]
+        tiros_arco_vals = [p.get('tiros_arco', 0) for p in partidos]
+        amarillas_vals = [p.get('amarillas', 0) for p in partidos]
+        rojas_vals = [p.get('rojas', 0) for p in partidos]
+        posesion_vals = [p.get('posesion', 0) for p in partidos]
+        faltas_vals = [p.get('faltas', 0) for p in partidos]
+        
+        # También calcular lambda con ponderación
+        gf_vals = [p.get('goles_favor', 0) for p in partidos]
+        gc_vals = [p.get('goles_contra', 0) for p in partidos]
+        
+        lambda_goles = weighted_avg([gf + gc for gf, gc in zip(gf_vals, gc_vals)], decay)
+        
+        # Forma: últimos 5 partidos (para display)
+        forma = ''.join(p.get('resultado', '-') for p in reversed(partidos[:5]))
+        
         return {
-            'partidos': n,
-            'promedio_corners': round(sum(p.get('corners', 0) for p in partidos) / n, 1),
-            'promedio_tiros': round(sum(p.get('tiros_totales', 0) for p in partidos) / n, 1),
-            'promedio_tiros_arco': round(sum(p.get('tiros_arco', 0) for p in partidos) / n, 1),
-            'promedio_amarillas': round(sum(p.get('amarillas', 0) for p in partidos) / n, 1),
-            'promedio_rojas': round(sum(p.get('rojas', 0) for p in partidos) / n, 1),
-            'promedio_posesion': round(sum(p.get('posesion', 0) for p in partidos) / n, 1),
-            'promedio_faltas': round(sum(p.get('faltas', 0) for p in partidos) / n, 1),
-            # Resultados recientes
-            'forma': ''.join(p.get('resultado', '-') for p in reversed(partidos)),
+            'partidos_total': n,  # Total de partidos acumulados
+            'partidos_usados': n,  # Partidos usados en el cálculo
+            'promedio_corners': round(weighted_avg(corners_vals), 1),
+            'promedio_tiros': round(weighted_avg(tiros_vals), 1),
+            'promedio_tiros_arco': round(weighted_avg(tiros_arco_vals), 1),
+            'promedio_amarillas': round(weighted_avg(amarillas_vals), 1),
+            'promedio_rojas': round(weighted_avg(rojas_vals), 1),
+            'promedio_posesion': round(weighted_avg(posesion_vals), 1),
+            'promedio_faltas': round(weighted_avg(faltas_vals), 1),
+            # Lambda dinámico (ponderado)
+            'lambda_ponderado': round(lambda_goles, 2),
+            # Forma recent
+            'forma': forma,
+            # Datos de partidos para análisis
+            'partidos': partidos[:5],  # Últimos 5 para display
         }
     
     except Exception as e:

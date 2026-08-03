@@ -1546,6 +1546,10 @@ def render_login_form():
         # Datos completos de los equipos
         stats_local = None
         stats_visitante = None
+        team_id_local = None
+        team_id_visitante = None
+        promedios_dinamicos_local = None
+        promedios_dinamicos_visitante = None
         
         if home_team:
             try:
@@ -1554,7 +1558,12 @@ def render_login_form():
                 if resp.data and resp.data[0].get('lambda_local', 0) >= 0:
                     stats_local = resp.data[0]
                     lambda_local = stats_local.get('lambda_local', 0)
+                    team_id_local = stats_local.get('team_id')
                     equipo_local_ok = True
+                    
+                    # ★ OBTENER PROMEDIOS DINÁMICOS de equipo_partidos_stats
+                    if team_id_local:
+                        promedios_dinamicos_local = calcular_promedios_equipo(client, team_id_local)
                 else:
                     equipos_faltantes.append(home_team)
             except Exception as e:
@@ -1568,7 +1577,12 @@ def render_login_form():
                 if resp.data and resp.data[0].get('lambda_visitante', 0) >= 0:
                     stats_visitante = resp.data[0]
                     lambda_visitante = stats_visitante.get('lambda_visitante', 0)
+                    team_id_visitante = stats_visitante.get('team_id')
                     equipo_visitante_ok = True
+                    
+                    # ★ OBTENER PROMEDIOS DINÁMICOS de equipo_partidos_stats
+                    if team_id_visitante:
+                        promedios_dinamicos_visitante = calcular_promedios_equipo(client, team_id_visitante)
                 else:
                     equipos_faltantes.append(away_team)
             except Exception as e:
@@ -1587,27 +1601,76 @@ def render_login_form():
             try:
                 if home_team and away_team and lambda_local is not None and lambda_visitante is not None and stats_local and stats_visitante:
                     with st.spinner("Analizando..."):
-                        # Aplicar calibración (Fix #1 - usar lambdas ajustadas)
-                        lambda_local_adj = get_lambda_ajustada(home_team, lambda_local, como_local=True)
-                        lambda_visitante_adj = get_lambda_ajustada(away_team, lambda_visitante, como_local=False)
+                        # ★ LAMBDA DINÁMICO: Si hay datos de equipo_partidos_stats, usar lambda_ponderado
+                        # Si no, usar lambda base de equipos_stats
+                        lambda_base_local = lambda_local
+                        lambda_base_visitante = lambda_visitante
+                        
+                        if promedios_dinamicos_local and promedios_dinamicos_local.get('lambda_ponderado'):
+                            # Combinar lambda base con lambda ponderado (70% ponderado, 30% base)
+                            lambda_ponderada_local = promedios_dinamicos_local['lambda_ponderado']
+                            lambda_final_local = lambda_ponderada_local * 0.7 + lambda_base_local * 0.3
+                        else:
+                            lambda_final_local = lambda_base_local
+                        
+                        if promedios_dinamicos_visitante and promedios_dinamicos_visitante.get('lambda_ponderado'):
+                            lambda_ponderada_visitante = promedios_dinamicos_visitante['lambda_ponderado']
+                            lambda_final_visitante = lambda_ponderada_visitante * 0.7 + lambda_base_visitante * 0.3
+                        else:
+                            lambda_final_visitante = lambda_base_visitante
+                        
+                        # Aplicar calibración
+                        lambda_local_adj = get_lambda_ajustada(home_team, lambda_final_local, como_local=True)
+                        lambda_visitante_adj = get_lambda_ajustada(away_team, lambda_final_visitante, como_local=False)
                         lambda_local_cal = lambda_local_adj['lambda_ajustada']
                         lambda_visitante_cal = lambda_visitante_adj['lambda_ajustada']
+                        
+                        # ★ USAR PROMEDIOS DINÁMICOS si están disponibles
+                        if promedios_dinamicos_local:
+                            corners_l = promedios_dinamicos_local.get('promedio_corners', 10.0)
+                            tiros_l = promedios_dinamicos_local.get('promedio_tiros', 12.0)
+                            tiros_arco_l = promedios_dinamicos_local.get('promedio_tiros_arco', 4.0)
+                            amarillas_l = promedios_dinamicos_local.get('promedio_amarillas', 3.5)
+                            partidos_total_l = promedios_dinamicos_local.get('partidos_total', 0)
+                        else:
+                            corners_l = float(stats_local.get('promedio_corners_total', 0) or 0) or 10.0
+                            tiros_l = float(stats_local.get('promedio_tiros', 0) or 0) or 12.0
+                            tiros_arco_l = float(stats_local.get('promedio_tiros_arco', 0) or 0) or 4.0
+                            amarillas_l = float(stats_local.get('promedio_amarillas', 0) or 0) or 3.5
+                            partidos_total_l = 0
+                        
+                        if promedios_dinamicos_visitante:
+                            corners_v = promedios_dinamicos_visitante.get('promedio_corners', 10.0)
+                            tiros_v = promedios_dinamicos_visitante.get('promedio_tiros', 12.0)
+                            tiros_arco_v = promedios_dinamicos_visitante.get('promedio_tiros_arco', 4.0)
+                            amarillas_v = promedios_dinamicos_visitante.get('promedio_amarillas', 3.5)
+                            partidos_total_v = promedios_dinamicos_visitante.get('partidos_total', 0)
+                        else:
+                            corners_v = float(stats_visitante.get('promedio_corners_total', 0) or 0) or 10.0
+                            tiros_v = float(stats_visitante.get('promedio_tiros', 0) or 0) or 12.0
+                            tiros_arco_v = float(stats_visitante.get('promedio_tiros_arco', 0) or 0) or 4.0
+                            amarillas_v = float(stats_visitante.get('promedio_amarillas', 0) or 0) or 3.5
+                            partidos_total_v = 0
                         
                         # Llamar al modelo con TODOS los datos
                         result = calcular(
                             lambda_local=lambda_local_cal,
                             lambda_visitante=lambda_visitante_cal,
-                            corners_local=float(stats_local.get('promedio_corners_total', 0) or 0),
-                            corners_visitante=float(stats_visitante.get('promedio_corners_total', 0) or 0),
-                            tarjetas_local=float(stats_local.get('promedio_amarillas', 0) or 0),
-                            tarjetas_visitante=float(stats_visitante.get('promedio_amarillas', 0) or 0),
-                            tiros_local=float(stats_local.get('promedio_tiros', 0) or 0),
-                            tiros_visitante=float(stats_visitante.get('promedio_tiros', 0) or 0),
-                            tiros_arco_local=float(stats_local.get('promedio_tiros_arco', 0) or 0),
-                            tiros_arco_visitante=float(stats_visitante.get('promedio_tiros_arco', 0) or 0),
+                            corners_local=corners_l,
+                            corners_visitante=corners_v,
+                            tarjetas_local=amarillas_l,
+                            tarjetas_visitante=amarillas_v,
+                            tiros_local=tiros_l,
+                            tiros_visitante=tiros_v,
+                            tiros_arco_local=tiros_arco_l,
+                            tiros_arco_visitante=tiros_arco_v,
                             ultimos_5_local=stats_local.get('ultimos_5_partidos', []),
                             ultimos_5_visitante=stats_visitante.get('ultimos_5_partidos', []),
                         )
+                        
+                        # Guardar info de partidos dinámicos en result
+                        result['partidos_acumulados_local'] = partidos_total_l
+                        result['partidos_acumulados_visitante'] = partidos_total_v
                         
                         st.session_state.analysis_result = result
                         st.session_state.home = home_team
@@ -1728,8 +1791,15 @@ def render_login_form():
                 # DOS COLUMNAS - listas una al lado de otra
                 sp1, col_local, col_visita, sp2 = st.columns([1, 1, 1, 1])
                 
+                # ★ INFO DINÁMICA: Obtener datos de partidos acumulados
+                partidos_acum_l = r.get('partidos_acumulados_local', 0)
+                partidos_acum_v = r.get('partidos_acumulados_visitante', 0)
+                
                 with col_local:
                     st.markdown(f"<h4 class='se-match-local' style='text-align: center;'>🏠 {html.escape(str(home))}</h4>", unsafe_allow_html=True)
+                    # ★ Mostrar partidos acumulados si hay datos dinámicos
+                    if partidos_acum_l > 0:
+                        st.markdown(f"<span style='color:#00d4ff;font-size:11px;'>📊 {partidos_acum_l} partidos históricos</span>", unsafe_allow_html=True)
                     # Lista local
                     stats_list_l = [
                         ("📅 PJ", pj_l, "black"),
@@ -1751,6 +1821,9 @@ def render_login_form():
                 
                 with col_visita:
                     st.markdown(f"<h4 class='se-match-visitante' style='text-align: center;'>✈️ {html.escape(str(away))}</h4>", unsafe_allow_html=True)
+                    # ★ Mostrar partidos acumulados si hay datos dinámicos
+                    if partidos_acum_v > 0:
+                        st.markdown(f"<span style='color:#00d4ff;font-size:11px;'>📊 {partidos_acum_v} partidos históricos</span>", unsafe_allow_html=True)
                     # Lista visita
                     stats_list_v = [
                         ("📅 PJ", pj_v, "black"),
