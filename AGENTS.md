@@ -435,6 +435,56 @@ curl -s -o /dev/null -w "%{http_code}" https://scorpion-elite.onrender.com/
 | **Partidos** | HOY → HOY+6 (7 días) | Solo agrega partidos nuevos |
 | **Stats equipos** | De partidos guardados | Usa `upsert` - actualiza solo si es nuevo |
 
+---
+
+## 📅 Sesión 2026-08-03 - Lambda Dinámico con Ponderación Exponencial
+
+### Problema Anterior:
+- Se borraban partidos más antiguos de `equipo_partidos_stats` (limitaba a 5)
+- Lambda se calculaba con solo los últimos 5 partidos
+- No había acumulación histórica
+
+### Solución Implementada:
+
+#### 1. `funciones_stats.py`:
+```python
+def guardar_stats_equipo():
+    # ★ NO BORRA PARTIDOS - Acumula TODOS los partidos históricos
+    # Usa upsert para no duplicar
+    
+def calcular_promedios_equipo(client, team_id, max_partidos=None):
+    # ★ USA TODOS LOS PARTIDOS DISPONIBLES
+    # ★ Aplica decaimiento exponencial: decay=0.92
+    # Retorna: lambda_ponderado, partidos_total, promedios dinámicos
+```
+
+#### 2. `elite.py`:
+```python
+# Combina lambda dinámico con base
+lambda_final = lambda_ponderado * 0.7 + lambda_base * 0.3
+
+# Muestra en UI
+"📊 X partidos históricos"
+```
+
+### Flujo de Lambda Dinámico:
+
+| Día | Partidos Acumulados | Lambda Calculada |
+|-----|---------------------|-----------------|
+| 1 | 5 | Se calcula con 5 partidos |
+| 2 | 6 (+1 nuevo) | Se recalcula con 6 |
+| 3 | 7 (+1 nuevo) | Se recalcula con 7 |
+| ... | ... | ... |
+
+### Ponderación Exponencial:
+```
+Partidos recientes pesan más:
+- decay = 0.92
+- Partido más reciente: peso = 1.0
+- Partido 5to: peso = 0.92^5 ≈ 0.66
+- Partido 10mo: peso = 0.92^10 ≈ 0.43
+```
+
 ### Nota importante:
 - En pretemporada (agos-feb) no habrá partidos de liga - es normal
 - La app buscará con la temporada correcta automáticamente
