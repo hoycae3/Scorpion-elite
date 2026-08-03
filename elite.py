@@ -1892,24 +1892,30 @@ def render_login_form():
             # ========================
             st.markdown("---")
             
-            predicciones_act = st.session_state.get('predicciones_actuales', {})
+            # Verificar si hay resultado de análisis
+            r = st.session_state.get('analysis_result', {})
+            stats_local = st.session_state.get('stats_local', {})
+            stats_visitante = st.session_state.get('stats_visitante', {})
+            home = st.session_state.get('home', '')
+            away = st.session_state.get('away', '')
+            confianza = r.get('confianza', 0)
+            rango = r.get('rango', 'D')
             
-            if predicciones_act:
+            if r and stats_local and stats_visitante:
                 col_btn, col_info = st.columns([1, 3])
                 with col_btn:
                     if st.button("💾 GUARDAR PARTIDO", type="primary", use_container_width=True):
                         try:
                             client = get_client()
-                            r = st.session_state.analysis_result
                             
-                            # Obtener datos de predicciones
+                            # Obtener datos de predicciones del resultado
                             pred_tiros = r.get('tiros', {})
                             pred_tarjetas = r.get('tarjetas', {})
                             pred_arco = r.get('tiros_arco', {})
                             pred_corners = r.get('corners', {})
                             
                             # Guardar TODAS las predicciones
-                            pick_1x2 = predicciones_act.get('1x2', {}).get('pick', '')
+                            pick_1x2 = r.get('pick_1x2', '')
                             pick_data = {
                                 'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
                                 'liga': stats_local.get('liga', 'Desconocida'),
@@ -1917,15 +1923,15 @@ def render_login_form():
                                 'equipo_visitante': away,
                                 'pick': pick_1x2,
                                 'prediccion_1x2': pick_1x2,
-                                'prob_1x2': predicciones_act.get('1x2', {}).get('prob', 0),
+                                'prob_1x2': float(r.get('prob_1x2', 0)),
                                 'p1': float(r.get('p1', 0)),
                                 'px': float(r.get('px', 0)),
                                 'p2': float(r.get('p2', 0)),
                                 # Over/Under
-                                'prediccion_ou': predicciones_act.get('over_under', {}).get('pick', ''),
+                                'prediccion_ou': r.get('pick_over_under', ''),
                                 'prob_ou': r.get('prob_over_under', 0),
                                 # BTTS
-                                'prediccion_btts': predicciones_act.get('btts', {}).get('pick', ''),
+                                'prediccion_btts': r.get('pick_btts', ''),
                                 'btts_yes': r.get('btts_yes', 0),
                                 # Corners
                                 'prediccion_corners': r.get('pick_corners', ''),
