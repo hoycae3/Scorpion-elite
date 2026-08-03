@@ -488,3 +488,217 @@ Partidos recientes pesan más:
 ### Nota importante:
 - En pretemporada (agos-feb) no habrá partidos de liga - es normal
 - La app buscará con la temporada correcta automáticamente
+
+---
+
+## 📅 Sesión 2026-08-03 - Modelos Matemáticos Reales para Predicciones Adicionales
+
+### 🎯 Problema Anterior:
+Las predicciones de Tiros, Tarjetas y Tiros Arco usaban **fórmulas heurísticas simples**:
+```python
+# ANTES (heurística simple)
+remates_over_prob = min(90, max(10, 50 + (remates_total - 24) * 2))
+tarjetas_over_prob = min(90, max(10, 50 + (tarjetas_total - 6) * 5))
+arco_over_prob = min(90, max(10, 50 + (arco_total - 8) * 3))
+```
+
+### ✅ Solución Implementada:
+
+#### 1. `analysis_models.py` - Nuevas funciones:
+
+| Función | Descripción | Línea típica |
+|---------|-------------|-------------|
+| `predecir_tiros()` | Over/Under 24 | 24 |
+| `predecir_tarjetas()` | Over/Under 6 | 6 |
+| `predecir_tiros_arco()` | Over/Under 8 | 8 |
+| `normal_cdf()` | Función de distribución normal (aproximación Abramowitz & Stegun) | - |
+
+#### 2. Cómo funcionan los modelos:
+
+```python
+# Usan distribución normal con:
+# - Media: suma de promedios de ambos equipos
+# - Varianza: aproximación Poisson (varianza ≈ media)
+
+def predecir_tiros(tiros_local, tiros_visitante, ...):
+    total_estimado = tiros_local + tiros_visitante
+    # Calcular P(Over 24) usando distribución normal
+    z = (24.5 - media) / desviacion
+    over_24 = (1 - normal_cdf(z)) * 100
+```
+
+### 🔄 Flujo de Datos:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  1️⃣ equipo_partidos_stats (Supabase)                                  │
+│      └─→ Guarda cada partido histórico del equipo                      │
+│                                                                         │
+│  2️⃣ calcular_promedios_equipo()                                       │
+│      └─→ Lee de equipo_partidos_stats                                  │
+│      └─→ Aplica PONDERACIÓN EXPONENCIAL (decay=0.92)                  │
+│      └─→ Retorna: promedio_tiros, promedio_amarillas, promedio_arco   │
+│                                                                         │
+│  3️⃣ elite.py → botón "ANALIZAR"                                       │
+│      └─→ Usa promedios_dinamicos_local/visitante                      │
+│      └─→ Llama a calcular() con estos datos                           │
+│                                                                         │
+│  4️⃣ analysis_models.py → calcular()                                    │
+│      └─→ predecir_tiros() → usa promedio_tiros → Over/Under 24        │
+│      └─→ predecir_tarjetas() → usa promedio_amarillas → Over/Under 6  │
+│      └─→ predecir_tiros_arco() → usa promedio_arco → Over/Under 8      │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 📱 UI del Analizador (Rediseñada):
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  🏠 JAGUARES (15 part.)              ✈️ ATLÉTICO NACIONAL (25 part.)     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  ┌────────────────────────────────┐  ┌────────────────────────────────┐ │
+│  │     PJ    V    E    D          │  │     PJ    V    E    D          │ │
+│  │     20   5    3    12         │  │     25   18    1    6         │ │
+│  └────────────────────────────────┘  └────────────────────────────────┘ │
+│                                                                             │
+│  ┌────────────────────────────────┐  ┌────────────────────────────────┐ │
+│  │ ⚽ GF: 20   GC: 35           │  │ ⚽ GF: 49   GC: 21           │ │
+│  │ λ Ajustada: 🔽 1.85          │  │ λ Ajustada: 🔼 0.81          │ │
+│  └────────────────────────────────┘  └────────────────────────────────┘ │
+│                                                                             │
+│  ┌────────────────────────────────┐  ┌────────────────────────────────┐ │
+│  │ 📈 Promedios por partido:      │  │ 📈 Promedios por partido:      │ │
+│  │ 🔫 Tiros: 12.0   🎯 Arco: 4.0│  │ 🔫 Tiros: 10.5  🎯 Arco: 3.5│ │
+│  │ 🟨 Amarillas: 3.0  🌽 Córners:│  │ 🟨 Amarillas: 2.5  🌽 Córners:│ │
+│  └────────────────────────────────┘  └────────────────────────────────┘ │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  🎯 PROBABILIDADES (1X2)                                                  │
+│  ┌──────────────┐  ┌──────────┐  ┌──────────────┐                         │
+│  │ 🏠 Jaguares │  │🤝 Empate │  │✈️ Atlético  │                         │
+│  │    35.2%    │  │  28.1%  │  │    36.7%    │                         │
+│  └──────────────┘  └──────────┘  └──────────────┘                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  📊 PREDICCIONES ADICIONALES (MODELO MATEMÁTICO)                           │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ │
+│  │📈 O/U 2.5│ │⚽ BTTS │ │🌽Córners│ │🔫 Tiros │ │🎯 Arco │ │🟨Amaril│ │
+│  │ - 2.5  │ │ ✅ Sí │ │ + 10.5 │ │ Total │ │ Total │ │ Total │ │
+│  │ 65%   │ │ 58%   │ │ 40%    │ │ 22    │ │ 7.5   │ │ 5.5   │ │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘ │
+│                                                                             │
+│  🔫 Tiros: 22.5 → 📈 Over 24 (74%)                                        │
+│  🎯 Arco: 7.5 → 📉 Under 8 (68%)                                          │
+│  🟨 Amarillas: 5.5 → 📈 Over 6 (48%)                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                        💾 GUARDAR PARTIDO                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 💾 Botón Guardar Actualizado:
+
+Ahora guarda TODAS las predicciones en la tabla `picks`:
+- ✅ 1X2: pick, prob, p1, px, p2
+- ✅ Over/Under: pick, prob, over_25, under_25
+- ✅ BTTS: pick, prob, btts_yes, btts_no
+- ✅ Corners: pick, total_estimado
+- ✅ Tiros: pick, total, local, visitante, over_prob
+- ✅ Tarjetas: pick, total, over_prob, under_prob
+- ✅ Tiros Arco: pick, total, local, visitante, over_prob, under_prob
+- ✅ Confianza y Rango
+
+### 📊 Schema SQL actualizado (supabase_schema.sql):
+
+Nuevas columnas en tabla `picks`:
+```sql
+-- Tiros Arco
+prediccion_arco VARCHAR(20),
+arco_total_estimado DECIMAL(5,2),
+arco_local DECIMAL(5,2),
+arco_visitante DECIMAL(5,2),
+arco_over_prob DECIMAL(5,2),
+arco_under_prob DECIMAL(5,2),
+
+-- Resultados arco
+resultado_arco VARCHAR(20),
+acertado_arco BOOLEAN,
+```
+
+### 📁 Archivos modificados:
+
+| Archivo | Cambios |
+|---------|---------|
+| `analysis_models.py` | +260 líneas (nuevas funciones de predicción) |
+| `elite.py` | ~+100 líneas (UI rediseñada, guardar actualizado) |
+| `supabase_schema.sql` | +15 líneas (campos arco en picks) |
+
+---
+
+## 🔴 PENDIENTE - Por hacer
+
+### 🔴 CRÍTICO - Funcionalidad
+
+1. **Probar sincronización en producción** - Verificar que busque con temporada correcta
+2. **Testar flujo completo login** - ¿El usuario puede guardar picks?
+3. **Verificar cobertura de ligas** - ¿Las 55 ligas funcionan correctamente?
+4. **Agregar columnas de arco a tabla picks en Supabase** - Ejecutar ALTER TABLE
+
+### 🟡 IMPORTANTE - Mejoras
+
+5. **Mejorar UI del análisis preview** - Más visual, gráficos
+6. **Exportar picks** - Descargar análisis en PDF/Excel
+7. **Notificaciones** - Alertas para alta confianza
+8. **Pretemporada** - Agregar opción de buscar partidos de pretemporada o liga anterior
+
+### 🟢 OPCIONAL - Extras
+
+9. **Modo claro/oscuro** - Toggle de tema
+10. **Comparar equipos** - Stats lado a lado sin analizar
+11. **Filtros avanzados** - Por liga, confianza, fecha
+12. **Sincronizar resultados automáticamente** - De Flashscore o API
+
+---
+
+## ⚙️ Cómo se Ajustan los Modelos (Auto-calibración)
+
+### 1️⃣ Calibración por Equipo (`calibration.py`)
+```python
+# Después de cada partido:
+error_local = goles_reales - lambda_predicha
+
+# Si marcó MÁS de lo predicho → factor sube (ej: 1.1)
+# Si marcó MENOS de lo predicho → factor baja (ej: 0.9)
+```
+
+### 2️⃣ Optimizador de Pesos (`model_optimizer.py`)
+```python
+# Históricamente:
+# Poisson acertó 58% → peso sube a 0.35
+# Dixon-Coles acertó 52% → peso baja a 0.22
+# Monte Carlo acertó 55% → peso sube a 0.23
+```
+
+### ⚠️ IMPORTANTE:
+Para que la calibración funcione, el usuario debe **ingresar los resultados reales** usando el botón "Actualizar Resultado" en el Dashboard.
+
+---
+
+## 🚀 Deploy en Render
+
+Para ver los cambios en producción:
+```bash
+curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploys" \
+  -H "Authorization: Bearer $RENDER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"clearCache": "dont_clear"}'
+```
+
+Para agregar columnas faltantes a Supabase:
+```sql
+ALTER TABLE picks ADD COLUMN IF NOT EXISTS prediccion_arco VARCHAR(20);
+ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_total_estimado DECIMAL(5,2);
+ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_local DECIMAL(5,2);
+ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_visitante DECIMAL(5,2);
+ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_over_prob DECIMAL(5,2);
+ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_under_prob DECIMAL(5,2);
+ALTER TABLE picks ADD COLUMN IF NOT EXISTS resultado_arco VARCHAR(20);
+ALTER TABLE picks ADD COLUMN IF NOT EXISTS acertado_arco BOOLEAN;
+```
