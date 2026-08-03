@@ -1887,48 +1887,6 @@ def render_login_form():
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
-                
-                # ========================
-                # ÚLTIMOS 5 PARTIDOS
-                # ========================
-                ultimos_local = stats_local.get('ultimos_5_partidos', [])
-                ultimos_visitante = stats_visitante.get('ultimos_5_partidos', [])
-                
-                if ultimos_local or ultimos_visitante:
-                    st.markdown("##### 📅 Forma Reciente")
-                    
-                    col_forma1, col_forma2 = st.columns(2)
-                    
-                    with col_forma1:
-                        # Forma (simplificado)
-                        forma_local = "".join(["🟢" if r == "W" else "🔴" if r == "L" else "🟡" for r in (ultimos_local if isinstance(ultimos_local, list) else [])[:5]])
-                        st.markdown(forma_local if forma_local else "Sin datos")
-                    with col_forma2:
-                        # Forma (simplificado)
-                        forma_away = "".join(["🟢" if r == "W" else "🔴" if r == "L" else "🟡" for r in (ultimos_visitante if isinstance(ultimos_visitante, list) else [])[:5]])
-                        st.markdown(forma_away if forma_away else "Sin datos")
-            # RECUADRO PRINCIPAL DE ANÁLISIS
-            # ========================
-            pick = r.get('pick_1x2', 'X')
-            confianza = r.get('confianza', 0)
-            rango = r.get('rango', 'D')
-            marcador = r.get('marcador_predicho', f"{r.get('lambda_local', 0):.1f}-{r.get('lambda_visitante', 0):.1f}")
-            
-            pick_icon = {"1": "🏠", "X": "🤝", "2": "✈️"}
-            rango_color = {"A+": "🟢", "A": "🟢", "B": "🔵", "C": "🟡", "D": "🔴"}
-            
-            st.markdown(f"""
-            <div class="caja-analisis">
-                <p class="analisis-etiqueta">⚡ ANÁLISIS PRINCIPAL</p>
-                <p class="analisis-partido">⚽ {home} VS {away}</p>
-                <p class="analisis-score">Expected Score: {marcador}</p>
-                <p class="analisis-pick">{pick_icon.get(pick, '🎯')} {pick}</p>
-                <span class="analisis-confianza">
-                    {rango_color.get(rango, '⚪')} {confianza}% ({rango})
-                </span>
-            </div>
-            """, unsafe_allow_html=True)
-            
             # ========================
             # GUARDAR PARTIDO (TODAS LAS PREDICCIONES)
             # ========================
