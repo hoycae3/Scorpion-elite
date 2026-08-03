@@ -1758,17 +1758,36 @@ def render_login_form():
                 lambda_local_adj = get_lambda_ajustada(home, stats_local.get('lambda_local', 0), como_local=True)
                 lambda_visitante_adj = get_lambda_ajustada(away, stats_visitante.get('lambda_visitante', 0), como_local=False)
                 
-                # Calcular promedios LOCAL
+                # ★ USAR PROMEDIOS DINÁMICOS si están disponibles (ponderación exponencial)
+                if promedios_dinamicos_local:
+                    prom_corners_l = promedios_dinamicos_local.get('promedio_corners', 10.0)
+                    prom_amarillas_l = promedios_dinamicos_local.get('promedio_amarillas', 3.0)
+                    prom_tiros_l = promedios_dinamicos_local.get('promedio_tiros', 12.0)
+                    prom_tiros_arco_l = promedios_dinamicos_local.get('promedio_tiros_arco', 4.0)
+                else:
+                    prom_corners_l = stats_local.get('promedio_corners_total', 10) or 10
+                    prom_amarillas_l = stats_local.get('promedio_amarillas', 3) or 3
+                    prom_tiros_l = stats_local.get('promedio_tiros', 12) or 12
+                    prom_tiros_arco_l = stats_local.get('promedio_tiros_arco', 4) or 4
+                
+                if promedios_dinamicos_visitante:
+                    prom_corners_v = promedios_dinamicos_visitante.get('promedio_corners', 10.0)
+                    prom_amarillas_v = promedios_dinamicos_visitante.get('promedio_amarillas', 3.0)
+                    prom_tiros_v = promedios_dinamicos_visitante.get('promedio_tiros', 12.0)
+                    prom_tiros_arco_v = promedios_dinamicos_visitante.get('promedio_tiros_arco', 4.0)
+                else:
+                    prom_corners_v = stats_visitante.get('promedio_corners_total', 10) or 10
+                    prom_amarillas_v = stats_visitante.get('promedio_amarillas', 3) or 3
+                    prom_tiros_v = stats_visitante.get('promedio_tiros', 12) or 12
+                    prom_tiros_arco_v = stats_visitante.get('promedio_tiros_arco', 4) or 4
+                
+                # Calcular promedios LOCAL (para PJ, victorias, etc - de equipos_stats)
                 pj_l = stats_local.get('partidos_jugados', 1) or 1
                 gf_l = stats_local.get('goles_favor', 0) or 0
                 gc_l = stats_local.get('goles_contra', 0) or 0
                 vic_l = stats_local.get('victorias', 0) or 0
                 emp_l = stats_local.get('empates', 0) or 0
                 der_l = stats_local.get('derrotas', 0) or 0
-                prom_corners_l = stats_local.get('promedio_corners_total', 10) or 10
-                prom_amarillas_l = stats_local.get('promedio_amarillas', 3) or 3
-                prom_tiros_l = stats_local.get('promedio_tiros', 12) or 12
-                prom_tiros_arco_l = stats_local.get('promedio_tiros_arco', 4) or 4
                 
                 icono_ajuste_local = "🔼" if lambda_local_adj['factor'] > 1 else ("🔽" if lambda_local_adj['factor'] < 1 else "➖")
                 color_ajuste_local = "#00ff88" if lambda_local_adj['factor'] > 1 else ("#ff6b6b" if lambda_local_adj['factor'] < 1 else "#00d4ff")
@@ -1780,10 +1799,6 @@ def render_login_form():
                 vic_v = stats_visitante.get('victorias', 0) or 0
                 emp_v = stats_visitante.get('empates', 0) or 0
                 der_v = stats_visitante.get('derrotas', 0) or 0
-                prom_corners_v = stats_visitante.get('promedio_corners_total', 10) or 10
-                prom_amarillas_v = stats_visitante.get('promedio_amarillas', 3) or 3
-                prom_tiros_v = stats_visitante.get('promedio_tiros', 12) or 12
-                prom_tiros_arco_v = stats_visitante.get('promedio_tiros_arco', 4) or 4
                 
                 icono_ajuste_vis = "🔼" if lambda_visitante_adj['factor'] > 1 else ("🔽" if lambda_visitante_adj['factor'] < 1 else "➖")
                 color_ajuste_vis = "#00ff88" if lambda_visitante_adj['factor'] > 1 else ("#ff6b6b" if lambda_visitante_adj['factor'] < 1 else "#00d4ff")
