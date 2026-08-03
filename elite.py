@@ -76,6 +76,7 @@ from supabase import create_client
 from analysis_models import calcular
 from stats_extractor import calculate_team_lambda
 from stats_robot import run_robot_batch
+from robot_extractor import get_team_stats_from_football_data, get_football_data_stats
 from funciones_stats import obtener_ultimos_partidos_equipo, guardar_stats_equipo, calcular_promedios_equipo
 from scrapers_fallback import scrape_team_fallback
 from calibration import (
@@ -1656,12 +1657,20 @@ def render_login_form():
                             amarillas_l = promedios_dinamicos_local.get('promedio_amarillas', 2.5)
                             partidos_total_l = promedios_dinamicos_local.get('partidos_total', 0)
                         else:
-                            # Estimar basado en lambda (goles esperados)
-                            lambda_est = lambda_base_local if lambda_base_local else 1.3
-                            corners_l = 5.5
-                            tiros_l = round(lambda_est * 4.5, 1)
-                            tiros_arco_l = round(lambda_est * 1.5, 1)
-                            amarillas_l = 2.5
+                            # Buscar estadísticas REALES de football-data.co.uk
+                            fd_stats = get_team_stats_from_football_data(home_team)
+                            if fd_stats:
+                                corners_l = fd_stats.get('promedio_corners', 5.5)
+                                tiros_l = fd_stats.get('promedio_tiros', 13.0)
+                                tiros_arco_l = fd_stats.get('promedio_tiros_arco', 4.5)
+                                amarillas_l = fd_stats.get('promedio_amarillas', 2.5)
+                            else:
+                                # Solo estimar si no hay datos reales
+                                lambda_est = lambda_base_local if lambda_base_local else 1.3
+                                corners_l = 5.5
+                                tiros_l = round(lambda_est * 4.5, 1)
+                                tiros_arco_l = round(lambda_est * 1.5, 1)
+                                amarillas_l = 2.5
                             partidos_total_l = 0
                         
                         if promedios_dinamicos_visitante:
@@ -1671,12 +1680,20 @@ def render_login_form():
                             amarillas_v = promedios_dinamicos_visitante.get('promedio_amarillas', 2.5)
                             partidos_total_v = promedios_dinamicos_visitante.get('partidos_total', 0)
                         else:
-                            # Estimar basado en lambda (goles esperados)
-                            lambda_est = lambda_base_visitante if lambda_base_visitante else 1.1
-                            corners_v = 5.5
-                            tiros_v = round(lambda_est * 4.5, 1)
-                            tiros_arco_v = round(lambda_est * 1.5, 1)
-                            amarillas_v = 2.5
+                            # Buscar estadísticas REALES de football-data.co.uk
+                            fd_stats = get_team_stats_from_football_data(away_team)
+                            if fd_stats:
+                                corners_v = fd_stats.get('promedio_corners', 5.5)
+                                tiros_v = fd_stats.get('promedio_tiros', 13.0)
+                                tiros_arco_v = fd_stats.get('promedio_tiros_arco', 4.5)
+                                amarillas_v = fd_stats.get('promedio_amarillas', 2.5)
+                            else:
+                                # Solo estimar si no hay datos reales
+                                lambda_est = lambda_base_visitante if lambda_base_visitante else 1.1
+                                corners_v = 5.5
+                                tiros_v = round(lambda_est * 4.5, 1)
+                                tiros_arco_v = round(lambda_est * 1.5, 1)
+                                amarillas_v = 2.5
                             partidos_total_v = 0
                         
                         # ★ OBTENER ÚLTIMOS 5 PARTIDOS de equipo_partidos_stats
