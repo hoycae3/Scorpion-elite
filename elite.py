@@ -1498,12 +1498,6 @@ def render_login_form():
                     st.session_state.away = visitante_nombre
                     st.session_state.stats_local = stats_local
                     st.session_state.stats_visitante = stats_visitante
-                    
-                    remates_total = float(stats_local.get('promedio_tiros', 0) or 0) + float(stats_visitante.get('promedio_tiros', 0) or 0)
-                    tarjetas_total = float(stats_local.get('promedio_tarjetas', 0) or 0) + float(stats_visitante.get('promedio_tarjetas', 0) or 0)
-                    
-                    st.session_state.remates_over_prob = min(90, max(10, 50 + (remates_total - 24) * 2))
-                    st.session_state.tarjetas_over_prob = min(90, max(10, 50 + (tarjetas_total - 6) * 5))
             else:
                 st.stop()  # No continuar si no hay stats
         
@@ -1679,14 +1673,6 @@ def render_login_form():
                         st.session_state.stats_visitante = stats_visitante
                         
                         # Guardar TODAS las predicciones en session_state (NO en Supabase aun)
-                        # Calcular predicciones de remates
-                        remates_total = float(stats_local.get('promedio_tiros', 0) or 0) + float(stats_visitante.get('promedio_tiros', 0) or 0)
-                        remates_over_prob = min(90, max(10, 50 + (remates_total - 24) * 2))  # 24 es el promedio típico
-                        
-                        # Calcular predicciones de tarjetas
-                        tarjetas_total = float(stats_local.get('promedio_amarillas', 0) or 0) + float(stats_visitante.get('promedio_amarillas', 0) or 0)
-                        tarjetas_over_prob = min(90, max(10, 50 + (tarjetas_total - 6) * 5))  # 6 es el promedio típico
-                        
                         st.session_state.predicciones_actuales = {
                             '1x2': {
                                 'pick': result.get('pick_1x2', ''),
@@ -1709,18 +1695,18 @@ def render_login_form():
                                 'total': float(result.get('corners', {}).get('total_estimado', 0))
                             },
                             'remates': {
-                                'pick': f"+ {remates_total:.0f}" if remates_over_prob > 50 else f"- {remates_total:.0f}",
-                                'total': remates_total,
-                                'local': float(stats_local.get('promedio_tiros', 0) or 0),
-                                'visitante': float(stats_visitante.get('promedio_tiros', 0) or 0),
-                                'over_prob': remates_over_prob,
-                                'under_prob': 100 - remates_over_prob
+                                'pick': result.get('pick_tiros', ''),
+                                'total': float(result.get('tiros', {}).get('total_estimado', 0)),
+                                'local': float(result.get('tiros', {}).get('tiros_local_estimado', 0)),
+                                'visitante': float(result.get('tiros', {}).get('tiros_visitante_estimado', 0)),
+                                'over_prob': float(result.get('prob_tiros', 0)),
+                                'under_prob': float(result.get('tiros', {}).get('under_24', 0))
                             },
                             'tarjetas': {
-                                'pick': f"Over {tarjetas_total:.1f}" if tarjetas_over_prob > 50 else f"Under {tarjetas_total:.1f}",
-                                'total': tarjetas_total,
-                                'over_prob': tarjetas_over_prob,
-                                'under_prob': 100 - tarjetas_over_prob
+                                'pick': result.get('pick_tarjetas', ''),
+                                'total': float(result.get('tarjetas', {}).get('total_estimado', 0)),
+                                'over_prob': float(result.get('prob_tarjetas', 0)),
+                                'under_prob': float(result.get('tarjetas', {}).get('under_6', 0))
                             }
                         }
                             
