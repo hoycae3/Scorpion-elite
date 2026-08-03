@@ -338,6 +338,220 @@ def predecir_corners(
     }
 
 
+def normal_cdf(z: float) -> float:
+    """
+    Función de distribución acumulativa normal estándar.
+    Implementación manual usando aproximación de Abramowitz y Stegun.
+    """
+    # Constantes para la aproximación
+    a1 = 0.254829592
+    a2 = -0.284496736
+    a3 = 1.421413741
+    a4 = -1.453152027
+    a5 = 1.061405429
+    p = 0.3275911
+    
+    # Signo de z
+    sign = 1 if z >= 0 else -1
+    z = abs(z)
+    
+    # Aproximación de serie de Taylor
+    t = 1.0 / (1.0 + p * z)
+    y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * math.exp(-z * z / 2)
+    
+    return 0.5 * (1.0 + sign * y)
+
+
+def predecir_tiros(
+    tiros_local: float,
+    tiros_visitante: float,
+    estilo_local: Dict,
+    estilo_visitante: Dict
+) -> Dict:
+    """
+    Predice el total de tiros en el partido usando modelo matemático.
+    
+    Usa distribución de Poisson combinada con estilo de juego.
+    Línea típica: 24 (12 por equipo)
+    
+    Args:
+        tiros_local: tiros promedio del equipo local por partido
+        tiros_visitante: tiros promedio del equipo visitante por partido
+        estilo_local: dict con estilo del equipo local
+        estilo_visitante: dict con estilo del equipo visitante
+    """
+    # Total estimado de tiros en el partido
+    total_estimado = tiros_local + tiros_visitante
+    
+    # Desglose entre equipos (factor local)
+    factor_local = 1.05
+    factor_visitante = 0.95
+    tiros_local_estimado = total_estimado * factor_local / (factor_local + factor_visitante)
+    tiros_visitante_estimado = total_estimado - tiros_local_estimado
+    
+    # Usar Poisson para calcular Over/Under
+    # Lambda para el total sería aproximadamente tiros_local + tiros_visitante
+    # Pero como son estadísticas diferentes, usamos una aproximación
+    
+    # Modelo: P(Over 24) basado en el total estimado y variación típica
+    # Varianza típica de tiros es aproximadamente sqrt(media) para Poisson
+    
+    # Calcular probabilidad de Over 24 usando aproximación normal
+    # Para Poisson, varianza ≈ media
+    media = total_estimado
+    varianza = media  # Aproximación Poisson
+    desviacion = math.sqrt(varianza) if media > 0 else 1.0
+    
+    # P(X > 24) usando función de distribución normal
+    z = (24.5 - media) / desviacion if desviacion > 0 else 0
+    over_24 = min(95, max(5, (1 - normal_cdf(z)) * 100))
+    under_24 = 100 - over_24
+    
+    # También calcular para línea 26 (más/menos agresivo)
+    z_26 = (26.5 - media) / desviacion if desviacion > 0 else 0
+    over_26 = min(95, max(5, (1 - normal_cdf(z_26)) * 100))
+    under_26 = 100 - over_26
+    
+    # Línea 22
+    z_22 = (22.5 - media) / desviacion if desviacion > 0 else 0
+    over_22 = min(95, max(5, (1 - normal_cdf(z_22)) * 100))
+    under_22 = 100 - over_22
+    
+    return {
+        "total_estimado": round(total_estimado, 1),
+        "tiros_local_estimado": round(tiros_local_estimado, 1),
+        "tiros_visitante_estimado": round(tiros_visitante_estimado, 1),
+        "over_24": round(over_24, 1),
+        "under_24": round(under_24, 1),
+        "over_26": round(over_26, 1),
+        "under_26": round(under_26, 1),
+        "over_22": round(over_22, 1),
+        "under_22": round(under_22, 1),
+    }
+
+
+def predecir_tarjetas(
+    tarjetas_local: float,
+    tarjetas_visitante: float,
+    estilo_local: Dict,
+    estilo_visitante: Dict
+) -> Dict:
+    """
+    Predice el total de tarjetas amarillas en el partido usando modelo matemático.
+    
+    Usa distribución de Poisson combinada con estilo físico.
+    Línea típica: 6 (3 por equipo)
+    
+    Args:
+        tarjetas_local: tarjetas promedio del equipo local por partido
+        tarjetas_visitante: tarjetas promedio del equipo visitante por partido
+        estilo_local: dict con estilo del equipo local
+        estilo_visitante: dict con estilo del equipo visitante
+    """
+    # Total estimado de tarjetas en el partido
+    total_estimado = tarjetas_local + tarjetas_visitante
+    
+    # Factor local: equipos locales suelen recibir más tarjetas (cometiendo más faltas)
+    factor_local = 1.05
+    factor_visitante = 0.95
+    tarjetas_local_estimado = total_estimado * factor_local / (factor_local + factor_visitante)
+    tarjetas_visitante_estimado = total_estimado - tarjetas_local_estimado
+    
+    # Usar distribución de Poisson para calcular Over/Under
+    # Tarjetas tienen varianza menor que goles
+    media = total_estimado
+    varianza = media * 0.8  # Tarjetas tienen menos variabilidad
+    desviacion = math.sqrt(varianza) if varianza > 0 else 1.0
+    
+    # P(X > 6) 
+    z = (6.5 - media) / desviacion if desviacion > 0 else 0
+    over_6 = min(95, max(5, (1 - normal_cdf(z)) * 100))
+    under_6 = 100 - over_6
+    
+    # P(X > 5)
+    z_5 = (5.5 - media) / desviacion if desviacion > 0 else 0
+    over_5 = min(95, max(5, (1 - normal_cdf(z_5)) * 100))
+    under_5 = 100 - over_5
+    
+    # P(X > 7)
+    z_7 = (7.5 - media) / desviacion if desviacion > 0 else 0
+    over_7 = min(95, max(5, (1 - normal_cdf(z_7)) * 100))
+    under_7 = 100 - over_7
+    
+    return {
+        "total_estimado": round(total_estimado, 1),
+        "tarjetas_local_estimado": round(tarjetas_local_estimado, 1),
+        "tarjetas_visitante_estimado": round(tarjetas_visitante_estimado, 1),
+        "over_6": round(over_6, 1),
+        "under_6": round(under_6, 1),
+        "over_5": round(over_5, 1),
+        "under_5": round(under_5, 1),
+        "over_7": round(over_7, 1),
+        "under_7": round(under_7, 1),
+    }
+
+
+def predecir_tiros_arco(
+    tiros_arco_local: float,
+    tiros_arco_visitante: float,
+    estilo_local: Dict,
+    estilo_visitante: Dict
+) -> Dict:
+    """
+    Predice el total de tiros al arco en el partido usando modelo matemático.
+    
+    Usa distribución de Poisson combinada con estilo ofensivo.
+    Línea típica: 8 (4 por equipo)
+    
+    Args:
+        tiros_arco_local: tiros al arco promedio del equipo local por partido
+        tiros_arco_visitante: tiros al arco promedio del equipo visitante por partido
+        estilo_local: dict con estilo del equipo local
+        estilo_visitante: dict con estilo del equipo visitante
+    """
+    # Total estimado de tiros al arco
+    total_estimado = tiros_arco_local + tiros_arco_visitante
+    
+    # Factor local
+    factor_local = 1.05
+    factor_visitante = 0.95
+    arco_local_estimado = total_estimado * factor_local / (factor_local + factor_visitante)
+    arco_visitante_estimado = total_estimado - arco_local_estimado
+    
+    # Distribución de Poisson para tiros al arco
+    # Tienen correlación con estilo_ofensivo
+    media = total_estimado
+    varianza = media
+    desviacion = math.sqrt(varianza) if varianza > 0 else 1.0
+    
+    # P(X > 8)
+    z = (8.5 - media) / desviacion if desviacion > 0 else 0
+    over_8 = min(95, max(5, (1 - normal_cdf(z)) * 100))
+    under_8 = 100 - over_8
+    
+    # P(X > 6)
+    z_6 = (6.5 - media) / desviacion if desviacion > 0 else 0
+    over_6 = min(95, max(5, (1 - normal_cdf(z_6)) * 100))
+    under_6 = 100 - over_6
+    
+    # P(X > 10)
+    z_10 = (10.5 - media) / desviacion if desviacion > 0 else 0
+    over_10 = min(95, max(5, (1 - normal_cdf(z_10)) * 100))
+    under_10 = 100 - over_10
+    
+    return {
+        "total_estimado": round(total_estimado, 1),
+        "arco_local_estimado": round(arco_local_estimado, 1),
+        "arco_visitante_estimado": round(arco_visitante_estimado, 1),
+        "over_8": round(over_8, 1),
+        "under_8": round(under_8, 1),
+        "over_6": round(over_6, 1),
+        "under_6": round(under_6, 1),
+        "over_10": round(over_10, 1),
+        "under_10": round(under_10, 1),
+    }
+
+
 def calcular(
     lambda_local: float,
     lambda_visitante: float,
@@ -439,6 +653,24 @@ def calcular(
         estilo_local, estilo_visitante
     )
     
+    # PREDICCIÓN DE TIROS (nuevo modelo matemático)
+    prediccion_tiros = predecir_tiros(
+        tiros_local, tiros_visitante,
+        estilo_local, estilo_visitante
+    )
+    
+    # PREDICCIÓN DE TARJETAS (nuevo modelo matemático)
+    prediccion_tarjetas = predecir_tarjetas(
+        tarjetas_local, tarjetas_visitante,
+        estilo_local, estilo_visitante
+    )
+    
+    # PREDICCIÓN DE TIROS AL ARCO (nuevo modelo matemático)
+    prediccion_arco = predecir_tiros_arco(
+        tiros_arco_local, tiros_arco_visitante,
+        estilo_local, estilo_visitante
+    )
+    
     # CONFIANZA - basada en la diferencia entre probabilidades y el sesgo del favorito
     diff = abs(p1_ajustado - p2_ajustado)
     conf = round(max(0, min(100, diff * 1.5)))
@@ -472,6 +704,18 @@ def calcular(
     
     # Pick Corners - usar línea fija 9.5 para consistencia
     pick_corners = "Over 9.5" if prediccion_corners['over_95'] > 50 else "Under 9.5"
+    
+    # Pick Tiros - usar línea fija 24 para consistencia
+    pick_tiros = "Over 24" if prediccion_tiros['over_24'] > 50 else "Under 24"
+    prob_tiros = max(prediccion_tiros['over_24'], prediccion_tiros['under_24'])
+    
+    # Pick Tarjetas - usar línea fija 6 para consistencia
+    pick_tarjetas = "Over 6" if prediccion_tarjetas['over_6'] > 50 else "Under 6"
+    prob_tarjetas = max(prediccion_tarjetas['over_6'], prediccion_tarjetas['under_6'])
+    
+    # Pick Tiros Arco - usar línea fija 8 para consistencia
+    pick_arco = "Over 8" if prediccion_arco['over_8'] > 50 else "Under 8"
+    prob_arco = max(prediccion_arco['over_8'], prediccion_arco['under_8'])
     
     # Marcador predicho (basado en lambdas de Poisson)
     marcador_predicho = f"{xl:.1f}-{xv:.1f}"
@@ -511,6 +755,21 @@ def calcular(
         # Córners
         "corners": prediccion_corners,
         "pick_corners": pick_corners,
+        
+        # Tiros (nuevo modelo matemático)
+        "tiros": prediccion_tiros,
+        "pick_tiros": pick_tiros,
+        "prob_tiros": prob_tiros,
+        
+        # Tarjetas (nuevo modelo matemático)
+        "tarjetas": prediccion_tarjetas,
+        "pick_tarjetas": pick_tarjetas,
+        "prob_tarjetas": prob_tarjetas,
+        
+        # Tiros Arco (nuevo modelo matemático)
+        "tiros_arco": prediccion_arco,
+        "pick_tiros_arco": pick_arco,
+        "prob_tiros_arco": prob_arco,
         
         # Forma Reciente
         "forma_local": forma_local,

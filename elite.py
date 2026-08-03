@@ -1962,9 +1962,9 @@ def render_login_form():
             # ========================
             # PREDICCIONES ADICIONALES (CUADROS MEJORADOS)
             # ========================
-            st.markdown("##### 📊 Predicciones Adicionales")
+            st.markdown("##### 📊 Predicciones Adicionales (Modelo Matemático)")
             
-            # Calcular datos
+            # Obtener datos del modelo matemático
             ta_local = stats_local.get('promedio_amarillas', 3) if stats_local else 3
             ta_visitante = stats_visitante.get('promedio_amarillas', 3) if stats_visitante else 3
             tarjetas_total = ta_local + ta_visitante
@@ -1973,20 +1973,26 @@ def render_login_form():
             ti_visitante = stats_visitante.get('promedio_tiros', 12) if stats_visitante else 12
             remates_total = ti_local + ti_visitante
             
-            # Probabilidades para remates
-            remates_over_prob = min(90, max(10, 50 + (remates_total - 24) * 2))
-            pick_remates = "+" if remates_over_prob > 50 else "-"
-            
-            # Probabilidades para tarjetas
-            tarjetas_over_prob = min(90, max(10, 50 + (tarjetas_total - 6) * 5))
-            pick_tarjetas = "+" if tarjetas_over_prob > 50 else "-"
-            
-            # Tiros al arco
             arco_local = stats_local.get('promedio_tiros_arco', 4) if stats_local else 4
             arco_visitante = stats_visitante.get('promedio_tiros_arco', 4) if stats_visitante else 4
             arco_total = arco_local + arco_visitante
-            arco_over_prob = min(90, max(10, 50 + (arco_total - 8) * 3))
-            pick_arco = "+" if arco_over_prob > 50 else "-"
+            
+            # Obtener predicciones del modelo matemático
+            pred_tiros = r.get('tiros', {})
+            pred_tarjetas = r.get('tarjetas', {})
+            pred_arco = r.get('tiros_arco', {})
+            
+            pick_tiros = r.get('pick_tiros', 'Over 24')
+            prob_tiros = r.get('prob_tiros', 50)
+            remates_modelo = pred_tiros.get('total_estimado', remates_total)
+            
+            pick_tarjetas = r.get('pick_tarjetas', 'Over 6')
+            prob_tarjetas = r.get('prob_tarjetas', 50)
+            tarjetas_modelo = pred_tarjetas.get('total_estimado', tarjetas_total)
+            
+            pick_arco = r.get('pick_tiros_arco', 'Over 8')
+            prob_arco = r.get('prob_tiros_arco', 50)
+            arco_modelo = pred_arco.get('total_estimado', arco_total)
             
             modelos = r.get('modelos', {})
             mc = modelos.get('monte_carlo', {})
@@ -2035,35 +2041,35 @@ def render_login_form():
                 """, unsafe_allow_html=True)
             
             with col_remates:
-                remates_icon = "📈" if pick_remates == "+" else "📉"
-                remates_color_class = "pick-over" if pick_remates == "+" else "pick-under"
+                remates_icon = "📈" if "Over" in pick_tiros else "📉"
+                remates_color_class = "pick-over" if "Over" in pick_tiros else "pick-under"
                 st.markdown(f"""
                 <div class="caja-prediccion">
                     <p class="titulo-caja">🔫 Tiros Total</p>
-                    <p class="valor-caja" style="color: #00ff88;">{remates_total:.0f}</p>
-                    <p class="pick-caja {remates_color_class}">{remates_icon} {pick_remates}</p>
+                    <p class="valor-caja" style="color: #00ff88;">{remates_modelo:.0f}</p>
+                    <p class="pick-caja {remates_color_class}">{remates_icon} {pick_tiros} ({prob_tiros:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_arco:
-                arco_icon = "📈" if pick_arco == "+" else "📉"
-                arco_color_class = "pick-over" if pick_arco == "+" else "pick-under"
+                arco_icon = "📈" if "Over" in pick_arco else "📉"
+                arco_color_class = "pick-over" if "Over" in pick_arco else "pick-under"
                 st.markdown(f"""
                 <div class="caja-prediccion">
                     <p class="titulo-caja">🎯 Tiros Arco</p>
-                    <p class="valor-caja" style="color: #ff9f43;">{arco_total:.0f}</p>
-                    <p class="pick-caja {arco_color_class}">{arco_icon} {pick_arco}</p>
+                    <p class="valor-caja" style="color: #ff9f43;">{arco_modelo:.0f}</p>
+                    <p class="pick-caja {arco_color_class}">{arco_icon} {pick_arco} ({prob_arco:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_tarjetas:
-                tarjetas_icon = "📈" if pick_tarjetas == "+" else "📉"
-                tarjetas_color_class = "pick-over" if pick_tarjetas == "+" else "pick-under"
+                tarjetas_icon = "📈" if "Over" in pick_tarjetas else "📉"
+                tarjetas_color_class = "pick-over" if "Over" in pick_tarjetas else "pick-under"
                 st.markdown(f"""
                 <div class="caja-prediccion">
                     <p class="titulo-caja">🟨 Amarillas Total</p>
-                    <p class="valor-caja" style="color: #ffd700;">{tarjetas_total:.1f}</p>
-                    <p class="pick-caja {tarjetas_color_class}">{tarjetas_icon} {pick_tarjetas}</p>
+                    <p class="valor-caja" style="color: #ffd700;">{tarjetas_modelo:.1f}</p>
+                    <p class="pick-caja {tarjetas_color_class}">{tarjetas_icon} {pick_tarjetas} ({prob_tarjetas:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
