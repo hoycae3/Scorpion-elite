@@ -1147,6 +1147,8 @@ def render_login_form():
                                     
                                     if stats and pj_total > 0:
                                         goals = stats.get('goals', {})
+                                        # DEBUG: ver qué datos llegan
+                                        st.text(f"DEBUG {team_name}: pj={pj_total}, goals={goals}")
                                         fixtures = stats.get('fixtures', {})
                                         
                                         gf = goals.get('for', {}).get('total', {}).get('total', 0) or 0
