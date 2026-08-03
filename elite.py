@@ -1658,8 +1658,8 @@ def render_login_form():
                             tiros_visitante=tiros_v,
                             tiros_arco_local=tiros_arco_l,
                             tiros_arco_visitante=tiros_arco_v,
-                            ultimos_5_local=stats_local.get('ultimos_5_partidos', []),
-                            ultimos_5_visitante=stats_visitante.get('ultimos_5_partidos', []),
+                            ultimos_5_local=stats_local.get('ultimos_5_partidos', []) if isinstance(stats_local.get('ultimos_5_partidos'), list) else [],
+                            ultimos_5_visitante=stats_visitante.get('ultimos_5_partidos', []) if isinstance(stats_visitante.get('ultimos_5_partidos'), list) else [],
                         )
                         
                         # Guardar info de partidos dinámicos en result
@@ -2179,57 +2179,68 @@ def render_login_form():
             forma_l = r.get('forma_local', {})
             forma_v = r.get('forma_visitante', {})
             
-            col_space1, col_forma_local, col_forma_away, col_space2 = st.columns([1, 2, 2, 1])
+            # Verificar si hay datos de forma
+            letras = forma_l.get('forma_letras', [])
+            puntos = forma_l.get('forma_puntos', 0)
+            gf = forma_l.get('goles_favor_5', 0)
+            gc = forma_l.get('goles_contra_5', 0)
             
-            with col_forma_local:
-                letras = forma_l.get('forma_letras', '-----')
-                puntos = forma_l.get('forma_puntos', 0)
-                gf = forma_l.get('goles_favor_5', 0)
-                gc = forma_l.get('goles_contra_5', 0)
-                
-                # Crear badges de forma
-                badges_forma = "".join([
-                    f"<span class='forma-badge forma-badge-g'>{c}</span>" if c=='G' else (
-                    f"<span class='forma-badge forma-badge-e'>{c}</span>" if c=='E' else (
-                    f"<span class='forma-badge forma-badge-p'>{c}</span>" if c=='P' else c
-                    )) for c in letras
-                ])
-                
-                st.markdown(f"""
-                <div class="caja-forma caja-forma-local">
-                    <p class="forma-titulo">🏠 {home}</p>
-                    <div class="forma-letras">{badges_forma}</div>
-                    <p class="forma-stats">
-                        Puntos: <span>{puntos:.0f}%</span> | 
-                        Goles: <span>{gf}f/{gc}c</span>
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
+            letras_v = forma_v.get('forma_letras', [])
+            puntos_v = forma_v.get('forma_puntos', 0)
+            gf_v = forma_v.get('goles_favor_5', 0)
+            gc_v = forma_v.get('goles_contra_5', 0)
             
-            with col_forma_away:
-                letras_v = forma_v.get('forma_letras', '-----')
-                puntos_v = forma_v.get('forma_puntos', 0)
-                gf_v = forma_v.get('goles_favor_5', 0)
-                gc_v = forma_v.get('goles_contra_5', 0)
+            # Si no hay datos, mostrar mensaje
+            if not letras and not letras_v:
+                st.info("📝 Los datos de forma reciente requieren ejecutar el Robot de equipos")
+            else:
+                col_space1, col_forma_local, col_forma_away, col_space2 = st.columns([1, 2, 2, 1])
                 
-                # Crear badges de forma
-                badges_forma_v = "".join([
-                    f"<span class='forma-badge forma-badge-g'>{c}</span>" if c=='G' else (
-                    f"<span class='forma-badge forma-badge-e'>{c}</span>" if c=='E' else (
-                    f"<span class='forma-badge forma-badge-p'>{c}</span>" if c=='P' else c
-                    )) for c in letras_v
-                ])
+                with col_forma_local:
+                    # Crear badges de forma
+                    if isinstance(letras, list) and letras:
+                        badges_forma = "".join([
+                            f"<span class='forma-badge forma-badge-g'>{c}</span>" if c=='G' else (
+                            f"<span class='forma-badge forma-badge-e'>{c}</span>" if c=='E' else (
+                            f"<span class='forma-badge forma-badge-p'>{c}</span>" if c=='P' else c
+                            )) for c in letras
+                        ])
+                    else:
+                        badges_forma = "<span style='color:#666;'>Sin datos</span>"
+                    
+                    st.markdown(f"""
+                    <div class="caja-forma caja-forma-local">
+                        <p class="forma-titulo">🏠 {home}</p>
+                        <div class="forma-letras">{badges_forma}</div>
+                        <p class="forma-stats">
+                            Puntos: <span>{puntos:.0f}%</span> | 
+                            Goles: <span>{gf}f/{gc}c</span>
+                        </p>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
-                st.markdown(f"""
-                <div class="caja-forma caja-forma-visitante">
-                    <p class="forma-titulo">✈️ {away}</p>
-                    <div class="forma-letras">{badges_forma_v}</div>
-                    <p class="forma-stats">
-                        Puntos: <span>{puntos_v:.0f}%</span> | 
-                        Goles: <span>{gf_v}f/{gc_v}c</span>
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
+                with col_forma_away:
+                    # Crear badges de forma
+                    if isinstance(letras_v, list) and letras_v:
+                        badges_forma_v = "".join([
+                            f"<span class='forma-badge forma-badge-g'>{c}</span>" if c=='G' else (
+                            f"<span class='forma-badge forma-badge-e'>{c}</span>" if c=='E' else (
+                            f"<span class='forma-badge forma-badge-p'>{c}</span>" if c=='P' else c
+                            )) for c in letras_v
+                        ])
+                    else:
+                        badges_forma_v = "<span style='color:#666;'>Sin datos</span>"
+                    
+                    st.markdown(f"""
+                    <div class="caja-forma caja-forma-visitante">
+                        <p class="forma-titulo">✈️ {away}</p>
+                        <div class="forma-letras">{badges_forma_v}</div>
+                        <p class="forma-stats">
+                            Puntos: <span>{puntos_v:.0f}%</span> | 
+                            Goles: <span>{gf_v}f/{gc_v}c</span>
+                        </p>
+                    </div>
+                    """, unsafe_allow_html=True)
             
             # ========================
             # CUOTAS DEL PARTIDO (de Supabase) CON VALUE
