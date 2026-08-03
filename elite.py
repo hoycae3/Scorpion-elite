@@ -2162,6 +2162,52 @@ def render_login_form():
                 """, unsafe_allow_html=True)
             
             # ========================
+            # RESUMEN DE PREDICCIONES CON PROBABILIDADES
+            # ========================
+            st.markdown("---")
+            st.markdown("""
+            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; padding: 15px; margin: 10px 0;">
+                <h4 style="color: #00d4ff; text-align: center; margin: 0 0 15px 0;">📊 Predicciones del Modelo Matemático</h4>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Crear las 3 predicciones con flechas
+            col_pred1, col_pred2, col_pred3 = st.columns(3)
+            
+            with col_pred1:
+                icon_tiros = "📈" if "Over" in pick_tiros else "📉"
+                color_tiros = "#00ff88" if "Over" in pick_tiros else "#ff6b6b"
+                st.markdown(f"""
+                <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tiros};">
+                    <p style="color: #888; font-size: 12px; margin: 0;">🔫 Tiros Total</p>
+                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{remates_modelo:.0f}</p>
+                    <p style="color: {color_tiros}; font-size: 14px; margin: 0;">{icon_tiros} {pick_tiros} ({prob_tiros:.0f}%)</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col_pred2:
+                icon_arco = "📈" if "Over" in pick_arco else "📉"
+                color_arco = "#00ff88" if "Over" in pick_arco else "#ff6b6b"
+                st.markdown(f"""
+                <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_arco};">
+                    <p style="color: #888; font-size: 12px; margin: 0;">🎯 Tiros Arco</p>
+                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{arco_modelo:.0f}</p>
+                    <p style="color: {color_arco}; font-size: 14px; margin: 0;">{icon_arco} {pick_arco} ({prob_arco:.0f}%)</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col_pred3:
+                icon_tar = "📈" if "Over" in pick_tarjetas else "📉"
+                color_tar = "#00ff88" if "Over" in pick_tarjetas else "#ff6b6b"
+                st.markdown(f"""
+                <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tar};">
+                    <p style="color: #888; font-size: 12px; margin: 0;">🟨 Amarillas</p>
+                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{tarjetas_modelo:.1f}</p>
+                    <p style="color: {color_tar}; font-size: 14px; margin: 0;">{icon_tar} {pick_tarjetas} ({prob_tarjetas:.0f}%)</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # ========================
             # FORMA RECIENTE (CUADROS MEJORADOS)
             # ========================
             st.markdown("##### 📅 Forma Reciente (Últimos 5)")
