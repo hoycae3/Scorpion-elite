@@ -1147,30 +1147,15 @@ def render_login_form():
                                     
                                     if stats and pj_total > 0:
                                         goals = stats.get('goals', {})
-                                        # DEBUG: ver qué datos llegan
-                                        st.text(f"DEBUG {team_name}: pj={pj_total}, goals={goals}")
                                         fixtures = stats.get('fixtures', {})
                                         
-                                        # Obtener TODOS los partidos del equipo desde equipo_partidos_stats
-                                        resp_partidos = client.table('equipo_partidos_stats').select('*').eq('team_id', team_id).execute()
-                                        partidos_equipo = resp_partidos.data if resp_partidos.data else []
-                                        
-                                        # Calcular goles desde partidos reales
-                                        gf_h = sum([p.get('goles_favor', 0) for p in partidos_equipo if p.get('es_local') == True])
-                                        gc_h = sum([p.get('goles_contra', 0) for p in partidos_equipo if p.get('es_local') == True])
-                                        gf_a = sum([p.get('goles_favor', 0) for p in partidos_equipo if p.get('es_local') == False])
-                                        gc_a = sum([p.get('goles_contra', 0) for p in partidos_equipo if p.get('es_local') == False])
-                                        pj_h = len([p for p in partidos_equipo if p.get('es_local') == True])
-                                        pj_a = len([p for p in partidos_equipo if p.get('es_local') == False])
-                                        pj_t = len(partidos_equipo)
-                                        gf = gf_h + gf_a
-                                        gc = gc_h + gc_a
-                                        wins = len([p for p in partidos_equipo if p.get('resultado') == 'W'])
-                                        draws = len([p for p in partidos_equipo if p.get('resultado') == 'D'])
-                                        loses = len([p for p in partidos_equipo if p.get('resultado') == 'L'])
-                                        
-                                        # DEBUG
-                                        st.text(f"📊 {team_name}: {pj_t} partidos, gf_h={gf_h}, gc_h={gc_h}, gf_a={gf_a}, gc_a={gc_a}")
+                                        # Usar goals de /teams/statistics (toda la temporada)
+                                        gf = goals.get('for', {}).get('total', {}).get('total', 0) or 0
+                                        gc = goals.get('against', {}).get('total', {}).get('total', 0) or 0
+                                        gf_h = goals.get('for', {}).get('total', {}).get('home', 0) or 0
+                                        gf_a = goals.get('for', {}).get('total', {}).get('away', 0) or 0
+                                        gc_h = goals.get('against', {}).get('total', {}).get('home', 0) or 0
+                                        gc_a = goals.get('against', {}).get('total', {}).get('away', 0) or 0
                                         pj_h = fixtures.get('played', {}).get('home', 1) or 1
                                         pj_a = fixtures.get('played', {}).get('away', 1) or 1
                                         pj_t = fixtures.get('played', {}).get('total', 0) or 1
