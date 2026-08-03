@@ -788,7 +788,7 @@ def render_login_form():
         # ═══════════════════════════════════════════════════════════════
         # BOTONES BUSCAR Y LIMPIAR
         # ═══════════════════════════════════════════════════════════════
-        col_btn1, col_btn2, col_btn3, col_info = st.columns([1, 1, 1, 2])
+        col_btn1, col_btn2, col_btn3, col_btn4, col_info = st.columns([1, 1, 1, 1, 2])
         
         with col_btn1:
             if st.button("🗑️ Limpiar", type="secondary", use_container_width=True):
