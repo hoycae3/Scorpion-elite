@@ -595,9 +595,7 @@ def render_login_form():
                         st.session_state.is_admin = user.get('es_admin', 0) == 1
                         st.session_state.user_data = user
                         st.session_state.show_login = False
-                        nombre = user.get('nombre', password[:20])
-                        st.success(f"¡Bienvenido!")
-                        pass
+                        st.rerun()  # Recargar después de login
                     else:
                         st.error("❌ Contraseña incorrecta")
 
