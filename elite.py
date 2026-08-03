@@ -1261,7 +1261,7 @@ def render_login_form():
             st.session_state.sincronizacion_ok = False
             try:
                 client = get_client()
-                fecha_limite = (datetime.now(timezone(timedelta(hours=-5))) - timedelta(days=7)).strftime('%Y-%m-%d')
+                fecha_limite = (datetime.now(timezone(timedelta(hours=-5))) - timedelta(days=365)).strftime('%Y-%m-%d')
                 # Eliminar partidos de más de 7 días
                 resp_del = client.table('partidos').delete().lt('fecha', fecha_limite).execute()
                 eliminados = len(resp_del.data) if resp_del.data else 0
