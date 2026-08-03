@@ -187,6 +187,14 @@ CREATE TABLE IF NOT EXISTS picks (
     tarjetas_over_prob DECIMAL(5,2),
     tarjetas_under_prob DECIMAL(5,2),
     
+    -- Tiros Arco
+    prediccion_arco VARCHAR(20),
+    arco_total_estimado DECIMAL(5,2),
+    arco_local DECIMAL(5,2),
+    arco_visitante DECIMAL(5,2),
+    arco_over_prob DECIMAL(5,2),
+    arco_under_prob DECIMAL(5,2),
+    
     -- Confianza
     confianza INTEGER,
     rango VARCHAR(5),
@@ -197,11 +205,13 @@ CREATE TABLE IF NOT EXISTS picks (
     resultado_btts VARCHAR(10),
     resultado_remates VARCHAR(20),
     resultado_tarjetas VARCHAR(20),
+    resultado_arco VARCHAR(20),
     acertado_1x2 BOOLEAN,
     acertado_ou BOOLEAN,
     acertado_btts BOOLEAN,
     acertado_remates BOOLEAN,
     acertado_tarjetas BOOLEAN,
+    acertado_arco BOOLEAN,
     
     -- Metadatos
     lambda_local DECIMAL(5,2),

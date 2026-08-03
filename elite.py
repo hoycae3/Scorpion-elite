@@ -1958,6 +1958,12 @@ def render_login_form():
                             client = get_client()
                             r = st.session_state.analysis_result
                             
+                            # Obtener datos de predicciones
+                            pred_tiros = r.get('tiros', {})
+                            pred_tarjetas = r.get('tarjetas', {})
+                            pred_arco = r.get('tiros_arco', {})
+                            pred_corners = r.get('corners', {})
+                            
                             # Guardar TODAS las predicciones
                             pick_1x2 = predicciones_act.get('1x2', {}).get('pick', '')
                             pick_data = {
@@ -1971,12 +1977,32 @@ def render_login_form():
                                 'p1': float(r.get('p1', 0)),
                                 'px': float(r.get('px', 0)),
                                 'p2': float(r.get('p2', 0)),
+                                # Over/Under
                                 'prediccion_ou': predicciones_act.get('over_under', {}).get('pick', ''),
+                                'prob_ou': r.get('prob_over_under', 0),
+                                # BTTS
                                 'prediccion_btts': predicciones_act.get('btts', {}).get('pick', ''),
-                                'prediccion_corners': predicciones_act.get('corners', {}).get('pick', ''),
-                                'prediccion_remates': predicciones_act.get('remates', {}).get('pick', ''),
-                                'prediccion_tarjetas': predicciones_act.get('tarjetas', {}).get('pick', ''),
+                                'btts_yes': r.get('btts_yes', 0),
+                                # Corners
+                                'prediccion_corners': r.get('pick_corners', ''),
+                                'corners_total_estimado': pred_corners.get('total_estimado', 0),
+                                # Remates/Tiros
+                                'prediccion_remates': r.get('pick_tiros', ''),
+                                'remates_total_estimado': pred_tiros.get('total_estimado', 0),
+                                'remates_local': pred_tiros.get('tiros_local_estimado', 0),
+                                'remates_visitante': pred_tiros.get('tiros_visitante_estimado', 0),
+                                'over_remates': r.get('prob_tiros', 0),
+                                # Tarjetas
+                                'prediccion_tarjetas': r.get('pick_tarjetas', ''),
+                                'tarjetas_total_estimado': pred_tarjetas.get('total_estimado', 0),
+                                'tarjetas_over_prob': r.get('prob_tarjetas', 0),
+                                # Tiros Arco
+                                'prediccion_arco': r.get('pick_tiros_arco', ''),
+                                'arco_total_estimado': pred_arco.get('total_estimado', 0),
+                                'arco_over_prob': r.get('prob_tiros_arco', 0),
+                                # Confianza
                                 'confianza': int(confianza),
+                                'rango': rango,
                             }
                             
                             client.table('picks').insert(pick_data).execute()
