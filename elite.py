@@ -1215,6 +1215,32 @@ def render_login_form():
                 except Exception as e:
                     st.error(f"❌ Error en sincronización: {e}")
 
+
+        with col_btn3:
+            if st.button("🧹 Limpiar Equipos", type="secondary", use_container_width=True):
+                client = get_client()
+                try:
+                    resp_eq = client.table('equipos_stats').select('equipo', count='exact').execute()
+                    num_eq = len(resp_eq.data) if resp_eq.data else 0
+                    
+                    resp_ep = client.table('equipo_partidos_stats').select('equipo', count='exact').execute()
+                    num_ep = len(resp_ep.data) if resp_ep.data else 0
+                    
+                    if num_eq > 0 or num_ep > 0:
+                        client.table('equipos_stats').delete().neq('equipo', '').execute()
+                        client.table('equipo_partidos_stats').delete().neq('equipo', '').execute()
+                        st.success(f"✅ Limpiado: {num_eq} equipos + {num_ep} partidos stats")
+                    else:
+                        st.info("ℹ️ No hay datos para limpiar")
+                    time.sleep(2)
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Error: {e}")
+
+        with col_btn4:
+            if st.button("📊 Ver Stats", type="secondary", use_container_width=True):
+                st.info("📊 Estadísticas de equipos...")
+
         with col_info:
             st.markdown(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/999")
         
