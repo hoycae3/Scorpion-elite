@@ -538,7 +538,7 @@ def render_public_landing():
                                 st.session_state['show_analizador'] = True
                                 st.query_params["page"] = "analizador"
                             
-                            st.caption(f"🕐 {hora_col} | 📅 {fecha} | {liga}")
+                            st.caption(f"🕐 {hora_col} | 📅 {datetime.strptime(fecha, '%Y-%m-%d').strftime('%d/%m/%Y')} | {liga}")
         else:
             st.info("📭 No hay partidos cargados. Ve a la pestaña **Carga** para subir datos.")
 
