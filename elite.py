@@ -1389,16 +1389,17 @@ def render_login_form():
             total_partidos = len(partidos_pais)
             
             with st.expander(f"{emoji} **{pais}** ({total_partidos} partidos)", expanded=True):
-                # Ordenar por fecha y hora
-                partidos_pais.sort(key=lambda x: (str(x.get('fecha', '')), str(x.get('hora_colombia', ''))))
-                
-                # Agrupar por liga dentro del país
+                # Primero agrupar por liga
                 ligas_pais = {}
                 for p in partidos_pais:
                     liga = p.get('liga', 'Sin Liga')
                     if liga not in ligas_pais:
                         ligas_pais[liga] = []
                     ligas_pais[liga].append(p)
+                
+                # Ordenar partidos DENTRO de cada liga por fecha y hora
+                for liga in ligas_pais:
+                    ligas_pais[liga].sort(key=lambda x: (str(x.get('fecha', '')), str(x.get('hora_colombia', ''))))
                 
                 # Mostrar cada liga
                 for liga, partidos_liga in sorted(ligas_pais.items()):
@@ -1428,12 +1429,16 @@ def render_login_form():
                         else:
                             badge = "⚪"
                         
-                        # Botón para analizar
-                        if st.button(f"{badge} ⚽ {equipo_local} vs {equipo_visitante}  🕐 {hora_col} | 📅 {fecha_fmt}", key=f"btn_pais_{pais}_{liga}_{i}", use_container_width=True):
+                        # Botón para analizar con fecha/hora organizada
+                        label = f"{badge} ⚽ {equipo_local} vs {equipo_visitante}"
+                        if st.button(label, key=f"btn_pais_{pais}_{liga}_{i}", use_container_width=True):
                             st.session_state.selected_local = equipo_local
                             st.session_state.selected_away = equipo_visitante
                             st.session_state.page = "Analizador"
                             st.rerun()
+                        
+                        # Mostrar fecha y hora abajo del botón
+                        st.caption(f"   🕐 {hora_col} hrs  📅 {fecha_fmt}")
                 
                 st.markdown("---")
         
