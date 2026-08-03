@@ -1520,15 +1520,14 @@ def render_login_form():
         #             away_team = visitante_match if visitante_match else (visitante_nombre.title() if visitante_nombre else "")
         #         else:
         #             # Usar selectores si no hay partido seleccionado
+            # Obtener equipos disponibles de Supabase
+            try:
+                resp_equipos = client.table('equipos_stats').select('equipo').execute()
+                equipos_disponibles = sorted(list(set([e.get('equipo', '') for e in resp_equipos.data if e.get('equipo')])))
+            except:
+                equipos_disponibles = []
+
             col_space, col1, col2, col_space2 = st.columns([2, 1, 1, 2])
-            st.markdown("""
-<style>
-.stSelectbox label {
-    font-size: 120px !important;
-    font-weight: bold !important;
-}
-</style>
-""", unsafe_allow_html=True)
             with col1:
                 home_team = st.selectbox("🏠 Local", [""] + equipos_disponibles, key="home_select")
             with col2:
