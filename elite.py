@@ -1237,10 +1237,6 @@ def render_login_form():
                 except Exception as e:
                     st.error(f"❌ Error: {e}")
 
-        with col_btn4:
-            if st.button("📊 Ver Stats", type="secondary", use_container_width=True):
-                st.info("📊 Estadísticas de equipos...")
-
         with col_info:
             st.markdown(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/999")
         
