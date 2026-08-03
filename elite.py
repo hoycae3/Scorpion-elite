@@ -1405,18 +1405,14 @@ def render_login_form():
                 for liga, partidos_liga in sorted(ligas_pais.items()):
                     st.markdown(f"**🏆 {liga}**")
                     
-                    # Crear tabla con columnas
-                    col1, col2, col3, col4, col5 = st.columns([3, 3, 1, 1, 1])
+                    # Crear tabla con columnas: Fecha | Hora | Partido
+                    col1, col2, col3 = st.columns([1, 1, 4])
                     with col1:
-                        st.markdown("**Local**")
-                    with col2:
-                        st.markdown("**Visitante**")
-                    with col3:
                         st.markdown("**Fecha**")
-                    with col4:
+                    with col2:
                         st.markdown("**Hora**")
-                    with col5:
-                        st.markdown("**Acción**")
+                    with col3:
+                        st.markdown("**Partido**")
                     
                     st.markdown("---")
                     
@@ -1445,17 +1441,13 @@ def render_login_form():
                             badge = "⚪"
                         
                         # Mostrar fila
-                        c1, c2, c3, c4, c5 = st.columns([3, 3, 1, 1, 1])
+                        c1, c2, c3 = st.columns([1, 1, 4])
                         with c1:
-                            st.write(f"{badge} {equipo_local}")
-                        with c2:
-                            st.write(equipo_visitante)
-                        with c3:
                             st.write(fecha_fmt)
-                        with c4:
+                        with c2:
                             st.write(hora_col)
-                        with c5:
-                            if st.button("📊", key=f"btn_{pais}_{liga}_{i}", help=f"Analizar {equipo_local} vs {equipo_visitante}"):
+                        with c3:
+                            if st.button(f"{badge} {equipo_local} vs {equipo_visitante}", key=f"btn_{pais}_{liga}_{i}", use_container_width=True):
                                 st.session_state.selected_local = equipo_local
                                 st.session_state.selected_away = equipo_visitante
                                 st.session_state.page = "Analizador"
