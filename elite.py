@@ -2025,21 +2025,21 @@ def render_login_form():
             pred_tarjetas = r.get('tarjetas', {})
             pred_arco = r.get('tiros_arco', {})
             
-            pick_tiros = r.get('pick_tiros', 'Over 24')
-            prob_tiros = r.get('prob_tiros', 50)
-            remates_modelo = pred_tiros.get('total_estimado', remates_total)
+            pick_tiros = r.get('pick_tiros') or 'Over 24'
+            prob_tiros = float(r.get('prob_tiros') or 50)
+            remates_modelo = float(pred_tiros.get('total_estimado') or remates_total or 0)
             
-            pick_tarjetas = r.get('pick_tarjetas', 'Over 6')
-            prob_tarjetas = r.get('prob_tarjetas', 50)
-            tarjetas_modelo = pred_tarjetas.get('total_estimado', tarjetas_total)
+            pick_tarjetas = r.get('pick_tarjetas') or 'Over 6'
+            prob_tarjetas = float(r.get('prob_tarjetas') or 50)
+            tarjetas_modelo = float(pred_tarjetas.get('total_estimado') or tarjetas_total or 0)
             
-            pick_arco = r.get('pick_tiros_arco', 'Over 8')
-            prob_arco = r.get('prob_tiros_arco', 50)
-            arco_modelo = pred_arco.get('total_estimado', arco_total)
+            pick_arco = r.get('pick_tiros_arco') or 'Over 8'
+            prob_arco = float(r.get('prob_tiros_arco') or 50)
+            arco_modelo = float(pred_arco.get('total_estimado') or arco_total or 0)
             
-            modelos = r.get('modelos', {})
-            mc = modelos.get('monte_carlo', {})
-            top_scores = mc.get('top_scores', {})
+            modelos = r.get('modelos') or {}
+            mc = modelos.get('monte_carlo') or {}
+            top_scores = mc.get('top_scores') or {}
             score_mas_probable = list(top_scores.keys())[0] if top_scores else "2-1"
             
             col_space, col_ou, col_btts, col_corners, col_remates, col_arco, col_tarjetas, col_score, col_space2 = st.columns([0.3, 1, 1, 1, 1, 1, 1, 1, 0.3])
@@ -2139,35 +2139,38 @@ def render_login_form():
             col_pred1, col_pred2, col_pred3 = st.columns(3)
             
             with col_pred1:
-                icon_tiros = "📈" if "Over" in pick_tiros else "📉"
-                color_tiros = "#00ff88" if "Over" in pick_tiros else "#ff6b6b"
+                icon_tiros = "📈" if "Over" in (pick_tiros or "") else "📉"
+                color_tiros = "#00ff88" if "Over" in (pick_tiros or "") else "#ff6b6b"
+                remates_val = remates_modelo if remates_modelo and remates_modelo > 0 else 0
                 st.markdown(f"""
                 <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tiros};">
                     <p style="color: #888; font-size: 12px; margin: 0;">🔫 Tiros Total</p>
-                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{remates_modelo:.0f}</p>
-                    <p style="color: {color_tiros}; font-size: 14px; margin: 0;">{icon_tiros} {pick_tiros} ({prob_tiros:.0f}%)</p>
+                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{remates_val:.0f}</p>
+                    <p style="color: {color_tiros}; font-size: 14px; margin: 0;">{icon_tiros} {pick_tiros or "N/A"} ({prob_tiros or 0:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_pred2:
-                icon_arco = "📈" if "Over" in pick_arco else "📉"
-                color_arco = "#00ff88" if "Over" in pick_arco else "#ff6b6b"
+                icon_arco = "📈" if "Over" in (pick_arco or "") else "📉"
+                color_arco = "#00ff88" if "Over" in (pick_arco or "") else "#ff6b6b"
+                arco_val = arco_modelo if arco_modelo and arco_modelo > 0 else 0
                 st.markdown(f"""
                 <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_arco};">
                     <p style="color: #888; font-size: 12px; margin: 0;">🎯 Tiros Arco</p>
-                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{arco_modelo:.0f}</p>
-                    <p style="color: {color_arco}; font-size: 14px; margin: 0;">{icon_arco} {pick_arco} ({prob_arco:.0f}%)</p>
+                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{arco_val:.0f}</p>
+                    <p style="color: {color_arco}; font-size: 14px; margin: 0;">{icon_arco} {pick_arco or "N/A"} ({prob_arco or 0:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_pred3:
-                icon_tar = "📈" if "Over" in pick_tarjetas else "📉"
-                color_tar = "#00ff88" if "Over" in pick_tarjetas else "#ff6b6b"
+                icon_tar = "📈" if "Over" in (pick_tarjetas or "") else "📉"
+                color_tar = "#00ff88" if "Over" in (pick_tarjetas or "") else "#ff6b6b"
+                tarjetas_val = tarjetas_modelo if tarjetas_modelo and tarjetas_modelo > 0 else 0
                 st.markdown(f"""
                 <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tar};">
                     <p style="color: #888; font-size: 12px; margin: 0;">🟨 Amarillas</p>
-                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{tarjetas_modelo:.1f}</p>
-                    <p style="color: {color_tar}; font-size: 14px; margin: 0;">{icon_tar} {pick_tarjetas} ({prob_tarjetas:.0f}%)</p>
+                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{tarjetas_val:.1f}</p>
+                    <p style="color: {color_tar}; font-size: 14px; margin: 0;">{icon_tar} {pick_tarjetas or "N/A"} ({prob_tarjetas or 0:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
