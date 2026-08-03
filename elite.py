@@ -179,6 +179,29 @@ def verify_password(password: str, hashed: str) -> bool:
 def get_hoy():
     return str(datetime.now(timezone(timedelta(hours=-5))).date())
 
+def utc_to_colombia(utc_datetime_str):
+    """Convierte datetime UTC a hora colombiana (UTC-5)"""
+    try:
+        if not utc_datetime_str:
+            return ""
+        # Parsear el datetime UTC
+        utc_dt = datetime.fromisoformat(utc_datetime_str.replace('Z', '+00:00'))
+        # Convertir a Colombia (UTC-5)
+        colombia_tz = timezone(timedelta(hours=-5))
+        colombia_dt = utc_dt.astimezone(colombia_tz)
+        return colombia_dt.strftime('%H:%M')
+    except:
+        # Si falla, intentar con formato simple
+        try:
+            hora_str = utc_datetime_str[11:16]  # Extraer HH:MM
+            hora = int(hora_str.split(':')[0]) if hora_str else 0
+            minuto = int(hora_str.split(':')[1]) if ':' in hora_str else 0
+            # Restar 5 horas
+            hora_colombia = (hora - 5) % 24
+            return f"{hora_colombia:02d}:{minuto:02d}"
+        except:
+            return utc_datetime_str[11:16] if len(utc_datetime_str) > 16 else ""
+
 
 def db_todos():
     """Obtiene todos los usuarios"""
@@ -462,38 +485,60 @@ def render_public_landing():
         except Exception as e:
             st.error(f"Error: {str(e)}")
     else:
-        # MOSTRAR 4 PARTIDOS ALEATORIOS - PRUEBA GRATIS
+        # MOSTRAR PARTIDOS ORGANIZADOS POR PAÍS/FECHA/HORA
         if partidos:
-            import random
-            random.seed()  # Semilla aleatoria basada en tiempo
-            partidos_aleatorios = random.sample(partidos, min(4, len(partidos)))
-            
-            st.markdown("###### Partidos Destacados")
-            st.caption("Preview gratuito - Accede con tu cuenta para análisis completo")
-            
-            # Crear botones clicables para cada partido
-            cols = st.columns(2)
-            
-            for i, partido in enumerate(partidos_aleatorios):
-                # Variables del partido
-                local = partido.get('equipo_local', 'Local')
-                visitante = partido.get('equipo_visitante', 'Visitante')
-                liga = partido.get('liga', '')
-                hora = partido.get('hora', '')
-                fixture_id = partido.get('fixture_id', 0)
+            # Convertir hora a colombiana y organizar
+            partidos_procesados = []
+            for p in partidos:
+                fecha = p.get('fecha', '')
+                hora_original = p.get('hora', '')
+                hora_colombia = utc_to_colombia(f"{fecha}T{hora_original}:00Z") if fecha and hora_original else ""
                 
-                with cols[i % 2]:
-                    # Guardar el partido en session_state y navegar
-                    st.session_state['partido_seleccionado'] = partido
-                    
-                    # Botón clicable
-                    if st.button(f"⚽ {local} vs {visitante}", key=f"partido_{fixture_id}", use_container_width=True):
-                        st.session_state['partido_seleccionado'] = partido
-                        st.session_state['show_analizador'] = True
-                        st.query_params["page"] = "analizador"
-                        pass
-                    
-                    st.caption(f"📅 {hora} | {liga}")
+                partidos_procesados.append({
+                    **p,
+                    'hora_colombia': hora_colombia,
+                    'fecha_hora': f"{fecha} {hora_colombia}"
+                })
+            
+            # Ordenar por país, fecha, hora
+            partidos_procesados.sort(key=lambda x: (
+                x.get('pais', ''),  # Primero por país
+                x.get('fecha', ''),   # Luego por fecha
+                x.get('hora_colombia', '')  # Finalmente por hora colombiana
+            ))
+            
+            st.markdown("###### 📅 Partidos del Día")
+            st.caption("Organizados por país, fecha y hora (Colombia)")
+            
+            # Agrupar por país
+            paises_agrupados = {}
+            for p in partidos_procesados:
+                pais = p.get('pais', 'Sin país')
+                if pais not in paises_agrupados:
+                    paises_agrupados[pais] = []
+                paises_agrupados[pais].append(p)
+            
+            # Mostrar por país
+            for pais, lista_partidos in paises_agrupados.items():
+                with st.expander(f"🌍 {pais} ({len(lista_partidos)} partidos)", expanded=True):
+                    cols = st.columns(2)
+                    for i, partido in enumerate(lista_partidos):
+                        local = partido.get('equipo_local', 'Local')
+                        visitante = partido.get('equipo_visitante', 'Visitante')
+                        liga = partido.get('liga', '')
+                        hora_col = partido.get('hora_colombia', '')
+                        fecha = partido.get('fecha', '')
+                        fixture_id = partido.get('fixture_id', 0)
+                        
+                        with cols[i % 2]:
+                            st.session_state['partido_seleccionado'] = partido
+                            
+                            if st.button(f"⚽ {local} vs {visitante}", key=f"partido_{fixture_id}", use_container_width=True):
+                                st.session_state['partido_seleccionado'] = partido
+                                st.session_state['show_analizador'] = True
+                                st.query_params["page"] = "analizador"
+                            
+                            st.caption(f"🕐 {hora_col} | 📅 {fecha} | {liga}")
         else:
             st.info("📭 No hay partidos cargados. Ve a la pestaña **Carga** para subir datos.")
 
@@ -1622,29 +1667,38 @@ def render_login_form():
                         # ★ USAR PROMEDIOS DINÁMICOS si están disponibles
                         if promedios_dinamicos_local:
                             corners_l = promedios_dinamicos_local.get('promedio_corners', 10.0)
-                            tiros_l = promedios_dinamicos_local.get('promedio_tiros', 12.0)
-                            tiros_arco_l = promedios_dinamicos_local.get('promedio_tiros_arco', 4.0)
-                            amarillas_l = promedios_dinamicos_local.get('promedio_amarillas', 3.5)
+                            tiros_l = promedios_dinamicos_local.get('promedio_tiros', 0)
+                            tiros_arco_l = promedios_dinamicos_local.get('promedio_tiros_arco', 0)
+                            amarillas_l = promedios_dinamicos_local.get('promedio_amarillas', 0)
                             partidos_total_l = promedios_dinamicos_local.get('partidos_total', 0)
                         else:
                             corners_l = float(stats_local.get('promedio_corners_total', 0) or 0) or 10.0
-                            tiros_l = float(stats_local.get('promedio_tiros', 0) or 0) or 12.0
-                            tiros_arco_l = float(stats_local.get('promedio_tiros_arco', 0) or 0) or 4.0
-                            amarillas_l = float(stats_local.get('promedio_amarillas', 0) or 0) or 3.5
+                            tiros_l = float(stats_local.get('promedio_tiros', 0) or 0) or 0
+                            tiros_arco_l = float(stats_local.get('promedio_tiros_arco', 0) or 0) or 0
+                            amarillas_l = float(stats_local.get('promedio_amarillas', 0) or 0) or 0
                             partidos_total_l = 0
                         
                         if promedios_dinamicos_visitante:
                             corners_v = promedios_dinamicos_visitante.get('promedio_corners', 10.0)
-                            tiros_v = promedios_dinamicos_visitante.get('promedio_tiros', 12.0)
-                            tiros_arco_v = promedios_dinamicos_visitante.get('promedio_tiros_arco', 4.0)
-                            amarillas_v = promedios_dinamicos_visitante.get('promedio_amarillas', 3.5)
+                            tiros_v = promedios_dinamicos_visitante.get('promedio_tiros', 0)
+                            tiros_arco_v = promedios_dinamicos_visitante.get('promedio_tiros_arco', 0)
+                            amarillas_v = promedios_dinamicos_visitante.get('promedio_amarillas', 0)
                             partidos_total_v = promedios_dinamicos_visitante.get('partidos_total', 0)
                         else:
                             corners_v = float(stats_visitante.get('promedio_corners_total', 0) or 0) or 10.0
-                            tiros_v = float(stats_visitante.get('promedio_tiros', 0) or 0) or 12.0
-                            tiros_arco_v = float(stats_visitante.get('promedio_tiros_arco', 0) or 0) or 4.0
-                            amarillas_v = float(stats_visitante.get('promedio_amarillas', 0) or 0) or 3.5
+                            tiros_v = float(stats_visitante.get('promedio_tiros', 0) or 0) or 0
+                            tiros_arco_v = float(stats_visitante.get('promedio_tiros_arco', 0) or 0) or 0
+                            amarillas_v = float(stats_visitante.get('promedio_amarillas', 0) or 0) or 0
                             partidos_total_v = 0
+                        
+                        # ★ OBTENER ÚLTIMOS 5 PARTIDOS de equipo_partidos_stats
+                        ultimos_5_local = []
+                        ultimos_5_visitante = []
+                        
+                        if promedios_dinamicos_local:
+                            ultimos_5_local = promedios_dinamicos_local.get('partidos', [])[:5]
+                        if promedios_dinamicos_visitante:
+                            ultimos_5_visitante = promedios_dinamicos_visitante.get('partidos', [])[:5]
                         
                         # Llamar al modelo con TODOS los datos
                         result = calcular(
@@ -1658,8 +1712,8 @@ def render_login_form():
                             tiros_visitante=tiros_v,
                             tiros_arco_local=tiros_arco_l,
                             tiros_arco_visitante=tiros_arco_v,
-                            ultimos_5_local=stats_local.get('ultimos_5_partidos', []) if isinstance(stats_local.get('ultimos_5_partidos'), list) else [],
-                            ultimos_5_visitante=stats_visitante.get('ultimos_5_partidos', []) if isinstance(stats_visitante.get('ultimos_5_partidos'), list) else [],
+                            ultimos_5_local=ultimos_5_local,
+                            ultimos_5_visitante=ultimos_5_visitante,
                         )
                         
                         # Guardar info de partidos dinámicos en result
@@ -1748,24 +1802,24 @@ def render_login_form():
                 if promedios_dinamicos_local:
                     prom_corners_l = promedios_dinamicos_local.get('promedio_corners', 10.0)
                     prom_amarillas_l = promedios_dinamicos_local.get('promedio_amarillas', 3.0)
-                    prom_tiros_l = promedios_dinamicos_local.get('promedio_tiros', 12.0)
-                    prom_tiros_arco_l = promedios_dinamicos_local.get('promedio_tiros_arco', 4.0)
+                    prom_tiros_l = promedios_dinamicos_local.get('promedio_tiros', 0)
+                    prom_tiros_arco_l = promedios_dinamicos_local.get('promedio_tiros_arco', 0)
                 else:
                     prom_corners_l = stats_local.get('promedio_corners_total', 10) or 10
-                    prom_amarillas_l = stats_local.get('promedio_amarillas', 3) or 3
-                    prom_tiros_l = stats_local.get('promedio_tiros', 12) or 12
-                    prom_tiros_arco_l = stats_local.get('promedio_tiros_arco', 4) or 4
+                    prom_amarillas_l = stats_local.get('promedio_amarillas', 0) or 0
+                    prom_tiros_l = stats_local.get('promedio_tiros', 0) or 0
+                    prom_tiros_arco_l = stats_local.get('promedio_tiros_arco', 0) or 0
                 
                 if promedios_dinamicos_visitante:
                     prom_corners_v = promedios_dinamicos_visitante.get('promedio_corners', 10.0)
                     prom_amarillas_v = promedios_dinamicos_visitante.get('promedio_amarillas', 3.0)
-                    prom_tiros_v = promedios_dinamicos_visitante.get('promedio_tiros', 12.0)
-                    prom_tiros_arco_v = promedios_dinamicos_visitante.get('promedio_tiros_arco', 4.0)
+                    prom_tiros_v = promedios_dinamicos_visitante.get('promedio_tiros', 0)
+                    prom_tiros_arco_v = promedios_dinamicos_visitante.get('promedio_tiros_arco', 0)
                 else:
                     prom_corners_v = stats_visitante.get('promedio_corners_total', 10) or 10
-                    prom_amarillas_v = stats_visitante.get('promedio_amarillas', 3) or 3
-                    prom_tiros_v = stats_visitante.get('promedio_tiros', 12) or 12
-                    prom_tiros_arco_v = stats_visitante.get('promedio_tiros_arco', 4) or 4
+                    prom_amarillas_v = stats_visitante.get('promedio_amarillas', 0) or 0
+                    prom_tiros_v = stats_visitante.get('promedio_tiros', 0) or 0
+                    prom_tiros_arco_v = stats_visitante.get('promedio_tiros_arco', 0) or 0
                 
                 # Calcular promedios LOCAL (para PJ, victorias, etc - de equipos_stats)
                 pj_l = stats_local.get('partidos_jugados', 1) or 1
@@ -2008,16 +2062,16 @@ def render_login_form():
             st.markdown("##### 📊 Predicciones Adicionales (Modelo Matemático)")
             
             # Obtener datos del modelo matemático
-            ta_local = stats_local.get('promedio_amarillas', 3) if stats_local else 3
-            ta_visitante = stats_visitante.get('promedio_amarillas', 3) if stats_visitante else 3
+            ta_local = stats_local.get('promedio_amarillas', 0) if stats_local else 3
+            ta_visitante = stats_visitante.get('promedio_amarillas', 0) if stats_visitante else 3
             tarjetas_total = ta_local + ta_visitante
             
-            ti_local = stats_local.get('promedio_tiros', 12) if stats_local else 12
-            ti_visitante = stats_visitante.get('promedio_tiros', 12) if stats_visitante else 12
+            ti_local = stats_local.get('promedio_tiros', 0) if stats_local else 12
+            ti_visitante = stats_visitante.get('promedio_tiros', 0) if stats_visitante else 12
             remates_total = ti_local + ti_visitante
             
-            arco_local = stats_local.get('promedio_tiros_arco', 4) if stats_local else 4
-            arco_visitante = stats_visitante.get('promedio_tiros_arco', 4) if stats_visitante else 4
+            arco_local = stats_local.get('promedio_tiros_arco', 0) if stats_local else 4
+            arco_visitante = stats_visitante.get('promedio_tiros_arco', 0) if stats_visitante else 4
             arco_total = arco_local + arco_visitante
             
             # Obtener predicciones del modelo matemático
@@ -3492,10 +3546,10 @@ def render_login_form():
                 # Simular scores de consenso (en producción vendría de los modelos reales)
                 modelos = ['Poisson', 'Dixon-Coles', 'Monte Carlo', 'Elo']
                 probabilidades = [
-                    ultimo.get('p1', 0) or 40,
-                    ultimo.get('p1', 0) or 40,  # Simulado
-                    ultimo.get('p1', 0) or 40,  # Simulado
-                    ultimo.get('p1', 0) or 40,  # Simulado
+                    ultimo.get('p1', 0) or 00,
+                    ultimo.get('p1', 0) or 00,  # Simulado
+                    ultimo.get('p1', 0) or 00,  # Simulado
+                    ultimo.get('p1', 0) or 00,  # Simulado
                 ]
                 
                 # Calcular consenso
