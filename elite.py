@@ -1672,7 +1672,7 @@ def render_login_form():
                             amarillas_l = promedios_dinamicos_local.get('promedio_amarillas', 0)
                             partidos_total_l = promedios_dinamicos_local.get('partidos_total', 0)
                         else:
-                            corners_l = float(stats_local.get('promedio_corners_total', 0) or 0) or 10.0
+                            corners_l = float(stats_local.get('promedio_corners_total', 0) or 0) or 0
                             tiros_l = float(stats_local.get('promedio_tiros', 0) or 0) or 0
                             tiros_arco_l = float(stats_local.get('promedio_tiros_arco', 0) or 0) or 0
                             amarillas_l = float(stats_local.get('promedio_amarillas', 0) or 0) or 0
@@ -1685,7 +1685,7 @@ def render_login_form():
                             amarillas_v = promedios_dinamicos_visitante.get('promedio_amarillas', 0)
                             partidos_total_v = promedios_dinamicos_visitante.get('partidos_total', 0)
                         else:
-                            corners_v = float(stats_visitante.get('promedio_corners_total', 0) or 0) or 10.0
+                            corners_v = float(stats_visitante.get('promedio_corners_total', 0) or 0) or 0
                             tiros_v = float(stats_visitante.get('promedio_tiros', 0) or 0) or 0
                             tiros_arco_v = float(stats_visitante.get('promedio_tiros_arco', 0) or 0) or 0
                             amarillas_v = float(stats_visitante.get('promedio_amarillas', 0) or 0) or 0
