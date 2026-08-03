@@ -1173,8 +1173,8 @@ def render_login_form():
                                             'derrotas': loses,
                                             'goles_favor': gf,
                                             'goles_contra': gc,
-                                            'lambda_local': round((gf_h + gc_a) / pj_h / 2, 2) if pj_h > 0 else 1.0,
-                                            'lambda_visitante': round((gf_a + gc_h) / pj_a / 2, 2) if pj_a > 0 else 1.0,
+                                            'lambda_local': round((gf_h + gc_a) / pj_h / 2, 2) if pj_h > 0 else 0,
+                                            'lambda_visitante': round((gf_a + gc_h) / pj_a / 2, 2) if pj_a > 0 else 0,
                                             'ultimos_5_partidos': list(stats.get('form', '') or '')[:5],
                                         }
                                         
@@ -1476,14 +1476,14 @@ def render_login_form():
                     result = calcular(
                         lambda_local=lambda_local_cal,
                         lambda_visitante=lambda_visitante_cal,
-                        corners_local=float(stats_local.get('promedio_corners_total', 10)),
-                        corners_visitante=float(stats_visitante.get('promedio_corners_total', 10)),
-                        tarjetas_local=float(stats_local.get('promedio_tarjetas', 3)),
-                        tarjetas_visitante=float(stats_visitante.get('promedio_tarjetas', 3)),
-                        tiros_local=float(stats_local.get('promedio_tiros', 12)),
-                        tiros_visitante=float(stats_visitante.get('promedio_tiros', 12)),
-                        tiros_arco_local=float(stats_local.get('promedio_tiros_arco', 4)),
-                        tiros_arco_visitante=float(stats_visitante.get('promedio_tiros_arco', 4)),
+                        corners_local=float(stats_local.get('promedio_corners_total', 0) or 0),
+                        corners_visitante=float(stats_visitante.get('promedio_corners_total', 0) or 0),
+                        tarjetas_local=float(stats_local.get('promedio_tarjetas', 0) or 0),
+                        tarjetas_visitante=float(stats_visitante.get('promedio_tarjetas', 0) or 0),
+                        tiros_local=float(stats_local.get('promedio_tiros', 0) or 0),
+                        tiros_visitante=float(stats_visitante.get('promedio_tiros', 0) or 0),
+                        tiros_arco_local=float(stats_local.get('promedio_tiros_arco', 0) or 0),
+                        tiros_arco_visitante=float(stats_visitante.get('promedio_tiros_arco', 0) or 0),
                         ultimos_5_local=[],
                         ultimos_5_visitante=[],
                     )
@@ -1498,8 +1498,8 @@ def render_login_form():
                     st.session_state.stats_local = stats_local
                     st.session_state.stats_visitante = stats_visitante
                     
-                    remates_total = float(stats_local.get('promedio_tiros', 12)) + float(stats_visitante.get('promedio_tiros', 12))
-                    tarjetas_total = float(stats_local.get('promedio_tarjetas', 3)) + float(stats_visitante.get('promedio_tarjetas', 3))
+                    remates_total = float(stats_local.get('promedio_tiros', 0) or 0) + float(stats_visitante.get('promedio_tiros', 0) or 0)
+                    tarjetas_total = float(stats_local.get('promedio_tarjetas', 0) or 0) + float(stats_visitante.get('promedio_tarjetas', 0) or 0)
                     
                     st.session_state.remates_over_prob = min(90, max(10, 50 + (remates_total - 24) * 2))
                     st.session_state.tarjetas_over_prob = min(90, max(10, 50 + (tarjetas_total - 6) * 5))
@@ -1596,14 +1596,14 @@ def render_login_form():
                         result = calcular(
                             lambda_local=lambda_local_cal,
                             lambda_visitante=lambda_visitante_cal,
-                            corners_local=float(stats_local.get('promedio_corners_total', 10)),
-                            corners_visitante=float(stats_visitante.get('promedio_corners_total', 10)),
-                            tarjetas_local=float(stats_local.get('promedio_amarillas', 3)),
-                            tarjetas_visitante=float(stats_visitante.get('promedio_amarillas', 3)),
-                            tiros_local=float(stats_local.get('promedio_tiros', 12)),
-                            tiros_visitante=float(stats_visitante.get('promedio_tiros', 12)),
-                            tiros_arco_local=float(stats_local.get('promedio_tiros_arco', 4)),
-                            tiros_arco_visitante=float(stats_visitante.get('promedio_tiros_arco', 4)),
+                            corners_local=float(stats_local.get('promedio_corners_total', 0) or 0),
+                            corners_visitante=float(stats_visitante.get('promedio_corners_total', 0) or 0),
+                            tarjetas_local=float(stats_local.get('promedio_amarillas', 0) or 0),
+                            tarjetas_visitante=float(stats_visitante.get('promedio_amarillas', 0) or 0),
+                            tiros_local=float(stats_local.get('promedio_tiros', 0) or 0),
+                            tiros_visitante=float(stats_visitante.get('promedio_tiros', 0) or 0),
+                            tiros_arco_local=float(stats_local.get('promedio_tiros_arco', 0) or 0),
+                            tiros_arco_visitante=float(stats_visitante.get('promedio_tiros_arco', 0) or 0),
                             ultimos_5_local=stats_local.get('ultimos_5_partidos', []),
                             ultimos_5_visitante=stats_visitante.get('ultimos_5_partidos', []),
                         )
@@ -1616,11 +1616,11 @@ def render_login_form():
                         
                         # Guardar TODAS las predicciones en session_state (NO en Supabase aun)
                         # Calcular predicciones de remates
-                        remates_total = float(stats_local.get('promedio_tiros', 12)) + float(stats_visitante.get('promedio_tiros', 12))
+                        remates_total = float(stats_local.get('promedio_tiros', 0) or 0) + float(stats_visitante.get('promedio_tiros', 0) or 0)
                         remates_over_prob = min(90, max(10, 50 + (remates_total - 24) * 2))  # 24 es el promedio típico
                         
                         # Calcular predicciones de tarjetas
-                        tarjetas_total = float(stats_local.get('promedio_amarillas', 3)) + float(stats_visitante.get('promedio_amarillas', 3))
+                        tarjetas_total = float(stats_local.get('promedio_amarillas', 0) or 0) + float(stats_visitante.get('promedio_amarillas', 0) or 0)
                         tarjetas_over_prob = min(90, max(10, 50 + (tarjetas_total - 6) * 5))  # 6 es el promedio típico
                         
                         st.session_state.predicciones_actuales = {
@@ -1647,8 +1647,8 @@ def render_login_form():
                             'remates': {
                                 'pick': f"+ {remates_total:.0f}" if remates_over_prob > 50 else f"- {remates_total:.0f}",
                                 'total': remates_total,
-                                'local': float(stats_local.get('promedio_tiros', 12)),
-                                'visitante': float(stats_visitante.get('promedio_tiros', 12)),
+                                'local': float(stats_local.get('promedio_tiros', 0) or 0),
+                                'visitante': float(stats_visitante.get('promedio_tiros', 0) or 0),
                                 'over_prob': remates_over_prob,
                                 'under_prob': 100 - remates_over_prob
                             },
