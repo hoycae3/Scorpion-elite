@@ -1089,14 +1089,17 @@ def render_login_form():
                     
                     st.markdown(f"📊 **{len(partidos_stats)}** partidos encontrados en rango de stats")
                     
+                    # Botón para forzar actualización
+                    force_update = st.checkbox("🔄 Forzar actualización de todos los equipos", value=False, help="Si está marcado, re-descargará las stats de TODOS los equipos")
+
                     # Coleccionar equipos que necesitan stats
                     equipos_necesitan_stats = {}
                     for p in partidos_stats:
                         team_id_local = p.get('team_id_local')
                         team_id_visitante = p.get('team_id_visitante')
                         
-                        # Solo si NO tienen stats todavía
-                        if team_id_local and team_id_local not in equipos_con_stats:
+                        # Solo si NO tienen stats, O si se fuerza actualización
+                        if team_id_local and (team_id_local not in equipos_con_stats or force_update):
                             equipos_necesitan_stats[team_id_local] = {
                                 'team_id': team_id_local,
                                 'team_name': p.get('equipo_local', ''),
@@ -1104,7 +1107,7 @@ def render_login_form():
                                 'league_name': p.get('liga', ''),
                                 'season': season_stats
                             }
-                        if team_id_visitante and team_id_visitante not in equipos_con_stats:
+                        if team_id_visitante and (team_id_visitante not in equipos_con_stats or force_update):
                             equipos_necesitan_stats[team_id_visitante] = {
                                 'team_id': team_id_visitante,
                                 'team_name': p.get('equipo_visitante', ''),
