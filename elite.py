@@ -1405,19 +1405,20 @@ def render_login_form():
                         badge_color = "#9ca3af"
                         tooltip = "No verificado"
 
-                    # Fila estilo enlace
-                    st.markdown(f"""
-                    <div onclick="this.nextElementSibling.click()" style="cursor:pointer; padding:12px 16px; margin:4px 0; background:#F0FDFA; border:1px solid #e5e7eb; border-radius:8px;">
-                        <span style="color:#6b7280;">🗓️ {hora}</span>&nbsp;|&nbsp;
-                        <span style="color:#059669;font-weight:600;">🏠 {equipo_local}</span>&nbsp;⚽&nbsp;
-                        <span style="color:#dc2626;font-weight:600;">{equipo_visitante}</span>&nbsp;✈️
-                    </div>
-                    """, unsafe_allow_html=True)
-                    if st.button("Ir", key=f"go_{liga}_{i}"):
+                    # Fila clickeable - al hacer clic analiza directo
+                    partido_info = {
+                        'equipo_local': equipo_local,
+                        'equipo_visitante': equipo_visitante,
+                        'liga': liga,
+                        'fecha': fecha,
+                        'hora': hora,
+                        'fixture_id': fix_id
+                    }
+                    
+                    if st.button(f"⚽ {equipo_local} vs {equipo_visitante}  🗓️ {hora}", key=f"match_{liga}_{i}", use_container_width=True):
                         st.session_state.selected_local = equipo_local
                         st.session_state.selected_away = equipo_visitante
                         st.session_state.page = "Analizador"
-                        # Sin rerun - la página se actualiza automáticamente
         
     # Página: Analizador
     elif st.session_state.page == "Analizador":
