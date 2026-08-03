@@ -1401,12 +1401,10 @@ def render_login_form():
                 for liga in ligas_pais:
                     ligas_pais[liga].sort(key=lambda x: (str(x.get('fecha', '')), str(x.get('hora_colombia', ''))))
                 
-                # Mostrar cada liga en formato tabla
+                # Mostrar cada liga
                 for liga, partidos_liga in sorted(ligas_pais.items()):
                     st.markdown(f"**🏆 {liga}**")
                     
-                    # Crear tabla en markdown
-                    tabla = "| Fecha | Hora | Partido |\n|-------|------|--------|\n"
                     for i, partido in enumerate(partidos_liga):
                         equipo_local = partido.get('equipo_local', '')
                         equipo_visitante = partido.get('equipo_visitante', '')
@@ -1431,16 +1429,9 @@ def render_login_form():
                         else:
                             badge = "⚪"
                         
-                        tabla += f"| {fecha_fmt} | {hora_col} | {badge} {equipo_local} vs {equipo_visitante} |\n"
-                    
-                    st.markdown(tabla)
-                    
-                    # Botones de análisis
-                    for i, partido in enumerate(partidos_liga):
-                        equipo_local = partido.get('equipo_local', '')
-                        equipo_visitante = partido.get('equipo_visitante', '')
-                        
-                        if st.button(f"📊 Analizar: {equipo_local} vs {equipo_visitante}", key=f"btn_{pais}_{liga}_{i}", use_container_width=True):
+                        # Todo en un solo botón
+                        label = f"📅 {fecha_fmt}  🕐 {hora_col}  |  {badge} {equipo_local} vs {equipo_visitante}"
+                        if st.button(label, key=f"btn_{pais}_{liga}_{i}", use_container_width=True):
                             st.session_state.selected_local = equipo_local
                             st.session_state.selected_away = equipo_visitante
                             st.session_state.page = "Analizador"
