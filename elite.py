@@ -1405,22 +1405,13 @@ def render_login_form():
                 for liga, partidos_liga in sorted(ligas_pais.items()):
                     st.markdown(f"**🏆 {liga}**")
                     
-                    # Crear tabla con columnas: Fecha | Hora | Partido
-                    col1, col2, col3 = st.columns([1, 1, 4])
-                    with col1:
-                        st.markdown("**Fecha**")
-                    with col2:
-                        st.markdown("**Hora**")
-                    with col3:
-                        st.markdown("**Partido**")
-                    
-                    st.markdown("---")
-                    
+                    # Crear tabla en markdown
+                    tabla = "| Fecha | Hora | Partido |\n|-------|------|--------|\n"
                     for i, partido in enumerate(partidos_liga):
                         equipo_local = partido.get('equipo_local', '')
                         equipo_visitante = partido.get('equipo_visitante', '')
                         hora_col = partido.get('hora_colombia', '')
-                        fecha_fmt = partido.get('fecha_formato', '')[:5]  # Solo día/mes
+                        fecha_fmt = partido.get('fecha_formato', '')[:5]
 
                         # Verificar si los equipos tienen estadísticas
                         try:
@@ -1440,18 +1431,20 @@ def render_login_form():
                         else:
                             badge = "⚪"
                         
-                        # Mostrar fila
-                        c1, c2, c3 = st.columns([1, 1, 4])
-                        with c1:
-                            st.write(fecha_fmt)
-                        with c2:
-                            st.write(hora_col)
-                        with c3:
-                            if st.button(f"{badge} {equipo_local} vs {equipo_visitante}", key=f"btn_{pais}_{liga}_{i}", use_container_width=True):
-                                st.session_state.selected_local = equipo_local
-                                st.session_state.selected_away = equipo_visitante
-                                st.session_state.page = "Analizador"
-                                st.rerun()
+                        tabla += f"| {fecha_fmt} | {hora_col} | {badge} {equipo_local} vs {equipo_visitante} |\n"
+                    
+                    st.markdown(tabla)
+                    
+                    # Botones de análisis
+                    for i, partido in enumerate(partidos_liga):
+                        equipo_local = partido.get('equipo_local', '')
+                        equipo_visitante = partido.get('equipo_visitante', '')
+                        
+                        if st.button(f"📊 Analizar: {equipo_local} vs {equipo_visitante}", key=f"btn_{pais}_{liga}_{i}", use_container_width=True):
+                            st.session_state.selected_local = equipo_local
+                            st.session_state.selected_away = equipo_visitante
+                            st.session_state.page = "Analizador"
+                            st.rerun()
                 
                 st.markdown("---")
         
