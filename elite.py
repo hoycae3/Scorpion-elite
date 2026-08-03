@@ -1550,7 +1550,7 @@ def render_login_form():
             try:
                 client = get_client()
                 resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{home_team}%').execute()
-                if resp.data and resp.data[0].get('lambda_local', 0) > 0:
+                if resp.data and resp.data[0].get('lambda_local', 0) >= 0:
                     stats_local = resp.data[0]
                     lambda_local = stats_local.get('lambda_local', 0)
                     equipo_local_ok = True
@@ -1564,7 +1564,7 @@ def render_login_form():
             try:
                 client = get_client()
                 resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{away_team}%').execute()
-                if resp.data and resp.data[0].get('lambda_visitante', 0) > 0:
+                if resp.data and resp.data[0].get('lambda_visitante', 0) >= 0:
                     stats_visitante = resp.data[0]
                     lambda_visitante = stats_visitante.get('lambda_visitante', 0)
                     equipo_visitante_ok = True
@@ -1584,7 +1584,7 @@ def render_login_form():
         
         if st.button("🎯 ANALIZAR", type="primary", use_container_width=True, disabled=analizar_disabled):
             try:
-                if home_team and away_team and lambda_local and lambda_visitante and stats_local and stats_visitante:
+                if home_team and away_team and lambda_local is not None and lambda_visitante is not None and stats_local and stats_visitante:
                     with st.spinner("Analizando..."):
                         # Aplicar calibración (Fix #1 - usar lambdas ajustadas)
                         lambda_local_adj = get_lambda_ajustada(home_team, lambda_local, como_local=True)
