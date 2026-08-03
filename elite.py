@@ -1803,60 +1803,104 @@ def render_login_form():
                 icono_ajuste_vis = "🔼" if lambda_visitante_adj['factor'] > 1 else ("🔽" if lambda_visitante_adj['factor'] < 1 else "➖")
                 color_ajuste_vis = "#00ff88" if lambda_visitante_adj['factor'] > 1 else ("#ff6b6b" if lambda_visitante_adj['factor'] < 1 else "#00d4ff")
                 
-                # DOS COLUMNAS - listas una al lado de otra
-                sp1, col_local, col_visita, sp2 = st.columns([1, 1, 1, 1])
+                # DOS COLUMNAS - stats de equipos simplificado
+                sp1, col_local, col_visita, sp2 = st.columns([0.5, 2, 2, 0.5])
                 
                 # ★ INFO DINÁMICA: Obtener datos de partidos acumulados
                 partidos_acum_l = r.get('partidos_acumulados_local', 0)
                 partidos_acum_v = r.get('partidos_acumulados_visitante', 0)
                 
                 with col_local:
-                    st.markdown(f"<h4 class='se-match-local' style='text-align: center;'>🏠 {html.escape(str(home))}</h4>", unsafe_allow_html=True)
-                    # ★ Mostrar partidos acumulados si hay datos dinámicos
-                    if partidos_acum_l > 0:
-                        st.markdown(f"<span style='color:#00d4ff;font-size:11px;'>📊 {partidos_acum_l} partidos históricos</span>", unsafe_allow_html=True)
-                    # Lista local - valores en BLANCO
-                    stats_list_l = [
-                        ("📅 PJ", pj_l, "#ffffff"),
-                        ("✅ Victorias", vic_l, "#ffffff"),
-                        ("🤝 Empates", emp_l, "#ffffff"),
-                        ("❌ Derrotas", der_l, "#ffffff"),
-                        ("⚽ Goles Favor", gf_l, "#ffffff"),
-                        ("⚽ Goles Contra", gc_l, "#ffffff"),
-                        ("📊 Diferencia", f"{gf_l - gc_l:+.0f}", "#ffffff"),
-                        ("λ Local", f"{stats_local.get('lambda_local', 0):.2f}", "#ffffff"),
-                        (f"λ Ajustada {icono_ajuste_local}", f"{lambda_local_adj['lambda_ajustada']:.2f}", color_ajuste_local),
-                        ("🌽 Córners", f"⬆️{stats_local.get('corners_favor', 0)} ⬇️{stats_local.get('corners_contra', 0)}", "#ffffff"),
-                        ("🟨 Amarillas", f"{prom_amarillas_l:.1f}", "#ffffff"),
-                        ("🔫 Tiros", f"{prom_tiros_l:.1f}", "#ffffff"),
-                        ("🎯 Tiros Arco", f"{prom_tiros_arco_l:.1f}", "#ffffff"),
-                    ]
-                    for label, val, color in stats_list_l:
-                        st.markdown(f"<div style='display:flex; justify-content:space-between; padding:4px 10px; border-bottom:1px solid #333; font-size:14px;'><span>{label}</span><span style='color:{color}'>{val}</span></div>", unsafe_allow_html=True)
+                    st.markdown(f"""
+                    <div style='background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; padding: 15px; margin: 5px 0;'>
+                        <h4 style='text-align: center; color: #00ff88; margin: 0 0 10px 0;'>🏠 {html.escape(str(home))}</h4>
+                        <p style='text-align: center; color: #00d4ff; font-size: 11px; margin: 0;'>📊 {partidos_acum_l if partidos_acum_l > 0 else pj_l} partidos históricos</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Datos generales
+                    st.markdown("""
+                    <div style='display: flex; justify-content: space-around; background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
+                        <div style='text-align: center;'><span style='color:#ffffff;font-size:12px;'>PJ</span><br><span style='color:#ffffff;font-size:16px;font-weight:bold;'>{}</span></div>
+                        <div style='text-align: center;'><span style='color:#00ff88;font-size:12px;'>V</span><br><span style='color:#00ff88;font-size:16px;font-weight:bold;'>{}</span></div>
+                        <div style='text-align: center;'><span style='color:#ffd700;font-size:12px;'>E</span><br><span style='color:#ffd700;font-size:16px;font-weight:bold;'>{}</span></div>
+                        <div style='text-align: center;'><span style='color:#ff6b6b;font-size:12px;'>D</span><br><span style='color:#ff6b6b;font-size:16px;font-weight:bold;'>{}</span></div>
+                    </div>
+                    """.format(pj_l, vic_l, emp_l, der_l), unsafe_allow_html=True)
+                    
+                    # Goles y lambda
+                    st.markdown(f"""
+                    <div style='background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
+                        <div style='display: flex; justify-content: space-between; font-size: 13px;'>
+                            <span style='color: #888;'>⚽ GF</span><span style='color: #fff;'>{gf_l}</span>
+                        </div>
+                        <div style='display: flex; justify-content: space-between; font-size: 13px;'>
+                            <span style='color: #888;'>⚽ GC</span><span style='color: #fff;'>{gc_l}</span>
+                        </div>
+                        <div style='display: flex; justify-content: space-between; font-size: 13px;'>
+                            <span style='color: #888;'>λ Ajustada</span><span style='color: {color_ajuste_local};'>{icono_ajuste_local} {lambda_local_adj['lambda_ajustada']:.2f}</span>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Promedios por partido
+                    st.markdown(f"""
+                    <div style='background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
+                        <p style='color: #00d4ff; font-size: 11px; margin: 0 0 8px 0;'>📈 Promedios por partido:</p>
+                        <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 12px;'>
+                            <div><span style='color: #888;'>🔫 Tiros</span> <span style='color: #fff; float: right;'>{prom_tiros_l:.1f}</span></div>
+                            <div><span style='color: #888;'>🎯 Arco</span> <span style='color: #fff; float: right;'>{prom_tiros_arco_l:.1f}</span></div>
+                            <div><span style='color: #888;'>🟨 Amarillas</span> <span style='color: #fff; float: right;'>{prom_amarillas_l:.1f}</span></div>
+                            <div><span style='color: #888;'>🌽 Córners</span> <span style='color: #fff; float: right;'>{prom_corners_l:.1f}</span></div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 with col_visita:
-                    st.markdown(f"<h4 class='se-match-visitante' style='text-align: center;'>✈️ {html.escape(str(away))}</h4>", unsafe_allow_html=True)
-                    # ★ Mostrar partidos acumulados si hay datos dinámicos
-                    if partidos_acum_v > 0:
-                        st.markdown(f"<span style='color:#00d4ff;font-size:11px;'>📊 {partidos_acum_v} partidos históricos</span>", unsafe_allow_html=True)
-                    # Lista visita - valores en BLANCO
-                    stats_list_v = [
-                        ("📅 PJ", pj_v, "#ffffff"),
-                        ("✅ Victorias", vic_v, "#ffffff"),
-                        ("🤝 Empates", emp_v, "#ffffff"),
-                        ("❌ Derrotas", der_v, "#ffffff"),
-                        ("⚽ Goles Favor", gf_v, "#ffffff"),
-                        ("⚽ Goles Contra", gc_v, "#ffffff"),
-                        ("📊 Diferencia", f"{gf_v - gc_v:+.0f}", "#ffffff"),
-                        ("λ Visitante", f"{stats_visitante.get('lambda_visitante', 0):.2f}", "#ffffff"),
-                        (f"λ Ajustada {icono_ajuste_vis}", f"{lambda_visitante_adj['lambda_ajustada']:.2f}", color_ajuste_vis),
-                        ("🌽 Córners", f"⬆️{stats_visitante.get('corners_favor', 0)} ⬇️{stats_visitante.get('corners_contra', 0)}", "#ffffff"),
-                        ("🟨 Amarillas", f"{prom_amarillas_v:.1f}", "#ffffff"),
-                        ("🔫 Tiros", f"{prom_tiros_v:.1f}", "#ffffff"),
-                        ("🎯 Tiros Arco", f"{prom_tiros_arco_v:.1f}", "#ffffff"),
-                    ]
-                    for label, val, color in stats_list_v:
-                        st.markdown(f"<div style='display:flex; justify-content:space-between; padding:4px 10px; border-bottom:1px solid #333; font-size:14px;'><span>{label}</span><span style='color:{color}'>{val}</span></div>", unsafe_allow_html=True)
+                    st.markdown(f"""
+                    <div style='background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; padding: 15px; margin: 5px 0;'>
+                        <h4 style='text-align: center; color: #00ff88; margin: 0 0 10px 0;'>✈️ {html.escape(str(away))}</h4>
+                        <p style='text-align: center; color: #00d4ff; font-size: 11px; margin: 0;'>📊 {partidos_acum_v if partidos_acum_v > 0 else pj_v} partidos históricos</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Datos generales
+                    st.markdown("""
+                    <div style='display: flex; justify-content: space-around; background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
+                        <div style='text-align: center;'><span style='color:#ffffff;font-size:12px;'>PJ</span><br><span style='color:#ffffff;font-size:16px;font-weight:bold;'>{}</span></div>
+                        <div style='text-align: center;'><span style='color:#00ff88;font-size:12px;'>V</span><br><span style='color:#00ff88;font-size:16px;font-weight:bold;'>{}</span></div>
+                        <div style='text-align: center;'><span style='color:#ffd700;font-size:12px;'>E</span><br><span style='color:#ffd700;font-size:16px;font-weight:bold;'>{}</span></div>
+                        <div style='text-align: center;'><span style='color:#ff6b6b;font-size:12px;'>D</span><br><span style='color:#ff6b6b;font-size:16px;font-weight:bold;'>{}</span></div>
+                    </div>
+                    """.format(pj_v, vic_v, emp_v, der_v), unsafe_allow_html=True)
+                    
+                    # Goles y lambda
+                    st.markdown(f"""
+                    <div style='background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
+                        <div style='display: flex; justify-content: space-between; font-size: 13px;'>
+                            <span style='color: #888;'>⚽ GF</span><span style='color: #fff;'>{gf_v}</span>
+                        </div>
+                        <div style='display: flex; justify-content: space-between; font-size: 13px;'>
+                            <span style='color: #888;'>⚽ GC</span><span style='color: #fff;'>{gc_v}</span>
+                        </div>
+                        <div style='display: flex; justify-content: space-between; font-size: 13px;'>
+                            <span style='color: #888;'>λ Ajustada</span><span style='color: {color_ajuste_vis};'>{icono_ajuste_vis} {lambda_visitante_adj['lambda_ajustada']:.2f}</span>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Promedios por partido
+                    st.markdown(f"""
+                    <div style='background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
+                        <p style='color: #00d4ff; font-size: 11px; margin: 0 0 8px 0;'>📈 Promedios por partido:</p>
+                        <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 12px;'>
+                            <div><span style='color: #888;'>🔫 Tiros</span> <span style='color: #fff; float: right;'>{prom_tiros_v:.1f}</span></div>
+                            <div><span style='color: #888;'>🎯 Arco</span> <span style='color: #fff; float: right;'>{prom_tiros_arco_v:.1f}</span></div>
+                            <div><span style='color: #888;'>🟨 Amarillas</span> <span style='color: #fff; float: right;'>{prom_amarillas_v:.1f}</span></div>
+                            <div><span style='color: #888;'>🌽 Córners</span> <span style='color: #fff; float: right;'>{prom_corners_v:.1f}</span></div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 # ========================
                 # ÚLTIMOS 5 PARTIDOS
