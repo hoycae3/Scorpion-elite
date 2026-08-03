@@ -76,6 +76,7 @@ from supabase import create_client
 from analysis_models import calcular
 from stats_extractor import calculate_team_lambda
 from stats_robot import run_robot_batch
+from funciones_stats import obtener_ultimos_partidos_equipo, guardar_stats_equipo, calcular_promedios_equipo
 from scrapers_fallback import scrape_team_fallback
 from calibration import (
     get_lambda_ajustada,
@@ -1169,6 +1170,25 @@ def render_login_form():
                                         client.table('equipos_stats').upsert(equipo_data).execute()
                                         equipos_stats_descargados += 1
                                         equipos_con_stats.add(team_id)
+                                        
+                                        # ═══════════════════════════════════════════════════════════════
+                                        # DESCARGAR ESTADÍSTICAS DE ÚLTIMOS 5 PARTIDOS
+                                        # ═══════════════════════════════════════════════════════════════
+                                        try:
+                                            st.text(f"📊 {team_name}: descargando últimos 5 partidos...")
+                                            partidos_stats = obtener_ultimos_partidos_equipo(
+                                                team_id=team_id,
+                                                team_name=team_name,
+                                                league_id=league_id,
+                                                season=season_eq,
+                                                headers=headers,
+                                                API_URL=API_URL,
+                                                max_partidos=5
+                                            )
+                                            if partidos_stats:
+                                                guardar_stats_equipo(client, team_id, team_name, partidos_stats)
+                                        except Exception as e:
+                                            pass  # No fallar si no puede obtener stats de partidos
                             except:
                                 continue
                         
