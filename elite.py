@@ -1253,18 +1253,18 @@ def render_login_form():
             st.session_state.limpieza_equipos_ok = False
 
         # ═══════════════════════════════════════════════════════════════
-        # LIMPIEZA: Eliminar partidos de más de 7 días
+        # LIMPIEZA: Eliminar partidos de más de 1 año SOLO si hay partidos nuevos
         # ═══════════════════════════════════════════════════════════════
-        if st.session_state.get('sincronizacion_ok'):
+        if st.session_state.get('sincronizacion_ok') and st.session_state.get('partidos_nuevos_guardados', 0) > 0:
             st.session_state.sincronizacion_ok = False
+            st.session_state.partidos_nuevos_guardados = 0
             try:
                 client = get_client()
                 fecha_limite = (datetime.now(timezone(timedelta(hours=-5))) - timedelta(days=365)).strftime('%Y-%m-%d')
-                # Eliminar partidos de más de 7 días
                 resp_del = client.table('partidos').delete().lt('fecha', fecha_limite).execute()
                 eliminados = len(resp_del.data) if resp_del.data else 0
                 if eliminados > 0:
-                    st.info(f"🗑️ {eliminados} partidos antiguos eliminados")
+                    st.info(f"🗑️ {eliminados} partidos de más de 1 año eliminados")
             except Exception as e:
                 pass
 
