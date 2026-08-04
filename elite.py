@@ -1175,15 +1175,14 @@ def render_login_form():
                                                 API_URL=API_URL,
                                                 max_partidos=5
                                             )
-                                            if partidos_stats:
+                                            if partidos_stats and len(partidos_stats) > 0:
                                                 guardar_stats_equipo(client, team_id, team_name, partidos_stats)
-                                        except:
-                                            pass
+                                                st.info(f"📊 {team_name}: {len(partidos_stats)} partidos guardados")
+                                        except Exception as e:
+                                            st.warning(f"⚠️ {team_name}: error - {str(e)[:50]}")
                             except:
                                 continue
 
-                    st.success(f"✅ **{equipos_stats_descargados}** equipos con stats actualizadas")
-                    st.session_state.sincronizacion_ok = True
                     st.success(f"✅ **{equipos_stats_descargados}** equipos con stats actualizadas")
                     st.session_state.sincronizacion_ok = True
                     
