@@ -1618,7 +1618,7 @@ def render_login_form():
                         promedios_dinamicos_local = calcular_promedios_equipo(client, team_id_local)
                     else:
                         # Buscar por nombre si no hay team_id
-                        resp_eps = client.table('equipo_partidos_stats').select('team_id').eq('equipo', home_team).limit(1).execute()
+                        resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{home_team}%').limit(1).execute()
                         if resp_eps.data:
                             promedios_dinamicos_local = calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
                 else:
@@ -1642,7 +1642,7 @@ def render_login_form():
                         promedios_dinamicos_visitante = calcular_promedios_equipo(client, team_id_visitante)
                     else:
                         # Buscar por nombre si no hay team_id
-                        resp_eps = client.table('equipo_partidos_stats').select('team_id').eq('equipo', away_team).limit(1).execute()
+                        resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{away_team}%').limit(1).execute()
                         if resp_eps.data:
                             promedios_dinamicos_visitante = calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
                 else:
