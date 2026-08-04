@@ -432,17 +432,32 @@ def render_public_landing():
         # Obtener stats de equipos
         try:
             client = get_client()
+            team_id_local = partido.get('team_id_local')
+            team_id_visitante = partido.get('team_id_visitante')
+            
             if client:
+                # 1️⃣ Buscar por nombre
                 local_resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{local}%').execute()
                 visit_resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{visitante}%').execute()
-                
+
                 stats_local = local_resp.data[0] if local_resp.data else None
                 stats_visit = visit_resp.data[0] if visit_resp.data else None
+
+                # 2️⃣ Fallback: buscar por team_id si no se encontró por nombre
+                if not stats_local and team_id_local:
+                    resp_by_id = client.table('equipos_stats').select('*').eq('team_id', team_id_local).execute()
+                    if resp_by_id.data:
+                        stats_local = resp_by_id.data[0]
                 
-                # DEBUG - ver qué equipos se encuentran
-                st.write(f"🔍 Buscando: '{local}' y '{visitante}'")
-                
-                
+                if not stats_visit and team_id_visitante:
+                    resp_by_id = client.table('equipos_stats').select('*').eq('team_id', team_id_visitante).execute()
+                    if resp_by_id.data:
+                        stats_visit = resp_by_id.data[0]
+
+                # DEBUG
+                st.write(f"🔍 Local: '{local}' → {'✅' if stats_local else '❌'} (team_id: {team_id_local})")
+                st.write(f"🔍 Visit: '{visitante}' → {'✅' if stats_visit else '❌'} (team_id: {team_id_visitante})")
+
                 if stats_local and stats_visit:
                     st.markdown("---")
                     st.markdown("### 📊 Estadísticas Calibradas")
