@@ -2085,21 +2085,30 @@ def render_login_form():
             # ========================
             # PREDICCIONES ADICIONALES (CUADROS MEJORADOS)
             # ========================
-            st.markdown("##### 📊 Predicciones Adicionales (Modelo Matemático)")
+            # ★ Verificar si hay datos reales para mostrar predicciones
+            tiene_datos_local = promedios_dinamicos_local and promedios_dinamicos_local.get('partidos_total', 0) > 0
+            tiene_datos_visitante = promedios_dinamicos_visitante and promedios_dinamicos_visitante.get('partidos_total', 0) > 0
             
-            # Obtener datos del modelo matemático
-            ta_local = stats_local.get('promedio_amarillas', 2.5) if stats_local else 3
-            ta_visitante = stats_visitante.get('promedio_amarillas', 2.5) if stats_visitante else 3
-            tarjetas_total = ta_local + ta_visitante
-            
-            ti_local = stats_local.get('promedio_tiros', 13.0) if stats_local else 12
-            ti_visitante = stats_visitante.get('promedio_tiros', 13.0) if stats_visitante else 12
-            remates_total = ti_local + ti_visitante
-            
-            arco_local = stats_local.get('promedio_tiros_arco', 4.5) if stats_local else 4
-            arco_visitante = stats_visitante.get('promedio_tiros_arco', 4.5) if stats_visitante else 4
-            arco_total = arco_local + arco_visitante
-            
+            if not (tiene_datos_local or tiene_datos_visitante):
+                st.warning("⚠️ **Sin datos históricos** - Sincroniza equipos para ver predicciones adicionales.")
+                st.stop()
+            else:
+                # Usar datos reales
+                datos_local = promedios_dinamicos_local or {}
+                datos_visitante = promedios_dinamicos_visitante or {}
+                
+                ta_local = datos_local.get('promedio_amarillas', 0) if tiene_datos_local else 0
+                ta_visitante = datos_visitante.get('promedio_amarillas', 0) if tiene_datos_visitante else 0
+                tarjetas_total = ta_local + ta_visitante
+
+                ti_local = datos_local.get('promedio_tiros', 0) if tiene_datos_local else 0
+                ti_visitante = datos_visitante.get('promedio_tiros', 0) if tiene_datos_visitante else 0
+                remates_total = ti_local + ti_visitante
+
+                arco_local = datos_local.get('promedio_tiros_arco', 0) if tiene_datos_local else 0
+                arco_visitante = datos_visitante.get('promedio_tiros_arco', 0) if tiene_datos_visitante else 0
+                arco_total = arco_local + arco_visitante
+
             # Obtener predicciones del modelo matemático
             pred_tiros = r.get('tiros', {})
             pred_tarjetas = r.get('tarjetas', {})
