@@ -1613,13 +1613,13 @@ def render_login_form():
                     equipo_local_ok = True
                     
                     # ★ OBTENER PROMEDIOS DINÁMICOS de equipo_partidos_stats
-                    if team_id_local:
+                    # Buscar directamente por nombre para evitar problemas de team_id
+                    resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{home_team}%').limit(1).execute()
+                    if resp_eps.data:
+                        promedios_dinamicos_local = calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
+                    elif team_id_local:
+                        # Si no encuentra por nombre, usar team_id
                         promedios_dinamicos_local = calcular_promedios_equipo(client, team_id_local)
-                    else:
-                        # Buscar por nombre si no hay team_id
-                        resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{home_team}%').limit(1).execute()
-                        if resp_eps.data:
-                            promedios_dinamicos_local = calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
                 else:
                     equipos_faltantes.append(home_team)
             except Exception as e:
@@ -1637,13 +1637,13 @@ def render_login_form():
                     equipo_visitante_ok = True
                     
                     # ★ OBTENER PROMEDIOS DINÁMICOS de equipo_partidos_stats
-                    if team_id_visitante:
+                    # Buscar directamente por nombre para evitar problemas de team_id
+                    resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{away_team}%').limit(1).execute()
+                    if resp_eps.data:
+                        promedios_dinamicos_visitante = calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
+                    elif team_id_visitante:
+                        # Si no encuentra por nombre, usar team_id
                         promedios_dinamicos_visitante = calcular_promedios_equipo(client, team_id_visitante)
-                    else:
-                        # Buscar por nombre si no hay team_id
-                        resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{away_team}%').limit(1).execute()
-                        if resp_eps.data:
-                            promedios_dinamicos_visitante = calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
                 else:
                     equipos_faltantes.append(away_team)
             except Exception as e:
