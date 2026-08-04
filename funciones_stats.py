@@ -158,44 +158,76 @@ def obtener_ultimos_partidos_equipo(team_id, team_name, league_id, season, heade
 
 def guardar_stats_equipo(client, team_id, equipo, partidos_stats):
     """
-    Guarda las estadísticas de partidos de un equipo.
+    Guarda las estadísticas de partidos de un equipo en Supabase.
     ★ NO borra partidos - acumula TODOS los partidos históricos.
     La función calcular_promedios_equipo se encarga de ponderar.
+    
+    Returns:
+        tuple: (success: bool, message: str, count: int)
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    if not partidos_stats:
+        return True, "Sin partidos para guardar", 0
+    
     try:
         partidos_guardados = 0
+        errores = []
+        primer_error = None
         
-        # Guardar cada partido (upsert no duplica)
+        # Guardar cada partido (upsert no duplica gracias a UNIQUE constraint)
         for ps in partidos_stats:
-            data = {
-                'team_id': team_id,
-                'equipo': equipo,
-                'fixture_id': ps['fixture_id'],
-                'fecha': ps['fecha'],
-                'liga': ps['liga'],
-                'es_local': ps['es_local'],
-                'resultado': ps['resultado'],
-                'goles_favor': ps.get('goles_favor', 0),
-                'goles_contra': ps.get('goles_contra', 0),
-                'tiros_totales': ps.get('tiros_totales', 0),
-                'tiros_arco': ps.get('tiros_arco', 0),
-                'tiros_fuera': ps.get('tiros_fuera', 0),
-                'corners': ps.get('corners', 0),
-                'amarillas': ps.get('amarillas', 0),
-                'rojas': ps.get('rojas', 0),
-                'posesion': ps.get('posesion', 0),
-                'faltas': ps.get('faltas', 0),
-                'ahorradas': ps.get('ahorradas', 0),
-            }
-            
-            client.table('equipo_partidos_stats').upsert(data, on_conflict='team_id,fixture_id').execute()
-            partidos_guardados += 1
+            try:
+                data = {
+                    'team_id': int(team_id) if team_id else 0,
+                    'equipo': str(equipo) if equipo else '',
+                    'fixture_id': int(ps['fixture_id']) if ps.get('fixture_id') else 0,
+                    'fecha': str(ps['fecha']) if ps.get('fecha') else None,
+                    'liga': str(ps['liga']) if ps.get('liga') else '',
+                    'es_local': bool(ps['es_local']) if ps.get('es_local') is not None else False,
+                    'resultado': str(ps['resultado']) if ps.get('resultado') else '-',
+                    'goles_favor': int(ps.get('goles_favor', 0)) if ps.get('goles_favor') is not None else 0,
+                    'goles_contra': int(ps.get('goles_contra', 0)) if ps.get('goles_contra') is not None else 0,
+                    'tiros_totales': int(ps.get('tiros_totales', 0)) if ps.get('tiros_totales') is not None else 0,
+                    'tiros_arco': int(ps.get('tiros_arco', 0)) if ps.get('tiros_arco') is not None else 0,
+                    'tiros_fuera': int(ps.get('tiros_fuera', 0)) if ps.get('tiros_fuera') is not None else 0,
+                    'corners': int(ps.get('corners', 0)) if ps.get('corners') is not None else 0,
+                    'amarillas': int(ps.get('amarillas', 0)) if ps.get('amarillas') is not None else 0,
+                    'rojas': int(ps.get('rojas', 0)) if ps.get('rojas') is not None else 0,
+                    'posesion': int(ps.get('posesion', 0)) if ps.get('posesion') is not None else 0,
+                    'faltas': int(ps.get('faltas', 0)) if ps.get('faltas') is not None else 0,
+                    'ahorradas': int(ps.get('ahorradas', 0)) if ps.get('ahorradas') is not None else 0,
+                }
+                
+                # ★ Usar upsert con constraint única - no duplica, solo actualiza si existe
+                # La constraint se llama 'equipo_partidos_stats_unique'
+                result = client.table('equipo_partidos_stats').upsert(
+                    data, 
+                    on_conflict='equipo_partidos_stats_unique'
+                ).execute()
+                
+                partidos_guardados += 1
+                
+            except Exception as e:
+                error_msg = str(e)
+                # Registrar error individual pero continuar con otros partidos
+                if primer_error is None:
+                    primer_error = error_msg
+                errores.append(f"fixture {ps.get('fixture_id', '?')}: {error_msg[:100]}")
+                logger.warning(f"Error al guardar partido {ps.get('fixture_id')} para {equipo}: {e}")
+                continue
         
         # ★ NO BORRAMOS NADA - Acumulamos todos los partidos
-        return True
+        if errores:
+            logger.warning(f"{equipo}: {len(errores)} errores, {partidos_guardados} guardados. Primer error: {primer_error}")
+            return True, f"{len(errores)} errores. Detalle: {primer_error[:80] if primer_error else 'Unknown'}", partidos_guardados
+        
+        return True, "OK", partidos_guardados
     
     except Exception as e:
-        return False
+        logger.error(f"Error grave en guardar_stats_equipo({equipo}): {e}")
+        return False, str(e)[:100], 0
 
 
 def calcular_promedios_equipo(client, team_id, max_partidos=None):

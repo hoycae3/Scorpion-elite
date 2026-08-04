@@ -702,3 +702,206 @@ ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_under_prob DECIMAL(5,2);
 ALTER TABLE picks ADD COLUMN IF NOT EXISTS resultado_arco VARCHAR(20);
 ALTER TABLE picks ADD COLUMN IF NOT EXISTS acertado_arco BOOLEAN;
 ```
+
+---
+
+## 📅 Sesión 2026-08-04 - Corrección Crítica de Sincronización
+
+### 🎯 Problemas Identificados y Corregidos:
+
+| Bug | Descripción | Solución |
+|-----|-------------|----------|
+| **Equipos omitidos** | Equipos de partidos existentes no se agregaban a `equipos_unicos` | ✅ Ahora TODOS los equipos se agregan siempre |
+| **Rango fechas insuficiente** | Solo HOY → HOY+6 | ✅ Ahora HOY-3 → HOY+10 |
+| **Excepciones silenciosas** | `except: pass` ocultaba errores | ✅ Ahora muestran `st.warning()` |
+| **Variable indefinida** | `equipos_con_stats` nunca definida | ✅ Corregido a `equipos_unicos` |
+| **guardar_stats_equipo()** | Retornaba solo boolean | ✅ Ahora retorna tuple (success, msg, count) |
+
+### 🔧 Cambios Técnicos:
+
+#### 1. `elite.py` - Lógica de equipos_unicos (CORREGIDA):
+```python
+# ★ ANTES (BUG): Equipos solo se agregaban si partido era nuevo
+if fix_id not in partidos_existentes:
+    # Agregar equipos aquí... (fallaba si partido ya existía)
+    equipos_unicos[team_id_local] = {...}
+
+# ★ AHORA (CORRECTO): Equipos SIEMPRE se agregan de TODOS los fixtures
+if team_id_local:
+    equipos_unicos[team_id_local] = {...}
+if team_id_visitante:
+    equipos_unicos[team_id_visitante] = {...}
+# Guardar partido nuevo solo si es nuevo
+if fix_id not in partidos_existentes:
+    client.table("partidos").upsert(...).execute()
+```
+
+#### 2. `elite.py` - Rango de Fechas (AMPLIADO):
+```python
+# ★ ANTES: 7 días
+fecha_inicio = hoy_str  # HOY
+fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')  # HOY+6
+
+# ★ AHORA: 13 días (incluye partidos recientes finalizados)
+fecha_inicio = (hoy - timedelta(days=3)).strftime('%Y-%m-%d')  # HOY-3
+fecha_fin = (hoy + timedelta(days=10)).strftime('%Y-%m-%d')  # HOY+10
+```
+
+#### 3. `funciones_stats.py` - guardar_stats_equipo() (MEJORADO):
+```python
+def guardar_stats_equipo(client, team_id, equipo, partidos_stats):
+    """
+    Returns:
+        tuple: (success: bool, message: str, count: int)
+    """
+    # Ahora muestra errores individuales pero continúa con otros partidos
+    # Usa logging para debugging
+    # Retorna conteo de partidos guardados
+```
+
+### ✅ Resultado Esperado:
+- Al sincronizar, TODOS los equipos de TODOS los partidos (nuevos y existentes) se agregarán a `equipos_unicos`
+- Cada equipo obtendrá sus estadísticas actualizadas en `equipos_stats`
+- Los últimos 5 partidos de cada equipo se guardarán en `equipo_partidos_stats`
+- Errores ya no se ocultan - se muestran en pantalla
+
+### 📊 Tabla `equipo_partidos_stats` - Estructura:
+```sql
+CREATE TABLE IF NOT EXISTS equipo_partidos_stats (
+    id BIGSERIAL PRIMARY KEY,
+    team_id BIGINT NOT NULL,
+    equipo VARCHAR(255),
+    fixture_id BIGINT NOT NULL,
+    fecha DATE,
+    liga VARCHAR(255),
+    es_local BOOLEAN DEFAULT false,
+    resultado CHAR(1) DEFAULT '-',
+    goles_favor INTEGER DEFAULT 0,
+    goles_contra INTEGER DEFAULT 0,
+    tiros_totales INTEGER DEFAULT 0,
+    tiros_arco INTEGER DEFAULT 0,
+    corners INTEGER DEFAULT 0,
+    amarillas INTEGER DEFAULT 0,
+    UNIQUE(team_id, fixture_id)  -- Evita duplicados
+);
+```
+
+---
+
+## 📅 Sesión 2026-08-04 - Sincronización Incremental Implementada
+
+### 🎯 Objetivo:
+Optimizar el uso de API credits de API-Football descargando solo los datos necesarios.
+
+### 🔄 Lógica de Sincronización Incremental:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  CLICK "🔄 SINCRONIZAR"                                                    │
+│  ├── PASO 1: Descargar partidos (hoy-2 a hoy+6)                           │
+│  │   └── Upsert a tabla `partidos`                                        │
+│  │   └──收集 FT fixtures por equipo en `equipos_ft_fixtures`              │
+│  │   └── Agregar TODOS los equipos a `equipos_unicos`                    │
+│  │                                                                          │
+│  └── PASO 2: Sincronizar stats de equipos                                 │
+│      ├── Verificar qué equipos ya tienen stats en `equipo_partidos_stats` │
+│      │                                                                          │
+│      ├── CASO A: EQUIPO NUEVO (0 records en DB)                           │
+│      │   └── Fetch /teams/statistics → guardar en `equipos_stats`         │
+│      │   └── Fetch 5 partidos iniciales con stats                         │
+│      │   └── Upsert a `equipo_partidos_stats`                            │
+│      │                                                                          │
+│      └── CASO B: EQUIPO EXISTENTE (tiene records)                          │
+│          └── Verificar qué fixture_ids ya están guardados                   │
+│          └── Para cada FT en ventana de búsqueda:                          │
+│              ├── Si fixture_id YA existe → SKIP (0 API calls)             │
+│              └── Si fixture_id FALTA → Fetch /fixtures/statistics        │
+│                  └── Upsert solo ese partido a `equipo_partidos_stats`    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 📊 Métricas en Resumen Final:
+
+| Métrica | Descripción |
+|---------|-------------|
+| 🏆 **Ligas procesadas** | Número de ligas consultadas |
+| 📅 **Partidos guardados** | Partidos nuevos upsertados |
+| 👥 **Equipos detectados** | Equipos únicos encontrados |
+| 🆕 **Equipos nuevos** | Equipos sin stats previas |
+| ♻️ **Equipos existentes** | Equipos con stats previas |
+| 📊 **Stats equipos descargadas** | Equipos con `equipos_stats` actualizado |
+| 📈 **Stats FT incrementales** | Stats de partidos FT nuevos guardados |
+
+### 💡 Beneficios:
+- **Nuevo equipo**: Descarga 5 partidos iniciales → ~5-6 API calls
+- **Equipo existente sin FT nuevos**: 0 API calls
+- **Equipo existente con 1 FT nuevo**: 1 API call (en lugar de 5+)
+
+### 📝 Código Clave:
+
+```python
+# Equipos existentes - solo fetch partidos FT no guardados
+ft_en_ventana = equipos_ft_fixtures.get(team_id, [])
+fixtures_necesarios = [f for f in ft_en_ventana 
+                       if f['fixture_id'] not in fixtures_guardados]
+
+if fixtures_necesarios:
+    for fix_info in fixtures_necesarios:
+        # Fetch stats del partido específico (1 API call)
+        stats_partido = obtener_stats_partido(...)
+```
+
+### ✅ Verificación:
+1. **Nuevo equipo**: Al sincronizar, debe mostrar `🆕 X partidos iniciales cargados`
+2. **Equipo existente sin cambios**: Sin mensajes de fetch (0 API calls)
+3. **Equipo existente con FT nuevo**: Debe mostrar stats incrementales guardadas
+
+---
+
+## 📅 Sesión 2026-08-04 - Botón "Stats Ayer" para Actualizar Partidos
+
+### 🎯 Objetivo:
+Agregar botón `📊 Stats Ayer` para actualizar únicamente los partidos de ayer (hoy-1) que ya están guardados en Supabase.
+
+### 📋 Lógica Implementada:
+
+```
+BOTÓN: 📊 Stats Ayer
+├── PASO 1: Consultar partidos de ayer en Supabase
+│   └── SELECT * FROM partidos WHERE fecha = (hoy - 1)
+│   └── Si no hay partidos → mensaje y salir
+│
+├── PASO 2: Para cada partido de ayer
+│   ├── GET /fixtures?id={fixture_id}
+│   │   └── Actualizar estado (FT) y scores en tabla `partidos`
+│   │
+│   └── Si estado == 'FT':
+│       ├── GET /fixtures/statistics?fixture={fixture_id}
+│       ├── Extraer stats: corners, tiros, tarjetas, posesión
+│       └── UPSERT en `equipo_partidos_stats` (para local y visitante)
+│
+└── RESUMEN: Mostrar stats actualizadas y errores
+```
+
+### 🔧 Flujo Detallado:
+
+1. **Consulta Supabase**: Obtiene fixture_ids de partidos con fecha = ayer
+2. **Para cada fixture**:
+   - Consulta API para obtener estado actual y scores
+   - Actualiza tabla `partidos` con estado FT y scores finales
+   - Si el partido está FT, obtiene estadísticas detalladas
+   - Inserta/actualiza stats en `equipo_partidos_stats` para ambos equipos
+3. **Reporte**: Muestra resumen con stats actualizadas y errores
+
+### 📊 Columnas de Stats Guardadas:
+- `fixture_id`, `team_id`, `equipo`, `fecha`, `liga`
+- `es_local`, `resultado` (W/D/L)
+- `goles_favor`, `goles_contra`
+- `tiros_totales`, `tiros_arco`, `tiros_fuera`
+- `corners`, `amarillas`, `rojas`
+- `posesion`, `faltas`, `ahorradas`
+
+### ✅ Beneficios:
+- Solo consume API credits para partidos de ayer
+- No descarga partidos nuevos
+- Actualiza stats incrementales solo donde es necesario
