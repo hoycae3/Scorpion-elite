@@ -1177,10 +1177,13 @@ def render_login_form():
                                                 max_partidos=5
                                             )
                                             if partidos_stats and len(partidos_stats) > 0:
-                                                guardar_stats_equipo(client, team_id, team_name, partidos_stats)
-                                                st.info(f"📊 {team_name}: {len(partidos_stats)} partidos guardados")
+                                                resultado = guardar_stats_equipo(client, team_id, team_name, partidos_stats)
+                                                if resultado:
+                                                    st.info(f"✅ {team_name}: {len(partidos_stats)} partidos guardados")
+                                                else:
+                                                    st.warning(f"⚠️ {team_name}: error al guardar")
                                         except Exception as e:
-                                            st.warning(f"⚠️ {team_name}: error - {str(e)[:50]}")
+                                            st.warning(f"⚠️ {team_name}: {str(e)[:50]}")
                             except:
                                 continue
                     else:

@@ -828,6 +828,9 @@ CREATE TABLE IF NOT EXISTS equipo_partidos_stats (
 CREATE INDEX IF NOT EXISTS idx_equipo_partidos_team ON equipo_partidos_stats(team_id);
 CREATE INDEX IF NOT EXISTS idx_equipo_partidos_fixture ON equipo_partidos_stats(fixture_id);
 
+-- ★ Constraint UNIQUE para evitar duplicados
+ALTER TABLE equipo_partidos_stats ADD CONSTRAINT equipo_partidos_stats_unique UNIQUE (team_id, fixture_id);
+
 ALTER TABLE equipo_partidos_stats ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "equipo_partidos_stats_all" ON equipo_partidos_stats FOR ALL USING (true) WITH CHECK (true);
 
