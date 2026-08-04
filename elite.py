@@ -1532,8 +1532,8 @@ def render_login_form():
                     result = calcular(
                         lambda_local=lambda_local_cal,
                         lambda_visitante=lambda_visitante_cal,
-                        corners_local=float(stats_local.get('promedio_corners_total', 0) or 0),
-                        corners_visitante=float(stats_visitante.get('promedio_corners_total', 0) or 0),
+                        corners_local=float(stats_local.get('promedio_corners', 0) or 0),
+                        corners_visitante=float(stats_visitante.get('promedio_corners', 0) or 0),
                         tarjetas_local=float(stats_local.get('promedio_tarjetas', 0) or 0),
                         tarjetas_visitante=float(stats_visitante.get('promedio_tarjetas', 0) or 0),
                         tiros_local=float(stats_local.get('promedio_tiros', 13.0) or 0),
@@ -1829,7 +1829,7 @@ def render_login_form():
                     prom_tiros_l = promedios_dinamicos_local.get('promedio_tiros', 13.0)
                     prom_tiros_arco_l = promedios_dinamicos_local.get('promedio_tiros_arco', 4.5)
                 else:
-                    prom_corners_l = stats_local.get('promedio_corners_total', 10) or 10
+                    prom_corners_l = stats_local.get('promedio_corners', 10) or 10
                     prom_amarillas_l = stats_local.get('promedio_amarillas', 2.5) or 0
                     prom_tiros_l = stats_local.get('promedio_tiros', 13.0) or 0
                     prom_tiros_arco_l = stats_local.get('promedio_tiros_arco', 4.5) or 0
@@ -1840,7 +1840,7 @@ def render_login_form():
                     prom_tiros_v = promedios_dinamicos_visitante.get('promedio_tiros', 13.0)
                     prom_tiros_arco_v = promedios_dinamicos_visitante.get('promedio_tiros_arco', 4.5)
                 else:
-                    prom_corners_v = stats_visitante.get('promedio_corners_total', 10) or 10
+                    prom_corners_v = stats_visitante.get('promedio_corners', 10) or 10
                     prom_amarillas_v = stats_visitante.get('promedio_amarillas', 2.5) or 0
                     prom_tiros_v = stats_visitante.get('promedio_tiros', 13.0) or 0
                     prom_tiros_arco_v = stats_visitante.get('promedio_tiros_arco', 4.5) or 0
