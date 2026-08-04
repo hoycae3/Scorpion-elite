@@ -1010,16 +1010,12 @@ def render_login_form():
                     equipos_unicos = {}
                     
                     # Barra de progreso
-                    progress_bar = st.progress(0)
-                    status_text = st.empty()
                     
                     # Recorrer cada liga y descargar SOLO partidos
                     for idx, liga in enumerate(LIGAS):
                         liga_id = liga['id']
                         liga_nombre = liga['name']
                         
-                        status_text.text(f"📊 {liga_nombre}...")
-                        progress_bar.progress((idx + 1) / len(LIGAS))
                         
                         # Descargar fixtures de esta liga
                         params = {
@@ -1105,8 +1101,6 @@ def render_login_form():
                             # Si falla una liga, continuar con la siguiente
                             continue
                     
-                    progress_bar.empty()
-                    status_text.empty()
                     
                     # ═══════════════════════════════════════════════════════════════
                     # PASO 2: ACTUALIZAR ESTADÍSTICAS DE EQUIPOS
