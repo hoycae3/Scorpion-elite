@@ -1060,7 +1060,7 @@ def render_login_form():
                                     score_local = score.get('fulltime', {}).get('home') if score.get('fulltime') else goals.get('home') or 0
                                     score_visitante = score.get('fulltime', {}).get('away') if score.get('fulltime') else goals.get('away') or 0
                                     
-                                    # Guardar/actualizar partido en BD (siempre, para actualizar score)
+                                    # Guardar partido nuevo en BD
                                     partido_data = {
                                         'fixture_id': fix_id,
                                         'fecha': fix.get('date', '')[:10],
@@ -1077,31 +1077,31 @@ def render_login_form():
                                         'estado': estado,
                                     }
                                     
-                                    # ★ GUARDAR SIEMPRE (para actualizar scores)
-                                    try:
-                                        client.table("partidos").upsert(partido_data, on_conflict="fixture_id").execute()
-                                    except: pass
-
-                                    # Agregar equipos SOLO de partidos nuevos
+                                    # Guardar SOLO partidos nuevos
                                     if fix_id not in partidos_existentes:
-                                        partidos_guardados += 1
-                                        if team_id_local:
-                                            equipos_unicos[team_id_local] = {
-                                                'team_id': team_id_local,
-                                                'team_name': equipo_local,
-                                                'league_id': liga_id,
-                                                'league_name': liga_nombre,
-                                                'season': season_stats
-                                            }
+                                        try:
+                                            client.table("partidos").upsert(partido_data, on_conflict="fixture_id").execute()
+                                            partidos_guardados += 1
 
-                                        if team_id_visitante:
-                                            equipos_unicos[team_id_visitante] = {
-                                                'team_id': team_id_visitante,
-                                                'team_name': equipo_visitante,
-                                                'league_id': liga_id,
-                                                'league_name': liga_nombre,
-                                                'season': season_stats
-                                            }
+                                            # Agregar equipos de partidos nuevos
+                                            if team_id_local:
+                                                equipos_unicos[team_id_local] = {
+                                                    'team_id': team_id_local,
+                                                    'team_name': equipo_local,
+                                                    'league_id': liga_id,
+                                                    'league_name': liga_nombre,
+                                                    'season': season_stats
+                                                }
+
+                                            if team_id_visitante:
+                                                equipos_unicos[team_id_visitante] = {
+                                                    'team_id': team_id_visitante,
+                                                    'team_name': equipo_visitante,
+                                                    'league_id': liga_id,
+                                                    'league_name': liga_nombre,
+                                                    'season': season_stats
+                                                }
+                                        except: pass
                         except Exception as e:
                             # Si falla una liga, continuar con la siguiente
                             continue
