@@ -1109,28 +1109,9 @@ def render_login_form():
 
                     equipos_stats_descargados = 0
 
-                    # ★ SIEMPRE descargar de equipos_unicos (partidos nuevos)
-                    # + equipos existentes que no tienen 5 partidos
-                    equipos_para_descargar = equipos_unicos.copy()
-
-                    # Obtener equipos ya guardados que NO tienen partido_partidos_stats
-                    try:
-                        resp_existing = client.table('equipos_stats').select('team_id, equipo, liga_id, league_name, season').execute()
-                        if resp_existing.data:
-                            for eq in resp_existing.data:
-                                tid = eq.get('team_id')
-                                if tid and tid not in equipos_para_descargar:
-                                    equipos_para_descargar[tid] = {
-                                        'team_id': tid,
-                                        'team_name': eq.get('equipo', ''),
-                                        'league_id': eq.get('liga_id') or eq.get('league_name', ''),
-                                        'league_name': eq.get('league_name', ''),
-                                        'season': eq.get('season', season_stats)
-                                    }
-                    except: pass
-
-                    if equipos_para_descargar:
-                        for idx, (tid, equipo) in enumerate(equipos_para_descargar.items()):
+                    # ★ Descargar SOLO de equipos_unicos (partidos nuevos)
+                    if equipos_unicos:
+                        for idx, (tid, equipo) in enumerate(equipos_unicos.items()):
                             team_id = equipo['team_id']
                             team_name = equipo['team_name']
                             league_id = equipo['league_id']
@@ -1203,7 +1184,7 @@ def render_login_form():
                             except:
                                 continue
                     else:
-                        st.info("ℹ️ Todos los equipos ya tienen stats descargadas.")
+                        st.info("ℹ️ No hay partidos nuevos que procesar.")
 
                     st.success(f"✅ **{equipos_stats_descargados}** equipos con stats actualizadas")
                     st.session_state.sincronizacion_ok = True
