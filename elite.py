@@ -737,7 +737,10 @@ def render_login_form():
         st.markdown("### 🏠 Partidos de los Próximos 7 Días")
         
         # API-Football config
-        API_KEY = "e3926f829cd848f4b2b54d722ca29701"
+        API_KEY = os.getenv("API_FOOTBALL_KEY", "")
+        if not API_KEY:
+            st.error("❌ API_FOOTBALL_KEY no configurada. Configúrala en Render.")
+            st.stop()
         API_URL = "https://v3.football.api-sports.io"
         
                 # ═══════════════════════════════════════════════════════════════
@@ -898,7 +901,7 @@ def render_login_form():
                         st.stop()
 
                     API_URL = "https://v3.football.api-sports.io"
-                    API_KEY = "e3926f829cd848f4b2b54d722ca29701"
+                    API_KEY = os.getenv("API_FOOTBALL_KEY", "")
                     headers = {'x-apisports-key': API_KEY}
                     hoy = datetime.now(timezone(timedelta(hours=-5))).date()
                     hoy_str = hoy.strftime('%Y-%m-%d')
