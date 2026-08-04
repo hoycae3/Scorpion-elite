@@ -55,7 +55,7 @@ def obtener_stats_partido(fixture_id, team_id, team_name, headers, API_URL):
                     'rojas': get_val(stats, 'Red Cards'),
                     'posesion': get_val(stats, 'Ball Possession'),
                     'faltas': get_val(stats, 'Fouls'),
-                    'atajadas': get_val(stats, 'Goalkeeper Saves'),
+                    'ahorradas': get_val(stats, 'Goalkeeper Saves'),
                 }
         
         return None
@@ -181,7 +181,7 @@ def guardar_stats_equipo(client, team_id, equipo, partidos_stats):
                 'rojas': ps.get('rojas', 0),
                 'posesion': ps.get('posesion', 0),
                 'faltas': ps.get('faltas', 0),
-                'atajadas': ps.get('atajadas', 0),
+                'ahorradas': ps.get('ahorradas', 0),
             }
             
             client.table('equipo_partidos_stats').upsert(data, on_conflict='team_id,fixture_id').execute()
