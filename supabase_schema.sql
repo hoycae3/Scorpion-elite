@@ -797,6 +797,41 @@ ALTER TABLE team_form ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "team_form_all" ON team_form FOR ALL USING (true) WITH CHECK (true);
 
 -- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLA EQUIPO_PARTIDOS_STATS
+-- Estadísticas detalladas de cada partido individual de los equipos
+-- (Corners, Tiros, Tarjetas, etc.)
+-- ═══════════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS equipo_partidos_stats (
+    id BIGSERIAL PRIMARY KEY,
+    team_id BIGINT NOT NULL,
+    equipo VARCHAR(255),
+    fixture_id BIGINT NOT NULL,
+    fecha DATE,
+    liga VARCHAR(255),
+    es_local BOOLEAN DEFAULT false,
+    resultado CHAR(1) DEFAULT '-',
+    goles_favor INTEGER DEFAULT 0,
+    goles_contra INTEGER DEFAULT 0,
+    tiros_totales INTEGER DEFAULT 0,
+    tiros_arco INTEGER DEFAULT 0,
+    tiros_fuera INTEGER DEFAULT 0,
+    corners INTEGER DEFAULT 0,
+    amarillas INTEGER DEFAULT 0,
+    rojas INTEGER DEFAULT 0,
+    posesion INTEGER DEFAULT 0,
+    faltas INTEGER DEFAULT 0,
+    ahorradas INTEGER DEFAULT 0,
+    actualizado_en TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(team_id, fixture_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_equipo_partidos_team ON equipo_partidos_stats(team_id);
+CREATE INDEX IF NOT EXISTS idx_equipo_partidos_fixture ON equipo_partidos_stats(fixture_id);
+
+ALTER TABLE equipo_partidos_stats ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "equipo_partidos_stats_all" ON equipo_partidos_stats FOR ALL USING (true) WITH CHECK (true);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
 -- TABLA USUARIOS
 -- Usuarios del sistema (login)
 -- ═══════════════════════════════════════════════════════════════════════════════

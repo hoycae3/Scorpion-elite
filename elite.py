@@ -155,10 +155,38 @@ def migrate_team_id_column():
             cur.execute('ALTER TABLE partidos ADD COLUMN IF NOT EXISTS liga_id BIGINT;')
             cur.execute('ALTER TABLE partidos ADD COLUMN IF NOT EXISTS team_id_local BIGINT;')
             cur.execute('ALTER TABLE partidos ADD COLUMN IF NOT EXISTS team_id_visitante BIGINT;')
+            
+            # Crear tabla equipo_partidos_stats si no existe
+            cur.execute('''CREATE TABLE IF NOT EXISTS equipo_partidos_stats (
+                id BIGSERIAL PRIMARY KEY,
+                team_id BIGINT NOT NULL,
+                equipo VARCHAR(255),
+                fixture_id BIGINT NOT NULL,
+                fecha DATE,
+                liga VARCHAR(255),
+                es_local BOOLEAN DEFAULT false,
+                resultado CHAR(1) DEFAULT '-',
+                goles_favor INTEGER DEFAULT 0,
+                goles_contra INTEGER DEFAULT 0,
+                tiros_totales INTEGER DEFAULT 0,
+                tiros_arco INTEGER DEFAULT 0,
+                tiros_fuera INTEGER DEFAULT 0,
+                corners INTEGER DEFAULT 0,
+                amarillas INTEGER DEFAULT 0,
+                rojas INTEGER DEFAULT 0,
+                posesion INTEGER DEFAULT 0,
+                faltas INTEGER DEFAULT 0,
+                ahorradas INTEGER DEFAULT 0,
+                actualizado_en TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE(team_id, fixture_id)
+            )''')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_equipo_partidos_team ON equipo_partidos_stats(team_id);')
+            cur.execute('CREATE INDEX IF NOT EXISTS idx_equipo_partidos_fixture ON equipo_partidos_stats(fixture_id);')
+            
             conn.commit()
             cur.close()
             conn.close()
-            logger.info("✅ Migration completada: team_id, liga_id, team_id_local, team_id_visitante")
+            logger.info("✅ Migration completada: team_id, liga_id, team_id_local, team_id_visitante, equipo_partidos_stats")
     except Exception as e:
         logger.warning(f"Migration error: {e}")
 
