@@ -1036,7 +1036,6 @@ def render_login_form():
                                 data = resp.json()
                                 fixtures = data.get('response', []) or []
                                 ligas_procesadas += 1
-                                st.info(f"📊 DEBUG: {len(fixtures)} partidos de la API, {len(partidos_existentes)} ya existen")
                                 
                                 # Procesar cada fixture
                                 for f in fixtures:
@@ -1274,7 +1273,7 @@ def render_login_form():
                                         # DESCARGAR ESTADÍSTICAS DE ÚLTIMOS 5 PARTIDOS
                                         # ═══════════════════════════════════════════════════════════════
                                         try:
-                                            st.text(f"📊 {team_name}: descargando últimos 5 partidos...")
+                                            # 
                                             partidos_stats = obtener_ultimos_partidos_equipo(
                                                 team_id=team_id,
                                                 team_name=team_name,
