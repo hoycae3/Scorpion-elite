@@ -197,7 +197,6 @@ def guardar_stats_equipo(client, team_id, equipo, partidos_stats):
                     'rojas': int(ps.get('rojas', 0)) if ps.get('rojas') is not None else 0,
                     'posesion': int(ps.get('posesion', 0)) if ps.get('posesion') is not None else 0,
                     'faltas': int(ps.get('faltas', 0)) if ps.get('faltas') is not None else 0,
-                    'ahorradas': int(ps.get('ahorradas', 0)) if ps.get('ahorradas') is not None else 0,
                 }
                 
                 # ★ Usar upsert con constraint única - no duplica, solo actualiza si existe

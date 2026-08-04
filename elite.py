@@ -172,7 +172,6 @@ def migrate_team_id_column():
                 rojas INTEGER DEFAULT 0,
                 posesion INTEGER DEFAULT 0,
                 faltas INTEGER DEFAULT 0,
-                ahorradas INTEGER DEFAULT 0,
                 actualizado_en TIMESTAMPTZ DEFAULT NOW(),
                 UNIQUE(team_id, fixture_id)
             )''')
@@ -1249,7 +1248,10 @@ def render_login_form():
                                             }
                                             
                                             try:
-                                                client.table('equipos_stats').upsert(equipo_data).execute()
+                                                client.table('equipos_stats').upsert(
+                                                    equipo_data,
+                                                    on_conflict='equipos_stats_equipo_temporada_key'
+                                                ).execute()
                                                 equipos_stats_descargados += 1
                                             except Exception as e:
                                                 st.error(f"❌ Error Supabase ({team_name}): {e}")
@@ -1547,7 +1549,6 @@ def render_login_form():
                                 'rojas': get_stat(stats_list, 'Red Cards'),
                                 'posesion': get_stat(stats_list, 'Ball Possession'),
                                 'faltas': get_stat(stats_list, 'Fouls'),
-                                'ahorradas': get_stat(stats_list, 'Goalkeeper Saves'),
                             }
                             
                             # Insertar/actualizar en equipo_partidos_stats
