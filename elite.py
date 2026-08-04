@@ -1053,12 +1053,12 @@ def render_login_form():
                                     
                                     # Extraer score y estado
                                     score = f.get('score', {}) or {}
-                                    goals = fix.get('score') or {}
+                                    goals = teams.get('goals', {})  # ★ CORRECTO
                                     estado = fix.get('status', {}).get('short', 'NS')
                                     
                                     # Score fulltime
-                                    score_local = score.get('fulltime', {}).get('home') or goals.get('home') or 0
-                                    score_visitante = score.get('fulltime', {}).get('away') or goals.get('away') or 0
+                                    score_local = score.get('fulltime', {}).get('home') if score.get('fulltime') else goals.get('home') or 0
+                                    score_visitante = score.get('fulltime', {}).get('away') if score.get('fulltime') else goals.get('away') or 0
                                     
                                     # Guardar/actualizar partido en BD (siempre, para actualizar score)
                                     partido_data = {
@@ -1077,31 +1077,31 @@ def render_login_form():
                                         'estado': estado,
                                     }
                                     
+                                    # ★ GUARDAR SIEMPRE (para actualizar scores)
+                                    try:
+                                        client.table("partidos").upsert(partido_data, on_conflict="fixture_id").execute()
+                                    except: pass
+
+                                    # Agregar equipos SOLO de partidos nuevos
                                     if fix_id not in partidos_existentes:
-                                        try:
-                                            client.table('partidos').upsert(partido_data, on_conflict='fixture_id').execute()
-                                            partidos_guardados += 1
-                                        except: pass
-                                        
-                                        # Agregar equipos SOLO de partidos nuevos
+                                        partidos_guardados += 1
                                         if team_id_local:
                                             equipos_unicos[team_id_local] = {
                                                 'team_id': team_id_local,
                                                 'team_name': equipo_local,
                                                 'league_id': liga_id,
                                                 'league_name': liga_nombre,
-                                                'season': season_stats  # Usar temporada con stats disponibles
+                                                'season': season_stats
                                             }
-                                        
+
                                         if team_id_visitante:
                                             equipos_unicos[team_id_visitante] = {
                                                 'team_id': team_id_visitante,
                                                 'team_name': equipo_visitante,
                                                 'league_id': liga_id,
                                                 'league_name': liga_nombre,
-                                                'season': season_stats  # Usar temporada con stats disponibles
+                                                'season': season_stats
                                             }
-                                        
                         except Exception as e:
                             # Si falla una liga, continuar con la siguiente
                             continue
