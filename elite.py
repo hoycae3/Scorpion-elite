@@ -1250,7 +1250,7 @@ def render_login_form():
                                             try:
                                                 client.table('equipos_stats').upsert(
                                                     equipo_data,
-                                                    on_conflict='equipos_stats_equipo_temporada_key'
+                                                    on_conflict='equipo,temporada'
                                                 ).execute()
                                                 equipos_stats_descargados += 1
                                             except Exception as e:
@@ -1313,7 +1313,7 @@ def render_login_form():
                                                 try:
                                                     client.table('equipo_partidos_stats').upsert(
                                                         partido_data,
-                                                        on_conflict='equipo_partidos_stats_unique'
+                                                        on_conflict='team_id,fixture_id'
                                                     ).execute()
                                                     stats_ft_nuevos += 1
                                                 except Exception as e:
@@ -1555,7 +1555,7 @@ def render_login_form():
                             try:
                                 client.table('equipo_partidos_stats').upsert(
                                     stats_record,
-                                    on_conflict='equipo_partidos_stats_unique'
+                                    on_conflict='team_id,fixture_id'
                                 ).execute()
                                 stats_actualizadas += 1
                             except Exception as e:

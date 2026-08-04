@@ -200,10 +200,9 @@ def guardar_stats_equipo(client, team_id, equipo, partidos_stats):
                 }
                 
                 # ★ Usar upsert con constraint única - no duplica, solo actualiza si existe
-                # La constraint se llama 'equipo_partidos_stats_unique'
                 result = client.table('equipo_partidos_stats').upsert(
                     data, 
-                    on_conflict='equipo_partidos_stats_unique'
+                    on_conflict='team_id,fixture_id'
                 ).execute()
                 
                 partidos_guardados += 1
