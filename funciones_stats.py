@@ -108,16 +108,20 @@ def obtener_ultimos_partidos_equipo(team_id, team_name, league_id, season, heade
             home_team = teams.get('home', {})
             away_team = teams.get('away', {})
             
+            goals = teams.get('goals', {})
+            gf_home = goals.get('home') or 0
+            gf_away = goals.get('away') or 0
+
             if home_team.get('id') == team_id:
                 es_local = True
                 resultado_str = home_team.get('winner') or False
-                gf = home_team.get('goals') or 0
-                gv = away_team.get('goals') or 0
+                gf = gf_home
+                gv = gf_away
             else:
                 es_local = False
                 resultado_str = away_team.get('winner') or False
-                gf = away_team.get('goals') or 0
-                gv = home_team.get('goals') or 0
+                gf = gf_away
+                gv = gf_home
             
             # Determinar resultado W/D/L
             if resultado_str == True:
