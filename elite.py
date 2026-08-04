@@ -1812,8 +1812,8 @@ def render_login_form():
             
             if stats_local and stats_visitante:
                 # Fuente de datos
-                source_local = stats_local.get('source', 'football-data.co.uk')
-                source_visitante = stats_visitante.get('source', 'football-data.co.uk')
+                source_local = stats_local.get('source', 'Supabase')
+                source_visitante = stats_visitante.get('source', 'Supabase')
                 
                 st.markdown("##### 📊 Estadísticas Avanzadas (Calibradas)")
                 
