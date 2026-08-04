@@ -457,8 +457,15 @@ def render_public_landing():
                         else:
                             st.markdown(f"**Forma:** N/A")
                         st.markdown(f"**V/E/D:** <span style='color:black;font-weight:bold'>{stats_local.get('victorias', 0)}/{stats_local.get('empates', 0)}/{stats_local.get('derrotas', 0)}</span>", unsafe_allow_html=True)
-                        st.markdown(f"**GF/GC:** <span style='color:black;font-weight:bold'>{stats_local.get('goles_favor', 0)}/{stats_local.get('goles_contra', 0)}</span>", unsafe_allow_html=True)
-                        lambda_l = stats_local.get('lambda_local', 0)
+                        # Usar promedios de datos históricos si existen
+                        if promedios_dinamicos_local:
+                            gf_l = promedios_dinamicos_local.get('promedio_goles_favor', 0)
+                            gc_l = promedios_dinamicos_local.get('promedio_goles_contra', 0)
+                        else:
+                            gf_l = stats_local.get('goles_favor', 0)
+                            gc_l = stats_local.get('goles_contra', 0)
+                        st.markdown(f"**GF/GC:** <span style='color:black;font-weight:bold'>{gf_l:.2f}/{gc_l:.2f}</span>", unsafe_allow_html=True)
+                        lambda_l = promedios_dinamicos_local.get('lambda_ponderado', stats_local.get('lambda_local', 0)) if promedios_dinamicos_local else stats_local.get('lambda_local', 0)
                         st.markdown(f"**Ataque:** <span style='color:black;font-weight:bold'>{lambda_l:.2f}</span> goles/partido", unsafe_allow_html=True)
                     with col2:
                         st.markdown(f"**✈️ {visitante}**")
@@ -469,8 +476,15 @@ def render_public_landing():
                         else:
                             st.markdown(f"**Forma:** N/A")
                         st.markdown(f"**V/E/D:** <span style='color:black;font-weight:bold'>{stats_visit.get('victorias', 0)}/{stats_visit.get('empates', 0)}/{stats_visit.get('derrotas', 0)}</span>", unsafe_allow_html=True)
-                        st.markdown(f"**GF/GC:** <span style='color:black;font-weight:bold'>{stats_visit.get('goles_favor', 0)}/{stats_visit.get('goles_contra', 0)}</span>", unsafe_allow_html=True)
-                        lambda_v = stats_visit.get('lambda_visitante', 0)
+                        # Usar promedios de datos históricos si existen
+                        if promedios_dinamicos_visitante:
+                            gf_v = promedios_dinamicos_visitante.get('promedio_goles_favor', 0)
+                            gc_v = promedios_dinamicos_visitante.get('promedio_goles_contra', 0)
+                        else:
+                            gf_v = stats_visit.get('goles_favor', 0)
+                            gc_v = stats_visit.get('goles_contra', 0)
+                        st.markdown(f"**GF/GC:** <span style='color:black;font-weight:bold'>{gf_v:.2f}/{gc_v:.2f}</span>", unsafe_allow_html=True)
+                        lambda_v = promedios_dinamicos_visitante.get('lambda_ponderado', stats_visit.get('lambda_visitante', 0)) if promedios_dinamicos_visitante else stats_visit.get('lambda_visitante', 0)
                         st.markdown(f"**Ataque:** <span style='color:black;font-weight:bold'>{lambda_v:.2f}</span> goles/partido", unsafe_allow_html=True)
                     
                     st.markdown("---")

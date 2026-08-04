@@ -265,9 +265,15 @@ def calcular_promedios_equipo(client, team_id, max_partidos=None):
         # Forma: últimos 5 partidos (para display)
         forma = ''.join(p.get('resultado', '-') for p in reversed(partidos[:5]))
         
+        # Promedios de goles
+        promedio_gf = round(weighted_avg(gf_vals), 2) if gf_vals else 0
+        promedio_gc = round(weighted_avg(gc_vals), 2) if gc_vals else 0
+        
         return {
             'partidos_total': n,  # Total de partidos acumulados
             'partidos_usados': n,  # Partidos usados en el cálculo
+            'promedio_goles_favor': promedio_gf,
+            'promedio_goles_contra': promedio_gc,
             'promedio_corners': round(weighted_avg(corners_vals), 1),
             'promedio_tiros': round(weighted_avg(tiros_vals), 1),
             'promedio_tiros_arco': round(weighted_avg(tiros_arco_vals), 1),
