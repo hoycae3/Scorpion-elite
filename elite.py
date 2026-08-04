@@ -74,8 +74,6 @@ logger = logging.getLogger(__name__)
 
 from supabase import create_client
 from analysis_models import calcular
-from stats_extractor import calculate_team_lambda
-from stats_robot import run_robot_batch
 from funciones_stats import obtener_ultimos_partidos_equipo, guardar_stats_equipo, calcular_promedios_equipo
 from scrapers_fallback import scrape_team_fallback
 from calibration import (
