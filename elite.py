@@ -1660,14 +1660,14 @@ def render_login_form():
             stats_visitante = None
             
             try:
-                resp_local = client.table('equipos_stats').select('*').eq('equipo', local_nombre).execute()
+                resp_local = client.table('equipos_stats').select('*').ilike('equipo', f'%{local_nombre}%').execute()
                 if resp_local.data:
                     stats_local = resp_local.data[0]
             except:
                 pass
             
             try:
-                resp_visitante = client.table('equipos_stats').select('*').eq('equipo', visitante_nombre).execute()
+                resp_visitante = client.table('equipos_stats').select('*').ilike('equipo', f'%{visitante_nombre}%').execute()
                 if resp_visitante.data:
                     stats_visitante = resp_visitante.data[0]
             except:
