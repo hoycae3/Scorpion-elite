@@ -1908,116 +1908,173 @@ def render_login_form():
                 emp_v = stats_visitante.get('empates', 0) or 0
                 der_v = stats_visitante.get('derrotas', 0) or 0
                 
-                # DOS COLUMNAS - stats de equipos simplificado
-                sp1, col_local, col_visita, sp2 = st.columns([0.5, 2, 2, 0.5])
-                
                 # вҳ… INFO DINГҒMICA: Obtener datos de partidos acumulados
                 partidos_acum_l = r.get('partidos_acumulados_local', 0)
                 partidos_acum_v = r.get('partidos_acumulados_visitante', 0)
+                pj_l_display = partidos_acum_l if partidos_acum_l > 0 else pj_l
+                pj_v_display = partidos_acum_v if partidos_acum_v > 0 else pj_v
                 
-                with col_local:
-                    st.markdown(f"""
-                    <div style='background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; padding: 15px; margin: 5px 0;'>
-                        <h4 style='text-align: center; color: #00ff88; margin: 0 0 10px 0;'>📊 {html.escape(str(home))}</h4>
-                        <p style='text-align: center; color: #00d4ff; font-size: 11px; margin: 0;'>📥 {partidos_acum_l if partidos_acum_l > 0 else pj_l} partidos históricos</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    # Datos generales
-                    st.markdown("""
-                    <div style='display: flex; justify-content: space-around; background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
-                        <div style='text-align: center;'><span style='color:#ffffff;font-size:12px;'>PJ</span><br><span style='color:#ffffff;font-size:16px;font-weight:bold;'>{}</span></div>
-                        <div style='text-align: center;'><span style='color:#00ff88;font-size:12px;'>V</span><br><span style='color:#00ff88;font-size:16px;font-weight:bold;'>{}</span></div>
-                        <div style='text-align: center;'><span style='color:#ffd700;font-size:12px;'>E</span><br><span style='color:#ffd700;font-size:16px;font-weight:bold;'>{}</span></div>
-                        <div style='text-align: center;'><span style='color:#ff6b6b;font-size:12px;'>D</span><br><span style='color:#ff6b6b;font-size:16px;font-weight:bold;'>{}</span></div>
-                    </div>
-                    """.format(pj_l, vic_l, emp_l, der_l), unsafe_allow_html=True)
-                    
-                    # Goles y lambda
-                    st.markdown(f"""
-                    <div style='background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
-                        <div style='display: flex; justify-content: space-between; font-size: 13px;'>
-                            <span style='color: #888;'>⚽ GF</span><span style='color: #fff;'>{gf_l}</span>
-                        </div>
-                        <div style='display: flex; justify-content: space-between; font-size: 13px;'>
-                            <span style='color: #888;'>⚽ GC</span><span style='color: #fff;'>{gc_l}</span>
-                        </div>
-                        <div style='display: flex; justify-content: space-between; font-size: 12px;'>
-                            <span style='color: #888;'>⚡ Dinámico</span><span style='color: #00ff88;'>{f"{lambda_dinamico_local:.2f}" if lambda_dinamico_local else "0.00"}</span>
-                        </div>
-                        <div style='display: flex; justify-content: space-between; font-size: 12px;'>
-                            <span style='color: #888;'>📊 Histórico</span><span style='color: #00d4ff;'>{lambda_historico_local:.2f}</span>
-                        </div>
-                        <div style='display: flex; justify-content: space-between; font-size: 12px;'>
-                            <span style='color: #888;'>🎯 Final</span><span style='color: #ffd700;'>{lambda_local_final:.2f}</span>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    # Promedios por partido
-                    st.markdown(f"""
-                    <div style='background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
-                        <p style='color: #00d4ff; font-size: 11px; margin: 0 0 8px 0;'>📲 Promedios por partido:</p>
-                        <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 12px;'>
-                            <div><span style='color: #888;'>📍 Tiros</span> <span style='color: #fff; float: right;'>{prom_tiros_l:.1f}</span></div>
-                            <div><span style='color: #888;'>🎯 Arco</span> <span style='color: #fff; float: right;'>{prom_tiros_arco_l:.1f}</span></div>
-                            <div><span style='color: #888;'> Amarillas</span> <span style='color: #fff; float: right;'>{prom_amarillas_l:.1f}</span></div>
-                            <div><span style='color: #888;'>🌽 Córners</span> <span style='color: #fff; float: right;'>{prom_corners_l:.1f}</span></div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                # Lambda dinámico con fallback
+                lambda_din_l = f"{lambda_dinamico_local:.2f}" if lambda_dinamico_local else "0.00"
+                lambda_din_v = f"{lambda_dinamico_visit:.2f}" if lambda_dinamico_visit else "0.00"
                 
-                with col_visita:
-                    st.markdown(f"""
-                    <div style='background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; padding: 15px; margin: 5px 0;'>
-                        <h4 style='text-align: center; color: #00ff88; margin: 0 0 10px 0;'>вңҲпёҸ {html.escape(str(away))}</h4>
-                        <p style='text-align: center; color: #00d4ff; font-size: 11px; margin: 0;'>📥 {partidos_acum_v if partidos_acum_v > 0 else pj_v} partidos históricos</p>
+                # Tabla comparativa estilo Opción A
+                st.markdown(f"""
+                <div style='background: #0d1b2a; border-radius: 12px; overflow: hidden; margin: 10px 0;'>
+                    <!-- Header -->
+                    <div style='background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 15px; text-align: center;'>
+                        <h3 style='color: #fff; margin: 0;'>
+                            📊 {html.escape(str(home))} <span style='color: #ffd700;'>vs</span> {html.escape(str(away))}
+                        </h3>
+                        <p style='color: #00d4ff; font-size: 12px; margin: 5px 0 0 0;'>
+                            ({pj_l_display} PJ) vs ({pj_v_display} PJ)
+                        </p>
                     </div>
-                    """, unsafe_allow_html=True)
                     
-                    # Datos generales
-                    st.markdown("""
-                    <div style='display: flex; justify-content: space-around; background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
-                        <div style='text-align: center;'><span style='color:#ffffff;font-size:12px;'>PJ</span><br><span style='color:#ffffff;font-size:16px;font-weight:bold;'>{}</span></div>
-                        <div style='text-align: center;'><span style='color:#00ff88;font-size:12px;'>V</span><br><span style='color:#00ff88;font-size:16px;font-weight:bold;'>{}</span></div>
-                        <div style='text-align: center;'><span style='color:#ffd700;font-size:12px;'>E</span><br><span style='color:#ffd700;font-size:16px;font-weight:bold;'>{}</span></div>
-                        <div style='text-align: center;'><span style='color:#ff6b6b;font-size:12px;'>D</span><br><span style='color:#ff6b6b;font-size:16px;font-weight:bold;'>{}</span></div>
-                    </div>
-                    """.format(pj_v, vic_v, emp_v, der_v), unsafe_allow_html=True)
+                    <!-- Tabla principal -->
+                    <table style='width: 100%; border-collapse: collapse; font-size: 13px;'>
+                        <!-- Headers -->
+                        <tr style='background: #1e2a3a;'>
+                            <td style='padding: 12px 15px; color: #00ff88; font-weight: bold; text-align: center; border-bottom: 2px solid #00d4ff;'>
+                                {html.escape(str(home))}
+                            </td>
+                            <td style='padding: 12px 15px; color: #00d4ff; font-weight: bold; text-align: center; border-bottom: 2px solid #00d4ff;'>
+                                📊 COMPARATIVA
+                            </td>
+                            <td style='padding: 12px 15px; color: #ff6b6b; font-weight: bold; text-align: center; border-bottom: 2px solid #00d4ff;'>
+                                {html.escape(str(away))}
+                            </td>
+                        </tr>
+                        <!-- Récord -->
+                        <tr style='background: #0f1923;'>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
+                                {vic_l} - {emp_l} - {der_l}
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
+                                Récord (V-E-D)
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
+                                {vic_v} - {emp_v} - {der_v}
+                            </td>
+                        </tr>
+                        <!-- Goles Favor -->
+                        <tr style='background: #162031;'>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
+                                {gf_l}
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
+                                Goles Favor
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
+                                {gf_v}
+                            </td>
+                        </tr>
+                        <!-- Goles Contra -->
+                        <tr style='background: #0f1923;'>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
+                                {gc_l}
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
+                                Goles Contra
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
+                                {gc_v}
+                            </td>
+                        </tr>
+                        <!-- Lambda Dinámico -->
+                        <tr style='background: #162031;'>
+                            <td style='padding: 10px 15px; text-align: center; color: #00ff88; border-bottom: 1px solid #333;'>
+                                {lambda_din_l}
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
+                                λ Dinámico
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #00ff88; border-bottom: 1px solid #333;'>
+                                {lambda_din_v}
+                            </td>
+                        </tr>
+                        <!-- Lambda Histórico -->
+                        <tr style='background: #0f1923;'>
+                            <td style='padding: 10px 15px; text-align: center; color: #00d4ff; border-bottom: 1px solid #333;'>
+                                {lambda_historico_local:.2f}
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
+                                λ Histórico
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #00d4ff; border-bottom: 1px solid #333;'>
+                                {lambda_historico_visit:.2f}
+                            </td>
+                        </tr>
+                        <!-- Lambda Final -->
+                        <tr style='background: #1a1a2e;'>
+                            <td style='padding: 12px 15px; text-align: center; color: #ffd700; font-weight: bold;'>
+                                🔥 {lambda_local_final:.2f}
+                            </td>
+                            <td style='padding: 12px 15px; text-align: center; color: #ffd700; font-weight: bold;'>
+                                λ FINAL
+                            </td>
+                            <td style='padding: 12px 15px; text-align: center; color: #ffd700; font-weight: bold;'>
+                                🔥 {lambda_visit_final:.2f}
+                            </td>
+                        </tr>
+                    </table>
                     
-                    # Goles y lambda
-                    st.markdown(f"""
-                    <div style='background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
-                        <div style='display: flex; justify-content: space-between; font-size: 13px;'>
-                            <span style='color: #888;'>⚽ GF</span><span style='color: #fff;'>{gf_v}</span>
-                        </div>
-                        <div style='display: flex; justify-content: space-between; font-size: 13px;'>
-                            <span style='color: #888;'>⚽ GC</span><span style='color: #fff;'>{gc_v}</span>
-                        </div>
-                        <div style='display: flex; justify-content: space-between; font-size: 12px;'>
-                            <span style='color: #888;'>⚡ Dinámico</span><span style='color: #00ff88;'>{f"{lambda_dinamico_visit:.2f}" if lambda_dinamico_visit else "0.00"}</span>
-                        </div>
-                        <div style='display: flex; justify-content: space-between; font-size: 12px;'>
-                            <span style='color: #888;'>📊 Histórico</span><span style='color: #00d4ff;'>{lambda_historico_visit:.2f}</span>
-                        </div>
-                        <div style='display: flex; justify-content: space-between; font-size: 12px;'>
-                            <span style='color: #888;'>🎯 Final</span><span style='color: #ffd700;'>{lambda_visit_final:.2f}</span>
-                        </div>
+                    <!-- Promedios por Partido -->
+                    <div style='background: #0f1923; padding: 10px 15px; text-align: center; border-bottom: 2px solid #00d4ff;'>
+                        <span style='color: #00d4ff; font-weight: bold;'>📈 PROMEDIOS POR PARTIDO</span>
                     </div>
-                    """, unsafe_allow_html=True)
-                    
-                    # Promedios por partido
-                    st.markdown(f"""
-                    <div style='background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
-                        <p style='color: #00d4ff; font-size: 11px; margin: 0 0 8px 0;'>📲 Promedios por partido:</p>
-                        <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 12px;'>
-                            <div><span style='color: #888;'>📍 Tiros</span> <span style='color: #fff; float: right;'>{prom_tiros_v:.1f}</span></div>
-                            <div><span style='color: #888;'>🎯 Arco</span> <span style='color: #fff; float: right;'>{prom_tiros_arco_v:.1f}</span></div>
-                            <div><span style='color: #888;'> Amarillas</span> <span style='color: #fff; float: right;'>{prom_amarillas_v:.1f}</span></div>
-                            <div><span style='color: #888;'>🌽 Córners</span> <span style='color: #fff; float: right;'>{prom_corners_v:.1f}</span></div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    <table style='width: 100%; border-collapse: collapse; font-size: 13px;'>
+                        <!-- Tiros -->
+                        <tr style='background: #162031;'>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
+                                {prom_tiros_l:.1f}
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
+                                Tiros Total
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
+                                {prom_tiros_v:.1f}
+                            </td>
+                        </tr>
+                        <!-- Tiros Arco -->
+                        <tr style='background: #0f1923;'>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
+                                {prom_tiros_arco_l:.1f}
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
+                                Tiros Arco
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
+                                {prom_tiros_arco_v:.1f}
+                            </td>
+                        </tr>
+                        <!-- Amarillas -->
+                        <tr style='background: #162031;'>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
+                                {prom_amarillas_l:.1f}
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
+                                Amarillas
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
+                                {prom_amarillas_v:.1f}
+                            </td>
+                        </tr>
+                        <!-- Esquinas -->
+                        <tr style='background: #0f1923;'>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff;'>
+                                {prom_corners_l:.1f}
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #888;'>
+                                Esquinas
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff;'>
+                                {prom_corners_v:.1f}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                """, unsafe_allow_html=True)
             # ========================
             # GUARDAR PARTIDO (TODAS LAS PREDICCIONES)
             # ========================
