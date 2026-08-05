@@ -1952,44 +1952,36 @@ def render_login_form():
                     bg = '#162031' if bg_par else '#0f1923'
                     return f"""<div style='background:{bg};padding:8px 5px;border-radius:4px;margin:2px 0;display:flex;'><div style='width:33%;text-align:center;color:{color_val};font-size:13px;'>{valor_l}</div><div style='width:34%;text-align:center;color:#888;font-size:12px;'>{indicador}</div><div style='width:33%;text-align:center;color:{color_val};font-size:13px;'>{valor_v}</div></div>"""
                 
-                # Contenedor principal
-                st.markdown(f"""
+                # Contenedor principal usando st.html()
+                html_content = f"""
                 <div style='background:#0d1b2a;border-radius:12px;padding:10px;margin:10px 0;'>
-                    <!-- Header -->
                     <div style='background:linear-gradient(135deg,#1a1a2e,#16213e);padding:15px;border-radius:10px;margin-bottom:10px;text-align:center;'>
                         <h3 style='color:#fff;margin:0;font-size:18px;'>📊 {html.escape(str(home))} <span style='color:#ffd700;'>vs</span> {html.escape(str(away))}</h3>
                         <p style='color:#00d4ff;font-size:11px;margin:5px 0 0;'>({pj_l_display} PJ) vs ({pj_v_display} PJ)</p>
                     </div>
-                    
-                    <!-- Headers -->
                     <div style='display:flex;background:#1e2a3a;padding:10px;border-radius:8px;margin-bottom:5px;'>
                         <div style='width:33%;text-align:center;color:#00ff88;font-weight:bold;font-size:13px;'>{html.escape(str(home))}</div>
                         <div style='width:34%;text-align:center;color:#00d4ff;font-weight:bold;font-size:13px;'>📊 COMPARATIVA</div>
                         <div style='width:33%;text-align:center;color:#ff6b6b;font-weight:bold;font-size:13px;'>{html.escape(str(away))}</div>
                     </div>
-                    
-                    <!-- Récord -->
                     {fila_dato(f'{vic_l}-{emp_l}-{der_l}', 'Récord (V-E-D)', f'{vic_v}-{emp_v}-{der_v}')}
                     {fila_dato(gf_l, 'Goles Favor', gf_v, bg_par=True)}
                     {fila_dato(gc_l, 'Goles Contra', gc_v)}
                     {fila_dato(lambda_din_l, 'λ Dinámico', lambda_din_v, '#00ff88', bg_par=True)}
                     {fila_dato(f'{lambda_historico_local:.2f}', 'λ Histórico', f'{lambda_historico_visit:.2f}', '#00d4ff')}
                     <div style='background:#1a1a2e;padding:10px 5px;border-radius:4px;margin:2px 0;display:flex;'><div style='width:33%;text-align:center;color:#ffd700;font-weight:bold;font-size:15px;'>🔥 {lambda_local_final:.2f}</div><div style='width:34%;text-align:center;color:#ffd700;font-weight:bold;font-size:13px;'>λ FINAL</div><div style='width:33%;text-align:center;color:#ffd700;font-weight:bold;font-size:15px;'>🔥 {lambda_visit_final:.2f}</div></div>
-                    
-                    <!-- Promedios -->
                     <div style='background:#0f1923;padding:10px;border-radius:8px;margin-top:15px;margin-bottom:5px;text-align:center;'><span style='color:#00d4ff;font-weight:bold;'>📈 PROMEDIOS POR PARTIDO</span></div>
                     {fila_dato(f'{prom_tiros_l:.1f}', 'Tiros Total', f'{prom_tiros_v:.1f}', bg_par=True)}
                     {fila_dato(f'{prom_tiros_arco_l:.1f}', 'Tiros Arco', f'{prom_tiros_arco_v:.1f}')}
                     {fila_dato(f'{prom_amarillas_l:.1f}', 'Amarillas', f'{prom_amarillas_v:.1f}', bg_par=True)}
                     {fila_dato(f'{prom_corners_l:.1f}', 'Esquinas', f'{prom_corners_v:.1f}')}
-                    
-                    <!-- Forma Reciente -->
                     <div style='background:#0f1923;padding:10px;border-radius:8px;margin-top:15px;margin-bottom:5px;text-align:center;'><span style='color:#00d4ff;font-weight:bold;'>📅 FORMA RECIENTE (Últimos 5)</span></div>
                     {fila_dato(f'{puntos:.0f}%', 'Puntos %', f'{puntos_v:.0f}%', bg_par=True)}
                     {fila_dato(f'{gf_forma:.0f}f/{gc_forma:.0f}c', 'Goles (5 Part)', f'{gf_v_forma:.0f}f/{gc_v_forma:.0f}c')}
                     {fila_dato(badges_local, 'Resultados', badges_visitante, bg_par=True)}
                 </div>
-                """, unsafe_allow_html=True)
+                """
+                st.html(html_content)
             # ========================
             # GUARDAR PARTIDO (TODAS LAS PREDICCIONES)
             # ========================
