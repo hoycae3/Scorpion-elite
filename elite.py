@@ -1831,12 +1831,12 @@ def render_login_form():
                         return calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
             return None
 
-        # Buscar promedios directamente desde equipo_partidos_stats usando team_id del partido
-        partido_data = st.session_state.get('preview_partido') or {}
-        tid_local = partido_data.get('team_id_local')
-        tid_visitante = partido_data.get('team_id_visitante')
+        # Buscar promedios dinámicos desde equipo_partidos_stats usando team_id de stats_local/stats_visitante
+        # stats_local y stats_visitante ya tienen team_id
+        tid_local = stats_local.get('team_id') if stats_local else None
+        tid_visitante = stats_visitante.get('team_id') if stats_visitante else None
         
-        # Buscar promedios dinámicos directamente por team_id
+        # Buscar promedios dinámicos por team_id
         if tid_local:
             promedios_dinamicos_local = calcular_promedios_equipo(client, tid_local)
         
