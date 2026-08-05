@@ -1822,6 +1822,13 @@ def render_login_form():
             st.error(f"⚠️ Equipos sin datos completos: ', '.join(set(equipos_faltantes))")
             st.info("💡 Ejecuta Sincronizar para obtener estadísticas de estos equipos.")
         
+
+        # Debug: estado de equipos
+        with st.expander("DEBUG"):
+            st.write(f"home: {home_team} | ok: {equipo_local_ok} | lambda: {stats_local.get('lambda_local') if stats_local else 'N/A'}")
+            st.write(f"away: {away_team} | ok: {equipo_visitante_ok} | lambda: {stats_visitante.get('lambda_visitante') if stats_visitante else 'N/A'}")
+            st.write(f"Faltantes: {equipos_faltantes}")
+
         # Botón analizar - solo si ambos equipos existen
         analizar_disabled = not (equipo_local_ok and equipo_visitante_ok)
         
@@ -1852,9 +1859,9 @@ def render_login_form():
                             partidos_total_l = promedios_dinamicos_local.get('partidos_total', 0)
                         else:
                             # Estimar basado en lambda (si no hay datos en Supabase)
-                            lambda_est = lambda_local_cal if lambda_local_cal > 0 else 1.3
-                            corners_l = 5.5
-                            tiros_l = round(lambda_est * 4.5, 1)
+                            # Sin datos
+                            corners_l = None
+                            tiros_l = None
                             tiros_arco_l = round(lambda_est * 1.5, 1)
                             amarillas_l = 2.5
                             partidos_total_l = 0
@@ -1867,9 +1874,9 @@ def render_login_form():
                             partidos_total_v = promedios_dinamicos_visitante.get('partidos_total', 0)
                         else:
                             # Estimar basado en lambda (si no hay datos en Supabase)
-                            lambda_est = lambda_visitante_cal if lambda_visitante_cal > 0 else 1.1
-                            corners_v = 5.5
-                            tiros_v = round(lambda_est * 4.5, 1)
+                            # Sin datos
+                            corners_v = None
+                            tiros_v = None
                             tiros_arco_v = round(lambda_est * 1.5, 1)
                             amarillas_v = 2.5
                             partidos_total_v = 0
