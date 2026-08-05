@@ -1918,6 +1918,18 @@ def render_login_form():
                 lambda_din_l = f"{lambda_dinamico_local:.2f}" if lambda_dinamico_local else "0.00"
                 lambda_din_v = f"{lambda_dinamico_visit:.2f}" if lambda_dinamico_visit else "0.00"
                 
+                # FORMA RECIENTE - Obtener datos de forma
+                forma_l_data = r.get('forma_local', {})
+                forma_v_data = r.get('forma_visitante', {})
+                letras = forma_l_data.get('forma_letras', [])
+                puntos = forma_l_data.get('forma_puntos', 0)
+                gf_forma = forma_l_data.get('goles_favor_5', 0)
+                gc_forma = forma_l_data.get('goles_contra_5', 0)
+                letras_v = forma_v_data.get('forma_letras', [])
+                puntos_v = forma_v_data.get('forma_puntos', 0)
+                gf_v_forma = forma_v_data.get('goles_favor_5', 0)
+                gc_v_forma = forma_v_data.get('goles_contra_5', 0)
+                
                 # Tabla comparativa estilo Opción A
                 st.markdown(f"""
                 <div style='background: #0d1b2a; border-radius: 12px; overflow: hidden; margin: 10px 0;'>
@@ -2070,6 +2082,63 @@ def render_login_form():
                             </td>
                             <td style='padding: 10px 15px; text-align: center; color: #fff;'>
                                 {prom_corners_v:.1f}
+                            </td>
+                        </tr>
+                    </table>
+                    
+                    <!-- Forma Reciente -->
+                    <div style='background: #0f1923; padding: 10px 15px; text-align: center; border-bottom: 2px solid #00d4ff;'>
+                        <span style='color: #00d4ff; font-weight: bold;'>📅 FORMA RECIENTE (Últimos 5)</span>
+                    </div>
+                    <table style='width: 100%; border-collapse: collapse; font-size: 13px;'>
+                        <!-- Puntos -->
+                        <tr style='background: #162031;'>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
+                                {puntos:.0f}%
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
+                                Puntos %
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
+                                {puntos_v:.0f}%
+                            </td>
+                        </tr>
+                        <!-- Goles últimos 5 -->
+                        <tr style='background: #0f1923;'>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
+                                {gf_forma:.0f}f / {gc_forma:.0f}c
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
+                                Goles (5 Partidos)
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
+                                {gf_v_forma:.0f}f / {gc_v_forma:.0f}c
+                            </td>
+                        </tr>
+                        <!-- Badges de forma -->
+                        <tr style='background: #1a1a2e;'>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff;'>
+                                {''.join([
+                                    '<span style="background:#22c55e;color:#fff;padding:2px 6px;border-radius:4px;margin:0 2px;font-weight:bold;">' + c + '</span>' 
+                                    if c in ['G','W'] else 
+                                    '<span style="background:#eab308;color:#000;padding:2px 6px;border-radius:4px;margin:0 2px;font-weight:bold;">' + c + '</span>' 
+                                    if c == 'D' else 
+                                    '<span style="background:#ef4444;color:#fff;padding:2px 6px;border-radius:4px;margin:0 2px;font-weight:bold;">' + c + '</span>' 
+                                    for c in letras
+                                ]) if letras else '<span style="color:#666;">Sin datos</span>'}
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #888;'>
+                                Resultados (W/E/L)
+                            </td>
+                            <td style='padding: 10px 15px; text-align: center; color: #fff;'>
+                                {''.join([
+                                    '<span style="background:#22c55e;color:#fff;padding:2px 6px;border-radius:4px;margin:0 2px;font-weight:bold;">' + c + '</span>' 
+                                    if c in ['G','W'] else 
+                                    '<span style="background:#eab308;color:#000;padding:2px 6px;border-radius:4px;margin:0 2px;font-weight:bold;">' + c + '</span>' 
+                                    if c == 'D' else 
+                                    '<span style="background:#ef4444;color:#fff;padding:2px 6px;border-radius:4px;margin:0 2px;font-weight:bold;">' + c + '</span>' 
+                                    for c in letras_v
+                                ]) if letras_v else '<span style="color:#666;">Sin datos</span>'}
                             </td>
                         </tr>
                     </table>
@@ -2381,85 +2450,6 @@ def render_login_form():
                     <p style="color: {color_tar}; font-size: 14px; margin: 0;" translate="no">{icon_tar} {pick_tarjetas_display} ({prob_tarjetas or 0:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
-            
-            # ========================
-            # FORMA RECIENTE (últimos 5 partidos)
-            # ========================
-            st.markdown("##### 📅 Forma Reciente (Últimos 5)")
-            
-            # Obtener forma de los promedios_dinamicos guardados en session_state
-            promedios_dinamicos_local = st.session_state.get('promedios_dinamicos_local')
-            promedios_dinamicos_visitante = st.session_state.get('promedios_dinamicos_visitante')
-            
-            # Verificar si hay datos de forma en los promedios_dinamicos
-            tiene_forma_local = promedios_dinamicos_local and len(promedios_dinamicos_local.get('partidos', [])) > 0
-            tiene_forma_visitante = promedios_dinamicos_visitante and len(promedios_dinamicos_visitante.get('partidos', [])) > 0
-            
-            forma_l = r.get('forma_local', {})
-            forma_v = r.get('forma_visitante', {})
-            
-            # Verificar si hay datos de forma
-            letras = forma_l.get('forma_letras', [])
-            puntos = forma_l.get('forma_puntos', 0)
-            gf = forma_l.get('goles_favor_5', 0)
-            gc = forma_l.get('goles_contra_5', 0)
-            
-            letras_v = forma_v.get('forma_letras', [])
-            puntos_v = forma_v.get('forma_puntos', 0)
-            gf_v = forma_v.get('goles_favor_5', 0)
-            gc_v = forma_v.get('goles_contra_5', 0)
-            
-            # Si no hay datos, mostrar mensaje mejorado
-            if not tiene_forma_local and not tiene_forma_visitante:
-                st.info("⚠️ Sin datos de forma reciente. Haz clic en **Sincronizar** para descargar estadísticas de partidos.")
-            else:
-                col_space1, col_forma_local, col_forma_away, col_space2 = st.columns([1, 2, 2, 1])
-                
-                with col_forma_local:
-                    # Crear badges de forma
-                    if isinstance(letras, list) and letras:
-                        badges_forma = "".join([
-                            f"<span class='forma-badge forma-badge-g'>{c}</span>" if c=='G' else (
-                            f"<span class='forma-badge forma-badge-e'>{c}</span>" if c=='E' else (
-                            f"<span class='forma-badge forma-badge-p'>{c}</span>" if c=='P' else c
-                            )) for c in letras
-                        ])
-                    else:
-                        badges_forma = "<span style='color:#666;'>Sin datos</span>"
-                    
-                    st.markdown(f"""
-                    <div class="caja-forma caja-forma-local">
-                        <p class="forma-titulo">📊 {home}</p>
-                        <div class="forma-letras">{badges_forma}</div>
-                        <p class="forma-stats">
-                            Puntos: <span>{puntos:.0f}%</span> | 
-                            Goles: <span>{gf}f/{gc}c</span>
-                        </p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col_forma_away:
-                    # Crear badges de forma
-                    if isinstance(letras_v, list) and letras_v:
-                        badges_forma_v = "".join([
-                            f"<span class='forma-badge forma-badge-g'>{c}</span>" if c=='G' else (
-                            f"<span class='forma-badge forma-badge-e'>{c}</span>" if c=='E' else (
-                            f"<span class='forma-badge forma-badge-p'>{c}</span>" if c=='P' else c
-                            )) for c in letras_v
-                        ])
-                    else:
-                        badges_forma_v = "<span style='color:#666;'>Sin datos</span>"
-                    
-                    st.markdown(f"""
-                    <div class="caja-forma caja-forma-visitante">
-                        <p class="forma-titulo">вңҲпёҸ {away}</p>
-                        <div class="forma-letras">{badges_forma_v}</div>
-                        <p class="forma-stats">
-                            Puntos: <span>{puntos_v:.0f}%</span> | 
-                            Goles: <span>{gf_v}f/{gc_v}c</span>
-                        </p>
-                    </div>
-                    """, unsafe_allow_html=True)
             
             # ========================
             # CUOTAS DEL PARTIDO (de Supabase) CON VALUE
