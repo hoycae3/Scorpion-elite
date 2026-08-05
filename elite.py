@@ -1438,26 +1438,28 @@ def render_login_form():
                 # CSS para botones de partidos estilo tarjeta compacta
                 st.markdown("""
                 <style>
-                /* Botones de partidos estilo tarjeta compacta */
-                [data-testid="stMainBlockContainer"] button[data-testid="stButton"] {
+                /* Botones de partidos - tarjeta compacta */
+                div[data-testid="stHorizontalBlock"] button {
                     max-width: 550px !important;
-                    text-align: left !important;
+                    width: 100% !important;
                     padding: 6px 14px !important;
                     font-size: 13px !important;
                     border-radius: 8px !important;
-                    border: 1px solid #333 !important;
-                    background: #1a1a2e !important;
+                    border: 1px solid #444 !important;
+                    background: #1e2a3a !important;
                     color: #fff !important;
-                    width: 100% !important;
+                    text-align: left !important;
+                    justify-content: flex-start !important;
                 }
-                [data-testid="stMainBlockContainer"] button[data-testid="stButton"]:hover {
-                    background: #16213e !important;
+                div[data-testid="stHorizontalBlock"] button:hover {
+                    background: #2a3a4a !important;
                     border-color: #00d4ff !important;
                 }
-                /* Ocultar asteriscos de requerido */
-                .stButton > button > p {
+                /* Estilo general para botones de Streamlit */
+                .stButton > button {
+                    padding: 6px 14px !important;
                     font-size: 13px !important;
-                    margin: 0 !important;
+                    border-radius: 8px !important;
                 }
                 </style>
                 """, unsafe_allow_html=True)
