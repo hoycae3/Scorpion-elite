@@ -851,8 +851,8 @@ def render_login_form():
                         st.warning(f"вҡ пёҸ Error al obtener partidos existentes: {e}")
                     
                     # вҳ… RANGO DE BГҡSQUEDA: -2 dГӯas (partidos recientes) a +6 dГӯas (prГіximos partidos)
-                    fecha_inicio = (hoy - timedelta(days=2)).strftime('%Y-%m-%d')
-                    fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
+                    fecha_inicio = hoy.strftime('%Y-%m-%d')
+                    fecha_fin = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
                     st.markdown(f"рҹ“… Rango: **{fecha_inicio}** al **{fecha_fin}**")
                     
                     # вң… MODO PRODUCCIГ“N - Todas las ligas
@@ -972,8 +972,6 @@ def render_login_form():
                                     score_visitante = score.get('fulltime', {}).get('away') if score.get('fulltime') else goals.get('away') or 0
                                     
                                     # DEBUG: Mostrar valores de score
-                                    if estado == 'FT':
-                                        st.caption(f"DEBUG: {equipo_local} vs {equipo_visitante} - Local: {score_local}, Visitante: {score_visitante}")
                                     
                                     # вҳ… CORREGIDO: SIEMPRE agregar equipos a equipos_unicos para actualizar stats
                                     # Independientemente de si el partido es nuevo o existente
@@ -1069,20 +1067,6 @@ def render_login_form():
                     stats_ft_nuevos = 0
                     
                     if equipos_unicos:
-                        # вҳ… FILTRO: Solo procesar equipos de ligas Argentinas
-                        # IDs: 128=Liga Profesional, 129=Primera Nacional, 131=Primera B Metropolitana
-                        LIGAS_ARGENTINAS = {128, 129, 131}
-                        equipos_argentinos = {tid: eq for tid, eq in equipos_unicos.items() 
-                                              if eq.get('league_id') in LIGAS_ARGENTINAS}
-                        
-                        st.info(f"рҹ“Ҡ Equipos detectados: {len(equipos_unicos)}, Argentinos: {len(equipos_argentinos)}")
-                        
-                        # Reemplazar equipos_unicos con los filtrados
-                        equipos_unicos = equipos_argentinos
-                        
-                        if not equipos_unicos:
-                            st.warning("вҡ пёҸ No hay equipos Argentinos para procesar.")
-                            st.stop()
                         
                         # Paso 2a: Identificar equipos existentes en DB
                         equipos_existentes_ids = set()
@@ -1226,7 +1210,6 @@ def render_login_form():
                                             }
                                             
                                             # DEBUG: Mostrar qué se guarda
-                                            st.caption(f"DEBUG GUARDAR: gf={partido_data['goles_favor']}, gc={partido_data['goles_contra']}")
                                             
                                             # Agregar stats si estГЎn disponibles
                                             if stats_partido:

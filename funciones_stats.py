@@ -6,7 +6,6 @@ Funciones para obtener y procesar estadísticas de partidos
 
 import requests
 import time
-import json
 
 
 def obtener_stats_partido(fixture_id, team_id, team_name, headers, API_URL):
