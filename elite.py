@@ -470,7 +470,7 @@ def render_public_landing():
                         resp_eps_v = client.table("equipo_partidos_stats").select("team_id").eq("team_id", team_id_v).limit(1).execute()
                         if resp_eps_v.data:
                             promedios_dinamicos_visitante = calcular_promedios_equipo(client, team_id_v)
-                st.write(f"HistLocal: {len(promedios_dinamicos_local.get("partidos_total", 0)) if promedios_dinamicos_local else 0} partidos | HistVisit: {len(promedios_dinamicos_visitante.get("partidos_total", 0)) if promedios_dinamicos_visitante else 0} partidos")
+                st.write(f"HistLocal: {len(promedios_dinamicos_local.get('partidos_total', 0)) if promedios_dinamicos_local else 0} partidos | HistVisit: {len(promedios_dinamicos_visitante.get('partidos_total', 0)) if promedios_dinamicos_visitante else 0} partidos")
 
                 # DEBUG
                 st.write(f"📤 Local: '{local}' ↩️' {'✅' if stats_local else '❌'} (team_id: {team_id_local})")
