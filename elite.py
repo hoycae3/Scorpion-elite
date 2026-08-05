@@ -1849,48 +1849,21 @@ def render_login_form():
                         return calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
             return None
 
-        if home_team:
-            try:
-                client = get_client()
-                resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{home_team}%').execute()
-                st.write(f"DEBUG EPS Busqueda equipos_stats local: '{home_team}' -> {len(resp.data)} resultados")
-                if resp.data:
-                    st.write(f"  Primero: {resp.data[0].get('equipo')} (lambda_local={resp.data[0].get('lambda_local')})")
-                if resp.data and resp.data[0].get('lambda_local', 0) >= 0:
-                    stats_local = resp.data[0]
-                    lambda_local = stats_local.get('lambda_local', 0)
-                    team_id_local = stats_local.get('team_id')
-                    equipo_local_ok = True
-                else:
-                    equipos_faltantes.append(home_team)
-                    team_id_local = None
-                # SIEMPRE buscar promedios dinámicos (independiente de equipos_stats)
-                promedios_dinamicos_local = obtener_promedios_dinamicos(client, home_team, team_id_local)
-                st.write(f"DEBUG EPS Resultado local: team_id={team_id_local}, promedios={bool(promedios_dinamicos_local)}")
-            except Exception as e:
-                error_conexion = True
-                equipos_faltantes.append(home_team)
-
-        if away_team:
-            try:
-                client = get_client()
-                resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{away_team}%').execute()
-                if resp.data and resp.data[0].get('lambda_visitante', 0) >= 0:
-                    stats_visitante = resp.data[0]
-                    lambda_visitante = stats_visitante.get('lambda_visitante', 0)
-                    team_id_visitante = stats_visitante.get('team_id')
-                    equipo_visitante_ok = True
-                else:
-                    equipos_faltantes.append(away_team)
-                    team_id_visitante = None
-                # SIEMPRE buscar promedios dinámicos (independiente de equipos_stats)
-                promedios_dinamicos_visitante = obtener_promedios_dinamicos(client, away_team, team_id_visitante)
-            except Exception as e:
-                error_conexion = True
-                equipos_faltantes.append(away_team)
-
-                error_conexion = True
-                equipos_faltantes.append(away_team)
+        # Buscar promedios directamente desde equipo_partidos_stats usando team_id del partido
+        partido_data = st.session_state.get('preview_partido', {})
+        tid_local = partido_data.get('team_id_local')
+        tid_visitante = partido_data.get('team_id_visitante')
+        
+        st.write(f"DEBUG team_id del partido: local={tid_local}, visitante={tid_visitante}")
+        
+        # Buscar promedios dinámicos directamente por team_id
+        if tid_local:
+            promedios_dinamicos_local = calcular_promedios_equipo(client, tid_local)
+            st.write(f"DEBUG Local: {len(promedios_dinamicos_local.get('partidos', [])) if promedios_dinamicos_local else 0} partidos")
+        
+        if tid_visitante:
+            promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
+            st.write(f"DEBUG Visitante: {len(promedios_dinamicos_visitante.get('partidos', [])) if promedios_dinamicos_visitante else 0} partidos")
         
         # Mostrar info de equipos disponibles
         if not equipos_disponibles:
