@@ -1636,6 +1636,33 @@ def render_login_form():
                 for liga in ligas_pais:
                     ligas_pais[liga].sort(key=lambda x: (str(x.get('fecha', '')), str(x.get('hora_colombia', ''))))
                 
+                # CSS para botones de partidos estilo tarjeta compacta
+                st.markdown("""
+                <style>
+                /* Botones de partidos estilo tarjeta compacta */
+                [data-testid="stMainBlockContainer"] button[data-testid="stButton"] {
+                    max-width: 550px !important;
+                    text-align: left !important;
+                    padding: 6px 14px !important;
+                    font-size: 13px !important;
+                    border-radius: 8px !important;
+                    border: 1px solid #333 !important;
+                    background: #1a1a2e !important;
+                    color: #fff !important;
+                    width: 100% !important;
+                }
+                [data-testid="stMainBlockContainer"] button[data-testid="stButton"]:hover {
+                    background: #16213e !important;
+                    border-color: #00d4ff !important;
+                }
+                /* Ocultar asteriscos de requerido */
+                .stButton > button > p {
+                    font-size: 13px !important;
+                    margin: 0 !important;
+                }
+                </style>
+                """, unsafe_allow_html=True)
+                
                 # Mostrar cada liga
                 for liga, partidos_liga in sorted(ligas_pais.items()):
                     st.markdown(f"**🏆 {liga}**")
@@ -1657,7 +1684,6 @@ def render_login_form():
                             tiene_stats = None
 
                         # Badge de estado
-                        # Badge de estado con emoji correcto
                         if tiene_stats is True:
                             badge = "🔴"
                         elif tiene_stats is False:
@@ -1665,8 +1691,8 @@ def render_login_form():
                         else:
                             badge = "⚪"
                         
-                        # Botón compacto con solo lo esencial
-                        label = f"{fecha_fmt} {hora_col} | {badge} {equipo_local} vs {equipo_visitante}"
+                        # Botón estilo tarjeta compacta
+                        label = f"📅 {fecha_fmt} {hora_col} | {badge} {equipo_local} vs {equipo_visitante} ➜"
                         if st.button(label, key=f"btn_{pais}_{liga}_{i}", use_container_width=True):
                             st.session_state.selected_local = equipo_local
                             st.session_state.selected_away = equipo_visitante
