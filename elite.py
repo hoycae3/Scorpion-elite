@@ -1942,6 +1942,10 @@ def render_login_form():
                         if promedios_dinamicos_visitante:
                             ultimos_5_visitante = promedios_dinamicos_visitante.get('partidos', [])[:5]
                         
+                        # GUARDAR promedios_dinamicos en session_state para usarlos después
+                        st.session_state.promedios_dinamicos_local = promedios_dinamicos_local
+                        st.session_state.promedios_dinamicos_visitante = promedios_dinamicos_visitante
+                        
                         # Llamar al modelo con TODOS los datos
                         result = calcular(
                             lambda_local=lambda_local_cal,
@@ -2302,6 +2306,12 @@ def render_login_form():
             # PREDICCIONES ADICIONALES (CUADROS MEJORADOS)
             # ========================
             # вҳ… Verificar si hay datos reales para mostrar predicciones
+            # RECUPERAR promedios_dinamicos del session_state
+            promedios_dinamicos_local = st.session_state.get('promedios_dinamicos_local')
+            promedios_dinamicos_visitante = st.session_state.get('promedios_dinamicos_visitante')
+            
+            st.write(f"DEBUG Recuperado: local={bool(promedios_dinamicos_local)}, visitante={bool(promedios_dinamicos_visitante)}")
+            
             tiene_datos_local = promedios_dinamicos_local and promedios_dinamicos_local.get('partidos_total', 0) > 0
             tiene_datos_visitante = promedios_dinamicos_visitante and promedios_dinamicos_visitante.get('partidos_total', 0) > 0
             
