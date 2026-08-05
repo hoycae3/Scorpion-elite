@@ -1808,10 +1808,14 @@ def render_login_form():
                 error_conexion = True
                 equipos_faltantes.append(away_team)
         
+        # Mostrar info de equipos disponibles
+        if not equipos_disponibles:
+            st.warning("⚠️ No hay equipos en la base de datos. Ejecuta Sincronizar primero.")
+        
         # Mostrar error si faltan equipos
         if equipos_faltantes and not error_conexion:
-            st.error(f"⚠️ Equipos no encontrados en la base de datos: {', '.join(set(equipos_faltantes))}")
-            st.info("қ Ve a la pestaГұa 'Estadísticas' ↩️' 'Agregar Equipo Manual' para agregar los datos.")
+            st.error(f"⚠️ Equipos sin datos completos: ', '.join(set(equipos_faltantes))")
+            st.info("💡 Ejecuta Sincronizar para obtener estadísticas de estos equipos.")
         
         # Botón analizar - solo si ambos equipos existen
         analizar_disabled = not (equipo_local_ok and equipo_visitante_ok)
