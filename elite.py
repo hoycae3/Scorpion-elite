@@ -1850,7 +1850,7 @@ def render_login_form():
             return None
 
         # Buscar promedios directamente desde equipo_partidos_stats usando team_id del partido
-        partido_data = st.session_state.get('preview_partido', {})
+        partido_data = st.session_state.get('preview_partido') or {}
         tid_local = partido_data.get('team_id_local')
         tid_visitante = partido_data.get('team_id_visitante')
         
