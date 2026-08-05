@@ -1281,11 +1281,11 @@ def render_login_form():
                             else:
                                 equipos_existentes += 1
                                 ft_en_ventana = equipos_ft_fixtures.get(team_id, [])
-                                fixtures_necesarios = [f for f in ft_en_ventana if f['fixture_id'] not in fixtures_guardados]
                                 
-                                if fixtures_necesarios:
-                                    # Solo fetch stats de partidos FT nuevos
-                                    for fix_info in fixtures_necesarios:
+                                # ★ CORREGIDO: Siempre intentar guardar/actualizar TODOS los FT
+                                # El upsert no duplica, solo actualiza si ya existe
+                                if ft_en_ventana:
+                                    for fix_info in ft_en_ventana:
                                         try:
                                             # Fetch stats del partido específico
                                             stats_partido = obtener_stats_partido(
@@ -1296,34 +1296,34 @@ def render_login_form():
                                                 API_URL=API_URL
                                             )
                                             
+                                            # Crear datos del partido (siempre incluir goles)
+                                            partido_data = {
+                                                'team_id': team_id,
+                                                'equipo': team_name,
+                                                'fixture_id': fix_info['fixture_id'],
+                                                'fecha': fix_info['fecha'],
+                                                'liga': fix_info['liga'],
+                                                'es_local': fix_info['es_local'],
+                                                'resultado': fix_info['resultado'],
+                                                'goles_favor': fix_info['goles_favor'] if fix_info['goles_favor'] else 0,
+                                                'goles_contra': fix_info['goles_contra'] if fix_info['goles_contra'] else 0,
+                                            }
+                                            
+                                            # Agregar stats si están disponibles
                                             if stats_partido:
-                                                partido_data = {
-                                                    'team_id': team_id,
-                                                    'equipo': team_name,
-                                                    'fixture_id': fix_info['fixture_id'],
-                                                    'fecha': fix_info['fecha'],
-                                                    'liga': fix_info['liga'],
-                                                    'es_local': fix_info['es_local'],
-                                                    'resultado': fix_info['resultado'],
-                                                    'goles_favor': fix_info['goles_favor'],
-                                                    'goles_contra': fix_info['goles_contra'],
-                                                    **stats_partido
-                                                }
-                                                
-                                                try:
-                                                    client.table('equipo_partidos_stats').upsert(
-                                                        partido_data,
-                                                        on_conflict='team_id,fixture_id'
-                                                    ).execute()
-                                                    stats_ft_nuevos += 1
-                                                except Exception as e:
-                                                    st.error(f"❌ Error Supabase ({team_name} - fixture {fix_info['fixture_id']}): {e}")
+                                                partido_data.update(stats_partido)
+                                            
+                                            try:
+                                                client.table('equipo_partidos_stats').upsert(
+                                                    partido_data,
+                                                    on_conflict='team_id,fixture_id'
+                                                ).execute()
+                                                stats_ft_nuevos += 1
+                                            except Exception as e:
+                                                st.error(f"❌ Error Supabase ({team_name} - fixture {fix_info['fixture_id']}): {e}")
                                             
                                         except Exception as e:
                                             st.warning(f"⚠️ {team_name}: error fetching fixture {fix_info['fixture_id']}: {str(e)[:60]}")
-                                else:
-                                    # No hay FT nuevos que descargar - 0 API calls
-                                    pass
                     
                     else:
                         st.info("ℹ️ No hay equipos para procesar.")
