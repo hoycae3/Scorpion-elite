@@ -964,7 +964,7 @@ def render_login_form():
                                     
                                     # Extraer score y estado
                                     score = f.get('score', {}) or {}
-                                    goals = teams.get('goals', {})  # вҳ… CORRECTO
+                                    goals = f.get('goals', {}) or {}  # CORREGIDO
                                     estado = fix.get('status', {}).get('short', 'NS')
                                     
                                     # Score fulltime
