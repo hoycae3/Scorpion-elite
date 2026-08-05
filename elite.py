@@ -1829,9 +1829,14 @@ def render_login_form():
         promedios_dinamicos_local = None
         promedios_dinamicos_visitante = None
         
-        # FUNCIÓN AUXILIAR: Buscar promedios dinámicos (robusto)
+        # FUNCIÓN AUXILIAR: Buscar promedios dinámicos (por team_id directamente)
         def obtener_promedios_dinamicos(client, equipo_nombre, team_id=None):
-            # Buscar por nombre completo primero
+            # SIEMPRE usar team_id si está disponible (más confiable)
+            if team_id:
+                resp_check = client.table('equipo_partidos_stats').select('team_id').eq('team_id', team_id).limit(1).execute()
+                if resp_check.data:
+                    return calcular_promedios_equipo(client, team_id)
+            # Fallback: buscar por nombre
             resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{equipo_nombre}%').limit(5).execute()
             if resp_eps.data:
                 return calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
@@ -1842,15 +1847,15 @@ def render_login_form():
                     resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{palabra}%').limit(1).execute()
                     if resp_eps.data:
                         return calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
-            # Fallback: usar team_id directamente
-            if team_id:
-                return calcular_promedios_equipo(client, team_id)
             return None
 
         if home_team:
             try:
                 client = get_client()
                 resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{home_team}%').execute()
+                st.write(f"DEBUG EPS Busqueda equipos_stats local: '{home_team}' -> {len(resp.data)} resultados")
+                if resp.data:
+                    st.write(f"  Primero: {resp.data[0].get('equipo')} (lambda_local={resp.data[0].get('lambda_local')})")
                 if resp.data and resp.data[0].get('lambda_local', 0) >= 0:
                     stats_local = resp.data[0]
                     lambda_local = stats_local.get('lambda_local', 0)
@@ -1861,6 +1866,7 @@ def render_login_form():
                     team_id_local = None
                 # SIEMPRE buscar promedios dinámicos (independiente de equipos_stats)
                 promedios_dinamicos_local = obtener_promedios_dinamicos(client, home_team, team_id_local)
+                st.write(f"DEBUG EPS Resultado local: team_id={team_id_local}, promedios={bool(promedios_dinamicos_local)}")
             except Exception as e:
                 error_conexion = True
                 equipos_faltantes.append(home_team)
