@@ -455,21 +455,20 @@ def render_public_landing():
                         stats_visit = resp_by_id.data[0]
 
 
-                # Buscar promedios dinámicos de equipo_partidos_stats
+                # Buscar promedios dinámicos de equipo_partidos_stats (por nombre Y team_id)
                 promedios_dinamicos_local = None
                 promedios_dinamicos_visitante = None
-                if stats_local:
-                    team_id_l = stats_local.get("team_id")
-                    if team_id_l:
-                        resp_eps_l = client.table("equipo_partidos_stats").select("team_id").eq("team_id", team_id_l).limit(1).execute()
-                        if resp_eps_l.data:
-                            promedios_dinamicos_local = calcular_promedios_equipo(client, team_id_l)
-                if stats_visit:
-                    team_id_v = stats_visit.get("team_id")
-                    if team_id_v:
-                        resp_eps_v = client.table("equipo_partidos_stats").select("team_id").eq("team_id", team_id_v).limit(1).execute()
-                        if resp_eps_v.data:
-                            promedios_dinamicos_visitante = calcular_promedios_equipo(client, team_id_v)
+                
+                # Buscar por nombre primero (más flexible)
+                if local:
+                    resp_eps_l = client.table("equipo_partidos_stats").select("team_id").ilike("equipo", f"%{local}%").limit(1).execute()
+                    if resp_eps_l.data:
+                        promedios_dinamicos_local = calcular_promedios_equipo(client, resp_eps_l.data[0]["team_id"])
+                
+                if visitante:
+                    resp_eps_v = client.table("equipo_partidos_stats").select("team_id").ilike("equipo", f"%{visitante}%").limit(1).execute()
+                    if resp_eps_v.data:
+                        promedios_dinamicos_visitante = calcular_promedios_equipo(client, resp_eps_v.data[0]["team_id"])
                 st.write(f"HistLocal: {len(promedios_dinamicos_local.get('partidos_total', 0)) if promedios_dinamicos_local else 0} partidos | HistVisit: {len(promedios_dinamicos_visitante.get('partidos_total', 0)) if promedios_dinamicos_visitante else 0} partidos")
 
                 # DEBUG
