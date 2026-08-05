@@ -474,7 +474,14 @@ def render_public_landing():
                                 return resp.data[0]
                     return None
                 
+                st.write(f"DEBUG local='{local}' visitante='{visitante}'")
                 if local:
+                    # DEBUG: mostrar qué estamos buscando
+                    resp_test = client.table("equipo_partidos_stats").select("equipo").ilike("equipo", f"%{local}%").limit(3).execute()
+                    st.write(f"DEBUG Busqueda local '{local}': {len(resp_test.data)} encontrados")
+                    if resp_test.data:
+                        for r in resp_test.data[:3]:
+                            st.write(f"  - {r.get('equipo')}")
                     result_l = buscar_en_eps(client, local)
                     if result_l:
                         promedios_dinamicos_local = calcular_promedios_equipo(client, result_l["team_id"])
