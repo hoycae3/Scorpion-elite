@@ -1664,11 +1664,13 @@ def render_login_form():
                         else:
                             badge = "вҡӘ"
                         
-                        # Todo en un solo botón
+                        # Todo en un solo botón - guardar con team_id directo
                         label = f"📅 {fecha_fmt}  ⚽ {hora_col}  |  {badge} {equipo_local} vs {equipo_visitante}"
                         if st.button(label, key=f"btn_{pais}_{liga}_{i}", use_container_width=True):
                             st.session_state.selected_local = equipo_local
                             st.session_state.selected_away = equipo_visitante
+                            st.session_state.selected_team_id_local = partido.get('team_id_local')
+                            st.session_state.selected_team_id_visitante = partido.get('team_id_visitante')
                             st.session_state.page = "Analizador"
                             st.rerun()
                 
@@ -1832,29 +1834,22 @@ def render_login_form():
             return None
 
         # USAR team_id DIRECTO del partido para buscar en equipo_partidos_stats
-        # Buscar equipo_partidos_stats por team_id directo
-        if home_team:
-            st.write(f"DEBUG: home_team = '{home_team}'")
-            # Primero buscar team_id en equipos_stats por nombre
-            resp_l = client.table('equipos_stats').select('team_id').ilike('equipo', f'%{home_team}%').limit(1).execute()
-            st.write(f"DEBUG: resp_l.data = {resp_l.data}")
-            if resp_l.data:
-                tid_local = resp_l.data[0].get('team_id')
-                st.write(f"DEBUG: tid_local = {tid_local}")
-                promedios_dinamicos_local = calcular_promedios_equipo(client, tid_local)
-                st.write(f"DEBUG: promedios_local = {promedios_dinamicos_local}")
-                equipo_local_ok = True
-            else:
-                equipos_faltantes.append(home_team)
+        tid_local = st.session_state.get('selected_team_id_local')
+        tid_visitante = st.session_state.get('selected_team_id_visitante')
+        
+        # Limpiar session_state de team_ids después de usar
+        if tid_local:
+            promedios_dinamicos_local = calcular_promedios_equipo(client, tid_local)
+            equipo_local_ok = True
+            # Limpiar
+            st.session_state.pop('selected_team_id_local', None)
+            st.session_state.pop('selected_team_id_visitante', None)
         
         if away_team:
-            resp_v = client.table('equipos_stats').select('team_id').ilike('equipo', f'%{away_team}%').limit(1).execute()
-            if resp_v.data:
-                tid_visitante = resp_v.data[0].get('team_id')
+            tid_visitante = tid_visitante or st.session_state.get('selected_team_id_visitante')
+            if tid_visitante:
                 promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
                 equipo_visitante_ok = True
-            else:
-                equipos_faltantes.append(away_team)
         
         # Mostrar info de equipos disponibles
         if not equipos_disponibles:
