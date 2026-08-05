@@ -1930,251 +1930,93 @@ def render_login_form():
                 gf_v_forma = forma_v_data.get('goles_favor_5', 0)
                 gc_v_forma = forma_v_data.get('goles_contra_5', 0)
                 
-                # Tabla comparativa estilo Opción A
+                # Crear badges de forma
+                def crear_badges(lista):
+                    if not lista:
+                        return "Sin datos"
+                    badges = ""
+                    for c in lista:
+                        if c in ['G','W']:
+                            badges += f"🟢{c} "
+                        elif c == 'D':
+                            badges += f"🟡{c} "
+                        else:
+                            badges += f"🔴{c} "
+                    return badges.strip()
+                
+                badges_local = crear_badges(letras)
+                badges_visitante = crear_badges(letras_v)
+                
+                # Tabla comparativa usando columnas de Streamlit
                 st.markdown(f"""
-                <div style='background: #0d1b2a; border-radius: 12px; overflow: hidden; margin: 10px 0;'>
-                    <!-- Header -->
-                    <div style='background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 15px; text-align: center;'>
-                        <h3 style='color: #fff; margin: 0;'>
-                            📊 {html.escape(str(home))} <span style='color: #ffd700;'>vs</span> {html.escape(str(away))}
-                        </h3>
-                        <p style='color: #00d4ff; font-size: 12px; margin: 5px 0 0 0;'>
-                            ({pj_l_display} PJ) vs ({pj_v_display} PJ)
-                        </p>
-                    </div>
-                    
-                    <!-- Tabla principal -->
-                    <table style='width: 100%; border-collapse: collapse; font-size: 13px;'>
-                        <!-- Headers -->
-                        <tr style='background: #1e2a3a;'>
-                            <td style='padding: 12px 15px; color: #00ff88; font-weight: bold; text-align: center; border-bottom: 2px solid #00d4ff;'>
-                                {html.escape(str(home))}
-                            </td>
-                            <td style='padding: 12px 15px; color: #00d4ff; font-weight: bold; text-align: center; border-bottom: 2px solid #00d4ff;'>
-                                📊 COMPARATIVA
-                            </td>
-                            <td style='padding: 12px 15px; color: #ff6b6b; font-weight: bold; text-align: center; border-bottom: 2px solid #00d4ff;'>
-                                {html.escape(str(away))}
-                            </td>
-                        </tr>
-                        <!-- Récord -->
-                        <tr style='background: #0f1923;'>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
-                                {vic_l} - {emp_l} - {der_l}
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
-                                Récord (V-E-D)
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
-                                {vic_v} - {emp_v} - {der_v}
-                            </td>
-                        </tr>
-                        <!-- Goles Favor -->
-                        <tr style='background: #162031;'>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
-                                {gf_l}
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
-                                Goles Favor
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
-                                {gf_v}
-                            </td>
-                        </tr>
-                        <!-- Goles Contra -->
-                        <tr style='background: #0f1923;'>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
-                                {gc_l}
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
-                                Goles Contra
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
-                                {gc_v}
-                            </td>
-                        </tr>
-                        <!-- Lambda Dinámico -->
-                        <tr style='background: #162031;'>
-                            <td style='padding: 10px 15px; text-align: center; color: #00ff88; border-bottom: 1px solid #333;'>
-                                {lambda_din_l}
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
-                                λ Dinámico
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #00ff88; border-bottom: 1px solid #333;'>
-                                {lambda_din_v}
-                            </td>
-                        </tr>
-                        <!-- Lambda Histórico -->
-                        <tr style='background: #0f1923;'>
-                            <td style='padding: 10px 15px; text-align: center; color: #00d4ff; border-bottom: 1px solid #333;'>
-                                {lambda_historico_local:.2f}
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
-                                λ Histórico
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #00d4ff; border-bottom: 1px solid #333;'>
-                                {lambda_historico_visit:.2f}
-                            </td>
-                        </tr>
-                        <!-- Lambda Final -->
-                        <tr style='background: #1a1a2e;'>
-                            <td style='padding: 12px 15px; text-align: center; color: #ffd700; font-weight: bold;'>
-                                🔥 {lambda_local_final:.2f}
-                            </td>
-                            <td style='padding: 12px 15px; text-align: center; color: #ffd700; font-weight: bold;'>
-                                λ FINAL
-                            </td>
-                            <td style='padding: 12px 15px; text-align: center; color: #ffd700; font-weight: bold;'>
-                                🔥 {lambda_visit_final:.2f}
-                            </td>
-                        </tr>
-                    </table>
-                    
-                    <!-- Promedios por Partido -->
-                    <div style='background: #0f1923; padding: 10px 15px; text-align: center; border-bottom: 2px solid #00d4ff;'>
-                        <span style='color: #00d4ff; font-weight: bold;'>📈 PROMEDIOS POR PARTIDO</span>
-                    </div>
-                    <table style='width: 100%; border-collapse: collapse; font-size: 13px;'>
-                        <!-- Tiros -->
-                        <tr style='background: #162031;'>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
-                                {prom_tiros_l:.1f}
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
-                                Tiros Total
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
-                                {prom_tiros_v:.1f}
-                            </td>
-                        </tr>
-                        <!-- Tiros Arco -->
-                        <tr style='background: #0f1923;'>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
-                                {prom_tiros_arco_l:.1f}
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
-                                Tiros Arco
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
-                                {prom_tiros_arco_v:.1f}
-                            </td>
-                        </tr>
-                        <!-- Amarillas -->
-                        <tr style='background: #162031;'>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
-                                {prom_amarillas_l:.1f}
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
-                                Amarillas
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
-                                {prom_amarillas_v:.1f}
-                            </td>
-                        </tr>
-                        <!-- Esquinas -->
-                        <tr style='background: #0f1923;'>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff;'>
-                                {prom_corners_l:.1f}
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #888;'>
-                                Esquinas
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff;'>
-                                {prom_corners_v:.1f}
-                            </td>
-                        </tr>
-                    </table>
-                    
-                    <!-- Forma Reciente -->
-                    <div style='background: #0f1923; padding: 10px 15px; text-align: center; border-bottom: 2px solid #00d4ff;'>
-                        <span style='color: #00d4ff; font-weight: bold;'>📅 FORMA RECIENTE (Últimos 5)</span>
-                    </div>
-                    <table style='width: 100%; border-collapse: collapse; font-size: 13px;'>
-                        <!-- Puntos -->
-                        <tr style='background: #162031;'>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
-                                {puntos:.0f}%
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
-                                Puntos %
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
-                                {puntos_v:.0f}%
-                            </td>
-                        </tr>
-                        <!-- Goles últimos 5 -->
-                        <tr style='background: #0f1923;'>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
-                                {gf_forma:.0f}f / {gc_forma:.0f}c
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #888; border-bottom: 1px solid #333;'>
-                                Goles (5 Partidos)
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff; border-bottom: 1px solid #333;'>
-                                {gf_v_forma:.0f}f / {gc_v_forma:.0f}c
-                            </td>
-                        </tr>
-                        <!-- Badges de forma -->
-                        <tr style='background: #1a1a2e;'>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff;'>
-                                {''.join([
-                                    '<span style="background:#22c55e;color:#fff;padding:2px 6px;border-radius:4px;margin:0 2px;font-weight:bold;">' + c + '</span>' 
-                                    if c in ['G','W'] else 
-                                    '<span style="background:#eab308;color:#000;padding:2px 6px;border-radius:4px;margin:0 2px;font-weight:bold;">' + c + '</span>' 
-                                    if c == 'D' else 
-                                    '<span style="background:#ef4444;color:#fff;padding:2px 6px;border-radius:4px;margin:0 2px;font-weight:bold;">' + c + '</span>' 
-                                    for c in letras
-                                ]) if letras else '<span style="color:#666;">Sin datos</span>'}
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #888;'>
-                                Resultados (W/E/L)
-                            </td>
-                            <td style='padding: 10px 15px; text-align: center; color: #fff;'>
-                                {''.join([
-                                    '<span style="background:#22c55e;color:#fff;padding:2px 6px;border-radius:4px;margin:0 2px;font-weight:bold;">' + c + '</span>' 
-                                    if c in ['G','W'] else 
-                                    '<span style="background:#eab308;color:#000;padding:2px 6px;border-radius:4px;margin:0 2px;font-weight:bold;">' + c + '</span>' 
-                                    if c == 'D' else 
-                                    '<span style="background:#ef4444;color:#fff;padding:2px 6px;border-radius:4px;margin:0 2px;font-weight:bold;">' + c + '</span>' 
-                                    for c in letras_v
-                                ]) if letras_v else '<span style="color:#666;">Sin datos</span>'}
-                            </td>
-                        </tr>
-                    </table>
+                <div style='background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; padding: 15px; margin: 10px 0; text-align: center;'>
+                    <h3 style='color: #fff; margin: 0;'>📊 {html.escape(str(home))} <span style='color: #ffd700;'>vs</span> {html.escape(str(away))}</h3>
+                    <p style='color: #00d4ff; font-size: 12px; margin: 5px 0 0 0;'>({pj_l_display} PJ) vs ({pj_v_display} PJ)</p>
                 </div>
                 """, unsafe_allow_html=True)
-                st.html(f"""
-                <style>
-                .comparativa-table {{
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-size: 13px;
-                    background: #0d1b2a;
-                    border-radius: 12px;
-                    overflow: hidden;
-                }}
-                .comparativa-table td {{
-                    padding: 10px 15px;
-                    text-align: center;
-                    color: #fff;
-                    border-bottom: 1px solid #333;
-                }}
-                .comparativa-table .header-cell {{
-                    background: #1e2a3a;
-                    font-weight: bold;
-                    border-bottom: 2px solid #00d4ff;
-                }}
-                .comparativa-table .verde {{ color: #00ff88; }}
-                .comparativa-table .rojo {{ color: #ff6b6b; }}
-                .comparativa-table .azul {{ color: #00d4ff; }}
-                .comparativa-table .amarillo {{ color: #ffd700; font-weight: bold; }}
-                .comparativa-table .gris {{ color: #888; }}
-                .comparativa-table .bg-oscuro {{ background: #0f1923; }}
-                .comparativa-table .bg-medio {{ background: #162031; }}
-                .comparativa-table .bg-header {{ background: #1a1a2e; }}
-                </style>
-                """)
+                
+                # Headers de la tabla
+                col_local, col_indicador, col_visita = st.columns([2, 2, 2])
+                with col_local:
+                    st.markdown(f"<p style='color:#00ff88;font-weight:bold;text-align:center;font-size:14px;'>{html.escape(str(home))}</p>", unsafe_allow_html=True)
+                with col_indicador:
+                    st.markdown("<p style='color:#00d4ff;font-weight:bold;text-align:center;font-size:14px;'>📊 COMPARATIVA</p>", unsafe_allow_html=True)
+                with col_visita:
+                    st.markdown(f"<p style='color:#ff6b6b;font-weight:bold;text-align:center;font-size:14px;'>{html.escape(str(away))}</p>", unsafe_allow_html=True)
+                
+                # Función auxiliar para crear fila de datos
+                def fila_dato(valor_l, indicador, valor_v, color_val='white', bg_par=False):
+                    bg = '#162031' if bg_par else '#0f1923'
+                    return f"""
+                    <div style='background:{bg};padding:8px 5px;border-radius:4px;margin:2px 0;display:flex;'>
+                        <div style='width:33%;text-align:center;color:{color_val};'>{valor_l}</div>
+                        <div style='width:34%;text-align:center;color:#888;'>{indicador}</div>
+                        <div style='width:33%;text-align:center;color:{color_val};'>{valor_v}</div>
+                    </div>
+                    """
+                
+                # Récord V-E-D
+                st.markdown(fila_dato(f"{vic_l}-{emp_l}-{der_l}", "Récord (V-E-D)", f"{vic_v}-{emp_v}-{der_v}"), unsafe_allow_html=True)
+                # Goles Favor
+                st.markdown(fila_dato(gf_l, "Goles Favor", gf_v, bg_par=True), unsafe_allow_html=True)
+                # Goles Contra
+                st.markdown(fila_dato(gc_l, "Goles Contra", gc_v), unsafe_allow_html=True)
+                # Lambda Dinámico
+                st.markdown(fila_dato(lambda_din_l, "λ Dinámico", lambda_din_v, '#00ff88', bg_par=True), unsafe_allow_html=True)
+                # Lambda Histórico
+                st.markdown(fila_dato(f"{lambda_historico_local:.2f}", "λ Histórico", f"{lambda_historico_visit:.2f}", '#00d4ff'), unsafe_allow_html=True)
+                # Lambda Final
+                st.markdown(f"""
+                <div style='background:#1a1a2e;padding:10px 5px;border-radius:4px;margin:2px 0;display:flex;'>
+                    <div style='width:33%;text-align:center;color:#ffd700;font-weight:bold;font-size:16px;'>🔥 {lambda_local_final:.2f}</div>
+                    <div style='width:34%;text-align:center;color:#ffd700;font-weight:bold;font-size:14px;'>λ FINAL</div>
+                    <div style='width:33%;text-align:center;color:#ffd700;font-weight:bold;font-size:16px;'>🔥 {lambda_visit_final:.2f}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # PROMEDIOS POR PARTIDO
+                st.markdown("""
+                <div style='background:#0f1923;padding:10px;text-align:center;margin-top:15px;border-bottom:2px solid #00d4ff;'>
+                    <span style='color:#00d4ff;font-weight:bold;'>📈 PROMEDIOS POR PARTIDO</span>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Promedios
+                st.markdown(fila_dato(f"{prom_tiros_l:.1f}", "Tiros Total", f"{prom_tiros_v:.1f}", bg_par=True), unsafe_allow_html=True)
+                st.markdown(fila_dato(f"{prom_tiros_arco_l:.1f}", "Tiros Arco", f"{prom_tiros_arco_v:.1f}"), unsafe_allow_html=True)
+                st.markdown(fila_dato(f"{prom_amarillas_l:.1f}", "Amarillas", f"{prom_amarillas_v:.1f}", bg_par=True), unsafe_allow_html=True)
+                st.markdown(fila_dato(f"{prom_corners_l:.1f}", "Esquinas", f"{prom_corners_v:.1f}"), unsafe_allow_html=True)
+                
+                # FORMA RECIENTE
+                st.markdown("""
+                <div style='background:#0f1923;padding:10px;text-align:center;margin-top:15px;border-bottom:2px solid #00d4ff;'>
+                    <span style='color:#00d4ff;font-weight:bold;'>📅 FORMA RECIENTE (Últimos 5)</span>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                st.markdown(fila_dato(f"{puntos:.0f}%", "Puntos %", f"{puntos_v:.0f}%", bg_par=True), unsafe_allow_html=True)
+                st.markdown(fila_dato(f"{gf_forma:.0f}f/{gc_forma:.0f}c", "Goles (5 Part)", f"{gf_v_forma:.0f}f/{gc_v_forma:.0f}c"), unsafe_allow_html=True)
+                st.markdown(fila_dato(badges_local, "Resultados", badges_visitante, bg_par=True), unsafe_allow_html=True)
             # ========================
             # GUARDAR PARTIDO (TODAS LAS PREDICCIONES)
             # ========================
