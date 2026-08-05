@@ -1733,10 +1733,14 @@ def render_login_form():
         #             # Usar selectores si no hay partido seleccionado
             # Obtener equipos disponibles de Supabase
             try:
-                resp_equipos = client.table('equipos_stats').select('equipo').execute()
+                resp_equipos = client.table('equipos_stats').select('equipo,lambda_local').execute()
                 equipos_disponibles = sorted(list(set([e.get('equipo', '') for e in resp_equipos.data if e.get('equipo')])))
-            except:
+                # Debug: mostrar equipos con lambda válido
+                equipos_con_lambda = [e for e in resp_equipos.data if e.get('lambda_local', 0) >= 0]
+                st.caption(f"📊 {len(equipos_disponibles)} equipos | {len(equipos_con_lambda)} con stats")
+            except Exception as ex:
                 equipos_disponibles = []
+                st.error(f"Error conectando a Supabase: {ex}")
 
             col_space, col1, col2, col_space2 = st.columns([2, 1, 1, 2])
             with col1:
