@@ -2050,14 +2050,24 @@ def render_login_form():
                 source_local = stats_local.get('source', 'Supabase')
                 source_visitante = stats_visitante.get('source', 'Supabase')
                 
-                st.markdown("##### 📥 Estadísticas Avanzadas (Calibradas)")
+                st.markdown("##### 📥 Estadísticas Avanzadas")
                 
                 # Fuentes de datos en una línea
                 st.markdown(f"📊 **Fuente:** Local `{source_local}` | Visitante `{source_visitante}`")
                 
-                # Obtener lambdas ajustadas
-                lambda_local_adj = get_lambda_ajustada(home, stats_local.get('lambda_local', 0), como_local=True)
-                lambda_visitante_adj = get_lambda_ajustada(away, stats_visitante.get('lambda_visitante', 0), como_local=False)
+                # LAMBDA 1: De equipos_stats (promedio histórico)
+                lambda_historico_local = stats_local.get('lambda_local', 0)
+                lambda_historico_visit = stats_visitante.get('lambda_visitante', 0)
+                
+                # LAMBDA 2: De equipo_partidos_stats (ponderación exponencial de últimos partidos)
+                lambda_dinamico_local = promedios_dinamicos_local.get('lambda_ponderado') if promedios_dinamicos_local else None
+                lambda_dinamico_visit = promedios_dinamicos_visitante.get('lambda_ponderado') if promedios_dinamicos_visitante else None
+                
+                # Lambda final: combinar ambos (60% dinámico, 40% histórico)
+                if lambda_dinamico_local and lambda_dinamico_visit:
+                    lambda_local_final = lambda_dinamico_local * 0.6 + lambda_historico_local * 0.4
+                    lambda_visit_final = lambda_dinamico_visit * 0.6 + lambda_historico_visit * 0.4
+                    st.caption("⚡ Lambda: 60% dinámico (últimos partidos) + 40% histórico")
                 
                 # вҳ… USAR PROMEDIOS DINГҒMICOS si están disponibles (ponderación exponencial)
                 if promedios_dinamicos_local:
@@ -2090,8 +2100,6 @@ def render_login_form():
                 emp_l = stats_local.get('empates', 0) or 0
                 der_l = stats_local.get('derrotas', 0) or 0
                 
-                icono_ajuste_local = "🔼" if lambda_local_adj['factor'] > 1 else ("🔽" if lambda_local_adj['factor'] < 1 else "вһ–")
-                color_ajuste_local = "#00ff88" if lambda_local_adj['factor'] > 1 else ("#ff6b6b" if lambda_local_adj['factor'] < 1 else "#00d4ff")
                 
                 # Calcular promedios VISITANTE
                 pj_v = stats_visitante.get('partidos_jugados', 1) or 1
@@ -2100,9 +2108,6 @@ def render_login_form():
                 vic_v = stats_visitante.get('victorias', 0) or 0
                 emp_v = stats_visitante.get('empates', 0) or 0
                 der_v = stats_visitante.get('derrotas', 0) or 0
-                
-                icono_ajuste_vis = "🔼" if lambda_visitante_adj['factor'] > 1 else ("🔽" if lambda_visitante_adj['factor'] < 1 else "вһ–")
-                color_ajuste_vis = "#00ff88" if lambda_visitante_adj['factor'] > 1 else ("#ff6b6b" if lambda_visitante_adj['factor'] < 1 else "#00d4ff")
                 
                 # DOS COLUMNAS - stats de equipos simplificado
                 sp1, col_local, col_visita, sp2 = st.columns([0.5, 2, 2, 0.5])
@@ -2138,8 +2143,14 @@ def render_login_form():
                         <div style='display: flex; justify-content: space-between; font-size: 13px;'>
                             <span style='color: #888;'>вҡҪ GC</span><span style='color: #fff;'>{gc_l}</span>
                         </div>
-                        <div style='display: flex; justify-content: space-between; font-size: 13px;'>
-                            <span style='color: #888;'>О» Ajustada</span><span style='color: {color_ajuste_local};'>{icono_ajuste_local} {lambda_local_adj['lambda_ajustada']:.2f}</span>
+                        <div style='display: flex; justify-content: space-between; font-size: 12px;'>
+                            <span style='color: #888;'>⚡ Dinámico</span><span style='color: #00ff88;'>{lambda_dinamico_local:.2f if lambda_dinamico_local else 0:.2f}</span>
+                        </div>
+                        <div style='display: flex; justify-content: space-between; font-size: 12px;'>
+                            <span style='color: #888;'>📊 Histórico</span><span style='color: #00d4ff;'>{lambda_historico_local:.2f}</span>
+                        </div>
+                        <div style='display: flex; justify-content: space-between; font-size: 12px;'>
+                            <span style='color: #888;'>🎯 Final</span><span style='color: #ffd700;'>{lambda_local_final:.2f}</span>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -2184,8 +2195,14 @@ def render_login_form():
                         <div style='display: flex; justify-content: space-between; font-size: 13px;'>
                             <span style='color: #888;'>вҡҪ GC</span><span style='color: #fff;'>{gc_v}</span>
                         </div>
-                        <div style='display: flex; justify-content: space-between; font-size: 13px;'>
-                            <span style='color: #888;'>О» Ajustada</span><span style='color: {color_ajuste_vis};'>{icono_ajuste_vis} {lambda_visitante_adj['lambda_ajustada']:.2f}</span>
+                        <div style='display: flex; justify-content: space-between; font-size: 12px;'>
+                            <span style='color: #888;'>⚡ Dinámico</span><span style='color: #00ff88;'>{lambda_dinamico_visit:.2f if lambda_dinamico_visit else 0:.2f}</span>
+                        </div>
+                        <div style='display: flex; justify-content: space-between; font-size: 12px;'>
+                            <span style='color: #888;'>📊 Histórico</span><span style='color: #00d4ff;'>{lambda_historico_visit:.2f}</span>
+                        </div>
+                        <div style='display: flex; justify-content: space-between; font-size: 12px;'>
+                            <span style='color: #888;'>🎯 Final</span><span style='color: #ffd700;'>{lambda_visit_final:.2f}</span>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
