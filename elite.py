@@ -1859,11 +1859,20 @@ def render_login_form():
         # Buscar promedios dinámicos directamente por team_id
         if tid_local:
             promedios_dinamicos_local = calcular_promedios_equipo(client, tid_local)
-            st.write(f"DEBUG Local: {len(promedios_dinamicos_local.get('partidos', [])) if promedios_dinamicos_local else 0} partidos")
+            st.write(f"DEBUG Local: team_id={tid_local}, resultado={type(promedios_dinamicos_local)}")
+            if promedios_dinamicos_local:
+                st.write(f"DEBUG Local tiene datos: {bool(promedios_dinamicos_local)}")
+                st.write(f"DEBUG Local partidos_total: {promedios_dinamicos_local.get('partidos_total', 'N/A')}")
+            else:
+                st.write("DEBUG Local: calcular_promedios_equipo retornó None")
         
         if tid_visitante:
             promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
-            st.write(f"DEBUG Visitante: {len(promedios_dinamicos_visitante.get('partidos', [])) if promedios_dinamicos_visitante else 0} partidos")
+            st.write(f"DEBUG Visitante: team_id={tid_visitante}, resultado={type(promedios_dinamicos_visitante)}")
+            if promedios_dinamicos_visitante:
+                st.write(f"DEBUG Visitante tiene datos: {bool(promedios_dinamicos_visitante)}")
+            else:
+                st.write("DEBUG Visitante: calcular_promedios_equipo retornó None")
         
         # Mostrar info de equipos disponibles
         if not equipos_disponibles:
