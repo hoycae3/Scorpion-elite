@@ -1435,35 +1435,6 @@ def render_login_form():
                 for liga in ligas_pais:
                     ligas_pais[liga].sort(key=lambda x: (str(x.get('fecha', '')), str(x.get('hora_colombia', ''))))
                 
-                # CSS para botones de partidos estilo tarjeta compacta
-                st.markdown("""
-                <style>
-                /* Botones de partidos - tarjeta compacta */
-                div[data-testid="stHorizontalBlock"] button {
-                    max-width: 550px !important;
-                    width: 100% !important;
-                    padding: 6px 14px !important;
-                    font-size: 13px !important;
-                    border-radius: 8px !important;
-                    border: 1px solid #444 !important;
-                    background: #1e2a3a !important;
-                    color: #fff !important;
-                    text-align: left !important;
-                    justify-content: flex-start !important;
-                }
-                div[data-testid="stHorizontalBlock"] button:hover {
-                    background: #2a3a4a !important;
-                    border-color: #00d4ff !important;
-                }
-                /* Estilo general para botones de Streamlit */
-                .stButton > button {
-                    padding: 6px 14px !important;
-                    font-size: 13px !important;
-                    border-radius: 8px !important;
-                }
-                </style>
-                """, unsafe_allow_html=True)
-                
                 # Mostrar cada liga
                 for liga, partidos_liga in sorted(ligas_pais.items()):
                     st.markdown(f"**🏆 {liga}**")

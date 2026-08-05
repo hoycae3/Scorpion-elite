@@ -566,16 +566,45 @@
 .se-p-3 { padding: var(--spacing-lg); }
 
 /* ============================================
-   🔘 BOTONES - ALINEACIÓN A LA IZQUIERDA
+   🔘 BOTONES - ESTILO TARJETA COMPACTA
    ============================================ */
-/* Botones de partidos con ancho ajustado al contenido */
-[data-testid="stHorizontalBlock"] button {
+/* Botones de partidos - formato tarjeta compacta */
+.stButton button {
+    max-width: 550px !important;
+    width: 100% !important;
     text-align: left !important;
-    width: auto !important;
-    min-width: fit-content !important;
+    justify-content: flex-start !important;
+    padding: 6px 14px !important;
+    font-size: 13px !important;
+    border-radius: 8px !important;
+    border: 1px solid #444 !important;
+    background: #1e2a3a !important;
+    color: #fff !important;
 }
 
-/* Estilo de texto en botones de partidos */
-[data-testid="stHorizontalBlock"] button p {
+/* Botones dentro de expanders */
+[data-testid="stExpander"] button {
+    max-width: 550px !important;
+    width: 100% !important;
     text-align: left !important;
+    justify-content: flex-start !important;
+    padding: 6px 14px !important;
+    font-size: 13px !important;
+    border-radius: 8px !important;
+    border: 1px solid #444 !important;
+    background: #1e2a3a !important;
+    color: #fff !important;
+}
+
+/* Hover de botones */
+.stButton button:hover {
+    border-color: #00d4ff !important;
+    background: #2a3a4a !important;
+}
+
+/* Texto dentro de botones */
+.stButton button p {
+    text-align: left !important;
+    margin: 0 !important;
+    font-size: 13px !important;
 }
