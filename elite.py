@@ -2144,6 +2144,37 @@ def render_login_form():
                     </table>
                 </div>
                 """, unsafe_allow_html=True)
+                st.html(f"""
+                <style>
+                .comparativa-table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 13px;
+                    background: #0d1b2a;
+                    border-radius: 12px;
+                    overflow: hidden;
+                }}
+                .comparativa-table td {{
+                    padding: 10px 15px;
+                    text-align: center;
+                    color: #fff;
+                    border-bottom: 1px solid #333;
+                }}
+                .comparativa-table .header-cell {{
+                    background: #1e2a3a;
+                    font-weight: bold;
+                    border-bottom: 2px solid #00d4ff;
+                }}
+                .comparativa-table .verde {{ color: #00ff88; }}
+                .comparativa-table .rojo {{ color: #ff6b6b; }}
+                .comparativa-table .azul {{ color: #00d4ff; }}
+                .comparativa-table .amarillo {{ color: #ffd700; font-weight: bold; }}
+                .comparativa-table .gris {{ color: #888; }}
+                .comparativa-table .bg-oscuro {{ background: #0f1923; }}
+                .comparativa-table .bg-medio {{ background: #162031; }}
+                .comparativa-table .bg-header {{ background: #1a1a2e; }}
+                </style>
+                """)
             # ========================
             # GUARDAR PARTIDO (TODAS LAS PREDICCIONES)
             # ========================
