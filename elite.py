@@ -1852,7 +1852,7 @@ def render_login_form():
                             partidos_total_l = promedios_dinamicos_local.get('partidos_total', 0)
                         else:
                             # Estimar basado en lambda (si no hay datos en Supabase)
-                            lambda_est = lambda_base_local if lambda_base_local else 1.3
+                            lambda_est = lambda_local_cal if lambda_local_cal > 0 else 1.3
                             corners_l = 5.5
                             tiros_l = round(lambda_est * 4.5, 1)
                             tiros_arco_l = round(lambda_est * 1.5, 1)
@@ -1867,7 +1867,7 @@ def render_login_form():
                             partidos_total_v = promedios_dinamicos_visitante.get('partidos_total', 0)
                         else:
                             # Estimar basado en lambda (si no hay datos en Supabase)
-                            lambda_est = lambda_base_visitante if lambda_base_visitante else 1.1
+                            lambda_est = lambda_visitante_cal if lambda_visitante_cal > 0 else 1.1
                             corners_v = 5.5
                             tiros_v = round(lambda_est * 4.5, 1)
                             tiros_arco_v = round(lambda_est * 1.5, 1)
