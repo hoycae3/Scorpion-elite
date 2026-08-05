@@ -202,6 +202,9 @@ def guardar_stats_equipo(client, team_id, equipo, partidos_stats):
                     'faltas': int(ps.get('faltas', 0)) if ps.get('faltas') is not None else 0,
                 }
                 
+                # DEBUG: Log de lo que se intenta guardar
+                logger.info(f"DEBUG Guardando para {equipo} fixture {ps.get('fixture_id')}: gf={data['goles_favor']}, gc={data['goles_contra']}")
+                
                 # ★ Usar upsert con constraint única - no duplica, solo actualiza si existe
                 result = client.table('equipo_partidos_stats').upsert(
                     data, 
@@ -260,6 +263,12 @@ def calcular_promedios_equipo(client, team_id, max_partidos=None):
         
         partidos = resp.data
         n = len(partidos)
+        
+        # DEBUG: Verificar qué datos llegan de Supabase
+        if partidos:
+            primer_partido = partidos[0]
+            logger.info(f"DEBUG: Primer partido de team_id {team_id}: {primer_partido.keys()}")
+            logger.info(f"DEBUG: goles_favor={primer_partido.get('goles_favor')}, goles_contra={primer_partido.get('goles_contra')}")
         
         if n == 0:
             return None
