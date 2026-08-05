@@ -1154,6 +1154,7 @@ def render_login_form():
                                                     on_conflict='equipo,temporada'
                                                 ).execute()
                                                 equipos_stats_descargados += 1
+                                                st.success(f"GUARDADO: {team_name} - lambda_l: {round(gf_h / max(pj_h, 1), 2)}")
                                             except Exception as e:
                                                 st.error(f"❌ Error Supabase ({team_name}): {e}")
                                     
