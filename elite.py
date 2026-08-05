@@ -1701,12 +1701,17 @@ def render_login_form():
         elif 'selected_local' in st.session_state and 'selected_away' in st.session_state:
             local_nombre = st.session_state.selected_local
             visitante_nombre = st.session_state.selected_away
+            tid_local = st.session_state.get('selected_team_id_local')
+            tid_visitante = st.session_state.get('selected_team_id_visitante')
+            
             st.markdown("---")
             st.markdown(f"### 🎯 Analizando: **{local_nombre}** VS **{visitante_nombre}**")
             
             # Buscar stats de los equipos en Supabase
             stats_local = None
             stats_visitante = None
+            promedios_dinamicos_local = None
+            promedios_dinamicos_visitante = None
             
             try:
                 resp_local = client.table('equipos_stats').select('*').ilike('equipo', f'%{local_nombre}%').execute()
@@ -1721,17 +1726,46 @@ def render_login_form():
                     stats_visitante = resp_visitante.data[0]
             except:
                 pass
-                                    
+            
+            # Buscar promedios_dinamicos por team_id directo
+            if tid_local:
+                promedios_dinamicos_local = calcular_promedios_equipo(client, tid_local)
+            if tid_visitante:
+                promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
+            
             # Limpiar session_state después de usar
-            del st.session_state.selected_local
-            del st.session_state.selected_away
+            for key in ['selected_local', 'selected_away', 'selected_team_id_local', 'selected_team_id_visitante']:
+                st.session_state.pop(key, None)
             st.session_state.selected_match_data = None
             
             if stats_local and stats_visitante:
                 lambda_local = stats_local.get('lambda_local', 0)
                 lambda_visitante = stats_visitante.get('lambda_visitante', 0)
                 
-                # Aplicar calibración (Fix #1 - usar lambdas ajustadas)
+                # Usar promedios_dinamicos si existen
+                if promedios_dinamicos_local:
+                    corners_l = promedios_dinamicos_local.get('promedio_corners', 5.5)
+                    tiros_l = promedios_dinamicos_local.get('promedio_tiros', 13.0)
+                    tiros_arco_l = promedios_dinamicos_local.get('promedio_tiros_arco', 4.5)
+                    tarjetas_l = promedios_dinamicos_local.get('promedio_amarillas', 2.5)
+                else:
+                    corners_l = stats_local.get('promedio_corners', 5.5) or 5.5
+                    tiros_l = stats_local.get('promedio_tiros', 13.0) or 13.0
+                    tiros_arco_l = stats_local.get('promedio_tiros_arco', 4.5) or 4.5
+                    tarjetas_l = stats_local.get('promedio_tarjetas', 2.5) or 2.5
+                
+                if promedios_dinamicos_visitante:
+                    corners_v = promedios_dinamicos_visitante.get('promedio_corners', 5.5)
+                    tiros_v = promedios_dinamicos_visitante.get('promedio_tiros', 13.0)
+                    tiros_arco_v = promedios_dinamicos_visitante.get('promedio_tiros_arco', 4.5)
+                    tarjetas_v = promedios_dinamicos_visitante.get('promedio_amarillas', 2.5)
+                else:
+                    corners_v = stats_visitante.get('promedio_corners', 5.5) or 5.5
+                    tiros_v = stats_visitante.get('promedio_tiros', 13.0) or 13.0
+                    tiros_arco_v = stats_visitante.get('promedio_tiros_arco', 4.5) or 4.5
+                    tarjetas_v = stats_visitante.get('promedio_tarjetas', 2.5) or 2.5
+                
+                # Aplicar calibración
                 lambda_local_adj = get_lambda_ajustada(local_nombre, lambda_local, como_local=True)
                 lambda_visitante_adj = get_lambda_ajustada(visitante_nombre, lambda_visitante, como_local=False)
                 lambda_local_cal = lambda_local_adj['lambda_ajustada']
@@ -1741,21 +1775,21 @@ def render_login_form():
                     result = calcular(
                         lambda_local=lambda_local_cal,
                         lambda_visitante=lambda_visitante_cal,
-                        corners_local=float(stats_local.get('promedio_corners', 0) or 0),
-                        corners_visitante=float(stats_visitante.get('promedio_corners', 0) or 0),
-                        tarjetas_local=float(stats_local.get('promedio_tarjetas', 0) or 0),
-                        tarjetas_visitante=float(stats_visitante.get('promedio_tarjetas', 0) or 0),
-                        tiros_local=float(stats_local.get('promedio_tiros', 13.0) or 0),
-                        tiros_visitante=float(stats_visitante.get('promedio_tiros', 13.0) or 0),
-                        tiros_arco_local=float(stats_local.get('promedio_tiros_arco', 4.5) or 0),
-                        tiros_arco_visitante=float(stats_visitante.get('promedio_tiros_arco', 4.5) or 0),
+                        corners_local=float(corners_l),
+                        corners_visitante=float(corners_v),
+                        tarjetas_local=float(tarjetas_l),
+                        tarjetas_visitante=float(tarjetas_v),
+                        tiros_local=float(tiros_l),
+                        tiros_visitante=float(tiros_v),
+                        tiros_arco_local=float(tiros_arco_l),
+                        tiros_arco_visitante=float(tiros_arco_v),
                         ultimos_5_local=[],
                         ultimos_5_visitante=[],
                     )
                     
-                    # Agregar fixture_id si existe en el partido seleccionado
-                    if 'selected_match_data' in st.session_state and st.session_state.selected_match_data and st.session_state.selected_match_data.get('fixture_id'):
-                        result['fixture_id'] = st.session_state.selected_match_data.get('fixture_id')
+                    # Guardar promedios_dinamicos en session_state
+                    st.session_state.promedios_dinamicos_local = promedios_dinamicos_local
+                    st.session_state.promedios_dinamicos_visitante = promedios_dinamicos_visitante
                     
                     st.session_state.analysis_result = result
                     st.session_state.home = local_nombre
