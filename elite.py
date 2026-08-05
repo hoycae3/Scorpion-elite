@@ -82,7 +82,7 @@ from calibration import (
     resetear_calibracion
 )
 
-st.set_page_config(page_title="Scorpion Elite", page_icon="🐸", layout="wide")
+st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
 
 # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
 # CONFIGURACION - Variables de entorno
@@ -326,9 +326,9 @@ def render_public_landing():
     st.markdown("""
     <div class="hero-section">
         <h1 class="hero-title">
-            <span class="scorpion-icon">🐸</span>
+            <span class="scorpion-icon">🦂</span>
             <span class="title-text">SCORPION ELITE</span>
-            <span class="scorpion-icon">🐸</span>
+            <span class="scorpion-icon">🦂</span>
         </h1>
         <p class="hero-subtitle">Inteligencia Artificial para Pronósticos Deportivos</p>
         <p class="hero-description">Sistema predictivo con 4 modelos matemáticos avanzados</p>
@@ -338,7 +338,7 @@ def render_public_landing():
     # Botón 🔑 Acceder arriba
     col_btn1, col_btn2, col_btn3 = st.columns([2, 1, 2])
     with col_btn2:
-        if st.button("🔑 🔑 Acceder", use_container_width=True, type="primary"):
+        if st.button("🔑 Acceder", use_container_width=True, type="primary"):
             st.session_state.show_login = True
             st.rerun()
             pass
@@ -654,7 +654,7 @@ def render_public_landing():
     # --- FOOTER ---
     st.markdown("""
     <div class="footer">
-        <p>🐸 Scorpion Elite - Todos los derechos reservados</p>
+        <p>🦂 Scorpion Elite - Todos los derechos reservados</p>
         <p>El análisis deportivo no garantiza resultados. Apuesta responsablemente.</p>
     </div>
     """, unsafe_allow_html=True)
@@ -707,12 +707,12 @@ def render_login_form():
 
     # Sidebar con información del usuario
     with st.sidebar:
-        st.markdown("## 🐸 Scorpion Elite")
+        st.markdown("## 🦂 Scorpion Elite")
         user_plan = st.session_state.user_data.get('plan', 'vip') if st.session_state.user_data else 'vip'
         dias = st.session_state.user_data.get('dias', 0) if st.session_state.user_data else 0
         is_admin = st.session_state.user_data.get('es_admin', 0) == 1 if st.session_state.user_data else False
         
-        plan_icon = {"admin": "⚡пёҸ", "elite": "👑", "vip": "👑", "mes": "👑", "free": "⭐"}.get(user_plan, "🐸")
+        plan_icon = {"admin": "⚡пёҸ", "elite": "👑", "vip": "👑", "mes": "👑", "free": "⭐"}.get(user_plan, "🦂")
         st.markdown(f"{plan_icon} **{user_plan.upper()}**")
         if not is_admin:
             st.caption(f"вҸұпёҸ {dias} días restantes")
@@ -725,7 +725,7 @@ def render_login_form():
             pass
     
     # MenГә horizontal arriba - ж №жҚ®з"ЁжҲ·зұ»еһӢжҳҫзӨә
-    st.markdown('<h1 class="title">🐸 Scorpion Elite</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
     
     # Construir menГә dinámicamente segГәn tipo de usuario
     # VIP va de primeras y es la página por defecto
@@ -2681,7 +2681,7 @@ def render_login_form():
                 with col_nom:
                     nombre = st.text_input("қ Nombre / Cliente", placeholder="Ej: Juan, Carlos VIP").strip()
                 with col_plan:
-                    plan = st.selectbox("🐸 Plan", ["semana", "mes", "elite", "vip"])
+                    plan = st.selectbox("🦂 Plan", ["semana", "mes", "elite", "vip"])
                 
                 nueva_clave = st.text_input("🔑 Nueva ContraseГұa", placeholder="Escribe la contraseГұa Гәnica").strip()
                 
@@ -2691,7 +2691,7 @@ def render_login_form():
                 col_info, col_btn = st.columns([2, 1])
                 with col_info:
                     plan_icon = {"semana": "📦", "mes": "👑", "elite": "📘", "vip": "вӯҗ"}
-                    st.info(f"{plan_icon.get(plan, '🐸')} Plan: {plan.upper()} - {dias} días")
+                    st.info(f"{plan_icon.get(plan, '🦂')} Plan: {plan.upper()} - {dias} días")
                 
                 submitted = st.form_submit_button("✅ Crear ContraseГұa", use_container_width=True, type="primary")
                 
@@ -2791,7 +2791,7 @@ def render_login_form():
                                                              index=["semana", "mes", "elite", "vip"].index(plan) if plan in ["semana", "mes", "elite", "vip"] else 0,
                                                              key=f"plan_{clave_id}")
                                     dias_nuevos = {"semana": 7, "mes": 30, "elite": 90, "vip": 90}.get(plan_nuevo, 30)
-                                    if st.button("🐸 Cambiar Plan", key=f"btn_plan_{clave_id}"):
+                                    if st.button("🦂 Cambiar Plan", key=f"btn_plan_{clave_id}"):
                                         if db_actualizar_plan(clave_id, plan_nuevo if plan_nuevo != "elite" else "elite", dias_nuevos):
                                             st.success(f"✅ Plan cambiado a {plan_nuevo.upper()}")
                                             pass
