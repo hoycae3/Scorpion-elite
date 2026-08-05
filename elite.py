@@ -1831,39 +1831,26 @@ def render_login_form():
                         return calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
             return None
 
-        # Buscar stats de los equipos seleccionados por nombre
+        # USAR team_id DIRECTO del partido para buscar en equipo_partidos_stats
+        # Buscar equipo_partidos_stats por team_id directo
         if home_team:
-            try:
-                resp_l = client.table('equipos_stats').select('*').ilike('equipo', f'%{home_team}%').execute()
-                if resp_l.data:
-                    stats_local = resp_l.data[0]
-                    equipo_local_ok = True
-                else:
-                    equipos_faltantes.append(home_team)
-            except:
-                error_conexion = True
+            # Primero buscar team_id en equipos_stats por nombre
+            resp_l = client.table('equipos_stats').select('team_id').ilike('equipo', f'%{home_team}%').limit(1).execute()
+            if resp_l.data:
+                tid_local = resp_l.data[0].get('team_id')
+                promedios_dinamicos_local = calcular_promedios_equipo(client, tid_local)
+                equipo_local_ok = True
+            else:
+                equipos_faltantes.append(home_team)
         
         if away_team:
-            try:
-                resp_v = client.table('equipos_stats').select('*').ilike('equipo', f'%{away_team}%').execute()
-                if resp_v.data:
-                    stats_visitante = resp_v.data[0]
-                    equipo_visitante_ok = True
-                else:
-                    equipos_faltantes.append(away_team)
-            except:
-                error_conexion = True
-        
-        # Buscar promedios dinámicos desde equipo_partidos_stats usando team_id de stats_local/stats_visitante
-        tid_local = stats_local.get('team_id') if stats_local else None
-        tid_visitante = stats_visitante.get('team_id') if stats_visitante else None
-        
-        # Buscar promedios dinámicos por team_id
-        if tid_local:
-            promedios_dinamicos_local = calcular_promedios_equipo(client, tid_local)
-        
-        if tid_visitante:
-            promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
+            resp_v = client.table('equipos_stats').select('team_id').ilike('equipo', f'%{away_team}%').limit(1).execute()
+            if resp_v.data:
+                tid_visitante = resp_v.data[0].get('team_id')
+                promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
+                equipo_visitante_ok = True
+            else:
+                equipos_faltantes.append(away_team)
         
         # Mostrar info de equipos disponibles
         if not equipos_disponibles:
