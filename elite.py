@@ -2,12 +2,12 @@ import streamlit as st
 import pandas as pd
 import os
 
-# ══════════════════════════════════════════════════════════
-# 🎨 SISTEMA DE DISEÑO - COLORES Y ESTILOS
-# ══════════════════════════════════════════════════════════
+# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+# рҹҺЁ SISTEMA DE DISEГ‘O - COLORES Y ESTILOS
+# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
 # Colores principales (coinciden con styles.css)
 COLORS = {
-    'victoria': '#22c55e',     # Verde éxito
+    'victoria': '#22c55e',     # Verde Г©xito
     'derrota': '#ef4444',       # Rojo error
     'empate': '#eab308',        # Amarillo
     'primary': '#00d4aa',       # Cyan/acento
@@ -21,7 +21,7 @@ COLORS = {
     'text_secondary': '#94a3b8', # Texto secundario
 }
 
-# Función helper para formatear colores en HTML
+# FunciГіn helper para formatear colores en HTML
 def css(color_key, extra=''):
     """Retorna estilo CSS inline con el color de COLORS"""
     return f"color:{COLORS.get(color_key, '#fff')};{extra}"
@@ -65,7 +65,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Cargar variables de entorno desde .env si existe
-# En producción (Render) las variables vienen del Dashboard
+# En producciГіn (Render) las variables vienen del Dashboard
 load_dotenv()
 
 # Configurar logging
@@ -82,37 +82,37 @@ from calibration import (
     resetear_calibracion
 )
 
-st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
+st.set_page_config(page_title="Scorpion Elite", page_icon="рҹҰӮ", layout="wide")
 
-# ══════════════════════════════════════════════════════════
+# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
 # CONFIGURACION - Variables de entorno
-# ══════════════════════════════════════════════════════════
-# Las variables se cargan desde .env (desarrollo) o Render Dashboard (producción)
+# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+# Las variables se cargan desde .env (desarrollo) o Render Dashboard (producciГіn)
 
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-# Valores por defecto SOLO para desarrollo local (NO usar en producción)
-# En producción, estas variables DEBEN estar configuradas en el Dashboard de Render
+# Valores por defecto SOLO para desarrollo local (NO usar en producciГіn)
+# En producciГіn, estas variables DEBEN estar configuradas en el Dashboard de Render
 if not ADMIN_PASSWORD:
-    raise ValueError("❌ ADMIN_PASSWORD no está configurada. Configúrala en variables de entorno.")
+    raise ValueError("вқҢ ADMIN_PASSWORD no estГЎ configurada. ConfigГәrala en variables de entorno.")
 if not SUPABASE_URL:
-    raise ValueError("❌ SUPABASE_URL no está configurada. Configúrala en variables de entorno.")
+    raise ValueError("вқҢ SUPABASE_URL no estГЎ configurada. ConfigГәrala en variables de entorno.")
 if not SUPABASE_KEY:
-    raise ValueError("❌ SUPABASE_KEY no está configurada. Configúrala en variables de entorno.")
+    raise ValueError("вқҢ SUPABASE_KEY no estГЎ configurada. ConfigГәrala en variables de entorno.")
 
-# Base de datos persistente en el directorio de la aplicación
+# Base de datos persistente en el directorio de la aplicaciГіn
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# ══════════════════════════════════════════════════════════
+# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
 # CLIENTE SUPABASE UNIFICADO con @st.cache_resource
-# ══════════════════════════════════════════════════════════
+# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
 @st.cache_resource
 def get_supabase_client():
     """Crea y cachea el cliente de Supabase - se reutiliza en toda la app"""
     if not SUPABASE_URL or not SUPABASE_KEY:
-        logger.warning("SUPABASE_URL o SUPABASE_KEY no están configurados")
+        logger.warning("SUPABASE_URL o SUPABASE_KEY no estГЎn configurados")
         return None
     try:
         client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -128,7 +128,7 @@ def get_supabase_client():
         return None
 
 def get_client():
-    """Función de compatibilidad - retorna cliente de Supabase"""
+    """FunciГіn de compatibilidad - retorna cliente de Supabase"""
     return get_supabase_client()
 
 def migrate_team_id_column():
@@ -181,16 +181,16 @@ def migrate_team_id_column():
             conn.commit()
             cur.close()
             conn.close()
-            logger.info("✅ Migration completada: team_id, liga_id, team_id_local, team_id_visitante, equipo_partidos_stats")
+            logger.info("вң… Migration completada: team_id, liga_id, team_id_local, team_id_visitante, equipo_partidos_stats")
     except Exception as e:
         logger.warning(f"Migration error: {e}")
 
-# ══════════════════════════════════════════════════════════
+# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
 # SISTEMA DE USUARIOS (Supabase) - Solo hash bcrypt
-# ══════════════════════════════════════════════════════════
+# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
 
 def hash_password(password: str) -> str:
-    """Genera hash bcrypt con salt automático"""
+    """Genera hash bcrypt con salt automГЎtico"""
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 def verify_password(password: str, hashed: str) -> bool:
@@ -320,32 +320,32 @@ if "page" not in st.session_state:
 if "show_login" not in st.session_state:
     st.session_state.show_login = False
 def render_public_landing():
-    """Renderiza la landing page pública para usuarios no autenticados"""
+    """Renderiza la landing page pГәblica para usuarios no autenticados"""
     
     # --- HERO SECTION ---
     st.markdown("""
     <div class="hero-section">
         <h1 class="hero-title">
-            <span class="scorpion-icon">🦂</span>
+            <span class="scorpion-icon">рҹҰӮ</span>
             <span class="title-text">SCORPION ELITE</span>
-            <span class="scorpion-icon">🦂</span>
+            <span class="scorpion-icon">рҹҰӮ</span>
         </h1>
-        <p class="hero-subtitle">Inteligencia Artificial para Pronósticos Deportivos</p>
-        <p class="hero-description">Sistema predictivo con 4 modelos matemáticos avanzados</p>
+        <p class="hero-subtitle">Inteligencia Artificial para PronГіsticos Deportivos</p>
+        <p class="hero-description">Sistema predictivo con 4 modelos matemГЎticos avanzados</p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Botón Acceder arriba
+    # BotГіn Acceder arriba
     col_btn1, col_btn2, col_btn3 = st.columns([2, 1, 2])
     with col_btn2:
-        if st.button("🔐 Acceder", use_container_width=True, type="primary"):
+        if st.button("рҹ”җ Acceder", use_container_width=True, type="primary"):
             st.session_state.show_login = True
             pass
 
     # --- KPIs EN VIVO ---
-    st.markdown("##### 📊 Métricas")
+    st.markdown("##### рҹ“Ҡ MГ©tricas")
 
-    # Obtener métricas REALES de Supabase
+    # Obtener mГ©tricas REALES de Supabase
     try:
         client = get_client()
         if client:
@@ -366,7 +366,7 @@ def render_public_landing():
             pct_aciertos = round(aciertos/total_picks*100, 1) if total_picks > 0 else 0
             yield_pct = round(total_yield/aciertos, 1) if aciertos > 0 else 0
             
-            # Obtener número de equipos con stats
+            # Obtener nГәmero de equipos con stats
             equipos_response = client.table('equipos_stats').select('*').execute()
             total_equipos = len(equipos_response.data) if equipos_response.data else 0
         else:
@@ -388,12 +388,12 @@ def render_public_landing():
         st.metric("Aciertos", f"{pct_aciertos}%", f"{aciertos} de {total_picks}")
 
     with col_kpi2:
-        st.metric("Pronósticos", f"{total_picks:,}", f"{total_equipos} equipos")
+        st.metric("PronГіsticos", f"{total_picks:,}", f"{total_equipos} equipos")
 
     with col_kpi3:
         st.metric("Rentabilidad", f"{yield_pct:+.1f}%", "")
 
-    # Estado para análisis preview
+    # Estado para anГЎlisis preview
     if "preview_partido" not in st.session_state:
         st.session_state.preview_partido = None
 
@@ -410,19 +410,19 @@ def render_public_landing():
         partidos = []
 
     if st.session_state.preview_partido:
-        # MOSTRAR ANÁLISIS DEL PARTIDO SELECCIONADO
+        # MOSTRAR ANГҒLISIS DEL PARTIDO SELECCIONADO
         partido = st.session_state.preview_partido
         local = partido.get('equipo_local', 'Local')
         visitante = partido.get('equipo_visitante', 'Visitante')
         liga = partido.get('liga', '')
         
         st.markdown("---")
-        st.markdown(f"## ⚽ Pronóstico: {local} VS {visitante}")
+        st.markdown(f"## вҡҪ PronГіstico: {local} VS {visitante}")
         if liga:
-            st.caption(f"🏆 {liga}")
+            st.caption(f"рҹҸҶ {liga}")
         
-        # Botón para volver
-        if st.button("← Volver", key="volver_partidos"):
+        # BotГіn para volver
+        if st.button("вҶҗ Volver", key="volver_partidos"):
             st.session_state.preview_partido = None
             pass
         
@@ -435,14 +435,14 @@ def render_public_landing():
             team_id_visitante = partido.get('team_id_visitante')
             
             if client:
-                # 1️⃣ Buscar por nombre
+                # 1пёҸвғЈ Buscar por nombre
                 local_resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{local}%').execute()
                 visit_resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{visitante}%').execute()
 
                 stats_local = local_resp.data[0] if local_resp.data else None
                 stats_visit = visit_resp.data[0] if visit_resp.data else None
 
-                # 2️⃣ Fallback: buscar por team_id si no se encontró por nombre
+                # 2пёҸвғЈ Fallback: buscar por team_id si no se encontrГі por nombre
                 if not stats_local and team_id_local:
                     resp_by_id = client.table('equipos_stats').select('*').eq('team_id', team_id_local).execute()
                     if resp_by_id.data:
@@ -454,16 +454,16 @@ def render_public_landing():
                         stats_visit = resp_by_id.data[0]
 
                 # DEBUG
-                st.write(f"🔍 Local: '{local}' → {'✅' if stats_local else '❌'} (team_id: {team_id_local})")
-                st.write(f"🔍 Visit: '{visitante}' → {'✅' if stats_visit else '❌'} (team_id: {team_id_visitante})")
+                st.write(f"рҹ”Қ Local: '{local}' вҶ’ {'вң…' if stats_local else 'вқҢ'} (team_id: {team_id_local})")
+                st.write(f"рҹ”Қ Visit: '{visitante}' вҶ’ {'вң…' if stats_visit else 'вқҢ'} (team_id: {team_id_visitante})")
 
                 if stats_local and stats_visit:
                     st.markdown("---")
-                    st.markdown("### 📊 Estadísticas Calibradas")
+                    st.markdown("### рҹ“Ҡ EstadГӯsticas Calibradas")
                     
                     col1, col2 = st.columns(2)
                     with col1:
-                        st.markdown(f"**🏠 {local}**")
+                        st.markdown(f"**рҹҸ  {local}**")
                         forma_l = stats_local.get('forma', 'N/A')
                         if forma_l and forma_l != 'N/A':
                             forma_html = ''.join([{'W': '<span class="se-result-w">W</span>', 'L': '<span class="se-result-l">L</span>', 'D': '<span class="se-result-d">D</span>'}.get(c, c) for c in str(forma_l)])
@@ -471,7 +471,7 @@ def render_public_landing():
                         else:
                             st.markdown(f"**Forma:** N/A")
                         st.markdown(f"**V/E/D:** <span style='color:black;font-weight:bold'>{stats_local.get('victorias', 0)}/{stats_local.get('empates', 0)}/{stats_local.get('derrotas', 0)}</span>", unsafe_allow_html=True)
-                        # Usar promedios de datos históricos si existen
+                        # Usar promedios de datos histГіricos si existen
                         if promedios_dinamicos_local:
                             gf_l = promedios_dinamicos_local.get('promedio_goles_favor', 0)
                             gc_l = promedios_dinamicos_local.get('promedio_goles_contra', 0)
@@ -482,7 +482,7 @@ def render_public_landing():
                         lambda_l = promedios_dinamicos_local.get('lambda_ponderado', stats_local.get('lambda_local', 0)) if promedios_dinamicos_local else stats_local.get('lambda_local', 0)
                         st.markdown(f"**Ataque:** <span style='color:black;font-weight:bold'>{lambda_l:.2f}</span> goles/partido", unsafe_allow_html=True)
                     with col2:
-                        st.markdown(f"**✈️ {visitante}**")
+                        st.markdown(f"**вңҲпёҸ {visitante}**")
                         forma_v = stats_visit.get('forma', 'N/A')
                         if forma_v and forma_v != 'N/A':
                             forma_html = ''.join([{'W': '<span class="se-result-w">W</span>', 'L': '<span class="se-result-l">L</span>', 'D': '<span class="se-result-d">D</span>'}.get(c, c) for c in str(forma_v)])
@@ -490,7 +490,7 @@ def render_public_landing():
                         else:
                             st.markdown(f"**Forma:** N/A")
                         st.markdown(f"**V/E/D:** <span style='color:black;font-weight:bold'>{stats_visit.get('victorias', 0)}/{stats_visit.get('empates', 0)}/{stats_visit.get('derrotas', 0)}</span>", unsafe_allow_html=True)
-                        # Usar promedios de datos históricos si existen
+                        # Usar promedios de datos histГіricos si existen
                         if promedios_dinamicos_visitante:
                             gf_v = promedios_dinamicos_visitante.get('promedio_goles_favor', 0)
                             gc_v = promedios_dinamicos_visitante.get('promedio_goles_contra', 0)
@@ -512,7 +512,7 @@ def render_public_landing():
                     prom_l = (gf_l + gc_v) / 2
                     prom_v = (gf_v + gc_l) / 2
                     
-                    st.markdown("### 🎯 Predicciones")
+                    st.markdown("### рҹҺҜ Predicciones")
                     
                     # 1X2
                     if prom_l > prom_v * 1.2:
@@ -528,17 +528,17 @@ def render_public_landing():
                     st.info(f"**Over/Under 2.5:** {ou} ({total:.1f} goles esperados)")
                     
                     # BTTS
-                    btts = "Sí" if gf_l > 1 and gf_v > 1 else "No"
+                    btts = "SГӯ" if gf_l > 1 and gf_v > 1 else "No"
                     st.info(f"**Ambos Marcan (BTTS):** {btts}")
                     
                     st.markdown("---")
-                    st.caption("🔐 Accede con tu cuenta para análisis completo con 4 modelos matemáticos.")
+                    st.caption("рҹ”җ Accede con tu cuenta para anГЎlisis completo con 4 modelos matemГЎticos.")
                 else:
-                    st.warning(f"No hay estadísticas para {local} o {visitante}")
+                    st.warning(f"No hay estadГӯsticas para {local} o {visitante}")
         except Exception as e:
             st.error(f"Error: {str(e)}")
     else:
-        # MOSTRAR PARTIDOS ORGANIZADOS POR PAÍS/FECHA/HORA
+        # MOSTRAR PARTIDOS ORGANIZADOS POR PAГҚS/FECHA/HORA
         if partidos:
             # Convertir hora a colombiana y organizar
             partidos_procesados = []
@@ -553,27 +553,27 @@ def render_public_landing():
                     'fecha_hora': f"{fecha} {hora_colombia}"
                 })
             
-            # Ordenar por país, fecha, hora
+            # Ordenar por paГӯs, fecha, hora
             partidos_procesados.sort(key=lambda x: (
-                x.get('pais', ''),  # Primero por país
+                x.get('pais', ''),  # Primero por paГӯs
                 x.get('fecha', ''),   # Luego por fecha
                 x.get('hora_colombia', '')  # Finalmente por hora colombiana
             ))
             
-            st.markdown("###### 📅 Partidos del Día")
-            st.caption("Organizados por país, fecha y hora (Colombia)")
+            st.markdown("###### рҹ“… Partidos del DГӯa")
+            st.caption("Organizados por paГӯs, fecha y hora (Colombia)")
             
-            # Agrupar por país
+            # Agrupar por paГӯs
             paises_agrupados = {}
             for p in partidos_procesados:
-                pais = p.get('pais', 'Sin país')
+                pais = p.get('pais', 'Sin paГӯs')
                 if pais not in paises_agrupados:
                     paises_agrupados[pais] = []
                 paises_agrupados[pais].append(p)
             
-            # Mostrar por país
+            # Mostrar por paГӯs
             for pais, lista_partidos in paises_agrupados.items():
-                with st.expander(f"🌍 {pais} ({len(lista_partidos)} partidos)", expanded=True):
+                with st.expander(f"рҹҢҚ {pais} ({len(lista_partidos)} partidos)", expanded=True):
                     cols = st.columns(2)
                     for i, partido in enumerate(lista_partidos):
                         local = partido.get('equipo_local', 'Local')
@@ -586,28 +586,28 @@ def render_public_landing():
                         with cols[i % 2]:
                             st.session_state['partido_seleccionado'] = partido
                             
-                            if st.button(f"⚽ {local} vs {visitante}", key=f"partido_{fixture_id}", use_container_width=True):
+                            if st.button(f"вҡҪ {local} vs {visitante}", key=f"partido_{fixture_id}", use_container_width=True):
                                 st.session_state['partido_seleccionado'] = partido
                                 st.session_state['show_analizador'] = True
                                 st.query_params["page"] = "analizador"
                             
-                            st.caption(f"🕐 {hora_col} | 📅 {datetime.strptime(fecha, '%Y-%m-%d').strftime('%d/%m/%Y')} | {liga}")
+                            st.caption(f"рҹ•җ {hora_col} | рҹ“… {datetime.strptime(fecha, '%Y-%m-%d').strftime('%d/%m/%Y')} | {liga}")
         else:
-            st.info("📭 No hay partidos cargados. Ve a la pestaña **Carga** para subir datos.")
+            st.info("рҹ“ӯ No hay partidos cargados. Ve a la pestaГұa **Carga** para subir datos.")
 
 
 
-    # --- CÓMO FUNCIONA ---
-    st.markdown("### 🔍 ¿Cómo Funciona?")
-    st.markdown("*El analizador usa 4 modelos matemáticos para predecir resultados*")
+    # --- CГ“MO FUNCIONA ---
+    st.markdown("### рҹ”Қ ВҝCГіmo Funciona?")
+    st.markdown("*El analizador usa 4 modelos matemГЎticos para predecir resultados*")
 
     modelos_col1, modelos_col2 = st.columns(2)
     with modelos_col1:
-        st.markdown("**📈 Modelos de Predicción:**")
-        st.markdown("- **Poisson:** Distribución de goles")
+        st.markdown("**рҹ“Ҳ Modelos de PredicciГіn:**")
+        st.markdown("- **Poisson:** DistribuciГіn de goles")
         st.markdown("- **Dixon-Coles:** Efecto tiempo/partido")
     with modelos_col2:
-        st.markdown("**🎯 Modelos Avanzados:**")
+        st.markdown("**рҹҺҜ Modelos Avanzados:**")
         st.markdown("- **Monte Carlo:** Simulaciones")
         st.markdown("- **Elo:** Rating de equipos")
 
@@ -615,34 +615,34 @@ def render_public_landing():
     st.markdown("<hr>", unsafe_allow_html=True)
     
     # --- TABLA DE PLANES ---
-    st.markdown("### 💰 Planes y Precios")
+    st.markdown("### рҹ’° Planes y Precios")
 
     st.markdown("""
     <table class="se-price-table">
         <tr>
-            <th>Duración</th>
+            <th>DuraciГіn</th>
             <th>Precio (USD)</th>
             <th>Etiqueta</th>
         </tr>
         <tr>
             <td class="se-duration">24 Horas</td>
             <td class="se-price">$3.99</td>
-            <td>Pase 1 Día</td>
+            <td>Pase 1 DГӯa</td>
         </tr>
         <tr>
-            <td class="se-duration">7 Días</td>
+            <td class="se-duration">7 DГӯas</td>
             <td class="se-price">$9.99</td>
             <td>Pase 1 Semana</td>
         </tr>
         <tr class="popular">
-            <td class="se-duration">30 Días <span class="se-badge se-badge-hot">MÁS POPULAR 🔥</span></td>
+            <td class="se-duration">30 DГӯas <span class="se-badge se-badge-hot">MГҒS POPULAR рҹ”Ҙ</span></td>
             <td class="se-price">$24.99</td>
             <td>Plan 1 Mes</td>
         </tr>
         <tr>
-            <td class="se-duration">365 Días <span class="se-badge se-badge-success">AHORRA 36%</span></td>
+            <td class="se-duration">365 DГӯas <span class="se-badge se-badge-success">AHORRA 36%</span></td>
             <td class="se-price">$189.99</td>
-            <td>Plan 1 Año</td>
+            <td>Plan 1 AГұo</td>
         </tr>
     </table>
     """, unsafe_allow_html=True)
@@ -653,39 +653,39 @@ def render_public_landing():
     # --- FOOTER ---
     st.markdown("""
     <div class="footer">
-        <p>🦂 Scorpion Elite - Todos los derechos reservados</p>
-        <p>El análisis deportivo no garantiza resultados. Apuesta responsablemente.</p>
+        <p>рҹҰӮ Scorpion Elite - Todos los derechos reservados</p>
+        <p>El anГЎlisis deportivo no garantiza resultados. Apuesta responsablemente.</p>
     </div>
     """, unsafe_allow_html=True)
 
 
-# ══════════════════════════════════════════════════════════
-# SISTEMA DE LOGIN - Solo contraseña
-# ══════════════════════════════════════════════════════════
+# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+# SISTEMA DE LOGIN - Solo contraseГұa
+# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
 
 def render_login_form():
-    """Renderiza el formulario de login con solo contraseña"""
+    """Renderiza el formulario de login con solo contraseГұa"""
     
     # Toggle para mostrar/ocultar login
-    # Si no está logueado
+    # Si no estГЎ logueado
     if not st.session_state.logged:
         
-        # Si NO está mostrando login, mostrar landing page
+        # Si NO estГЎ mostrando login, mostrar landing page
         if not st.session_state.show_login:
             render_public_landing()
             st.stop()
         
-        # Si está mostrando login, mostrar SOLO el formulario
+        # Si estГЎ mostrando login, mostrar SOLO el formulario
         st.markdown("---")
-        st.markdown("### 🔐 Iniciar Sesión")
+        st.markdown("### рҹ”җ Iniciar SesiГіn")
 
-        password = st.text_input("Contraseña", type="password", placeholder="Ingresa tu contraseña", key="login_password")
+        password = st.text_input("ContraseГұa", type="password", placeholder="Ingresa tu contraseГұa", key="login_password")
 
         col_login, col_cancel = st.columns([1, 1])
         with col_login:
-            if st.button("✅ Entrar", use_container_width=True, type="primary"):
+            if st.button("вң… Entrar", use_container_width=True, type="primary"):
                 if not password.strip():
-                    st.error("⚠️ Ingresa la contraseña")
+                    st.error("вҡ пёҸ Ingresa la contraseГұa")
                 else:
                     user = db_login(password)
                     if user:
@@ -693,58 +693,58 @@ def render_login_form():
                         st.session_state.is_admin = user.get('es_admin', 0) == 1
                         st.session_state.user_data = user
                         st.session_state.show_login = False
-                        st.rerun()  # Recargar después de login
+                        st.rerun()  # Recargar despuГ©s de login
                     else:
-                        st.error("❌ Contraseña incorrecta")
+                        st.error("вқҢ ContraseГұa incorrecta")
 
         with col_cancel:
-            if st.button("← Volver", use_container_width=True):
+            if st.button("вҶҗ Volver", use_container_width=True):
                 st.session_state.show_login = False
                 pass
 
         st.stop()
 
-    # Sidebar con información del usuario
+    # Sidebar con informaciГіn del usuario
     with st.sidebar:
-        st.markdown("## 🦂 Scorpion Elite")
+        st.markdown("## рҹҰӮ Scorpion Elite")
         user_plan = st.session_state.user_data.get('plan', 'vip') if st.session_state.user_data else 'vip'
         dias = st.session_state.user_data.get('dias', 0) if st.session_state.user_data else 0
         is_admin = st.session_state.user_data.get('es_admin', 0) == 1 if st.session_state.user_data else False
         
-        plan_icon = {"admin": "⚙️", "elite": "👑", "vip": "👑", "mes": "👑", "free": "🆓"}.get(user_plan, "📦")
+        plan_icon = {"admin": "вҡҷпёҸ", "elite": "рҹ‘‘", "vip": "рҹ‘‘", "mes": "рҹ‘‘", "free": "рҹҶ“"}.get(user_plan, "рҹ“Ұ")
         st.markdown(f"{plan_icon} **{user_plan.upper()}**")
         if not is_admin:
-            st.caption(f"⏱️ {dias} días restantes")
+            st.caption(f"вҸұпёҸ {dias} dГӯas restantes")
         
         st.markdown("---")
-        if st.button("🔓 Logout", use_container_width=True):
+        if st.button("рҹ”“ Logout", use_container_width=True):
             st.session_state.logged = False
             st.session_state.user_data = None
             st.session_state.is_admin = False
             pass
     
-    # Menú horizontal arriba - 根据用户类型显示
-    st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
+    # MenГә horizontal arriba - ж №жҚ®з”ЁжҲ·зұ»еһӢжҳҫзӨә
+    st.markdown('<h1 class="title">рҹҰӮ Scorpion Elite</h1>', unsafe_allow_html=True)
     
-    # Construir menú dinámicamente según tipo de usuario
-    # VIP va de primeras y es la página por defecto
+    # Construir menГә dinГЎmicamente segГәn tipo de usuario
+    # VIP va de primeras y es la pГЎgina por defecto
     if is_admin:
         # Admin: ve todo
         menu_pages = [
-            ("👑 VIP", "VIP"),
-            ("🏠 Partidos", "Partidos"),
-            ("📊 Analizador", "Analizador"),
-            ("🔑 Claves", "Claves"),
+            ("рҹ‘‘ VIP", "VIP"),
+            ("рҹҸ  Partidos", "Partidos"),
+            ("рҹ“Ҡ Analizador", "Analizador"),
+            ("рҹ”‘ Claves", "Claves"),
         ]
     else:
         # VIP: VIP primero, luego Partidos, Analizador
         menu_pages = [
-            ("👑 VIP", "VIP"),
-            ("🏠 Partidos", "Partidos"),
-            ("📊 Analizador", "Analizador"),
+            ("рҹ‘‘ VIP", "VIP"),
+            ("рҹҸ  Partidos", "Partidos"),
+            ("рҹ“Ҡ Analizador", "Analizador"),
         ]
     
-    # Crear columnas dinámicamente
+    # Crear columnas dinГЎmicamente
     num_cols = len(menu_pages)
     cols = st.columns(num_cols)
     
@@ -757,38 +757,38 @@ def render_login_form():
     
     st.markdown("---")
 
-    # Página: Partidos (NUEVA)
+    # PГЎgina: Partidos (NUEVA)
     if st.session_state.page == "Partidos":
         import requests
         import time
         
-        st.markdown("### 🏠 Partidos de los Próximos 7 Días")
+        st.markdown("### рҹҸ  Partidos de los PrГіximos 7 DГӯas")
         
         # API-Football config
         API_KEY = os.getenv("API_FOOTBALL_KEY", "")
         if not API_KEY:
-            st.error("❌ API_FOOTBALL_KEY no configurada. Configúrala en Render.")
+            st.error("вқҢ API_FOOTBALL_KEY no configurada. ConfigГәrala en Render.")
             st.stop()
         API_URL = "https://v3.football.api-sports.io"
         
-                # ═══════════════════════════════════════════════════════════════
+                # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
         # LISTA DE LIGAS - TODAS CON IDS CORRECTOS
-        # ═══════════════════════════════════════════════════════════════
+        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
         
-        # ★ DEBUG: Probar solo Argentina
+        # вҳ… DEBUG: Probar solo Argentina
         LIGAS = [{"id": 128, "name": "Liga Profesional Argentina", "pais": "Argentina"}]
         
         # Contador de requests
         if 'api_requests_today' not in st.session_state:
             st.session_state.api_requests_today = 0
         
-        # ═══════════════════════════════════════════════════════════════
+        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
         # BOTONES BUSCAR Y LIMPIAR
-        # ═══════════════════════════════════════════════════════════════
+        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
         col_btn1, col_btn2, col_btn3, col_btn4, col_btn5, col_info = st.columns([1, 1, 1, 1, 1, 1.5])
         
         with col_btn1:
-            if st.button("🗑️ Limpiar", type="secondary", use_container_width=True):
+            if st.button("рҹ—‘пёҸ Limpiar", type="secondary", use_container_width=True):
                 client = get_client()
                 try:
                     # Contar antes de borrar
@@ -804,25 +804,25 @@ def render_login_form():
                         client.table('cuotas').delete().neq('fixture_id', -999999).execute()
                     
                     st.session_state.api_requests_today = 0
-                    st.success(f"✅ Limpiado: {num_p} partidos y {num_c} cuotas")
+                    st.success(f"вң… Limpiado: {num_p} partidos y {num_c} cuotas")
                     time.sleep(2)
                     pass
                 except Exception as e:
-                    st.error(f"❌ Error: {e}")
+                    st.error(f"вқҢ Error: {e}")
         
         with col_btn2:
-            if st.button("🔄 Sincronizar", type="primary", use_container_width=True):
-                st.info("🔄 Iniciando sincronización...")
+            if st.button("рҹ”„ Sincronizar", type="primary", use_container_width=True):
+                st.info("рҹ”„ Iniciando sincronizaciГіn...")
                 try:
                     # Migrar columna team_id si no existe
                     migrate_team_id_column()
                     
-                    # ═══════════════════════════════════════════════════════════════
-                    # CONFIGURACIÓN INICIAL
-                    # ═══════════════════════════════════════════════════════════════
+                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+                    # CONFIGURACIГ“N INICIAL
+                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
                     client = get_client()
                     if not client:
-                        st.error("❌ No se pudo conectar a Supabase")
+                        st.error("вқҢ No se pudo conectar a Supabase")
                         st.stop()
 
                     API_URL = "https://v3.football.api-sports.io"
@@ -831,16 +831,16 @@ def render_login_form():
                     hoy = datetime.now(timezone(timedelta(hours=-5))).date()
                     hoy_str = hoy.strftime('%Y-%m-%d')
                     
-                    # Calcular temporada dinámicamente: Ago-Dic → season actual, Ene-Jul → season anterior
+                    # Calcular temporada dinГЎmicamente: Ago-Dic вҶ’ season actual, Ene-Jul вҶ’ season anterior
                     season = hoy.year if hoy.month >= 8 else hoy.year - 1
                     # Usar la misma temporada para stats (la API ya tiene stats de la temporada actual)
                     season_stats = season
-                    st.markdown(f"⚽ **Temporada partidos:** {season} | **Temporada stats:** {season_stats}")
+                    st.markdown(f"вҡҪ **Temporada partidos:** {season} | **Temporada stats:** {season_stats}")
 
-                    # ═══════════════════════════════════════════════════════════════
-                    # PASO 1: DESCARGAR PARTIDOS (SIN ESTADÍSTICAS DE EQUIPOS)
-                    # ═══════════════════════════════════════════════════════════════
-                    st.info("📥 **PASO 1:** Descargando partidos...")
+                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+                    # PASO 1: DESCARGAR PARTIDOS (SIN ESTADГҚSTICAS DE EQUIPOS)
+                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+                    st.info("рҹ“Ҙ **PASO 1:** Descargando partidos...")
                     
                     # Obtener partidos existentes para evitar duplicados
                     partidos_existentes = set()
@@ -848,14 +848,14 @@ def render_login_form():
                         resp_ex = client.table('partidos').select('fixture_id').execute()
                         partidos_existentes = {p['fixture_id'] for p in resp_ex.data} if resp_ex.data else set()
                     except Exception as e:
-                        st.warning(f"⚠️ Error al obtener partidos existentes: {e}")
+                        st.warning(f"вҡ пёҸ Error al obtener partidos existentes: {e}")
                     
-                    # ★ RANGO DE BÚSQUEDA: -2 días (partidos recientes) a +6 días (próximos partidos)
+                    # вҳ… RANGO DE BГҡSQUEDA: -2 dГӯas (partidos recientes) a +6 dГӯas (prГіximos partidos)
                     fecha_inicio = (hoy - timedelta(days=2)).strftime('%Y-%m-%d')
                     fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
-                    st.markdown(f"📅 Rango: **{fecha_inicio}** al **{fecha_fin}**")
+                    st.markdown(f"рҹ“… Rango: **{fecha_inicio}** al **{fecha_fin}**")
                     
-                    # ✅ MODO PRODUCCIÓN - Todas las ligas
+                    # вң… MODO PRODUCCIГ“N - Todas las ligas
                     LIGAS = [
                             {"id": 2, "name": "UEFA Champions League"},
                             {"id": 3, "name": "UEFA Europa League"},
@@ -867,7 +867,7 @@ def render_login_form():
                             {"id": 16, "name": "CONCACAF Champions League"},
                             {"id": 17, "name": "AFC Champions League"},
                             {"id": 140, "name": "La Liga"},
-                            {"id": 141, "name": "Segunda División"},
+                            {"id": 141, "name": "Segunda DivisiГіn"},
                             {"id": 39, "name": "Premier League"},
                             {"id": 40, "name": "Championship"},
                             {"id": 41, "name": "League One"},
@@ -881,7 +881,7 @@ def render_login_form():
                             {"id": 94, "name": "Primeira Liga"},
                             {"id": 88, "name": "Eredivisie"},
                             {"id": 144, "name": "Jupiler Pro League"},
-                            {"id": 203, "name": "Süper Lig"},
+                            {"id": 203, "name": "SГјper Lig"},
                             {"id": 204, "name": "1. Lig"},
                             {"id": 179, "name": "Scottish Premiership"},
                             {"id": 180, "name": "Championship Scotland"},
@@ -897,9 +897,9 @@ def render_login_form():
                             {"id": 251, "name": "Division Intermedia Paraguay"},
                             {"id": 242, "name": "Liga Pro Ecuador"},
                             {"id": 243, "name": "Liga Pro Serie B Ecuador"},
-                            {"id": 268, "name": "Primera División Uruguay"},
-                            {"id": 269, "name": "Segunda División Uruguay"},
-                            {"id": 265, "name": "Primera División Chile"},
+                            {"id": 268, "name": "Primera DivisiГіn Uruguay"},
+                            {"id": 269, "name": "Segunda DivisiГіn Uruguay"},
+                            {"id": 265, "name": "Primera DivisiГіn Chile"},
                             {"id": 266, "name": "Primera B Chile"},
                             {"id": 281, "name": "Liga 1 Peru"},
                             {"id": 282, "name": "Liga 2 Peru"},
@@ -907,7 +907,7 @@ def render_login_form():
                             {"id": 255, "name": "USL Championship"},
                             {"id": 909, "name": "MLS Next Pro"},
                             {"id": 262, "name": "Liga MX"},
-                            {"id": 263, "name": "Liga de Expansión MX"},
+                            {"id": 263, "name": "Liga de ExpansiГіn MX"},
                             {"id": 307, "name": "Saudi Pro League"},
                             {"id": 233, "name": "Premier League Egypt"},
                             {"id": 98, "name": "J1 League"},
@@ -918,10 +918,10 @@ def render_login_form():
                     ligas_procesadas = 0
                     partidos_guardados = 0
                     
-                    # Colección de equipos únicos: {team_id: {team_id, team_name, league_id, league_name, season}}
+                    # ColecciГіn de equipos Гәnicos: {team_id: {team_id, team_name, league_id, league_name, season}}
                     equipos_unicos = {}
                     
-                    # ★ NUEVO: Diccionario para rastrear partidos FT completados por equipo
+                    # вҳ… NUEVO: Diccionario para rastrear partidos FT completados por equipo
                     # {team_id: [(fixture_id, fecha, es_local, resultado, gf, gc), ...]}
                     equipos_ft_fixtures = {}
                     
@@ -964,7 +964,7 @@ def render_login_form():
                                     
                                     # Extraer score y estado
                                     score = f.get('score', {}) or {}
-                                    goals = teams.get('goals', {})  # ★ CORRECTO
+                                    goals = teams.get('goals', {})  # вҳ… CORRECTO
                                     estado = fix.get('status', {}).get('short', 'NS')
                                     
                                     # Score fulltime
@@ -975,7 +975,7 @@ def render_login_form():
                                     if estado == 'FT':
                                         st.caption(f"DEBUG: {equipo_local} vs {equipo_visitante} - Local: {score_local}, Visitante: {score_visitante}")
                                     
-                                    # ★ CORREGIDO: SIEMPRE agregar equipos a equipos_unicos para actualizar stats
+                                    # вҳ… CORREGIDO: SIEMPRE agregar equipos a equipos_unicos para actualizar stats
                                     # Independientemente de si el partido es nuevo o existente
                                     if team_id_local:
                                         equipos_unicos[team_id_local] = {
@@ -995,7 +995,7 @@ def render_login_form():
                                             'season': season_stats
                                         }
                                     
-                                    # ★ NUEVO: Rastrear partidos FT (terminados) para sincronización incremental
+                                    # вҳ… NUEVO: Rastrear partidos FT (terminados) para sincronizaciГіn incremental
                                     if estado == 'FT' and fix_id:
                                         fecha_partido = fix.get('date', '')[:10]
                                         resultado_local = 'W' if (score_local > score_visitante) else ('D' if score_local == score_visitante else 'L')
@@ -1050,18 +1050,18 @@ def render_login_form():
                                             client.table("partidos").upsert(partido_data, on_conflict="fixture_id").execute()
                                             partidos_guardados += 1
                                         except Exception as e:
-                                            st.warning(f"⚠️ Error al guardar partido {fix_id}: {e}")
+                                            st.warning(f"вҡ пёҸ Error al guardar partido {fix_id}: {e}")
                         except Exception as e:
                             # Si falla una liga, continuar con la siguiente
                             continue
                     
                     
-                    # ═══════════════════════════════════════════════════════════════
-                    # ═══════════════════════════════════════════════════════════════
-                    # PASO 2: SINCRONIZACIÓN INCREMENTAL DE STATS DE EQUIPOS
+                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+                    # PASO 2: SINCRONIZACIГ“N INCREMENTAL DE STATS DE EQUIPOS
                     # - Equipos NUEVOS (0 records): Fetch 5 partidos iniciales
                     # - Equipos EXISTENTES: Solo fetch partidos FT nuevos no guardados
-                    # ═══════════════════════════════════════════════════════════════
+                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
                     
                     equipos_stats_descargados = 0
                     equipos_nuevos = 0
@@ -1069,19 +1069,19 @@ def render_login_form():
                     stats_ft_nuevos = 0
                     
                     if equipos_unicos:
-                        # ★ FILTRO: Solo procesar equipos de ligas Argentinas
+                        # вҳ… FILTRO: Solo procesar equipos de ligas Argentinas
                         # IDs: 128=Liga Profesional, 129=Primera Nacional, 131=Primera B Metropolitana
                         LIGAS_ARGENTINAS = {128, 129, 131}
                         equipos_argentinos = {tid: eq for tid, eq in equipos_unicos.items() 
                                               if eq.get('league_id') in LIGAS_ARGENTINAS}
                         
-                        st.info(f"📊 Equipos detectados: {len(equipos_unicos)}, Argentinos: {len(equipos_argentinos)}")
+                        st.info(f"рҹ“Ҡ Equipos detectados: {len(equipos_unicos)}, Argentinos: {len(equipos_argentinos)}")
                         
                         # Reemplazar equipos_unicos con los filtrados
                         equipos_unicos = equipos_argentinos
                         
                         if not equipos_unicos:
-                            st.warning("⚠️ No hay equipos Argentinos para procesar.")
+                            st.warning("вҡ пёҸ No hay equipos Argentinos para procesar.")
                             st.stop()
                         
                         # Paso 2a: Identificar equipos existentes en DB
@@ -1091,9 +1091,9 @@ def render_login_form():
                             resp_existing = client.table('equipo_partidos_stats').select('team_id').execute()
                             if resp_existing.data:
                                 equipos_existentes_ids = {p['team_id'] for p in resp_existing.data}
-                            st.info(f"📊 Equipos en DB: {len(equipos_existentes_ids)}")
+                            st.info(f"рҹ“Ҡ Equipos en DB: {len(equipos_existentes_ids)}")
                         except Exception as e:
-                            st.error(f"❌ Error Supabase (equipos existentes): {e}")
+                            st.error(f"вқҢ Error Supabase (equipos existentes): {e}")
                             equipos_existentes_ids = set()
                         
                         # Paso 2b: Para cada equipo, determinar si es nuevo o existente
@@ -1112,13 +1112,13 @@ def render_login_form():
                                 if resp_fixtures.data:
                                     fixtures_guardados = {p['fixture_id'] for p in resp_fixtures.data}
                             except Exception as e:
-                                st.warning(f"⚠️ Error al verificar fixtures de {team_name}: {e}")
+                                st.warning(f"вҡ пёҸ Error al verificar fixtures de {team_name}: {e}")
                             
-                            # ★ CASO A: EQUIPO NUEVO (0 records en DB)
+                            # вҳ… CASO A: EQUIPO NUEVO (0 records en DB)
                             if is_new_team:
                                 equipos_nuevos += 1
                                 try:
-                                    # Descargar estadísticas del equipo
+                                    # Descargar estadГӯsticas del equipo
                                     resp_team = requests.get(
                                         f"{API_URL}/teams/statistics",
                                         headers=headers,
@@ -1170,9 +1170,9 @@ def render_login_form():
                                                 ).execute()
                                                 equipos_stats_descargados += 1
                                             except Exception as e:
-                                                st.error(f"❌ Error Supabase ({team_name}): {e}")
+                                                st.error(f"вқҢ Error Supabase ({team_name}): {e}")
                                     
-                                    # ★ Fetch 5 partidos iniciales para equipo nuevo
+                                    # вҳ… Fetch 5 partidos iniciales para equipo nuevo
                                     partidos_iniciales = obtener_ultimos_partidos_equipo(
                                         team_id=team_id,
                                         team_name=team_name,
@@ -1186,24 +1186,24 @@ def render_login_form():
                                     if partidos_iniciales and len(partidos_iniciales) > 0:
                                         success, msg, count = guardar_stats_equipo(client, team_id, team_name, partidos_iniciales)
                                         if success and count > 0:
-                                            st.info(f"🆕 {team_name}: {count} partidos iniciales cargados")
+                                            st.info(f"рҹҶ• {team_name}: {count} partidos iniciales cargados")
                                         else:
-                                            st.warning(f"⚠️ {team_name}: {msg}")
+                                            st.warning(f"вҡ пёҸ {team_name}: {msg}")
                                     
                                 except Exception as e:
-                                    st.warning(f"⚠️ Error {team_name}: {str(e)[:80]}")
+                                    st.warning(f"вҡ пёҸ Error {team_name}: {str(e)[:80]}")
                             
-                            # ★ CASO B: EQUIPO EXISTENTE (ya tiene records en DB)
+                            # вҳ… CASO B: EQUIPO EXISTENTE (ya tiene records en DB)
                             else:
                                 equipos_existentes += 1
                                 ft_en_ventana = equipos_ft_fixtures.get(team_id, [])
                                 
-                                # ★ CORREGIDO: Siempre intentar guardar/actualizar TODOS los FT
+                                # вҳ… CORREGIDO: Siempre intentar guardar/actualizar TODOS los FT
                                 # El upsert no duplica, solo actualiza si ya existe
                                 if ft_en_ventana:
                                     for fix_info in ft_en_ventana:
                                         try:
-                                            # Fetch stats del partido específico
+                                            # Fetch stats del partido especГӯfico
                                             stats_partido = obtener_stats_partido(
                                                 fixture_id=fix_info['fixture_id'],
                                                 team_id=team_id,
@@ -1221,11 +1221,14 @@ def render_login_form():
                                                 'liga': fix_info['liga'],
                                                 'es_local': fix_info['es_local'],
                                                 'resultado': fix_info['resultado'],
-                                                'goles_favor': fix_info['goles_favor'] if fix_info['goles_favor'] else 0,
-                                                'goles_contra': fix_info['goles_contra'] if fix_info['goles_contra'] else 0,
+                                                'goles_favor': fix_info['goles_favor'] if fix_info.get('goles_favor') is not None else 0,
+                                                'goles_contra': fix_info['goles_contra'] if fix_info.get('goles_contra') is not None else 0,
                                             }
                                             
-                                            # Agregar stats si están disponibles
+                                            # DEBUG: Mostrar qué se guarda
+                                            st.caption(f"DEBUG GUARDAR: gf={partido_data['goles_favor']}, gc={partido_data['goles_contra']}")
+                                            
+                                            # Agregar stats si estГЎn disponibles
                                             if stats_partido:
                                                 partido_data.update(stats_partido)
                                             
@@ -1236,43 +1239,43 @@ def render_login_form():
                                                 ).execute()
                                                 stats_ft_nuevos += 1
                                             except Exception as e:
-                                                st.error(f"❌ Error Supabase ({team_name} - fixture {fix_info['fixture_id']}): {e}")
+                                                st.error(f"вқҢ Error Supabase ({team_name} - fixture {fix_info['fixture_id']}): {e}")
                                             
                                         except Exception as e:
-                                            st.warning(f"⚠️ {team_name}: error fetching fixture {fix_info['fixture_id']}: {str(e)[:60]}")
+                                            st.warning(f"вҡ пёҸ {team_name}: error fetching fixture {fix_info['fixture_id']}: {str(e)[:60]}")
                     
                     else:
-                        st.info("ℹ️ No hay equipos para procesar.")
+                        st.info("в„№пёҸ No hay equipos para procesar.")
 
-                    st.success(f"✅ **{equipos_stats_descargados}** equipos con stats | 🆕 {equipos_nuevos} nuevos | ♻️ {equipos_existentes} existentes")
+                    st.success(f"вң… **{equipos_stats_descargados}** equipos con stats | рҹҶ• {equipos_nuevos} nuevos | вҷ»пёҸ {equipos_existentes} existentes")
                     if stats_ft_nuevos > 0:
-                        st.info(f"📊 **{stats_ft_nuevos}** stats FT incrementales guardadas")
+                        st.info(f"рҹ“Ҡ **{stats_ft_nuevos}** stats FT incrementales guardadas")
                     st.session_state.sincronizacion_ok = True
                     
-                    # ═══════════════════════════════════════════════════════════════
+                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
                     # RESUMEN FINAL
-                    # ═══════════════════════════════════════════════════════════════
-                    st.success("✅ **SINCRONIZACIÓN COMPLETADA**")
+                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+                    st.success("вң… **SINCRONIZACIГ“N COMPLETADA**")
                     st.markdown(f"""
-                    📊 **RESUMEN FINAL:**
+                    рҹ“Ҡ **RESUMEN FINAL:**
                     
-                    | Métrica | Valor |
+                    | MГ©trica | Valor |
                     |---------|-------|
-                    | 🏆 **Ligas procesadas** | {ligas_procesadas} |
-                    | 📅 **Partidos guardados** | {partidos_guardados} |
-                    | 👥 **Equipos detectados** | {len(equipos_unicos)} |
-                    | 🆕 **Equipos nuevos** | {equipos_nuevos} |
-                    | ♻️ **Equipos existentes** | {equipos_existentes} |
-                    | 📊 **Stats equipos descargadas** | {equipos_stats_descargados} |
-                    | 📈 **Stats FT incrementales** | {stats_ft_nuevos} |
+                    | рҹҸҶ **Ligas procesadas** | {ligas_procesadas} |
+                    | рҹ“… **Partidos guardados** | {partidos_guardados} |
+                    | рҹ‘Ҙ **Equipos detectados** | {len(equipos_unicos)} |
+                    | рҹҶ• **Equipos nuevos** | {equipos_nuevos} |
+                    | вҷ»пёҸ **Equipos existentes** | {equipos_existentes} |
+                    | рҹ“Ҡ **Stats equipos descargadas** | {equipos_stats_descargados} |
+                    | рҹ“Ҳ **Stats FT incrementales** | {stats_ft_nuevos} |
                     """)
                         
                 except Exception as e:
-                    st.error(f"❌ Error en sincronización: {e}")
+                    st.error(f"вқҢ Error en sincronizaciГіn: {e}")
 
 
         with col_btn3:
-            if st.button("🧹 Limpiar Equipos", type="secondary", use_container_width=True):
+            if st.button("рҹ§№ Limpiar Equipos", type="secondary", use_container_width=True):
                 client = get_client()
                 try:
                     resp_eq = client.table('equipos_stats').select('equipo', count='exact').execute()
@@ -1286,25 +1289,25 @@ def render_login_form():
                         client.table('equipo_partidos_stats').delete().neq('equipo', '').execute()
                         st.session_state.limpieza_equipos_ok = True
                     else:
-                        st.info("ℹ️ No hay datos para limpiar")
+                        st.info("в„№пёҸ No hay datos para limpiar")
                 except Exception as e:
-                    st.error(f"❌ Error: {e}")
+                    st.error(f"вқҢ Error: {e}")
 
         # Mostrar mensaje de limpieza si fue exitosa
         if st.session_state.get('limpieza_equipos_ok'):
-            st.success(f"✅ Equipos limpiados correctamente")
+            st.success(f"вң… Equipos limpiados correctamente")
             st.session_state.limpieza_equipos_ok = False
 
-        # ═══════════════════════════════════════════════════════════════
-        # BOTÓN: ACTUALIZAR STATS DE AYER
-        # ═══════════════════════════════════════════════════════════════
+        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+        # BOTГ“N: ACTUALIZAR STATS DE AYER
+        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
         with col_btn5:
-            if st.button("📊 Stats Ayer", type="secondary", use_container_width=True):
-                st.info("📥 Buscando partidos de ayer en Supabase...")
+            if st.button("рҹ“Ҡ Stats Ayer", type="secondary", use_container_width=True):
+                st.info("рҹ“Ҙ Buscando partidos de ayer en Supabase...")
                 
                 client = get_client()
                 if not client:
-                    st.error("❌ No se pudo conectar a Supabase")
+                    st.error("вқҢ No se pudo conectar a Supabase")
                     st.stop()
                 
                 API_URL = "https://v3.football.api-sports.io"
@@ -1315,7 +1318,7 @@ def render_login_form():
                 ayer = (hoy - timedelta(days=1)).strftime('%Y-%m-%d')
                 
                 # Paso 1: Consultar partidos de ayer en Supabase
-                st.info(f"📅 **PASO 1:** Buscando partidos del **{ayer}**...")
+                st.info(f"рҹ“… **PASO 1:** Buscando partidos del **{ayer}**...")
                 
                 try:
                     res = client.table("partidos").select(
@@ -1323,17 +1326,17 @@ def render_login_form():
                     ).eq("fecha", ayer).execute()
                     partidos_ayer = res.data if res.data else []
                 except Exception as e:
-                    st.error(f"❌ Error al consultar partidos de ayer: {e}")
+                    st.error(f"вқҢ Error al consultar partidos de ayer: {e}")
                     partidos_ayer = []
                 
                 if not partidos_ayer:
-                    st.info(f"ℹ️ No hay partidos de ayer guardados en Supabase ({ayer}).")
+                    st.info(f"в„№пёҸ No hay partidos de ayer guardados en Supabase ({ayer}).")
                     st.stop()
                 
-                st.success(f"✅ Encontrados **{len(partidos_ayer)}** partidos de ayer")
+                st.success(f"вң… Encontrados **{len(partidos_ayer)}** partidos de ayer")
                 
                 # Paso 2: Para cada partido, obtener stats y actualizar
-                st.info(f"📥 **PASO 2:** Actualizando estadísticas de {len(partidos_ayer)} partidos...")
+                st.info(f"рҹ“Ҙ **PASO 2:** Actualizando estadГӯsticas de {len(partidos_ayer)} partidos...")
                 
                 stats_actualizadas = 0
                 errores = 0
@@ -1346,7 +1349,7 @@ def render_login_form():
                     team_id_visitante = partido.get('team_id_visitante')
                     liga = partido.get('liga', '')
                     
-                    st.write(f"🔄 [{i+1}/{len(partidos_ayer)}] {equipo_local} vs {equipo_visitante}")
+                    st.write(f"рҹ”„ [{i+1}/{len(partidos_ayer)}] {equipo_local} vs {equipo_visitante}")
                     
                     try:
                         # Obtener detalles del partido (estado y scores)
@@ -1358,13 +1361,13 @@ def render_login_form():
                         )
                         
                         if resp_fix.status_code != 200:
-                            st.warning(f"⚠️ Fixture {fixture_id}: Error API ({resp_fix.status_code})")
+                            st.warning(f"вҡ пёҸ Fixture {fixture_id}: Error API ({resp_fix.status_code})")
                             errores += 1
                             continue
                         
                         fixtures_data = resp_fix.json().get('response', [])
                         if not fixtures_data:
-                            st.warning(f"⚠️ Fixture {fixture_id}: Sin datos")
+                            st.warning(f"вҡ пёҸ Fixture {fixture_id}: Sin datos")
                             errores += 1
                             continue
                         
@@ -1387,16 +1390,16 @@ def render_login_form():
                                 'score_visitante': score_visitante
                             }).eq('fixture_id', fixture_id).execute()
                         except Exception as e:
-                            st.error(f"❌ Error actualizando partido {fixture_id}: {e}")
+                            st.error(f"вқҢ Error actualizando partido {fixture_id}: {e}")
                             errores += 1
                             continue
                         
-                        # Solo procesar stats si el partido está FT
+                        # Solo procesar stats si el partido estГЎ FT
                         if estado != 'FT':
-                            st.write(f"   ⏳ Partido aún no terminado (estado: {estado})")
+                            st.write(f"   вҸі Partido aГәn no terminado (estado: {estado})")
                             continue
                         
-                        # Obtener estadísticas del partido
+                        # Obtener estadГӯsticas del partido
                         resp_stats = requests.get(
                             f"{API_URL}/fixtures/statistics",
                             headers=headers,
@@ -1405,7 +1408,7 @@ def render_login_form():
                         )
                         
                         if resp_stats.status_code != 200:
-                            st.warning(f"⚠️ Stats {fixture_id}: Error API ({resp_stats.status_code})")
+                            st.warning(f"вҡ пёҸ Stats {fixture_id}: Error API ({resp_stats.status_code})")
                             errores += 1
                             continue
                         
@@ -1432,7 +1435,7 @@ def render_login_form():
                             else:
                                 continue
                             
-                            # Extraer estadísticas
+                            # Extraer estadГӯsticas
                             def get_stat(stats_list, stat_type):
                                 for s in stats_list:
                                     if s.get('type') == stat_type:
@@ -1475,31 +1478,31 @@ def render_login_form():
                                 ).execute()
                                 stats_actualizadas += 1
                             except Exception as e:
-                                st.error(f"❌ Error guardando stats para {team_name}: {e}")
+                                st.error(f"вқҢ Error guardando stats para {team_name}: {e}")
                                 errores += 1
                         
-                        st.success(f"   ✅ {equipo_local} vs {equipo_visitante} - Stats guardadas")
+                        st.success(f"   вң… {equipo_local} vs {equipo_visitante} - Stats guardadas")
                         
                     except Exception as e:
-                        st.error(f"❌ Error procesando fixture {fixture_id}: {e}")
+                        st.error(f"вқҢ Error procesando fixture {fixture_id}: {e}")
                         errores += 1
                         continue
                 
                 # Resumen
                 st.markdown("---")
-                st.success(f"✅ **ACTUALIZACIÓN COMPLETADA**")
+                st.success(f"вң… **ACTUALIZACIГ“N COMPLETADA**")
                 st.markdown(f"""
-                📊 **RESUMEN:**
-                | Métrica | Valor |
+                рҹ“Ҡ **RESUMEN:**
+                | MГ©trica | Valor |
                 |---------|-------|
-                | 📅 **Partidos de ayer** | {len(partidos_ayer)} |
-                | ✅ **Stats actualizadas** | {stats_actualizadas} |
-                | ❌ **Errores** | {errores} |
+                | рҹ“… **Partidos de ayer** | {len(partidos_ayer)} |
+                | вң… **Stats actualizadas** | {stats_actualizadas} |
+                | вқҢ **Errores** | {errores} |
                 """)
 
-        # ═══════════════════════════════════════════════════════════════
-        # LIMPIEZA: Eliminar partidos de más de 1 año SOLO si hay partidos nuevos
-        # ═══════════════════════════════════════════════════════════════
+        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+        # LIMPIEZA: Eliminar partidos de mГЎs de 1 aГұo SOLO si hay partidos nuevos
+        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
         if st.session_state.get('sincronizacion_ok') and st.session_state.get('partidos_nuevos_guardados', 0) > 0:
             st.session_state.sincronizacion_ok = False
             st.session_state.partidos_nuevos_guardados = 0
@@ -1509,16 +1512,16 @@ def render_login_form():
                 resp_del = client.table('partidos').delete().lt('fecha', fecha_limite).execute()
                 eliminados = len(resp_del.data) if resp_del.data else 0
                 if eliminados > 0:
-                    st.info(f"🗑️ {eliminados} partidos de más de 1 año eliminados")
+                    st.info(f"рҹ—‘пёҸ {eliminados} partidos de mГЎs de 1 aГұo eliminados")
             except Exception as e:
                 pass
 
         with col_info:
-            st.markdown(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 📡 Requests: {st.session_state.api_requests_today}/999")
+            st.markdown(f"рҹ“… {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | рҹ“Ў Requests: {st.session_state.api_requests_today}/999")
         
-        # ═══════════════════════════════════════════════════════════════
-        # MOSTRAR PARTIDOS (AGRUPADOS POR PAÍS, HORA COLOMBIANA)
-        # ═══════════════════════════════════════════════════════════════
+        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+        # MOSTRAR PARTIDOS (AGRUPADOS POR PAГҚS, HORA COLOMBIANA)
+        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
         try:
             client = get_client()
             response = client.table('partidos').select('*').execute()
@@ -1527,22 +1530,22 @@ def render_login_form():
             partidos_db = []
         
         if partidos_db:
-            st.markdown(f"<span style='color:black;font-weight:bold'>✅ {len(partidos_db)} partidos de Supabase</span>", unsafe_allow_html=True)
+            st.markdown(f"<span style='color:black;font-weight:bold'>вң… {len(partidos_db)} partidos de Supabase</span>", unsafe_allow_html=True)
             partidos = partidos_db
         else:
-            st.markdown("📭 **No hay partidos.** Clic en 🔄 Sincronizar para obtener partidos.")
+            st.markdown("рҹ“ӯ **No hay partidos.** Clic en рҹ”„ Sincronizar para obtener partidos.")
             partidos = []
         
-        # Filtro por período
+        # Filtro por perГӯodo
         col_f1, col_f2 = st.columns([1, 3])
         with col_f1:
-            filtro_opcion = st.selectbox("📅 Ver", ["Todos", "Hoy", "Mañana", "Esta semana"])
+            filtro_opcion = st.selectbox("рҹ“… Ver", ["Todos", "Hoy", "MaГұana", "Esta semana"])
         
-        # Filtrar según opción
+        # Filtrar segГәn opciГіn
         hoy = datetime.now(timezone(timedelta(hours=-5))).date()
         if filtro_opcion == "Hoy":
             partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] == hoy.strftime('%Y-%m-%d')]
-        elif filtro_opcion == "Mañana":
+        elif filtro_opcion == "MaГұana":
             partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] == (hoy + timedelta(days=1)).strftime('%Y-%m-%d')]
         elif filtro_opcion == "Esta semana":
             semana = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
@@ -1561,27 +1564,27 @@ def render_login_form():
                 'fecha_formato': datetime.strptime(fecha, '%Y-%m-%d').strftime('%d/%m/%Y') if fecha else ''
             })
         
-        # Agrupar por PAÍS
+        # Agrupar por PAГҚS
         paises_partidos = {}
         for p in partidos_procesados:
-            pais = p.get('pais', 'Sin país')
+            pais = p.get('pais', 'Sin paГӯs')
             if pais not in paises_partidos:
                 paises_partidos[pais] = []
             paises_partidos[pais].append(p)
         
-        # Emoji por país
+        # Emoji por paГӯs
         def get_pais_emoji(pais):
             emojis = {
-                'Argentina': '🇦🇷', 'Brasil': '🇧🇷', 'Colombia': '🇨🇴', 'Chile': '🇨🇱',
-                'México': '🇲🇽', 'USA': '🇺🇸', 'Uruguay': '🇺🇾', 'Perú': '🇵🇪',
-                'Paraguay': '🇵🇾', 'Ecuador': '🇪🇨', 'España': '🇪🇸', 'Inglaterra': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-                'Alemania': '🇩🇪', 'Italia': '🇮🇹', 'Francia': '🇫🇷', 'Portugal': '🇵🇹',
-                'Holanda': '🇳🇱', 'Turquía': '🇹🇷', 'Escocia': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
-                'Bélgica': '🇧🇪', 'Mundial': '🌍'
+                'Argentina': 'рҹҮҰрҹҮ·', 'Brasil': 'рҹҮ§рҹҮ·', 'Colombia': 'рҹҮЁрҹҮҙ', 'Chile': 'рҹҮЁрҹҮұ',
+                'MГ©xico': 'рҹҮІрҹҮҪ', 'USA': 'рҹҮәрҹҮё', 'Uruguay': 'рҹҮәрҹҮҫ', 'PerГә': 'рҹҮөрҹҮӘ',
+                'Paraguay': 'рҹҮөрҹҮҫ', 'Ecuador': 'рҹҮӘрҹҮЁ', 'EspaГұa': 'рҹҮӘрҹҮё', 'Inglaterra': 'рҹҸҙу Ғ§у Ғўу ҒҘу Ғ®у Ғ§у Ғҝ',
+                'Alemania': 'рҹҮ©рҹҮӘ', 'Italia': 'рҹҮ®рҹҮ№', 'Francia': 'рҹҮ«рҹҮ·', 'Portugal': 'рҹҮөрҹҮ№',
+                'Holanda': 'рҹҮірҹҮұ', 'TurquГӯa': 'рҹҮ№рҹҮ·', 'Escocia': 'рҹҸҙу Ғ§у Ғўу Ғіу ҒЈу Ғҙу Ғҝ',
+                'BГ©lgica': 'рҹҮ§рҹҮӘ', 'Mundial': 'рҹҢҚ'
             }
-            return emojis.get(pais, '🌍')
+            return emojis.get(pais, 'рҹҢҚ')
         
-        # Mostrar cada país como expander
+        # Mostrar cada paГӯs como expander
         for pais in sorted(paises_partidos.keys()):
             emoji = get_pais_emoji(pais)
             partidos_pais = paises_partidos[pais]
@@ -1602,7 +1605,7 @@ def render_login_form():
                 
                 # Mostrar cada liga
                 for liga, partidos_liga in sorted(ligas_pais.items()):
-                    st.markdown(f"**🏆 {liga}**")
+                    st.markdown(f"**рҹҸҶ {liga}**")
                     
                     for i, partido in enumerate(partidos_liga):
                         equipo_local = partido.get('equipo_local', '')
@@ -1610,7 +1613,7 @@ def render_login_form():
                         hora_col = partido.get('hora_colombia', '')
                         fecha_fmt = partido.get('fecha_formato', '')[:5]
 
-                        # Verificar si los equipos tienen estadísticas
+                        # Verificar si los equipos tienen estadГӯsticas
                         try:
                             resp_local = client.table('equipos_stats').select('equipo').ilike('equipo', f'%{equipo_local}%').execute()
                             resp_visit = client.table('equipos_stats').select('equipo').ilike('equipo', f'%{equipo_visitante}%').execute()
@@ -1622,14 +1625,14 @@ def render_login_form():
 
                         # Badge de estado
                         if tiene_stats is True:
-                            badge = "🟢"
+                            badge = "рҹҹў"
                         elif tiene_stats is False:
-                            badge = "🔴"
+                            badge = "рҹ”ҙ"
                         else:
-                            badge = "⚪"
+                            badge = "вҡӘ"
                         
-                        # Todo en un solo botón
-                        label = f"📅 {fecha_fmt}  🕐 {hora_col}  |  {badge} {equipo_local} vs {equipo_visitante}"
+                        # Todo en un solo botГіn
+                        label = f"рҹ“… {fecha_fmt}  рҹ•җ {hora_col}  |  {badge} {equipo_local} vs {equipo_visitante}"
                         if st.button(label, key=f"btn_{pais}_{liga}_{i}", use_container_width=True):
                             st.session_state.selected_local = equipo_local
                             st.session_state.selected_away = equipo_visitante
@@ -1638,9 +1641,9 @@ def render_login_form():
                 
                 st.markdown("---")
         
-    # Página: Analizador
+    # PГЎgina: Analizador
     elif st.session_state.page == "Analizador":
-        pass  # Sin título
+        pass  # Sin tГӯtulo
         
         # Inicializar selected_match en session_state
         if 'selected_match_data' not in st.session_state:
@@ -1650,21 +1653,21 @@ def render_login_form():
         
         # Si no hay partido seleccionado, terminar silenciosamente
         if not st.session_state.selected_match_data and not ('selected_local' in st.session_state and 'selected_away' in st.session_state):
-            st.stop()  # Terminar aquí
+            st.stop()  # Terminar aquГӯ
         
-        # Emoji por país
-        # Si hay un partido seleccionado, hacer análisis automático
+        # Emoji por paГӯs
+        # Si hay un partido seleccionado, hacer anГЎlisis automГЎtico
         if st.session_state.selected_match_data:
             p = st.session_state.selected_match_data
             local_nombre = p.get('equipo_local', '')
             visitante_nombre = p.get('equipo_visitante', '')
         
-        # Si viene de la página Partidos con equipos en session_state
+        # Si viene de la pГЎgina Partidos con equipos en session_state
         elif 'selected_local' in st.session_state and 'selected_away' in st.session_state:
             local_nombre = st.session_state.selected_local
             visitante_nombre = st.session_state.selected_away
             st.markdown("---")
-            st.markdown(f"### 🎯 Analizando: **{local_nombre}** VS **{visitante_nombre}**")
+            st.markdown(f"### рҹҺҜ Analizando: **{local_nombre}** VS **{visitante_nombre}**")
             
             # Buscar stats de los equipos en Supabase
             stats_local = None
@@ -1686,7 +1689,7 @@ def render_login_form():
             
             # DEBUG
                                     
-            # Limpiar session_state después de usar
+            # Limpiar session_state despuГ©s de usar
             del st.session_state.selected_local
             del st.session_state.selected_away
             st.session_state.selected_match_data = None
@@ -1695,7 +1698,7 @@ def render_login_form():
                 lambda_local = stats_local.get('lambda_local', 0)
                 lambda_visitante = stats_visitante.get('lambda_visitante', 0)
                 
-                # Aplicar calibración (Fix #1 - usar lambdas ajustadas)
+                # Aplicar calibraciГіn (Fix #1 - usar lambdas ajustadas)
                 lambda_local_adj = get_lambda_ajustada(local_nombre, lambda_local, como_local=True)
                 lambda_visitante_adj = get_lambda_ajustada(visitante_nombre, lambda_visitante, como_local=False)
                 lambda_local_cal = lambda_local_adj['lambda_ajustada']
@@ -1753,9 +1756,9 @@ def render_login_form():
 
             col_space, col1, col2, col_space2 = st.columns([2, 1, 1, 2])
             with col1:
-                home_team = st.selectbox("🏠 Local", [""] + equipos_disponibles, key="home_select")
+                home_team = st.selectbox("рҹҸ  Local", [""] + equipos_disponibles, key="home_select")
             with col2:
-                away_team = st.selectbox("✈️ Visitante", [""] + equipos_disponibles, key="away_select")
+                away_team = st.selectbox("вңҲпёҸ Visitante", [""] + equipos_disponibles, key="away_select")
         
         # Validar que ambos equipos tengan DATOS REALES en Supabase
         lambda_local = None
@@ -1783,7 +1786,7 @@ def render_login_form():
                     team_id_local = stats_local.get('team_id')
                     equipo_local_ok = True
                     
-                    # ★ OBTENER PROMEDIOS DINÁMICOS de equipo_partidos_stats
+                    # вҳ… OBTENER PROMEDIOS DINГҒMICOS de equipo_partidos_stats
                     # Buscar directamente por nombre para evitar problemas de team_id
                     resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{home_team}%').limit(1).execute()
                     if resp_eps.data:
@@ -1807,7 +1810,7 @@ def render_login_form():
                     team_id_visitante = stats_visitante.get('team_id')
                     equipo_visitante_ok = True
                     
-                    # ★ OBTENER PROMEDIOS DINÁMICOS de equipo_partidos_stats
+                    # вҳ… OBTENER PROMEDIOS DINГҒMICOS de equipo_partidos_stats
                     # Buscar directamente por nombre para evitar problemas de team_id
                     resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{away_team}%').limit(1).execute()
                     if resp_eps.data:
@@ -1823,17 +1826,17 @@ def render_login_form():
         
         # Mostrar error si faltan equipos
         if equipos_faltantes and not error_conexion:
-            st.error(f"⚠️ Equipos no encontrados en la base de datos: {', '.join(set(equipos_faltantes))}")
-            st.info("📝 Ve a la pestaña 'Estadísticas' → 'Agregar Equipo Manual' para agregar los datos.")
+            st.error(f"вҡ пёҸ Equipos no encontrados en la base de datos: {', '.join(set(equipos_faltantes))}")
+            st.info("рҹ“қ Ve a la pestaГұa 'EstadГӯsticas' вҶ’ 'Agregar Equipo Manual' para agregar los datos.")
         
-        # Botón analizar - solo si ambos equipos existen
+        # BotГіn analizar - solo si ambos equipos existen
         analizar_disabled = not (equipo_local_ok and equipo_visitante_ok)
         
-        if st.button("🎯 ANALIZAR", type="primary", use_container_width=True, disabled=analizar_disabled):
+        if st.button("рҹҺҜ ANALIZAR", type="primary", use_container_width=True, disabled=analizar_disabled):
             try:
                 if home_team and away_team and lambda_local is not None and lambda_visitante is not None and stats_local and stats_visitante:
                     with st.spinner("Analizando..."):
-                        # ★ LAMBDA DINÁMICO: Si hay datos de equipo_partidos_stats, usar lambda_ponderado
+                        # вҳ… LAMBDA DINГҒMICO: Si hay datos de equipo_partidos_stats, usar lambda_ponderado
                         # Si no, usar lambda base de equipos_stats
                         lambda_base_local = lambda_local
                         lambda_base_visitante = lambda_visitante
@@ -1851,13 +1854,13 @@ def render_login_form():
                         else:
                             lambda_final_visitante = lambda_base_visitante
                         
-                        # Aplicar calibración
+                        # Aplicar calibraciГіn
                         lambda_local_adj = get_lambda_ajustada(home_team, lambda_final_local, como_local=True)
                         lambda_visitante_adj = get_lambda_ajustada(away_team, lambda_final_visitante, como_local=False)
                         lambda_local_cal = lambda_local_adj['lambda_ajustada']
                         lambda_visitante_cal = lambda_visitante_adj['lambda_ajustada']
                         
-                        # ★ USAR PROMEDIOS DINÁMICOS si están disponibles
+                        # вҳ… USAR PROMEDIOS DINГҒMICOS si estГЎn disponibles
                         if promedios_dinamicos_local:
                             corners_l = promedios_dinamicos_local.get('promedio_corners', 5.5)
                             tiros_l = promedios_dinamicos_local.get('promedio_tiros', 13.0)
@@ -1888,7 +1891,7 @@ def render_login_form():
                             amarillas_v = 2.5
                             partidos_total_v = 0
                         
-                        # ★ OBTENER ÚLTIMOS 5 PARTIDOS de equipo_partidos_stats
+                        # вҳ… OBTENER ГҡLTIMOS 5 PARTIDOS de equipo_partidos_stats
                         ultimos_5_local = []
                         ultimos_5_visitante = []
                         
@@ -1913,7 +1916,7 @@ def render_login_form():
                             ultimos_5_visitante=ultimos_5_visitante,
                         )
                         
-                        # Guardar info de partidos dinámicos en result
+                        # Guardar info de partidos dinГЎmicos en result
                         result['partidos_acumulados_local'] = partidos_total_l
                         result['partidos_acumulados_visitante'] = partidos_total_v
                         
@@ -1962,10 +1965,10 @@ def render_login_form():
                         }
                             
                 else:
-                    st.error("⚠️ Ambos equipos deben tener estadísticas. Ejecuta el robot primero.")
+                    st.error("вҡ пёҸ Ambos equipos deben tener estadГӯsticas. Ejecuta el robot primero.")
             except Exception as e:
-                st.error(f"❌ Error en análisis: {str(e)[:100]}")
-                st.info("💡 Intenta de nuevo o verifica que los equipos existan.")
+                st.error(f"вқҢ Error en anГЎlisis: {str(e)[:100]}")
+                st.info("рҹ’Ў Intenta de nuevo o verifica que los equipos existan.")
         
         # Mostrar resultados
         if 'analysis_result' in st.session_state:
@@ -1976,7 +1979,7 @@ def render_login_form():
             st.markdown("---")
             
             # ========================
-            # ESTADÍSTICAS AVANZADAS DEL ROBOT
+            # ESTADГҚSTICAS AVANZADAS DEL ROBOT
             # ========================
             stats_local = st.session_state.get('stats_local', {})
             stats_visitante = st.session_state.get('stats_visitante', {})
@@ -1986,16 +1989,16 @@ def render_login_form():
                 source_local = stats_local.get('source', 'Supabase')
                 source_visitante = stats_visitante.get('source', 'Supabase')
                 
-                st.markdown("##### 📊 Estadísticas Avanzadas (Calibradas)")
+                st.markdown("##### рҹ“Ҡ EstadГӯsticas Avanzadas (Calibradas)")
                 
-                # Fuentes de datos en una línea
-                st.markdown(f"🏦 **Fuente:** Local `{source_local}` | Visitante `{source_visitante}`")
+                # Fuentes de datos en una lГӯnea
+                st.markdown(f"рҹҸҰ **Fuente:** Local `{source_local}` | Visitante `{source_visitante}`")
                 
                 # Obtener lambdas ajustadas
                 lambda_local_adj = get_lambda_ajustada(home, stats_local.get('lambda_local', 0), como_local=True)
                 lambda_visitante_adj = get_lambda_ajustada(away, stats_visitante.get('lambda_visitante', 0), como_local=False)
                 
-                # ★ USAR PROMEDIOS DINÁMICOS si están disponibles (ponderación exponencial)
+                # вҳ… USAR PROMEDIOS DINГҒMICOS si estГЎn disponibles (ponderaciГіn exponencial)
                 if promedios_dinamicos_local:
                     prom_corners_l = promedios_dinamicos_local.get('promedio_corners', 5.5)
                     prom_amarillas_l = promedios_dinamicos_local.get('promedio_amarillas', 3.0)
@@ -2026,7 +2029,7 @@ def render_login_form():
                 emp_l = stats_local.get('empates', 0) or 0
                 der_l = stats_local.get('derrotas', 0) or 0
                 
-                icono_ajuste_local = "🔼" if lambda_local_adj['factor'] > 1 else ("🔽" if lambda_local_adj['factor'] < 1 else "➖")
+                icono_ajuste_local = "рҹ”ј" if lambda_local_adj['factor'] > 1 else ("рҹ”Ҫ" if lambda_local_adj['factor'] < 1 else "вһ–")
                 color_ajuste_local = "#00ff88" if lambda_local_adj['factor'] > 1 else ("#ff6b6b" if lambda_local_adj['factor'] < 1 else "#00d4ff")
                 
                 # Calcular promedios VISITANTE
@@ -2037,21 +2040,21 @@ def render_login_form():
                 emp_v = stats_visitante.get('empates', 0) or 0
                 der_v = stats_visitante.get('derrotas', 0) or 0
                 
-                icono_ajuste_vis = "🔼" if lambda_visitante_adj['factor'] > 1 else ("🔽" if lambda_visitante_adj['factor'] < 1 else "➖")
+                icono_ajuste_vis = "рҹ”ј" if lambda_visitante_adj['factor'] > 1 else ("рҹ”Ҫ" if lambda_visitante_adj['factor'] < 1 else "вһ–")
                 color_ajuste_vis = "#00ff88" if lambda_visitante_adj['factor'] > 1 else ("#ff6b6b" if lambda_visitante_adj['factor'] < 1 else "#00d4ff")
                 
                 # DOS COLUMNAS - stats de equipos simplificado
                 sp1, col_local, col_visita, sp2 = st.columns([0.5, 2, 2, 0.5])
                 
-                # ★ INFO DINÁMICA: Obtener datos de partidos acumulados
+                # вҳ… INFO DINГҒMICA: Obtener datos de partidos acumulados
                 partidos_acum_l = r.get('partidos_acumulados_local', 0)
                 partidos_acum_v = r.get('partidos_acumulados_visitante', 0)
                 
                 with col_local:
                     st.markdown(f"""
                     <div style='background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; padding: 15px; margin: 5px 0;'>
-                        <h4 style='text-align: center; color: #00ff88; margin: 0 0 10px 0;'>🏠 {html.escape(str(home))}</h4>
-                        <p style='text-align: center; color: #00d4ff; font-size: 11px; margin: 0;'>📊 {partidos_acum_l if partidos_acum_l > 0 else pj_l} partidos históricos</p>
+                        <h4 style='text-align: center; color: #00ff88; margin: 0 0 10px 0;'>рҹҸ  {html.escape(str(home))}</h4>
+                        <p style='text-align: center; color: #00d4ff; font-size: 11px; margin: 0;'>рҹ“Ҡ {partidos_acum_l if partidos_acum_l > 0 else pj_l} partidos histГіricos</p>
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -2069,13 +2072,13 @@ def render_login_form():
                     st.markdown(f"""
                     <div style='background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
                         <div style='display: flex; justify-content: space-between; font-size: 13px;'>
-                            <span style='color: #888;'>⚽ GF</span><span style='color: #fff;'>{gf_l}</span>
+                            <span style='color: #888;'>вҡҪ GF</span><span style='color: #fff;'>{gf_l}</span>
                         </div>
                         <div style='display: flex; justify-content: space-between; font-size: 13px;'>
-                            <span style='color: #888;'>⚽ GC</span><span style='color: #fff;'>{gc_l}</span>
+                            <span style='color: #888;'>вҡҪ GC</span><span style='color: #fff;'>{gc_l}</span>
                         </div>
                         <div style='display: flex; justify-content: space-between; font-size: 13px;'>
-                            <span style='color: #888;'>λ Ajustada</span><span style='color: {color_ajuste_local};'>{icono_ajuste_local} {lambda_local_adj['lambda_ajustada']:.2f}</span>
+                            <span style='color: #888;'>О» Ajustada</span><span style='color: {color_ajuste_local};'>{icono_ajuste_local} {lambda_local_adj['lambda_ajustada']:.2f}</span>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -2083,12 +2086,12 @@ def render_login_form():
                     # Promedios por partido
                     st.markdown(f"""
                     <div style='background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
-                        <p style='color: #00d4ff; font-size: 11px; margin: 0 0 8px 0;'>📈 Promedios por partido:</p>
+                        <p style='color: #00d4ff; font-size: 11px; margin: 0 0 8px 0;'>рҹ“Ҳ Promedios por partido:</p>
                         <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 12px;'>
-                            <div><span style='color: #888;'>🔫 Tiros</span> <span style='color: #fff; float: right;'>{prom_tiros_l:.1f}</span></div>
-                            <div><span style='color: #888;'>🎯 Arco</span> <span style='color: #fff; float: right;'>{prom_tiros_arco_l:.1f}</span></div>
-                            <div><span style='color: #888;'>🟨 Amarillas</span> <span style='color: #fff; float: right;'>{prom_amarillas_l:.1f}</span></div>
-                            <div><span style='color: #888;'>🌽 Córners</span> <span style='color: #fff; float: right;'>{prom_corners_l:.1f}</span></div>
+                            <div><span style='color: #888;'>рҹ”« Tiros</span> <span style='color: #fff; float: right;'>{prom_tiros_l:.1f}</span></div>
+                            <div><span style='color: #888;'>рҹҺҜ Arco</span> <span style='color: #fff; float: right;'>{prom_tiros_arco_l:.1f}</span></div>
+                            <div><span style='color: #888;'>рҹҹЁ Amarillas</span> <span style='color: #fff; float: right;'>{prom_amarillas_l:.1f}</span></div>
+                            <div><span style='color: #888;'>рҹҢҪ CГіrners</span> <span style='color: #fff; float: right;'>{prom_corners_l:.1f}</span></div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -2096,8 +2099,8 @@ def render_login_form():
                 with col_visita:
                     st.markdown(f"""
                     <div style='background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; padding: 15px; margin: 5px 0;'>
-                        <h4 style='text-align: center; color: #00ff88; margin: 0 0 10px 0;'>✈️ {html.escape(str(away))}</h4>
-                        <p style='text-align: center; color: #00d4ff; font-size: 11px; margin: 0;'>📊 {partidos_acum_v if partidos_acum_v > 0 else pj_v} partidos históricos</p>
+                        <h4 style='text-align: center; color: #00ff88; margin: 0 0 10px 0;'>вңҲпёҸ {html.escape(str(away))}</h4>
+                        <p style='text-align: center; color: #00d4ff; font-size: 11px; margin: 0;'>рҹ“Ҡ {partidos_acum_v if partidos_acum_v > 0 else pj_v} partidos histГіricos</p>
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -2115,13 +2118,13 @@ def render_login_form():
                     st.markdown(f"""
                     <div style='background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
                         <div style='display: flex; justify-content: space-between; font-size: 13px;'>
-                            <span style='color: #888;'>⚽ GF</span><span style='color: #fff;'>{gf_v}</span>
+                            <span style='color: #888;'>вҡҪ GF</span><span style='color: #fff;'>{gf_v}</span>
                         </div>
                         <div style='display: flex; justify-content: space-between; font-size: 13px;'>
-                            <span style='color: #888;'>⚽ GC</span><span style='color: #fff;'>{gc_v}</span>
+                            <span style='color: #888;'>вҡҪ GC</span><span style='color: #fff;'>{gc_v}</span>
                         </div>
                         <div style='display: flex; justify-content: space-between; font-size: 13px;'>
-                            <span style='color: #888;'>λ Ajustada</span><span style='color: {color_ajuste_vis};'>{icono_ajuste_vis} {lambda_visitante_adj['lambda_ajustada']:.2f}</span>
+                            <span style='color: #888;'>О» Ajustada</span><span style='color: {color_ajuste_vis};'>{icono_ajuste_vis} {lambda_visitante_adj['lambda_ajustada']:.2f}</span>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -2129,12 +2132,12 @@ def render_login_form():
                     # Promedios por partido
                     st.markdown(f"""
                     <div style='background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
-                        <p style='color: #00d4ff; font-size: 11px; margin: 0 0 8px 0;'>📈 Promedios por partido:</p>
+                        <p style='color: #00d4ff; font-size: 11px; margin: 0 0 8px 0;'>рҹ“Ҳ Promedios por partido:</p>
                         <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 12px;'>
-                            <div><span style='color: #888;'>🔫 Tiros</span> <span style='color: #fff; float: right;'>{prom_tiros_v:.1f}</span></div>
-                            <div><span style='color: #888;'>🎯 Arco</span> <span style='color: #fff; float: right;'>{prom_tiros_arco_v:.1f}</span></div>
-                            <div><span style='color: #888;'>🟨 Amarillas</span> <span style='color: #fff; float: right;'>{prom_amarillas_v:.1f}</span></div>
-                            <div><span style='color: #888;'>🌽 Córners</span> <span style='color: #fff; float: right;'>{prom_corners_v:.1f}</span></div>
+                            <div><span style='color: #888;'>рҹ”« Tiros</span> <span style='color: #fff; float: right;'>{prom_tiros_v:.1f}</span></div>
+                            <div><span style='color: #888;'>рҹҺҜ Arco</span> <span style='color: #fff; float: right;'>{prom_tiros_arco_v:.1f}</span></div>
+                            <div><span style='color: #888;'>рҹҹЁ Amarillas</span> <span style='color: #fff; float: right;'>{prom_amarillas_v:.1f}</span></div>
+                            <div><span style='color: #888;'>рҹҢҪ CГіrners</span> <span style='color: #fff; float: right;'>{prom_corners_v:.1f}</span></div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -2143,7 +2146,7 @@ def render_login_form():
             # ========================
             st.markdown("---")
             
-            # Verificar si hay resultado de análisis
+            # Verificar si hay resultado de anГЎlisis
             r = st.session_state.get('analysis_result', {})
             stats_local = st.session_state.get('stats_local', {})
             stats_visitante = st.session_state.get('stats_visitante', {})
@@ -2155,7 +2158,7 @@ def render_login_form():
             if r and stats_local and stats_visitante:
                 col_btn, col_info = st.columns([1, 3])
                 with col_btn:
-                    if st.button("💾 GUARDAR PARTIDO", type="primary", use_container_width=True):
+                    if st.button("рҹ’ҫ GUARDAR PARTIDO", type="primary", use_container_width=True):
                         try:
                             client = get_client()
                             
@@ -2207,22 +2210,22 @@ def render_login_form():
                             }
                             
                             client.table('picks').insert(pick_data).execute()
-                            st.success("✅ Partido guardado!")
+                            st.success("вң… Partido guardado!")
                             st.balloons()
                             
                         except Exception as e:
-                            st.error(f"❌ Error: {str(e)}")
+                            st.error(f"вқҢ Error: {str(e)}")
             
             # ========================
             # PROBABILIDADES 1X2 (CUADROS MEJORADOS)
             # ========================
-            st.markdown("##### 🎯 Probabilidades (1X2)")
+            st.markdown("##### рҹҺҜ Probabilidades (1X2)")
             
             p1 = r.get('p1', 0)
             px = r.get('px', 0)
             p2 = r.get('p2', 0)
             
-            # Determinar cuál tiene mayor probabilidad
+            # Determinar cuГЎl tiene mayor probabilidad
             es_local_max = p1 > px and p1 > p2
             es_empate_max = px > p1 and px > p2
             es_visita_max = p2 > p1 and p2 > px
@@ -2232,7 +2235,7 @@ def render_login_form():
                 clase = "caja-1x2 caja-local" if es_local_max else "caja-1x2"
                 st.markdown(f"""
                 <div class="{clase}">
-                    <p class="etiqueta-equipo etiqueta-local">🏠 {home}</p>
+                    <p class="etiqueta-equipo etiqueta-local">рҹҸ  {home}</p>
                     <p class="probabilidad">{p1:.1f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
@@ -2240,7 +2243,7 @@ def render_login_form():
                 clase = "caja-1x2 caja-empate" if es_empate_max else "caja-1x2"
                 st.markdown(f"""
                 <div class="{clase}">
-                    <p class="etiqueta-equipo etiqueta-empate">🤝 Empate</p>
+                    <p class="etiqueta-equipo etiqueta-empate">рҹӨқ Empate</p>
                     <p class="probabilidad">{px:.1f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
@@ -2248,7 +2251,7 @@ def render_login_form():
                 clase = "caja-1x2 caja-visita" if es_visita_max else "caja-1x2"
                 st.markdown(f"""
                 <div class="{clase}">
-                    <p class="etiqueta-equipo etiqueta-visita">✈️ {away}</p>
+                    <p class="etiqueta-equipo etiqueta-visita">вңҲпёҸ {away}</p>
                     <p class="probabilidad">{p2:.1f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
@@ -2256,12 +2259,12 @@ def render_login_form():
             # ========================
             # PREDICCIONES ADICIONALES (CUADROS MEJORADOS)
             # ========================
-            # ★ Verificar si hay datos reales para mostrar predicciones
+            # вҳ… Verificar si hay datos reales para mostrar predicciones
             tiene_datos_local = promedios_dinamicos_local and promedios_dinamicos_local.get('partidos_total', 0) > 0
             tiene_datos_visitante = promedios_dinamicos_visitante and promedios_dinamicos_visitante.get('partidos_total', 0) > 0
             
             if not (tiene_datos_local or tiene_datos_visitante):
-                st.warning("⚠️ **Sin datos históricos** - Sincroniza equipos para ver predicciones adicionales.")
+                st.warning("вҡ пёҸ **Sin datos histГіricos** - Sincroniza equipos para ver predicciones adicionales.")
                 st.stop()
             else:
                 # Usar datos reales
@@ -2280,7 +2283,7 @@ def render_login_form():
                 arco_visitante = datos_visitante.get('promedio_tiros_arco', 0) if tiene_datos_visitante else 0
                 arco_total = arco_local + arco_visitante
 
-            # Obtener predicciones del modelo matemático
+            # Obtener predicciones del modelo matemГЎtico
             pred_tiros = r.get('tiros', {})
             pred_tarjetas = r.get('tarjetas', {})
             pred_arco = r.get('tiros_arco', {})
@@ -2311,7 +2314,7 @@ def render_login_form():
                 ou_color_class = "pick-over" if "Over" in pick_ou else "pick-under"
                 st.markdown(f"""
                 <div class="caja-prediccion">
-                    <p class="titulo-caja">📈 Over/Under 2.5</p>
+                    <p class="titulo-caja">рҹ“Ҳ Over/Under 2.5</p>
                     <p class="valor-caja {ou_color_class}">{ou_symbol} 2.5</p>
                     <p class="pick-caja">{prob_ou:.0f}%</p>
                 </div>
@@ -2320,11 +2323,11 @@ def render_login_form():
             with col_btts:
                 pick_btts = r.get('pick_btts', 'No')
                 btts_yes = r.get('btts_yes', 50)
-                btts_icon = "✅" if pick_btts == "Sí" else "❌"
-                btts_color_class = "pick-si" if pick_btts == "Sí" else "pick-no"
+                btts_icon = "вң…" if pick_btts == "SГӯ" else "вқҢ"
+                btts_color_class = "pick-si" if pick_btts == "SГӯ" else "pick-no"
                 st.markdown(f"""
                 <div class="caja-prediccion">
-                    <p class="titulo-caja">⚽ Ambos Marcan</p>
+                    <p class="titulo-caja">вҡҪ Ambos Marcan</p>
                     <p class="valor-caja {btts_color_class}">{btts_icon} {pick_btts}</p>
                     <p class="pick-caja">{btts_yes:.0f}%</p>
                 </div>
@@ -2337,40 +2340,40 @@ def render_login_form():
                 pick_corner_symbol = "+" if pick_corners == "+" else "-"
                 st.markdown(f"""
                 <div class="caja-prediccion">
-                    <p class="titulo-caja">🌽 Córners Total</p>
+                    <p class="titulo-caja">рҹҢҪ CГіrners Total</p>
                     <p class="valor-caja" style="color: #00d2d3;">{total_c:.0f}</p>
                     <p class="pick-caja">{pick_corner_symbol} {total_c:.0f}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_remates:
-                remates_icon = "📈" if "Over" in pick_tiros else "📉"
+                remates_icon = "рҹ“Ҳ" if "Over" in pick_tiros else "рҹ“ү"
                 remates_color_class = "pick-over" if "Over" in pick_tiros else "pick-under"
                 st.markdown(f"""
                 <div class="caja-prediccion">
-                    <p class="titulo-caja">🔫 Tiros Total</p>
+                    <p class="titulo-caja">рҹ”« Tiros Total</p>
                     <p class="valor-caja" style="color: #00ff88;">{remates_modelo:.0f}</p>
                     <p class="pick-caja {remates_color_class}">{remates_icon} {pick_tiros} ({prob_tiros:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_arco:
-                arco_icon = "📈" if "Over" in pick_arco else "📉"
+                arco_icon = "рҹ“Ҳ" if "Over" in pick_arco else "рҹ“ү"
                 arco_color_class = "pick-over" if "Over" in pick_arco else "pick-under"
                 st.markdown(f"""
                 <div class="caja-prediccion">
-                    <p class="titulo-caja">🎯 Tiros Arco</p>
+                    <p class="titulo-caja">рҹҺҜ Tiros Arco</p>
                     <p class="valor-caja" style="color: #ff9f43;">{arco_modelo:.0f}</p>
                     <p class="pick-caja {arco_color_class}">{arco_icon} {pick_arco} ({prob_arco:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_tarjetas:
-                tarjetas_icon = "📈" if "Over" in pick_tarjetas else "📉"
+                tarjetas_icon = "рҹ“Ҳ" if "Over" in pick_tarjetas else "рҹ“ү"
                 tarjetas_color_class = "pick-over" if "Over" in pick_tarjetas else "pick-under"
                 st.markdown(f"""
                 <div class="caja-prediccion">
-                    <p class="titulo-caja">🟨 Amarillas Total</p>
+                    <p class="titulo-caja">рҹҹЁ Amarillas Total</p>
                     <p class="valor-caja" style="color: #ffd700;">{tarjetas_modelo:.1f}</p>
                     <p class="pick-caja {tarjetas_color_class}">{tarjetas_icon} {pick_tarjetas} ({prob_tarjetas:.0f}%)</p>
                 </div>
@@ -2379,9 +2382,9 @@ def render_login_form():
             with col_score:
                 st.markdown(f"""
                 <div class="caja-prediccion">
-                    <p class="titulo-caja">🎯 Marcador Probable</p>
+                    <p class="titulo-caja">рҹҺҜ Marcador Probable</p>
                     <p class="valor-caja" style="color: #ff6b6b;">{score_mas_probable}</p>
-                    <p class="pick-caja" style="color: #888;">Más probable</p>
+                    <p class="pick-caja" style="color: #888;">MГЎs probable</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -2391,7 +2394,7 @@ def render_login_form():
             st.markdown("---")
             st.markdown("""
             <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; padding: 15px; margin: 10px 0;">
-                <h4 style="color: #00d4ff; text-align: center; margin: 0 0 15px 0;">📊 Predicciones del Modelo Matemático</h4>
+                <h4 style="color: #00d4ff; text-align: center; margin: 0 0 15px 0;">рҹ“Ҡ Predicciones del Modelo MatemГЎtico</h4>
             </div>
             """, unsafe_allow_html=True)
             
@@ -2399,36 +2402,36 @@ def render_login_form():
             col_pred1, col_pred2, col_pred3 = st.columns(3)
             
             with col_pred1:
-                icon_tiros = "📈" if "Over" in (pick_tiros or "") else "📉"
+                icon_tiros = "рҹ“Ҳ" if "Over" in (pick_tiros or "") else "рҹ“ү"
                 color_tiros = "#00ff88" if "Over" in (pick_tiros or "") else "#ff6b6b"
                 remates_val = remates_modelo if remates_modelo and remates_modelo > 0 else 0
                 st.markdown(f"""
                 <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tiros};">
-                    <p style="color: #888; font-size: 12px; margin: 0;">🔫 Tiros Total</p>
+                    <p style="color: #888; font-size: 12px; margin: 0;">рҹ”« Tiros Total</p>
                     <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{remates_val:.0f}</p>
                     <p style="color: {color_tiros}; font-size: 14px; margin: 0;">{icon_tiros} {pick_tiros or "N/A"} ({prob_tiros or 0:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_pred2:
-                icon_arco = "📈" if "Over" in (pick_arco or "") else "📉"
+                icon_arco = "рҹ“Ҳ" if "Over" in (pick_arco or "") else "рҹ“ү"
                 color_arco = "#00ff88" if "Over" in (pick_arco or "") else "#ff6b6b"
                 arco_val = arco_modelo if arco_modelo and arco_modelo > 0 else 0
                 st.markdown(f"""
                 <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_arco};">
-                    <p style="color: #888; font-size: 12px; margin: 0;">🎯 Tiros Arco</p>
+                    <p style="color: #888; font-size: 12px; margin: 0;">рҹҺҜ Tiros Arco</p>
                     <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{arco_val:.0f}</p>
                     <p style="color: {color_arco}; font-size: 14px; margin: 0;">{icon_arco} {pick_arco or "N/A"} ({prob_arco or 0:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_pred3:
-                icon_tar = "📈" if "Over" in (pick_tarjetas or "") else "📉"
+                icon_tar = "рҹ“Ҳ" if "Over" in (pick_tarjetas or "") else "рҹ“ү"
                 color_tar = "#00ff88" if "Over" in (pick_tarjetas or "") else "#ff6b6b"
                 tarjetas_val = tarjetas_modelo if tarjetas_modelo and tarjetas_modelo > 0 else 0
                 st.markdown(f"""
                 <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tar};">
-                    <p style="color: #888; font-size: 12px; margin: 0;">🟨 Amarillas</p>
+                    <p style="color: #888; font-size: 12px; margin: 0;">рҹҹЁ Amarillas</p>
                     <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{tarjetas_val:.1f}</p>
                     <p style="color: {color_tar}; font-size: 14px; margin: 0;">{icon_tar} {pick_tarjetas or "N/A"} ({prob_tarjetas or 0:.0f}%)</p>
                 </div>
@@ -2437,7 +2440,7 @@ def render_login_form():
             # ========================
             # FORMA RECIENTE (CUADROS MEJORADOS)
             # ========================
-            st.markdown("##### 📅 Forma Reciente (Últimos 5)")
+            st.markdown("##### рҹ“… Forma Reciente (Гҡltimos 5)")
             
             forma_l = r.get('forma_local', {})
             forma_v = r.get('forma_visitante', {})
@@ -2455,7 +2458,7 @@ def render_login_form():
             
             # Si no hay datos, mostrar mensaje
             if not letras and not letras_v:
-                st.info("📝 Los datos de forma reciente requieren ejecutar el Robot de equipos")
+                st.info("рҹ“қ Los datos de forma reciente requieren ejecutar el Robot de equipos")
             else:
                 col_space1, col_forma_local, col_forma_away, col_space2 = st.columns([1, 2, 2, 1])
                 
@@ -2473,7 +2476,7 @@ def render_login_form():
                     
                     st.markdown(f"""
                     <div class="caja-forma caja-forma-local">
-                        <p class="forma-titulo">🏠 {home}</p>
+                        <p class="forma-titulo">рҹҸ  {home}</p>
                         <div class="forma-letras">{badges_forma}</div>
                         <p class="forma-stats">
                             Puntos: <span>{puntos:.0f}%</span> | 
@@ -2496,7 +2499,7 @@ def render_login_form():
                     
                     st.markdown(f"""
                     <div class="caja-forma caja-forma-visitante">
-                        <p class="forma-titulo">✈️ {away}</p>
+                        <p class="forma-titulo">вңҲпёҸ {away}</p>
                         <div class="forma-letras">{badges_forma_v}</div>
                         <p class="forma-stats">
                             Puntos: <span>{puntos_v:.0f}%</span> | 
@@ -2515,7 +2518,7 @@ def render_login_form():
                     cuotas_resp = client.table('cuotas').select('*').eq('fixture_id', fixture_id_partido).execute()
                     
                     if cuotas_resp.data:
-                        st.markdown("##### 💰 Cuotas del Mercado")
+                        st.markdown("##### рҹ’° Cuotas del Mercado")
                         
                         # Obtener probabilidades del modelo
                         prob_1 = r.get('p1', 0)
@@ -2529,7 +2532,7 @@ def render_login_form():
                         cuotas_btts = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Both Teams To Score']
                         cuotas_ou = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Over/Under']
                         
-                        # Función para calcular VALUE
+                        # FunciГіn para calcular VALUE
                         def calcular_value(prob_modelo, cuota):
                             if cuota <= 0:
                                 return 0, 0
@@ -2539,7 +2542,7 @@ def render_login_form():
                         
                         # Mostrar 1X2 con VALUE
                         if cuotas_1x2:
-                            st.markdown("**🎯 1X2**")
+                            st.markdown("**рҹҺҜ 1X2**")
                             col_c1, col_c2, col_c3 = st.columns(3)
                             
                             for i, cuota in enumerate(cuotas_1x2[:3]):
@@ -2559,23 +2562,23 @@ def render_login_form():
                                         else:
                                             value, prob_imp = calcular_value(33, valor)
                                         
-                                        # Color según VALUE
+                                        # Color segГәn VALUE
                                         if value > 5:
-                                            value_color = "🟢"
+                                            value_color = "рҹҹў"
                                             value_text = f"+{value:.1f}%"
                                         elif value > 0:
-                                            value_color = "🟡"
+                                            value_color = "рҹҹЎ"
                                             value_text = f"+{value:.1f}%"
                                         else:
-                                            value_color = "🔴"
+                                            value_color = "рҹ”ҙ"
                                             value_text = f"{value:.1f}%"
                                         
-                                        label = f"{'🏠 Local' if 'Home' in opcion or '1' in opcion else ('🤝 Empate' if 'Draw' in opcion or 'X' in opcion else '✈️ Visita')}"
+                                        label = f"{'рҹҸ  Local' if 'Home' in opcion or '1' in opcion else ('рҹӨқ Empate' if 'Draw' in opcion or 'X' in opcion else 'вңҲпёҸ Visita')}"
                                         st.metric(f"{label}", f"@ {valor:.2f}", f"{value_color} {value_text} VALUE")
                         
                         # Mostrar BTTS con VALUE
                         if cuotas_btts:
-                            st.markdown("**⚽ Ambos Marcan (BTTS)**")
+                            st.markdown("**вҡҪ Ambos Marcan (BTTS)**")
                             for cuota in cuotas_btts[:4]:
                                 opcion = cuota.get('opcion', '')
                                 valor = cuota.get('cuota', 0)
@@ -2586,23 +2589,23 @@ def render_login_form():
                                 value, prob_imp = calcular_value(prob_modelo_btts, valor)
                                 
                                 if value > 5:
-                                    value_color = "🟢"
+                                    value_color = "рҹҹў"
                                 elif value > 0:
-                                    value_color = "🟡"
+                                    value_color = "рҹҹЎ"
                                 else:
-                                    value_color = "🔴"
+                                    value_color = "рҹ”ҙ"
                                 
                                 st.write(f"{opcion}: **@ {valor:.2f}** | {value_color} VALUE: {value:+.1f}% | Modelo: {prob_modelo_btts:.0f}% | Implicita: {prob_imp:.0f}% ({bookie})")
                         
                         # Mostrar Over/Under con VALUE
                         if cuotas_ou:
-                            st.markdown("**📈 Over/Under**")
+                            st.markdown("**рҹ“Ҳ Over/Under**")
                             for cuota in cuotas_ou[:6]:
                                 opcion = cuota.get('opcion', '')
                                 valor = cuota.get('cuota', 0)
                                 bookie = cuota.get('bookmaker', '')
                                 
-                                # Extraer línea (ej: "Over 2.5" -> 2.5)
+                                # Extraer lГӯnea (ej: "Over 2.5" -> 2.5)
                                 if 'Over' in opcion:
                                     prob_modelo_ou = prob_ou
                                 else:
@@ -2611,17 +2614,17 @@ def render_login_form():
                                 value, prob_imp = calcular_value(prob_modelo_ou, valor)
                                 
                                 if value > 5:
-                                    value_color = "🟢"
+                                    value_color = "рҹҹў"
                                 elif value > 0:
-                                    value_color = "🟡"
+                                    value_color = "рҹҹЎ"
                                 else:
-                                    value_color = "🔴"
+                                    value_color = "рҹ”ҙ"
                                 
                                 st.write(f"{opcion}: **@ {valor:.2f}** | {value_color} VALUE: {value:+.1f}% | Modelo: {prob_modelo_ou:.0f}% | Implicita: {prob_imp:.0f}% ({bookie})")
                         
                         # Resumen de VALUE bets
                         st.markdown("---")
-                        st.markdown("**📊 Resumen de Value Bets:**")
+                        st.markdown("**рҹ“Ҡ Resumen de Value Bets:**")
                         
                         value_bets = []
                         for cuota in cuotas_resp.data:
@@ -2670,80 +2673,80 @@ def render_login_form():
                             value_bets.sort(key=lambda x: x['value'], reverse=True)
                             
                             for vb in value_bets[:5]:
-                                st.success(f"✅ **{vb['opcion']}** @ {vb['cuota']:.2f} | VALUE: +{vb['value']:.1f}% | {vb['bookie']}")
+                                st.success(f"вң… **{vb['opcion']}** @ {vb['cuota']:.2f} | VALUE: +{vb['value']:.1f}% | {vb['bookie']}")
                         else:
-                            st.info("🔴 Sin value bets en este momento")
+                            st.info("рҹ”ҙ Sin value bets en este momento")
                     else:
-                        st.info("💡 Sin cuotas guardadas para este partido. Actualiza los partidos desde Carga.")
+                        st.info("рҹ’Ў Sin cuotas guardadas para este partido. Actualiza los partidos desde Carga.")
                 except Exception as e:
                     logger.warning(f"Error consultando cuotas: {e}")
     
-    # Página: Estadísticas
+    # PГЎgina: EstadГӯsticas
     elif st.session_state.page == "Claves":
-        st.markdown("### 🔑 Gestión de Contraseñas")
+        st.markdown("### рҹ”‘ GestiГіn de ContraseГұas")
         
         # Tabs
-        tab_crear, tab_gestionar = st.tabs(["➕ Crear Contraseña", "📋 Ver Contraseñas"])
+        tab_crear, tab_gestionar = st.tabs(["вһ• Crear ContraseГұa", "рҹ“Ӣ Ver ContraseГұas"])
         
         # ========== TAB: CREAR ==========
         with tab_crear:
-            st.markdown("#### ➕ Crear Nueva Contraseña de Acceso")
+            st.markdown("#### вһ• Crear Nueva ContraseГұa de Acceso")
             
             with st.form("form_crear_clave", clear_on_submit=True):
                 col_nom, col_plan = st.columns(2)
                 with col_nom:
-                    nombre = st.text_input("📝 Nombre / Cliente", placeholder="Ej: Juan, Carlos VIP").strip()
+                    nombre = st.text_input("рҹ“қ Nombre / Cliente", placeholder="Ej: Juan, Carlos VIP").strip()
                 with col_plan:
-                    plan = st.selectbox("📦 Plan", ["semana", "mes", "elite", "vip"])
+                    plan = st.selectbox("рҹ“Ұ Plan", ["semana", "mes", "elite", "vip"])
                 
-                nueva_clave = st.text_input("🔐 Nueva Contraseña", placeholder="Escribe la contraseña única").strip()
+                nueva_clave = st.text_input("рҹ”җ Nueva ContraseГұa", placeholder="Escribe la contraseГұa Гәnica").strip()
                 
                 dias_opciones = {"semana": 7, "mes": 30, "elite": 90, "vip": 90}
                 dias = dias_opciones.get(plan, 30)
                 
                 col_info, col_btn = st.columns([2, 1])
                 with col_info:
-                    plan_icon = {"semana": "📆", "mes": "👑", "elite": "🔥", "vip": "⭐"}
-                    st.info(f"{plan_icon.get(plan, '📦')} Plan: {plan.upper()} - {dias} días")
+                    plan_icon = {"semana": "рҹ“Ҷ", "mes": "рҹ‘‘", "elite": "рҹ”Ҙ", "vip": "вӯҗ"}
+                    st.info(f"{plan_icon.get(plan, 'рҹ“Ұ')} Plan: {plan.upper()} - {dias} dГӯas")
                 
-                submitted = st.form_submit_button("✅ Crear Contraseña", use_container_width=True, type="primary")
+                submitted = st.form_submit_button("вң… Crear ContraseГұa", use_container_width=True, type="primary")
                 
                 if submitted:
                     if not nombre.strip():
-                        st.error("⚠️ Ingresa un nombre")
+                        st.error("вҡ пёҸ Ingresa un nombre")
                     elif not nueva_clave.strip():
-                        st.error("⚠️ Ingresa una contraseña")
+                        st.error("вҡ пёҸ Ingresa una contraseГұa")
                     elif len(nueva_clave) < 4:
-                        st.error("⚠️ La contraseña debe tener al menos 4 caracteres")
+                        st.error("вҡ пёҸ La contraseГұa debe tener al menos 4 caracteres")
                     else:
                         # Todos los planes son VIP (semana, mes, elite, vip)
                         plan_asignar = "elite"
                         success = db_crear_usuario(nueva_clave.strip(), nombre.strip(), plan_asignar, dias)
                         if success:
-                            st.success(f"✅ Contraseña '{nueva_clave}' creada para {nombre} - Plan {plan.upper()}")
+                            st.success(f"вң… ContraseГұa '{nueva_clave}' creada para {nombre} - Plan {plan.upper()}")
                             st.balloons()
                         else:
-                            st.error("❌ Esta contraseña ya existe. Usa otra.")
+                            st.error("вқҢ Esta contraseГұa ya existe. Usa otra.")
             
             st.markdown("---")
-            st.markdown("##### 📋 Planes")
+            st.markdown("##### рҹ“Ӣ Planes")
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.markdown("**🆓 GRATIS** - Sin VIP")
+                st.markdown("**рҹҶ“ GRATIS** - Sin VIP")
             with col2:
-                st.markdown("**📆 SEMANA** - 7 días VIP")
+                st.markdown("**рҹ“Ҷ SEMANA** - 7 dГӯas VIP")
         
         # ========== TAB: GESTIONAR ==========
         with tab_gestionar:
-            st.markdown("#### 📋 Contraseñas Creadas")
+            st.markdown("#### рҹ“Ӣ ContraseГұas Creadas")
             
-            # Botón recargar
-            if st.button("🔄 Recargar Lista"):
+            # BotГіn recargar
+            if st.button("рҹ”„ Recargar Lista"):
                 pass
             usuarios = db_todos()
             
             if not usuarios:
-                st.info("📭 No hay contraseñas creadas. Crea una en la pestaña de arriba.")
+                st.info("рҹ“ӯ No hay contraseГұas creadas. Crea una en la pestaГұa de arriba.")
             else:
                 col_total, col_vip, col_admin = st.columns(3)
                 with col_total:
@@ -2767,13 +2770,13 @@ def render_login_form():
                     nombre = u.get('nombre', 'Sin nombre')
                     
                     if es_admin:
-                        icono = "⚙️"
+                        icono = "вҡҷпёҸ"
                         color = "blue"
                     elif es_vip:
-                        icono = "👑"
+                        icono = "рҹ‘‘"
                         color = "green"
                     else:
-                        icono = "🆓"
+                        icono = "рҹҶ“"
                         color = "gray"
                     
                     with st.container():
@@ -2781,7 +2784,7 @@ def render_login_form():
                         with col_icon:
                             st.markdown(f"### {icono}")
                         with col_info:
-                            st.markdown(f"**{nombre}** - Plan: {plan.upper()} ({dias} días)")
+                            st.markdown(f"**{nombre}** - Plan: {plan.upper()} ({dias} dГӯas)")
                             st.code(password)
                             st.caption(f"Creado: {u.get('creado', 'N/A')}")
                             
@@ -2789,43 +2792,43 @@ def render_login_form():
                             if not es_admin:
                                 col_a, col_b, col_c = st.columns(3)
                                 with col_a:
-                                    nueva_pass = st.text_input("Nueva contraseña", placeholder="Nueva...", key=f"pass_{clave_id}", type="password")
-                                    if st.button("🔐 Cambiar", key=f"btn_pass_{clave_id}"):
+                                    nueva_pass = st.text_input("Nueva contraseГұa", placeholder="Nueva...", key=f"pass_{clave_id}", type="password")
+                                    if st.button("рҹ”җ Cambiar", key=f"btn_pass_{clave_id}"):
                                         if nueva_pass and len(nueva_pass) >= 4:
                                             if db_cambiar_password(clave_id, nueva_pass):
-                                                st.success("✅ Contraseña cambiada")
+                                                st.success("вң… ContraseГұa cambiada")
                                                 pass
                                             else:
-                                                st.error("❌ Error")
+                                                st.error("вқҢ Error")
                                         else:
-                                            st.warning("Mínimo 4 caracteres")
+                                            st.warning("MГӯnimo 4 caracteres")
                                 with col_b:
                                     plan_nuevo = st.selectbox("Nuevo plan", ["semana", "mes", "elite", "vip"], 
                                                              index=["semana", "mes", "elite", "vip"].index(plan) if plan in ["semana", "mes", "elite", "vip"] else 0,
                                                              key=f"plan_{clave_id}")
                                     dias_nuevos = {"semana": 7, "mes": 30, "elite": 90, "vip": 90}.get(plan_nuevo, 30)
-                                    if st.button("📦 Cambiar Plan", key=f"btn_plan_{clave_id}"):
+                                    if st.button("рҹ“Ұ Cambiar Plan", key=f"btn_plan_{clave_id}"):
                                         if db_actualizar_plan(clave_id, plan_nuevo if plan_nuevo != "elite" else "elite", dias_nuevos):
-                                            st.success(f"✅ Plan cambiado a {plan_nuevo.upper()}")
+                                            st.success(f"вң… Plan cambiado a {plan_nuevo.upper()}")
                                             pass
                                         else:
-                                            st.error("❌ Error")
+                                            st.error("вқҢ Error")
                                 with col_c:
                                     st.write("")  # Espacio
-                                    if st.button("🗑️ Eliminar", key=f"btn_del_{clave_id}", type="primary"):
+                                    if st.button("рҹ—‘пёҸ Eliminar", key=f"btn_del_{clave_id}", type="primary"):
                                         if db_eliminar_usuario(clave_id):
-                                            st.success("✅ Eliminada")
+                                            st.success("вң… Eliminada")
                                             pass
                                         else:
-                                            st.error("❌ No se pudo eliminar")
+                                            st.error("вқҢ No se pudo eliminar")
                             else:
-                                st.info("⚙️ Cuenta del administrador")
+                                st.info("вҡҷпёҸ Cuenta del administrador")
                         st.markdown("---")
 
 
-    # ══════════════════════════════════════════════════════════
-    # PÁGINA VIP DASHBOARD - Solo para usuarios Elite/Premium
-    # ══════════════════════════════════════════════════════════
+    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+    # PГҒGINA VIP DASHBOARD - Solo para usuarios Elite/Premium
+    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
     elif st.session_state.page == "VIP":
         
         # Verificar si el usuario es VIP/Elite
@@ -2836,9 +2839,9 @@ def render_login_form():
             # Mostrar pantalla de upgrade
             st.markdown("""
             <div style="text-align: center; padding: 50px 20px;">
-                <h1>🔒 Contenido Exclusivo para Miembros VIP</h1>
+                <h1>рҹ”’ Contenido Exclusivo para Miembros VIP</h1>
                 <p style="font-size: 1.2em; color: #666; margin: 30px 0;">
-                    El Dashboard VIP está disponible solo para miembros con plan <strong>Elite VIP</strong>
+                    El Dashboard VIP estГЎ disponible solo para miembros con plan <strong>Elite VIP</strong>
                 </p>
             </div>
             """, unsafe_allow_html=True)
@@ -2846,30 +2849,30 @@ def render_login_form():
             # Plan card
             st.markdown("""
             <div class="plan-card plan-vip" style="max-width: 400px; margin: 0 auto; text-align: center;">
-                <h3>👑 Plan Elite VIP</h3>
+                <h3>рҹ‘‘ Plan Elite VIP</h3>
                 <p class="plan-price">$29.99 <span>/mes</span></p>
                 <ul style="text-align: left;">
-                    <li>✅ Dashboard VIP completo</li>
-                    <li>✅ ROI por modelo y tipo de pick</li>
-                    <li>✅ Simulador de Bankroll</li>
-                    <li>✅ Detector de Value Bets</li>
-                    <li>✅ Alertas y notificaciones</li>
-                    <li>✅ Ranking mensual</li>
-                    <li>✅ Reportes exportables</li>
+                    <li>вң… Dashboard VIP completo</li>
+                    <li>вң… ROI por modelo y tipo de pick</li>
+                    <li>вң… Simulador de Bankroll</li>
+                    <li>вң… Detector de Value Bets</li>
+                    <li>вң… Alertas y notificaciones</li>
+                    <li>вң… Ranking mensual</li>
+                    <li>вң… Reportes exportables</li>
                 </ul>
-                <p style="margin-top: 20px;"><strong>🎁 7 días GRATIS - Sin tarjeta</strong></p>
+                <p style="margin-top: 20px;"><strong>рҹҺҒ 7 dГӯas GRATIS - Sin tarjeta</strong></p>
             </div>
             """, unsafe_allow_html=True)
             
             # Mostrar plan actual
             st.markdown("---")
-            st.info(f"📧 Tu plan actual: **{user_plan.upper()}**")
-            st.markdown("¿Quieres hacer upgrade? Contacta al administrador.")
+            st.info(f"рҹ“§ Tu plan actual: **{user_plan.upper()}**")
+            st.markdown("ВҝQuieres hacer upgrade? Contacta al administrador.")
             
             st.stop()
         
         # Usuario VIP - mostrar dashboard
-        st.markdown("### 👑 Dashboard VIP - Gestión Inteligente de Apuestas")
+        st.markdown("### рҹ‘‘ Dashboard VIP - GestiГіn Inteligente de Apuestas")
         
         # Obtener datos de Supabase
         client = get_client()
@@ -2877,12 +2880,12 @@ def render_login_form():
         
         # ==================== TABS VIP ====================
         tab_roi, tab_resultados, tab_bankroll, tab_value, tab_alertas, tab_ranking, tab_export = st.tabs([
-            "📊 ROI", "📝 Resultados", "💰 Bankroll", "🎯 Value Bets", "🔔 Alertas", "🏆 Ranking", "📄 Exportar"
+            "рҹ“Ҡ ROI", "рҹ“қ Resultados", "рҹ’° Bankroll", "рҹҺҜ Value Bets", "рҹ”” Alertas", "рҹҸҶ Ranking", "рҹ“„ Exportar"
         ])
         
         # ========== TAB 1: ROI POR MODELO ==========
         with tab_roi:
-            st.markdown("### 📊 Rendimiento por Modelo y Tipo de Pick")
+            st.markdown("### рҹ“Ҡ Rendimiento por Modelo y Tipo de Pick")
             
             # Obtener picks resueltos
             try:
@@ -2898,7 +2901,7 @@ def render_login_form():
                 
                 if picks_resueltos:
                     # ROI POR TIPO DE MERCADO
-                    st.markdown("#### 💹 ROI por Tipo de Pick")
+                    st.markdown("#### рҹ’№ ROI por Tipo de Pick")
                     
                     # 1X2
                     picks_1x2 = [p for p in picks_resueltos if p.get('acertado_1x2') is not None]
@@ -2930,47 +2933,47 @@ def render_login_form():
                     acertados_remates = len([p for p in picks_remates if p.get('acertado_remates')])
                     pct_remates = (acertados_remates / len(picks_remates) * 100) if picks_remates else 0
                     
-                    # Mostrar métricas en cards
+                    # Mostrar mГ©tricas en cards
                     col1, col2, col3 = st.columns(3)
                     with col1:
-                        st.metric("🎯 1X2", f"{acertados_1x2}/{len(picks_1x2)}", f"{pct_1x2:.1f}% acierto")
-                        if pct_1x2 > 55: st.success("✅ Rentable")
-                        elif pct_1x2 < 45: st.error("❌ Perjudicial")
-                        else: st.info("📊 Neutral")
+                        st.metric("рҹҺҜ 1X2", f"{acertados_1x2}/{len(picks_1x2)}", f"{pct_1x2:.1f}% acierto")
+                        if pct_1x2 > 55: st.success("вң… Rentable")
+                        elif pct_1x2 < 45: st.error("вқҢ Perjudicial")
+                        else: st.info("рҹ“Ҡ Neutral")
                     with col2:
-                        st.metric("📈 Over/Under", f"{acertados_ou}/{len(picks_ou)}", f"{pct_ou:.1f}% acierto")
-                        if pct_ou > 55: st.success("✅ Rentable")
-                        elif pct_ou < 45: st.error("❌ Perjudicial")
-                        else: st.info("📊 Neutral")
+                        st.metric("рҹ“Ҳ Over/Under", f"{acertados_ou}/{len(picks_ou)}", f"{pct_ou:.1f}% acierto")
+                        if pct_ou > 55: st.success("вң… Rentable")
+                        elif pct_ou < 45: st.error("вқҢ Perjudicial")
+                        else: st.info("рҹ“Ҡ Neutral")
                     
                     col4, col5, col6 = st.columns(3)
                     with col4:
-                        st.metric("📐 Corners", f"{acertados_corners}/{len(picks_corners)}", f"{pct_corners:.1f}% acierto")
-                        if pct_corners > 55: st.success("✅ Rentable")
-                        elif pct_corners < 45: st.error("❌ Perjudicial")
-                        else: st.info("📊 Neutral")
+                        st.metric("рҹ“җ Corners", f"{acertados_corners}/{len(picks_corners)}", f"{pct_corners:.1f}% acierto")
+                        if pct_corners > 55: st.success("вң… Rentable")
+                        elif pct_corners < 45: st.error("вқҢ Perjudicial")
+                        else: st.info("рҹ“Ҡ Neutral")
                     with col5:
-                        st.metric("🟨 Tarjetas", f"{acertados_tarjetas}/{len(picks_tarjetas)}", f"{pct_tarjetas:.1f}% acierto")
-                        if pct_tarjetas > 55: st.success("✅ Rentable")
-                        elif pct_tarjetas < 45: st.error("❌ Perjudicial")
-                        else: st.info("📊 Neutral")
+                        st.metric("рҹҹЁ Tarjetas", f"{acertados_tarjetas}/{len(picks_tarjetas)}", f"{pct_tarjetas:.1f}% acierto")
+                        if pct_tarjetas > 55: st.success("вң… Rentable")
+                        elif pct_tarjetas < 45: st.error("вқҢ Perjudicial")
+                        else: st.info("рҹ“Ҡ Neutral")
                     with col6:
-                        st.metric("🎯 Remates", f"{acertados_remates}/{len(picks_remates)}", f"{pct_remates:.1f}% acierto")
-                        if pct_remates > 55: st.success("✅ Rentable")
-                        elif pct_remates < 45: st.error("❌ Perjudicial")
-                        else: st.info("📊 Neutral")
+                        st.metric("рҹҺҜ Remates", f"{acertados_remates}/{len(picks_remates)}", f"{pct_remates:.1f}% acierto")
+                        if pct_remates > 55: st.success("вң… Rentable")
+                        elif pct_remates < 45: st.error("вқҢ Perjudicial")
+                        else: st.info("рҹ“Ҡ Neutral")
                     
                     st.markdown("---")
                     
                     # ROI POR RANGO DE CONFIANZA
-                    st.markdown("#### 🎚️ ROI por Rango de Confianza")
+                    st.markdown("#### рҹҺҡпёҸ ROI por Rango de Confianza")
                     
                     confianza_ranges = [
-                        ("95%+ (🔥🔥)", 95, 100),
-                        ("90-95% (🔥)", 90, 95),
-                        ("80-90% (⚡)", 80, 90),
-                        ("70-80% (📊)", 70, 80),
-                        ("<70% (📉)", 0, 70),
+                        ("95%+ (рҹ”Ҙрҹ”Ҙ)", 95, 100),
+                        ("90-95% (рҹ”Ҙ)", 90, 95),
+                        ("80-90% (вҡЎ)", 80, 90),
+                        ("70-80% (рҹ“Ҡ)", 70, 80),
+                        ("<70% (рҹ“ү)", 0, 70),
                     ]
                     
                     conf_cols = st.columns(len(confianza_ranges))
@@ -2984,8 +2987,8 @@ def render_login_form():
                     
                     st.markdown("---")
                     
-                    # RECOMENDACIÓN
-                    st.markdown("#### 💡 Recomendaciones Inteligentes")
+                    # RECOMENDACIГ“N
+                    st.markdown("#### рҹ’Ў Recomendaciones Inteligentes")
                     
                     tipos = [
                         ("1X2", pct_1x2, acertados_1x2, len(picks_1x2)),
@@ -3004,11 +3007,11 @@ def render_login_form():
                     
                     col_rec1, col_rec2 = st.columns(2)
                     with col_rec1:
-                        st.markdown("##### ✅ Tipo con MEJOR rendimiento:")
+                        st.markdown("##### вң… Tipo con MEJOR rendimiento:")
                         st.success(f"**{mejor[0]}** - {mejor[1]:.1f}% acierto ({mejor[2]}/{mejor[3]})")
-                        st.markdown("_Considera enfocarte más en este tipo de picks._")
+                        st.markdown("_Considera enfocarte mГЎs en este tipo de picks._")
                     with col_rec2:
-                        st.markdown("##### ⚠️ Tipo con PEOR rendimiento:")
+                        st.markdown("##### вҡ пёҸ Tipo con PEOR rendimiento:")
                         st.error(f"**{peor[0]}** - {peor[1]:.1f}% acierto ({peor[2]}/{peor[3]})")
                         st.markdown("_Considera reducir o evitar este tipo de picks._")
                     
@@ -3018,18 +3021,18 @@ def render_login_form():
                         acertados_95 = len([p for p in confianza_95plus if p.get('acertado_1x2')])
                         pct_95 = (acertados_95 / len(confianza_95plus) * 100)
                         if pct_95 >= 80:
-                            st.info(f"🔥 Los picks de ALTA CONFIANZA (95%+) tienen {pct_95:.1f}% de aciertos. ¡Sigue así!")
+                            st.info(f"рҹ”Ҙ Los picks de ALTA CONFIANZA (95%+) tienen {pct_95:.1f}% de aciertos. ВЎSigue asГӯ!")
                         elif pct_95 < 60:
-                            st.warning(f"⚠️ Los picks de alta confianza solo acertaron {pct_95:.1f}%. Revisar calibración.")
+                            st.warning(f"вҡ пёҸ Los picks de alta confianza solo acertaron {pct_95:.1f}%. Revisar calibraciГіn.")
                 else:
-                    st.info("📭 No hay picks resueltos aún. Completa algunos análisis y registra los resultados.")
+                    st.info("рҹ“ӯ No hay picks resueltos aГәn. Completa algunos anГЎlisis y registra los resultados.")
             else:
-                st.info("📭 No hay picks guardados aún. Ve al Analizador para crear picks.")
+                st.info("рҹ“ӯ No hay picks guardados aГәn. Ve al Analizador para crear picks.")
         
         # ========== TAB 2: INGRESAR RESULTADOS ==========
         with tab_resultados:
-            st.markdown("### 📝 Ingresar Resultados")
-            st.info("💡 Completa el marcador de los partidos para calibrar las predicciones")
+            st.markdown("### рҹ“қ Ingresar Resultados")
+            st.info("рҹ’Ў Completa el marcador de los partidos para calibrar las predicciones")
             
             # Obtener picks sin resultado
             try:
@@ -3043,7 +3046,7 @@ def render_login_form():
             picks_sin_resultado = [p for p in picks if not p.get('marcador') or p.get('marcador') == '?']
             
             if picks_sin_resultado:
-                st.markdown(f"#### 📋 {len(picks_sin_resultado)} picks pendientes de resultado")
+                st.markdown(f"#### рҹ“Ӣ {len(picks_sin_resultado)} picks pendientes de resultado")
                 
                 for p in picks_sin_resultado:
                     pick_id = p.get('id')
@@ -3051,7 +3054,7 @@ def render_login_form():
                     visitante = p.get('equipo_visitante', '?')
                     fecha = p.get('fecha', '')[:10]
                     
-                    with st.expander(f"⚽ {local} VS {visitante} ({fecha})"):
+                    with st.expander(f"вҡҪ {local} VS {visitante} ({fecha})"):
                         st.markdown(f"**Predicciones:** 1X2: {p.get('prediccion_1x2', 'N/A')} | O/U: {p.get('prediccion_ou', 'N/A')} | BTTS: {p.get('prediccion_btts', 'N/A')}")
                         
                         col1, col2, col3, col4 = st.columns([1,1,1,1])
@@ -3066,7 +3069,7 @@ def render_login_form():
                         with col6:
                             pass
                         
-                        if st.button("💾 Guardar Resultado", key=f"btn_res_{pick_id}"):
+                        if st.button("рҹ’ҫ Guardar Resultado", key=f"btn_res_{pick_id}"):
                             # Calcular resultado 1X2
                             if gl > gv:
                                 resultado_1x2 = "1"
@@ -3090,7 +3093,7 @@ def render_login_form():
                             acertado_tarjetas = p.get('prediccion_tarjetas') is not None
                             acertado_remates = p.get('prediccion_remates') is not None
 
-                            # RECALIBRACIÓN AUTOMÁTICA
+                            # RECALIBRACIГ“N AUTOMГҒTICA
                             try:
                                 registrar_resultado(
                                     equipo_local=local,
@@ -3110,7 +3113,7 @@ def render_login_form():
                                     rango=p.get('rango', 'B')
                                 )
                             except Exception as cal_e:
-                                logger.warning(f"Calibración no actualizada: {cal_e}")
+                                logger.warning(f"CalibraciГіn no actualizada: {cal_e}")
 
                             
                             try:
@@ -3129,35 +3132,35 @@ def render_login_form():
                                     'acertado_tarjetas': acertado_tarjetas,
                                     'acertado_remates': acertado_remates,
                                 }).eq('id', pick_id).execute()
-                                st.success("✅ Resultado guardado! La calibración se actualiza automáticamente.")
+                                st.success("вң… Resultado guardado! La calibraciГіn se actualiza automГЎticamente.")
                                 pass
                             except Exception as e:
                                 st.error(f"Error: {str(e)[:50]}")
             else:
-                st.success("🎉 ¡Todos los picks tienen resultado!")
-                st.info("Los resultados ayudan a calibrar las próximas predicciones.")
+                st.success("рҹҺү ВЎTodos los picks tienen resultado!")
+                st.info("Los resultados ayudan a calibrar las prГіximas predicciones.")
 
 
         # ========== TAB 3: BANKROLL ==========
         with tab_bankroll:
-            st.markdown("### 💰 Mi Bankroll Real")
+            st.markdown("### рҹ’° Mi Bankroll Real")
             
             usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
             
             # Definir monedas disponibles
             MONEDAS = {
-                "USD": {"simbolo": "$", "nombre": "Dólar Americano", "codigo": "US$"},
-                "EUR": {"simbolo": "€", "nombre": "Euro", "codigo": "€"},
+                "USD": {"simbolo": "$", "nombre": "DГіlar Americano", "codigo": "US$"},
+                "EUR": {"simbolo": "вӮ¬", "nombre": "Euro", "codigo": "вӮ¬"},
                 "MXN": {"simbolo": "$", "nombre": "Peso Mexicano", "codigo": "MX$"},
                 "COP": {"simbolo": "$", "nombre": "Peso Colombiano", "codigo": "COP$"},
                 "PEN": {"simbolo": "S/", "nombre": "Sol Peruano", "codigo": "S/"},
                 "CLP": {"simbolo": "$", "nombre": "Peso Chileno", "codigo": "CLP$"},
                 "ARS": {"simbolo": "$", "nombre": "Peso Argentino", "codigo": "ARS$"},
-                "BRL": {"simbolo": "R$", "nombre": "Real Brasileño", "codigo": "R$"},
-                "GBP": {"simbolo": "£", "nombre": "Libra Esterlina", "codigo": "£"},
+                "BRL": {"simbolo": "R$", "nombre": "Real BrasileГұo", "codigo": "R$"},
+                "GBP": {"simbolo": "ВЈ", "nombre": "Libra Esterlina", "codigo": "ВЈ"},
             }
             
-            # Función para formatear moneda
+            # FunciГіn para formatear moneda
             def format_money(valor, simbolo):
                 """Formatea valor con separadores de miles"""
                 return f"{simbolo}{valor:,.2f}"
@@ -3186,26 +3189,26 @@ def render_login_form():
                 apuestas = []
             
             # ==================== SUBTABS ====================
-            sub_tab1, sub_tab2, sub_tab3 = st.tabs(["📊 Dashboard", "➕ Agregar Apuesta", "📋 Mis Apuestas"])
+            sub_tab1, sub_tab2, sub_tab3 = st.tabs(["рҹ“Ҡ Dashboard", "вһ• Agregar Apuesta", "рҹ“Ӣ Mis Apuestas"])
             
             # ========== SUBTAB 1: DASHBOARD ==========
             with sub_tab1:
-                st.markdown("#### 📈 Resumen de Rendimiento")
+                st.markdown("#### рҹ“Ҳ Resumen de Rendimiento")
                 
                 # Selector de moneda y banco inicial
                 col_money1, col_money2 = st.columns([1, 2])
                 with col_money1:
-                    moneda_select = st.selectbox("💱 Moneda", options=list(MONEDAS.keys()), 
+                    moneda_select = st.selectbox("рҹ’ұ Moneda", options=list(MONEDAS.keys()), 
                                                format_func=lambda x: f"{MONEDAS[x]['simbolo']} {MONEDAS[x]['nombre']}",
                                                index=0)
                     simbolo = MONEDAS[moneda_select]["simbolo"]
                 
                 with col_money2:
-                    bankroll_inicial = st.number_input(f"💵 Bankroll Inicial", value=1000.0, min_value=100.0, step=100.0, key="bankroll_inicial")
+                    bankroll_inicial = st.number_input(f"рҹ’ө Bankroll Inicial", value=1000.0, min_value=100.0, step=100.0, key="bankroll_inicial")
                 
                 # Reset bankroll
                 col_reset = st.columns(1)[0]
-                if st.button("🔄 Reiniciar Bankroll", use_container_width=True):
+                if st.button("рҹ”„ Reiniciar Bankroll", use_container_width=True):
                     try:
                         client.table('bankroll_apuestas').delete().eq('usuario', usuario_id).execute()
                     except:
@@ -3216,7 +3219,7 @@ def render_login_form():
                 st.markdown("---")
                 
                 if apuestas:
-                    # Calcular métricas reales
+                    # Calcular mГ©tricas reales
                     total_apostado = sum(a.get('cantidad', 0) for a in apuestas)
                     ganancias = sum(a.get('ganancia', 0) for a in apuestas)
                     bankroll_actual = bankroll_inicial + ganancias
@@ -3226,63 +3229,63 @@ def render_login_form():
                     total_apuestas = len(apuestas)
                     tasa_acierto_real = (apuestas_ganadas / total_apuestas * 100) if total_apuestas > 0 else 0
                     
-                    # Mostrar métricas con formato de miles
+                    # Mostrar mГ©tricas con formato de miles
                     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
                     with col_m1:
                         delta_gan = f"{'+' if ganancias >= 0 else ''}{format_money(ganancias, simbolo)}"
-                        st.metric("💵 Bankroll Actual", format_money(bankroll_actual, simbolo), delta=delta_gan)
+                        st.metric("рҹ’ө Bankroll Actual", format_money(bankroll_actual, simbolo), delta=delta_gan)
                     with col_m2:
-                        st.metric("📊 ROI", f"{roi:.1f}%", delta=f"{'+' if roi >= 0 else ''}{roi:.1f}%")
+                        st.metric("рҹ“Ҡ ROI", f"{roi:.1f}%", delta=f"{'+' if roi >= 0 else ''}{roi:.1f}%")
                     with col_m3:
-                        st.metric("🎯 Tasa Acierto", f"{tasa_acierto_real:.1f}%", delta=f"{apuestas_ganadas}/{total_apuestas}")
+                        st.metric("рҹҺҜ Tasa Acierto", f"{tasa_acierto_real:.1f}%", delta=f"{apuestas_ganadas}/{total_apuestas}")
                     with col_m4:
-                        st.metric("💰 Ganado/Perdido", format_money(ganancias, simbolo))
+                        st.metric("рҹ’° Ganado/Perdido", format_money(ganancias, simbolo))
                     
                     # Estado del bankroll
                     if bankroll_actual >= bankroll_inicial * 1.1:
-                        st.success(f"✅ Bankroll saludable: {((bankroll_actual/bankroll_inicial)-1)*100:.1f}% de ganancia")
+                        st.success(f"вң… Bankroll saludable: {((bankroll_actual/bankroll_inicial)-1)*100:.1f}% de ganancia")
                     elif bankroll_actual >= bankroll_inicial * 0.9:
-                        st.warning(f"⚠️ Bankroll estable: {((bankroll_actual/bankroll_inicial)-1)*100:.1f}%")
+                        st.warning(f"вҡ пёҸ Bankroll estable: {((bankroll_actual/bankroll_inicial)-1)*100:.1f}%")
                     else:
-                        st.error(f"🔴 Bankroll en riesgo: {((bankroll_actual/bankroll_inicial)-1)*100:.1f}%")
+                        st.error(f"рҹ”ҙ Bankroll en riesgo: {((bankroll_actual/bankroll_inicial)-1)*100:.1f}%")
                     
-                    # Gráfico de evolución
-                    st.markdown("#### 📈 Evolución del Bankroll")
+                    # GrГЎfico de evoluciГіn
+                    st.markdown("#### рҹ“Ҳ EvoluciГіn del Bankroll")
                     import random
                     if total_apuestas > 1:
-                        # Crear datos de evolución
+                        # Crear datos de evoluciГіn
                         evolucion = []
                         b = bankroll_inicial
                         for a in sorted(apuestas, key=lambda x: x.get('fecha', '')):
                             b += a.get('ganancia', 0)
                             evolucion.append({'fecha': a.get('fecha', 'N/A'), 'bankroll': b})
                         
-                        # Mostrar tabla de evolución
+                        # Mostrar tabla de evoluciГіn
                         df_evo = pd.DataFrame(evolucion)
                         st.line_chart(df_evo.set_index('fecha'))
                     else:
-                        st.info("Agrega más apuestas para ver la evolución")
+                        st.info("Agrega mГЎs apuestas para ver la evoluciГіn")
                     
-                    # Pronóstico
+                    # PronГіstico
                     if total_apuestas >= 10:
-                        st.markdown("#### 🔮 Pronóstico")
+                        st.markdown("#### рҹ”® PronГіstico")
                         media_ganancia = ganancias / total_apuestas
                         proy_mensual = media_ganancia * 30
                         proy_anual = media_ganancia * 365
                         
                         col_p1, col_p2 = st.columns(2)
                         with col_p1:
-                            st.metric("📅 Proyección Mensual", format_money(proy_mensual, simbolo))
+                            st.metric("рҹ“… ProyecciГіn Mensual", format_money(proy_mensual, simbolo))
                         with col_p2:
-                            st.metric("📅 Proyección Anual", format_money(proy_anual, simbolo))
+                            st.metric("рҹ“… ProyecciГіn Anual", format_money(proy_anual, simbolo))
                 else:
-                    st.info("📭 No tienes apuestas aún. Ve a 'Agregar Apuesta' para empezar.")
+                    st.info("рҹ“ӯ No tienes apuestas aГәn. Ve a 'Agregar Apuesta' para empezar.")
             
             # ========== SUBTAB 2: AGREGAR APUESTA ==========
             with sub_tab2:
-                st.markdown("#### ➕ Agregar Nueva Apuesta")
+                st.markdown("#### вһ• Agregar Nueva Apuesta")
                 
-                tab_origen1, tab_origen2 = st.tabs(["📋 Desde Picks", "✏️ Manual"])
+                tab_origen1, tab_origen2 = st.tabs(["рҹ“Ӣ Desde Picks", "вңҸпёҸ Manual"])
                 
                 with tab_origen1:
                     if picks_disponibles:
@@ -3299,12 +3302,12 @@ def render_login_form():
                             
                             col_p1, col_p2 = st.columns(2)
                             with col_p1:
-                                st.write(f"**📅 Fecha:** {pick.get('fecha', 'N/A')}")
-                                st.write(f"**📊 Mercado:** {pick.get('mercado', 'N/A')}")
-                                st.write(f"**📈 Detalle:** {pick.get('detalle', 'N/A')}")
+                                st.write(f"**рҹ“… Fecha:** {pick.get('fecha', 'N/A')}")
+                                st.write(f"**рҹ“Ҡ Mercado:** {pick.get('mercado', 'N/A')}")
+                                st.write(f"**рҹ“Ҳ Detalle:** {pick.get('detalle', 'N/A')}")
                             with col_p2:
-                                st.write(f"**💰 Cuota:** {pick.get('cuota', 'N/A')}")
-                                st.write(f"**🎯 Confianza:** {pick.get('confianza', 'N/A')}%")
+                                st.write(f"**рҹ’° Cuota:** {pick.get('cuota', 'N/A')}")
+                                st.write(f"**рҹҺҜ Confianza:** {pick.get('confianza', 'N/A')}%")
                         else:
                             st.info("Todos tus picks ya tienen resultado")
                     else:
@@ -3315,26 +3318,26 @@ def render_login_form():
                     
                     col_d1, col_d2, col_d3 = st.columns(3)
                     with col_d1:
-                        equipo = st.text_input("🏆 Equipo/Partido", placeholder="Ej: Barcelona vs Real Madrid")
+                        equipo = st.text_input("рҹҸҶ Equipo/Partido", placeholder="Ej: Barcelona vs Real Madrid")
                     with col_d2:
-                        cuota = st.number_input("💰 Cuota", value=2.0, min_value=1.01, max_value=100.0, step=0.1)
+                        cuota = st.number_input("рҹ’° Cuota", value=2.0, min_value=1.01, max_value=100.0, step=0.1)
                     with col_d3:
-                        cantidad = st.number_input(f"💵 Cantidad ({simbolo})", value=20.0, min_value=1.0, step=5.0)
+                        cantidad = st.number_input(f"рҹ’ө Cantidad ({simbolo})", value=20.0, min_value=1.0, step=5.0)
                     
                     col_d4, col_d5 = st.columns(2)
                     with col_d4:
-                        mercado = st.selectbox("📊 Mercado", ["1X2", "Over/Under", "BTTS", "Corners", "Tarjetas", "Otro"])
+                        mercado = st.selectbox("рҹ“Ҡ Mercado", ["1X2", "Over/Under", "BTTS", "Corners", "Tarjetas", "Otro"])
                     with col_d5:
-                        fecha = st.date_input("📅 Fecha", value=datetime.now(timezone(timedelta(hours=-5))).date())
+                        fecha = st.date_input("рҹ“… Fecha", value=datetime.now(timezone(timedelta(hours=-5))).date())
                     
                     # Resultado (para apuestas ya resueltas)
-                    with st.expander("✅ Marcar Resultado (opcional)"):
+                    with st.expander("вң… Marcar Resultado (opcional)"):
                         resultado = st.radio("Resultado:", ["Pendiente", "Ganada", "Perdida"], horizontal=True)
                         if resultado != "Pendiente":
                             ganancia = cantidad * (cuota - 1) if resultado == "Ganada" else -cantidad
-                            st.write(f"**Ganancia/Pérdida:** {format_money(ganancia, simbolo)}")
+                            st.write(f"**Ganancia/PГ©rdida:** {format_money(ganancia, simbolo)}")
                     
-                    if st.button("➕ Agregar Apuesta", type="primary", use_container_width=True):
+                    if st.button("вһ• Agregar Apuesta", type="primary", use_container_width=True):
                         resultado_val = None
                         ganancia_val = 0
                         if resultado == "Ganada":
@@ -3356,14 +3359,14 @@ def render_login_form():
                                 'ganancia': ganancia_val,
                                 'resultado': resultado_val
                             }).execute()
-                            st.success("✅ Apuesta agregada")
+                            st.success("вң… Apuesta agregada")
                             pass
                         except Exception as e:
                             st.error(f"Error: {e}")
             
             # ========== SUBTAB 3: MIS APUESTAS ==========
             with sub_tab3:
-                st.markdown("#### 📋 Historial de Apuestas")
+                st.markdown("#### рҹ“Ӣ Historial de Apuestas")
                 
                 if apuestas:
                     # Filtros
@@ -3388,13 +3391,13 @@ def render_login_form():
                     for i, a in enumerate(apuestas_filtradas):
                         col_a1, col_a2 = st.columns([4, 1])
                         with col_a1:
-                            estado_icon = "✅" if a.get('resultado') == True else ("❌" if a.get('resultado') == False else "⏳")
+                            estado_icon = "вң…" if a.get('resultado') == True else ("вқҢ" if a.get('resultado') == False else "вҸі")
                             ganancia = a.get('ganancia', 0)
                             ganancia_fmt = format_money(ganancia, simbolo)
                             cantidad_fmt = format_money(a.get('cantidad', 0), simbolo)
                             
                             st.markdown(f"{estado_icon} **{a.get('equipo', 'N/A')}** - {a.get('fecha', 'N/A')}")
-                            st.caption(f"💰 {cantidad_fmt} @ {a.get('cuota', 'N/A')} | {a.get('mercado', 'N/A')} → **Ganancia: {ganancia_fmt}**")
+                            st.caption(f"рҹ’° {cantidad_fmt} @ {a.get('cuota', 'N/A')} | {a.get('mercado', 'N/A')} вҶ’ **Ganancia: {ganancia_fmt}**")
                         
                         with col_a2:
                             # Actualizar resultado
@@ -3402,7 +3405,7 @@ def render_login_form():
                                                           index=0 if a.get('resultado') is None else (1 if a.get('resultado') else 2),
                                                           key=f"res_{i}_{a.get('id', i)}")
                             
-                            if st.button("💾 Guardar", key=f"btn_res_{i}_{a.get('id', i)}"):
+                            if st.button("рҹ’ҫ Guardar", key=f"btn_res_{i}_{a.get('id', i)}"):
                                 cantidad = a.get('cantidad', 0)
                                 cuota = a.get('cuota', 2.0)
                                 resultado_new = None
@@ -3431,17 +3434,17 @@ def render_login_form():
         
         # ========== TAB 4: VALUE BETS ==========
         with tab_value:
-            st.markdown("### 🎯 Detector de Value Bets")
+            st.markdown("### рҹҺҜ Detector de Value Bets")
             st.markdown("_Encuentra apuestas donde la probabilidad del modelo es MAYOR que la cuota del mercado_")
             
             # Ingresar datos del pick
             col_v1, col_v2, col_v3 = st.columns(3)
             with col_v1:
-                prob_modelo = st.slider("📊 Probabilidad del Modelo (%)", 10, 99, 60)
+                prob_modelo = st.slider("рҹ“Ҡ Probabilidad del Modelo (%)", 10, 99, 60)
             with col_v2:
-                cuota_mercado = st.number_input("💰 Cuota del Mercado", value=2.0, min_value=1.01, max_value=20.0, step=0.05)
+                cuota_mercado = st.number_input("рҹ’° Cuota del Mercado", value=2.0, min_value=1.01, max_value=20.0, step=0.05)
             with col_v3:
-                tipo_apuesta = st.selectbox("📋 Tipo de Apuesta", ["1X2", "Over/Under", "BTTS", "Corners", "Tarjetas"])
+                tipo_apuesta = st.selectbox("рҹ“Ӣ Tipo de Apuesta", ["1X2", "Over/Under", "BTTS", "Corners", "Tarjetas"])
             
             # Calcular value
             prob_implicita = (1 / cuota_mercado) * 100
@@ -3449,31 +3452,31 @@ def render_login_form():
             
             col_calc1, col_calc2, col_calc3 = st.columns(3)
             with col_calc1:
-                st.metric("📊 Prob. Modelo", f"{prob_modelo:.1f}%")
+                st.metric("рҹ“Ҡ Prob. Modelo", f"{prob_modelo:.1f}%")
             with col_calc2:
-                st.metric("📉 Prob. Implícita", f"{prob_implicita:.1f}%")
+                st.metric("рҹ“ү Prob. ImplГӯcita", f"{prob_implicita:.1f}%")
             with col_calc3:
                 if value > 5:
-                    st.metric("🎯 VALUE", f"+{value:.1f}%", delta="🔥🔥 ALTO VALUE")
+                    st.metric("рҹҺҜ VALUE", f"+{value:.1f}%", delta="рҹ”Ҙрҹ”Ҙ ALTO VALUE")
                 elif value > 0:
-                    st.metric("🎯 VALUE", f"+{value:.1f}%", delta="✅ Value positivo")
+                    st.metric("рҹҺҜ VALUE", f"+{value:.1f}%", delta="вң… Value positivo")
                 else:
-                    st.metric("🎯 VALUE", f"{value:.1f}%", delta="❌ Sin value")
+                    st.metric("рҹҺҜ VALUE", f"{value:.1f}%", delta="вқҢ Sin value")
             
-            # Recomendación
+            # RecomendaciГіn
             if value >= 10:
-                st.success("🔥🔥 **APUESTA FUERTE** - Value muy alto, alta confianza")
+                st.success("рҹ”Ҙрҹ”Ҙ **APUESTA FUERTE** - Value muy alto, alta confianza")
             elif value >= 5:
-                st.success("✅ **APUESTA** - Value positivo, buena oportunidad")
+                st.success("вң… **APUESTA** - Value positivo, buena oportunidad")
             elif value >= 0:
-                st.info("📊 **CAUTELA** - Value marginal, depende de otros factores")
+                st.info("рҹ“Ҡ **CAUTELA** - Value marginal, depende de otros factores")
             else:
-                st.error("❌ **EVITAR** - La cuota está por encima de lo que el modelo sugiere")
+                st.error("вқҢ **EVITAR** - La cuota estГЎ por encima de lo que el modelo sugiere")
             
             st.markdown("---")
             
             # Tabla de value bets guardados
-            st.markdown("#### 📋 Value Bets Registrados")
+            st.markdown("#### рҹ“Ӣ Value Bets Registrados")
             
             try:
                 vb_response = client.table('value_bets').select('*').eq('usuario_id', usuario_id).order('value', desc=True).limit(20).execute()
@@ -3494,16 +3497,16 @@ def render_login_form():
                     ])
                     st.dataframe(df_vb, use_container_width=True)
                 else:
-                    st.info("📭 No hay value bets registrados.")
+                    st.info("рҹ“ӯ No hay value bets registrados.")
             except Exception as e:
-                st.info("📭 Conecta a Supabase para ver value bets guardados.")
+                st.info("рҹ“ӯ Conecta a Supabase para ver value bets guardados.")
         
         # ========== TAB 5: ALERTAS ==========
         with tab_alertas:
-            st.markdown("### 🔔 Centro de Alertas VIP")
+            st.markdown("### рҹ”” Centro de Alertas VIP")
             
             # Crear alertas
-            st.markdown("#### 📝 Crear Nueva Alerta")
+            st.markdown("#### рҹ“қ Crear Nueva Alerta")
             
             col_al1, col_al2, col_al3 = st.columns(3)
             with col_al1:
@@ -3513,10 +3516,10 @@ def render_login_form():
             with col_al3:
                 st.write("")  # spacer
             
-            titulo = st.text_input("Título de la Alerta")
+            titulo = st.text_input("TГӯtulo de la Alerta")
             mensaje = st.text_area("Mensaje")
             
-            if st.button("🔔 Crear Alerta", type="primary"):
+            if st.button("рҹ”” Crear Alerta", type="primary"):
                 try:
                     client.table('alertas').insert({
                         'usuario_id': usuario_id,
@@ -3526,14 +3529,14 @@ def render_login_form():
                         'prioridad': prioridad,
                         'leida': False
                     }).execute()
-                    st.success("✅ Alerta creada")
+                    st.success("вң… Alerta creada")
                 except Exception as e:
                     st.error(f"Error: {str(e)}")
             
             st.markdown("---")
             
             # Ver alertas
-            st.markdown("#### 📬 Alertas Recientes")
+            st.markdown("#### рҹ“¬ Alertas Recientes")
             
             try:
                 alertas_response = client.table('alertas').select('*').eq('usuario_id', usuario_id).order('creado_en', desc=True).limit(20).execute()
@@ -3547,36 +3550,36 @@ def render_login_form():
                     
                     col_alerta1, col_alerta2, col_alerta3 = st.columns(3)
                     with col_alerta1:
-                        st.metric("🔥 Alta Prioridad", len(alertas_alta))
+                        st.metric("рҹ”Ҙ Alta Prioridad", len(alertas_alta))
                     with col_alerta2:
-                        st.metric("⚡ Media Prioridad", len(alertas_media))
+                        st.metric("вҡЎ Media Prioridad", len(alertas_media))
                     with col_alerta3:
-                        st.metric("📉 Baja Prioridad", len(alertas_baja))
+                        st.metric("рҹ“ү Baja Prioridad", len(alertas_baja))
                     
                     for alerta in alertas[:10]:
-                        color = "🔴" if alerta.get('prioridad') == 'alta' else "🟡" if alerta.get('prioridad') == 'media' else "🟢"
+                        color = "рҹ”ҙ" if alerta.get('prioridad') == 'alta' else "рҹҹЎ" if alerta.get('prioridad') == 'media' else "рҹҹў"
                         with st.expander(f"{color} [{alerta.get('tipo', '')}] {alerta.get('titulo', '')}"):
                             st.write(alerta.get('mensaje', ''))
                             st.caption(f"Creada: {alerta.get('creado_en', '')}")
                             
-                            # Marcar como leída
-                            if st.button("✅ Marcar leída", key=f"leer_{alerta.get('id')}"):
+                            # Marcar como leГӯda
+                            if st.button("вң… Marcar leГӯda", key=f"leer_{alerta.get('id')}"):
                                 try:
                                     client.table('alertas').update({'leida': True}).eq('id', alerta.get('id')).execute()
-                                    st.success("Marcada como leída")
+                                    st.success("Marcada como leГӯda")
                                     pass
                                 except: pass
                 else:
-                    st.info("📭 No hay alertas.")
+                    st.info("рҹ“ӯ No hay alertas.")
             except Exception as e:
-                st.info("📭 Conecta a Supabase para ver alertas.")
+                st.info("рҹ“ӯ Conecta a Supabase para ver alertas.")
         
         # ========== TAB 6: RANKING ==========
         with tab_ranking:
-            st.markdown("### 🏆 Ranking Mensual VIP")
+            st.markdown("### рҹҸҶ Ranking Mensual VIP")
             
             # Ranking de la comunidad
-            st.markdown("#### 🌟 Top Pickers del Mes")
+            st.markdown("#### рҹҢҹ Top Pickers del Mes")
             
             try:
                 ranking_response = client.table('ranking').select('*').order('posicion').limit(10).execute()
@@ -3585,41 +3588,41 @@ def render_login_form():
                 if ranking:
                     df_ranking = pd.DataFrame([
                         {
-                            "🥇 Posición": r.get('posicion', i+1),
-                            "👤 Usuario": r.get('nombre', 'Anon'),
-                            "📊 Picks": r.get('total_picks', 0),
-                            "📈 ROI": f"{r.get('roi', 0):.1f}%",
-                            "💰 Yield": f"{r.get('yield', 0):.1f}%",
+                            "рҹҘҮ PosiciГіn": r.get('posicion', i+1),
+                            "рҹ‘Ө Usuario": r.get('nombre', 'Anon'),
+                            "рҹ“Ҡ Picks": r.get('total_picks', 0),
+                            "рҹ“Ҳ ROI": f"{r.get('roi', 0):.1f}%",
+                            "рҹ’° Yield": f"{r.get('yield', 0):.1f}%",
                         }
                         for i, r in enumerate(ranking)
                     ])
                     st.dataframe(df_ranking, use_container_width=True)
                 else:
-                    st.info("📭 No hay ranking aún. ¡Sé el primero!")
+                    st.info("рҹ“ӯ No hay ranking aГәn. ВЎSГ© el primero!")
                     
                     # Sugerir crear ranking basado en picks
                     if picks:
-                        st.markdown("##### 📊 Generar Ranking")
-                        if st.button("🔄 Calcular Ranking"):
-                            st.info("Ranking calculado (funcionalidad completa con más usuarios)")
+                        st.markdown("##### рҹ“Ҡ Generar Ranking")
+                        if st.button("рҹ”„ Calcular Ranking"):
+                            st.info("Ranking calculado (funcionalidad completa con mГЎs usuarios)")
             except Exception as e:
-                st.info("📭 Ranking no disponible. Conecta a Supabase.")
+                st.info("рҹ“ӯ Ranking no disponible. Conecta a Supabase.")
             
             st.markdown("---")
             
             # Badges y Logros
-            st.markdown("#### 🏅 Mis Badges y Logros")
+            st.markdown("#### рҹҸ… Mis Badges y Logros")
             
             # Badges predefinidos
             badges_disponibles = {
-                "🎯 Primer Pick": len(picks) >= 1,
-                "📊 10 Picks": len(picks) >= 10,
-                "🔥 50 Picks": len(picks) >= 50,
-                "👑 100 Picks": len(picks) >= 100,
-                "💰 ROI 10%": True,  # Calcular
-                "🎯 Racha 5": True,  # Calcular
-                "🔥 Racha 10": True,  # Calcular
-                "⭐ Valoración 5★": False,
+                "рҹҺҜ Primer Pick": len(picks) >= 1,
+                "рҹ“Ҡ 10 Picks": len(picks) >= 10,
+                "рҹ”Ҙ 50 Picks": len(picks) >= 50,
+                "рҹ‘‘ 100 Picks": len(picks) >= 100,
+                "рҹ’° ROI 10%": True,  # Calcular
+                "рҹҺҜ Racha 5": True,  # Calcular
+                "рҹ”Ҙ Racha 10": True,  # Calcular
+                "вӯҗ ValoraciГіn 5вҳ…": False,
             }
             
             cols_badge = st.columns(4)
@@ -3628,11 +3631,11 @@ def render_login_form():
                     if unlocked:
                         st.success(badge)
                     else:
-                        st.info(f"🔒 {badge}")
+                        st.info(f"рҹ”’ {badge}")
         
         # ========== TAB 7: EXPORTAR ==========
         with tab_export:
-            st.markdown("### 📄 Exportar Reportes")
+            st.markdown("### рҹ“„ Exportar Reportes")
             
             # Selector de formato
             col_exp1, col_exp2 = st.columns(2)
@@ -3647,7 +3650,7 @@ def render_login_form():
                     "Value Bets"
                 ])
             
-            # Período
+            # PerГӯodo
             col_per1, col_per2 = st.columns(2)
             with col_per1:
                 fecha_inicio = st.date_input("Desde", value=pd.Timestamp.now() - pd.Timedelta(days=30))
@@ -3661,9 +3664,9 @@ def render_login_form():
                     if p.get('fecha') and pd.Timestamp(fecha_inicio) <= pd.to_datetime(p.get('fecha')) <= pd.Timestamp(fecha_fin)
                 ]
                 
-                st.markdown(f"📊 **{len(picks_filtrados)} picks** en el período seleccionado")
+                st.markdown(f"рҹ“Ҡ **{len(picks_filtrados)} picks** en el perГӯodo seleccionado")
                 
-                if st.button("📥 Descargar Reporte", type="primary"):
+                if st.button("рҹ“Ҙ Descargar Reporte", type="primary"):
                     import io
                     
                     if tipo_reporte == "Picks Completos":
@@ -3712,7 +3715,7 @@ def render_login_form():
                         if formato == "CSV":
                             csv = df_export.to_csv(index=False)
                             st.download_button(
-                                "📥 Descargar CSV",
+                                "рҹ“Ҙ Descargar CSV",
                                 csv,
                                 f"scorpion_report_{pd.Timestamp.now().strftime('%Y%m%d')}.csv",
                                 "text/csv"
@@ -3722,7 +3725,7 @@ def render_login_form():
                             with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                                 df_export.to_excel(writer, index=False, sheet_name='Report')
                             st.download_button(
-                                "📥 Descargar Excel",
+                                "рҹ“Ҙ Descargar Excel",
                                 buffer.getvalue(),
                                 f"scorpion_report_{pd.Timestamp.now().strftime('%Y%m%d')}.xlsx",
                                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -3730,26 +3733,26 @@ def render_login_form():
                         else:  # JSON
                             json_str = df_export.to_json(orient='records')
                             st.download_button(
-                                "📥 Descargar JSON",
+                                "рҹ“Ҙ Descargar JSON",
                                 json_str,
                                 f"scorpion_report_{pd.Timestamp.now().strftime('%Y%m%d')}.json",
                                 "application/json"
                             )
                     else:
-                        st.warning("No hay datos para el período seleccionado")
+                        st.warning("No hay datos para el perГӯodo seleccionado")
             else:
-                st.info("📭 No hay picks para exportar.")
+                st.info("рҹ“ӯ No hay picks para exportar.")
         
         # Mostrar Consensus Meter
         st.markdown("---")
-        st.markdown("### 🤖 Consensus de Modelos")
-        st.markdown("_¿Cuántos modelos están de acuerdo en el último pick?_")
+        st.markdown("### рҹӨ– Consensus de Modelos")
+        st.markdown("_ВҝCuГЎntos modelos estГЎn de acuerdo en el Гәltimo pick?_")
         
-        # Obtener último pick
+        # Obtener Гәltimo pick
         if picks:
             ultimo = picks[0] if picks else None
             if ultimo:
-                # Simular scores de consenso (en producción vendría de los modelos reales)
+                # Simular scores de consenso (en producciГіn vendrГӯa de los modelos reales)
                 modelos = ['Poisson', 'Dixon-Coles', 'Monte Carlo', 'Elo']
                 probabilidades = [
                     ultimo.get('p1', 0) or 00,
@@ -3764,20 +3767,20 @@ def render_login_form():
                 
                 col_cons1, col_cons2, col_cons3 = st.columns(3)
                 with col_cons1:
-                    st.metric("📊 Promedio Local", f"{promedio:.1f}%")
+                    st.metric("рҹ“Ҡ Promedio Local", f"{promedio:.1f}%")
                 with col_cons2:
-                    st.metric("📈 Máx", f"{max(probabilidades):.1f}%")
+                    st.metric("рҹ“Ҳ MГЎx", f"{max(probabilidades):.1f}%")
                 with col_cons3:
-                    st.metric("📉 Mín", f"{min(probabilidades):.1f}%")
+                    st.metric("рҹ“ү MГӯn", f"{min(probabilidades):.1f}%")
                 
                 if discrepancia < 10:
-                    st.success("🔥 **ALTO CONSENSO** - Los 4 modelos están de acuerdo")
+                    st.success("рҹ”Ҙ **ALTO CONSENSO** - Los 4 modelos estГЎn de acuerdo")
                 elif discrepancia < 20:
-                    st.info("📊 **CONSENSO MODERADO** - Buena señal")
+                    st.info("рҹ“Ҡ **CONSENSO MODERADO** - Buena seГұal")
                 else:
-                    st.warning("⚠️ **BAJO CONSENSO** - Los modelos discrepan, mayor riesgo")
+                    st.warning("вҡ пёҸ **BAJO CONSENSO** - Los modelos discrepan, mayor riesgo")
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
 # EJECUTAR EL SISTEMA DE LOGIN
-# ═══════════════════════════════════════════════════════════════════════════════
+# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
 render_login_form()
