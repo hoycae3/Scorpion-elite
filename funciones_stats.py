@@ -108,8 +108,10 @@ def obtener_ultimos_partidos_equipo(team_id, team_name, league_id, season, heade
             away_team = teams.get('away', {})
             
             goals = teams.get('goals', {})
-            gf_home = goals.get('home') or 0
-            gf_away = goals.get('away') or 0
+            gf_home = goals.get('home') if goals else None
+            gf_away = goals.get('away') if goals else None
+            gf_home = gf_home if gf_home is not None else 0
+            gf_away = gf_away if gf_away is not None else 0
 
             if home_team.get('id') == team_id:
                 es_local = True
@@ -140,9 +142,12 @@ def obtener_ultimos_partidos_equipo(team_id, team_name, league_id, season, heade
                 'liga': league.get('name', ''),
                 'es_local': es_local,
                 'resultado': resultado,
-                'goles_favor': gf if gf else 0,
-                'goles_contra': gv if gv else 0,
+                'goles_favor': gf if gf is not None else 0,
+                'goles_contra': gv if gv is not None else 0,
             }
+            
+            # DEBUG
+            print(f"DEBUG {team_name}: fixture={fix_id}, gf={gf}, gv={gv}")
             
             # Agregar stats si están disponibles
             if stats:
