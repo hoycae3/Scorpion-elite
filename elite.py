@@ -1240,6 +1240,53 @@ def render_login_form():
                     # RESUMEN FINAL
                     # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
                     st.success("✅ **SINCRONIZACIÓN COMPLETADA**")
+                    
+                    # Botón para migrar datos de equipos_stats a equipo_partidos_stats
+                    if st.button("Migrar Lambda a equipo_partidos_stats"):
+                        with st.spinner("Migrando datos..."):
+                            equipos_migrados = 0
+                            try:
+                                resp_equipos = client.table('equipos_stats').select('*').execute()
+                                for eq in resp_equipos.data:
+                                    equipo = eq.get('equipo', '')
+                                    team_id = eq.get('team_id')
+                                    if not equipo or not team_id:
+                                        continue
+                                    
+                                    resp_existe = client.table('equipo_partidos_stats').select('id').eq('team_id', team_id).limit(1).execute()
+                                    
+                                    if not resp_existe.data:
+                                        pj = eq.get('partidos_jugados', 1) or 1
+                                        gf = eq.get('goles_favor', 0) or 0
+                                        gc = eq.get('goles_contra', 0) or 0
+                                        
+                                        partido_data = {
+                                            'team_id': team_id,
+                                            'equipo': equipo,
+                                            'fixture_id': int(team_id) * 1000000,
+                                            'fecha': '2024-01-01',
+                                            'liga': eq.get('liga', ''),
+                                            'es_local': True,
+                                            'resultado': '-',
+                                            'goles_favor': gf // max(pj, 1),
+                                            'goles_contra': gc // max(pj, 1),
+                                            'tiros_totales': 0,
+                                            'corners': 0,
+                                            'amarillas': 0,
+                                        }
+                                        
+                                        try:
+                                            client.table('equipo_partidos_stats').upsert(
+                                                partido_data,
+                                                on_conflict='team_id,fixture_id'
+                                            ).execute()
+                                            equipos_migrados += 1
+                                        except:
+                                            pass
+                                
+                                st.success(f"OK: {equipos_migrados} equipos migrados")
+                            except Exception as e:
+                                st.error(f"Error: {e}")
                     st.markdown(f"""
                     📥 **RESUMEN FINAL:**
                     
