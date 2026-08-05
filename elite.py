@@ -455,20 +455,36 @@ def render_public_landing():
                         stats_visit = resp_by_id.data[0]
 
 
-                # Buscar promedios dinámicos de equipo_partidos_stats (por nombre Y team_id)
+                # Buscar promedios dinámicos de equipo_partidos_stats (robusto)
                 promedios_dinamicos_local = None
                 promedios_dinamicos_visitante = None
                 
-                # Buscar por nombre primero (más flexible)
+                def buscar_en_eps(client, nombre):
+                    """Busca en equipo_partidos_stats por nombre completo o palabras individuales"""
+                    # Buscar por nombre completo primero
+                    resp = client.table("equipo_partidos_stats").select("team_id, equipo").ilike("equipo", f"%{nombre}%").limit(5).execute()
+                    if resp.data:
+                        return resp.data[0]
+                    # Si no encuentra, buscar por cada palabra del nombre
+                    palabras = nombre.split()
+                    for palabra in palabras:
+                        if len(palabra) > 3:  # Ignorar palabras muy cortas
+                            resp = client.table("equipo_partidos_stats").select("team_id, equipo").ilike("equipo", f"%{palabra}%").limit(1).execute()
+                            if resp.data:
+                                return resp.data[0]
+                    return None
+                
                 if local:
-                    resp_eps_l = client.table("equipo_partidos_stats").select("team_id").ilike("equipo", f"%{local}%").limit(1).execute()
-                    if resp_eps_l.data:
-                        promedios_dinamicos_local = calcular_promedios_equipo(client, resp_eps_l.data[0]["team_id"])
+                    result_l = buscar_en_eps(client, local)
+                    if result_l:
+                        promedios_dinamicos_local = calcular_promedios_equipo(client, result_l["team_id"])
+                        st.write(f"DEBUG EPS Local: '{local}' -> encontrado '{result_l.get('equipo')}'")
                 
                 if visitante:
-                    resp_eps_v = client.table("equipo_partidos_stats").select("team_id").ilike("equipo", f"%{visitante}%").limit(1).execute()
-                    if resp_eps_v.data:
-                        promedios_dinamicos_visitante = calcular_promedios_equipo(client, resp_eps_v.data[0]["team_id"])
+                    result_v = buscar_en_eps(client, visitante)
+                    if result_v:
+                        promedios_dinamicos_visitante = calcular_promedios_equipo(client, result_v["team_id"])
+                        st.write(f"DEBUG EPS Visit: '{visitante}' -> encontrado '{result_v.get('equipo')}'")
                 st.write(f"HistLocal: {len(promedios_dinamicos_local.get('partidos_total', 0)) if promedios_dinamicos_local else 0} partidos | HistVisit: {len(promedios_dinamicos_visitante.get('partidos_total', 0)) if promedios_dinamicos_visitante else 0} partidos")
 
                 # DEBUG
@@ -1822,11 +1838,20 @@ def render_login_form():
         promedios_dinamicos_local = None
         promedios_dinamicos_visitante = None
         
-        # FUNCIÓN AUXILIAR: Buscar promedios dinámicos por nombre o team_id
+        # FUNCIÓN AUXILIAR: Buscar promedios dinámicos (robusto)
         def obtener_promedios_dinamicos(client, equipo_nombre, team_id=None):
-            resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{equipo_nombre}%').limit(1).execute()
+            # Buscar por nombre completo primero
+            resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{equipo_nombre}%').limit(5).execute()
             if resp_eps.data:
                 return calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
+            # Si no encuentra, buscar por cada palabra
+            palabras = equipo_nombre.split()
+            for palabra in palabras:
+                if len(palabra) > 3:
+                    resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{palabra}%').limit(1).execute()
+                    if resp_eps.data:
+                        return calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
+            # Fallback: usar team_id directamente
             if team_id:
                 return calcular_promedios_equipo(client, team_id)
             return None
