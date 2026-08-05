@@ -1143,8 +1143,8 @@ def render_login_form():
                                                 'derrotas': loses,
                                                 'goles_favor': gf,
                                                 'goles_contra': gc,
-                                                'lambda_local': round((gf_h + gc_a) / pj_h / 2, 2) if pj_h > 0 else 0,
-                                                'lambda_visitante': round((gf_a + gc_h) / pj_a / 2, 2) if pj_a > 0 else 0,
+                                                'lambda_local': round(gf_h / max(pj_h, 1), 2),
+                                                'lambda_visitante': round(gf_a / max(pj_a, 1), 2),
                                                 'ultimos_5_partidos': list(stats.get('form', '') or '')[:5],
                                             }
                                             
@@ -1241,52 +1241,6 @@ def render_login_form():
                     # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
                     st.success("✅ **SINCRONIZACIÓN COMPLETADA**")
                     
-                    # Botón para migrar datos de equipos_stats a equipo_partidos_stats
-                    if st.button("Migrar Lambda a equipo_partidos_stats"):
-                        with st.spinner("Migrando datos..."):
-                            equipos_migrados = 0
-                            try:
-                                resp_equipos = client.table('equipos_stats').select('*').execute()
-                                for eq in resp_equipos.data:
-                                    equipo = eq.get('equipo', '')
-                                    team_id = eq.get('team_id')
-                                    if not equipo or not team_id:
-                                        continue
-                                    
-                                    resp_existe = client.table('equipo_partidos_stats').select('id').eq('team_id', team_id).limit(1).execute()
-                                    
-                                    if not resp_existe.data:
-                                        pj = eq.get('partidos_jugados', 1) or 1
-                                        gf = eq.get('goles_favor', 0) or 0
-                                        gc = eq.get('goles_contra', 0) or 0
-                                        
-                                        partido_data = {
-                                            'team_id': team_id,
-                                            'equipo': equipo,
-                                            'fixture_id': int(team_id) * 1000000,
-                                            'fecha': '2024-01-01',
-                                            'liga': eq.get('liga', ''),
-                                            'es_local': True,
-                                            'resultado': '-',
-                                            'goles_favor': gf // max(pj, 1),
-                                            'goles_contra': gc // max(pj, 1),
-                                            'tiros_totales': 0,
-                                            'corners': 0,
-                                            'amarillas': 0,
-                                        }
-                                        
-                                        try:
-                                            client.table('equipo_partidos_stats').upsert(
-                                                partido_data,
-                                                on_conflict='team_id,fixture_id'
-                                            ).execute()
-                                            equipos_migrados += 1
-                                        except:
-                                            pass
-                                
-                                st.success(f"OK: {equipos_migrados} equipos migrados")
-                            except Exception as e:
-                                st.error(f"Error: {e}")
                     st.markdown(f"""
                     📥 **RESUMEN FINAL:**
                     
@@ -1874,20 +1828,16 @@ def render_login_form():
         if st.button("🎯 ANALIZAR", type="primary", use_container_width=True, disabled=analizar_disabled):
             try:
                 if home_team and away_team and stats_local and stats_visitante:
-                    # LAMBDA DESDE equipo_partidos_stats (NO desde equipos_stats)
-                    if not promedios_dinamicos_local or not promedios_dinamicos_local.get('lambda_ponderado'):
-                        st.error(f"ERROR: {home_team} no tiene datos en equipo_partidos_stats. Ejecuta Sincronizar.")
-                        st.stop()
-                    if not promedios_dinamicos_visitante or not promedios_dinamicos_visitante.get('lambda_ponderado'):
-                        st.error(f"ERROR: {away_team} no tiene datos en equipo_partidos_stats. Ejecuta Sincronizar.")
+                    # LAMBDA DESDE equipos_stats (calculado durante sincronizacion)
+                    lambda_local_cal = stats_local.get('lambda_local', 1.3)
+                    lambda_visitante_cal = stats_visitante.get('lambda_visitante', 1.1)
+                    
+                    if lambda_local_cal <= 0 or lambda_visitante_cal <= 0:
+                        st.error("ERROR: Lambda invalido. Sincroniza los equipos primero.")
                         st.stop()
                     
                     with st.spinner("Analizando..."):
-                        # Usar lambda_ponderado directamente (calculado con decaimiento exponencial)
-                        lambda_local_cal = promedios_dinamicos_local['lambda_ponderado']
-                        lambda_visitante_cal = promedios_dinamicos_visitante['lambda_ponderado']
-                        
-                        # Aplicar calibración (ajuste fino)
+                        # Aplicar calibracion (ajuste fino)
                         lambda_local_adj = get_lambda_ajustada(home_team, lambda_local_cal, como_local=True)
                         lambda_visitante_adj = get_lambda_ajustada(away_team, lambda_visitante_cal, como_local=False)
                         lambda_local_final = lambda_local_adj['lambda_ajustada']
