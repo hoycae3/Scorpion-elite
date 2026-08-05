@@ -55,7 +55,6 @@ def obtener_stats_partido(fixture_id, team_id, team_name, headers, API_URL):
                     'rojas': get_val(stats, 'Red Cards'),
                     'posesion': get_val(stats, 'Ball Possession'),
                     'faltas': get_val(stats, 'Fouls'),
-                    'ahorradas': get_val(stats, 'Goalkeeper Saves'),
                 }
         
         return None
@@ -134,18 +133,22 @@ def obtener_ultimos_partidos_equipo(team_id, team_name, league_id, season, heade
             # Obtener estadísticas del partido
             stats = obtener_stats_partido(fix_id, team_id, team_name, headers, API_URL)
             
+            # Crear datos del partido (siempre incluir goles aunque stats falle)
+            partido_data = {
+                'fixture_id': fix_id,
+                'fecha': fecha,
+                'liga': league.get('name', ''),
+                'es_local': es_local,
+                'resultado': resultado,
+                'goles_favor': gf if gf else 0,
+                'goles_contra': gv if gv else 0,
+            }
+            
+            # Agregar stats si están disponibles
             if stats:
-                partido_data = {
-                    'fixture_id': fix_id,
-                    'fecha': fecha,
-                    'liga': league.get('name', ''),
-                    'es_local': es_local,
-                    'resultado': resultado,
-                    'goles_favor': gf,
-                    'goles_contra': gv,
-                    **stats
-                }
-                partidos_stats.append(partido_data)
+                partido_data.update(stats)
+            
+            partidos_stats.append(partido_data)
             
             # Rate limit suave
             time.sleep(0.2)
