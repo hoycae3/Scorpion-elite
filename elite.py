@@ -1183,6 +1183,49 @@ def render_login_form():
                             else:
                                 equipos_existentes += 1
                                 ft_en_ventana = equipos_ft_fixtures.get(team_id, [])
+
+                                # NUEVO: Si no hay partidos terminados en ventana, buscar directamente
+                                if not ft_en_ventana:
+                                    try:
+                                        resp_last = requests.get(
+                                            f"{API_URL}/fixtures",
+                                            headers=headers,
+                                            params={
+                                                "team": team_id,
+                                                "season": season_eq,
+                                                "status": "FT",
+                                                "from": f"{hoy.year}-01-01",
+                                                "to": hoy_str,
+                                                "limit": 10
+                                            },
+                                            timeout=10
+                                        )
+                                        if resp_last.status_code == 200:
+                                            data_last = resp_last.json()
+                                            if data_last.get("response"):
+                                                for fix in data_last["response"]:
+                                                    f2 = fix.get("fixture", {})
+                                                    fix_id = f2.get("id")
+                                                    teams = fix.get("teams", {})
+                                                    score = f2.get("score", {}) or {}
+                                                    goals = fix.get("goals", {}) or {}
+                                                    fecha_partido = f2.get("date", "")[:10]
+                                                    score_local = score.get("fulltime", {}).get("home") if score.get("fulltime") else goals.get("home") or 0
+                                                    score_visitante = score.get("fulltime", {}).get("away") if score.get("fulltime") else goals.get("away") or 0
+                                                    es_local = teams.get("home", {}).get("id") == team_id
+                                                    resultado = "W" if ((es_local and score_local > score_visitante) or (not es_local and score_visitante > score_local)) else ("D" if score_local == score_visitante else "L")
+                                                    ft_en_ventana.append({
+                                                        "fixture_id": fix_id,
+                                                        "fecha": fecha_partido,
+                                                        "liga": fix.get("league", {}).get("name", ""),
+                                                        "es_local": es_local,
+                                                        "resultado": resultado,
+                                                        "goles_favor": score_visitante if not es_local else score_local,
+                                                        "goles_contra": score_local if not es_local else score_visitante
+                                                    })
+                                    except:
+                                        pass
+
                                 
                                 # вҳ… CORREGIDO: Siempre intentar guardar/actualizar TODOS los FT
                                 # El upsert no duplica, solo actualiza si ya existe
