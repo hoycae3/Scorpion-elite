@@ -2079,13 +2079,18 @@ def render_login_form():
             es_empate_max = px > p1 and px > p2
             es_visita_max = p2 > p1 and p2 > px
             
+            # Formatear sin decimales (evitar coma)
+            p1_fmt = int(p1)
+            px_fmt = int(px)
+            p2_fmt = int(p2)
+            
             col1, col2, col3 = st.columns([1.5, 1.2, 1.5])
             with col1:
                 clase = "caja-1x2 caja-local" if es_local_max else "caja-1x2"
                 st.markdown(f"""
                 <div class="{clase}">
                     <p class="etiqueta-equipo etiqueta-local">📊 {home}</p>
-                    <p class="probabilidad">{p1:.1f}%</p>
+                    <p class="probabilidad">{p1_fmt}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             with col2:
@@ -2093,15 +2098,15 @@ def render_login_form():
                 st.markdown(f"""
                 <div class="{clase}">
                     <p class="etiqueta-equipo etiqueta-empate">⚖️ Empate</p>
-                    <p class="probabilidad">{px:.1f}%</p>
+                    <p class="probabilidad">{px_fmt}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             with col3:
                 clase = "caja-1x2 caja-visita" if es_visita_max else "caja-1x2"
                 st.markdown(f"""
                 <div class="{clase}">
-                    <p class="etiqueta-equipo etiqueta-visita">вңҲпёҸ {away}</p>
-                    <p class="probabilidad">{p2:.1f}%</p>
+                    <p class="etiqueta-equipo etiqueta-visita">✈️ {away}</p>
+                    <p class="probabilidad">{p2_fmt}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -2163,13 +2168,15 @@ def render_login_form():
             with col_ou:
                 pick_ou = r.get('pick_over_under', 'Over 2.5')
                 prob_ou = r.get('prob_over_under', 50)
+                # Cambiar texto para evitar traduccion
+                ou_display = "Over" if "Over" in pick_ou else "Menos"
                 ou_symbol = "+" if "Over" in pick_ou else "-"
                 ou_color_class = "pick-over" if "Over" in pick_ou else "pick-under"
                 st.markdown(f"""
                 <div class="caja-prediccion">
-                    <p class="titulo-caja">📲 Over/Under 2.5</p>
+                    <p class="titulo-caja">📲 Mas/Menos 2.5</p>
                     <p class="valor-caja {ou_color_class}">{ou_symbol} 2.5</p>
-                    <p class="pick-caja">{prob_ou:.0f}%</p>
+                    <p class="pick-caja">{ou_display} {prob_ou:.0f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -2202,37 +2209,37 @@ def render_login_form():
             with col_remates:
                 remates_icon = "📲" if "Over" in pick_tiros else "🔽"
                 remates_color_class = "pick-over" if "Over" in pick_tiros else "pick-under"
-                # Traducir pick a español para evitar confusión
-                pick_tiros_es = pick_tiros.replace("Over", "Over").replace("Under", "Under")
+                # Usar "Mas" o "Menos" para evitar traduccion automatica
+                pick_tiros_display = "Mas" if "Over" in pick_tiros else "Menos"
                 st.markdown(f"""
                 <div class="caja-prediccion">
                     <p class="titulo-caja">📍 Tiros Total</p>
-                    <p class="valor-caja" style="color: #00ff88;">{remates_modelo:.0f}</p>
-                    <p class="pick-caja {remates_color_class}" translate="no">{remates_icon} {pick_tiros_es} ({prob_tiros:.0f}%)</p>
+                    <p class="valor-caja" style="color: #00ff88;">{int(remates_modelo)}</p>
+                    <p class="pick-caja {remates_color_class}">{remates_icon} {pick_tiros_display} ({int(prob_tiros)}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_arco:
                 arco_icon = "📲" if "Over" in pick_arco else "🔽"
                 arco_color_class = "pick-over" if "Over" in pick_arco else "pick-under"
-                pick_arco_es = pick_arco.replace("Over", "Over").replace("Under", "Under")
+                pick_arco_display = "Mas" if "Over" in pick_arco else "Menos"
                 st.markdown(f"""
                 <div class="caja-prediccion">
                     <p class="titulo-caja">🎯 Tiros Arco</p>
-                    <p class="valor-caja" style="color: #ff9f43;">{arco_modelo:.0f}</p>
-                    <p class="pick-caja {arco_color_class}" translate="no">{arco_icon} {pick_arco_es} ({prob_arco:.0f}%)</p>
+                    <p class="valor-caja" style="color: #ff9f43;">{int(arco_modelo)}</p>
+                    <p class="pick-caja {arco_color_class}">{arco_icon} {pick_arco_display} ({int(prob_arco)}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_tarjetas:
                 tarjetas_icon = "📲" if "Over" in pick_tarjetas else "🔽"
                 tarjetas_color_class = "pick-over" if "Over" in pick_tarjetas else "pick-under"
-                pick_tarjetas_es = pick_tarjetas.replace("Over", "Over").replace("Under", "Under")
+                pick_tarjetas_display = "Mas" if "Over" in pick_tarjetas else "Menos"
                 st.markdown(f"""
                 <div class="caja-prediccion">
                     <p class="titulo-caja">🟨 Amarillas Total</p>
                     <p class="valor-caja" style="color: #ffd700;">{tarjetas_modelo:.1f}</p>
-                    <p class="pick-caja {tarjetas_color_class}" translate="no">{tarjetas_icon} {pick_tarjetas_es} ({prob_tarjetas:.0f}%)</p>
+                    <p class="pick-caja {tarjetas_color_class}">{tarjetas_icon} {pick_tarjetas_display} ({int(prob_tarjetas)}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -2261,26 +2268,26 @@ def render_login_form():
             with col_pred1:
                 icon_tiros = "📲" if "Over" in (pick_tiros or "") else "🔽"
                 color_tiros = "#00ff88" if "Over" in (pick_tiros or "") else "#ff6b6b"
-                remates_val = remates_modelo if remates_modelo and remates_modelo > 0 else 0
-                pick_tiros_display = pick_tiros.replace("Over", "Over").replace("Under", "Under") if pick_tiros else "N/A"
+                remates_val = int(remates_modelo) if remates_modelo and remates_modelo > 0 else 0
+                pick_tiros_txt = "Mas" if "Over" in (pick_tiros or "") else "Menos"
                 st.markdown(f"""
                 <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tiros};">
                     <p style="color: #888; font-size: 12px; margin: 0;">📍 Tiros Total</p>
-                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{remates_val:.0f}</p>
-                    <p style="color: {color_tiros}; font-size: 14px; margin: 0;" translate="no">{icon_tiros} {pick_tiros_display} ({prob_tiros or 0:.0f}%)</p>
+                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{remates_val}</p>
+                    <p style="color: {color_tiros}; font-size: 14px; margin: 0;">{icon_tiros} {pick_tiros_txt} ({int(prob_tiros or 0)}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_pred2:
                 icon_arco = "📲" if "Over" in (pick_arco or "") else "🔽"
                 color_arco = "#00ff88" if "Over" in (pick_arco or "") else "#ff6b6b"
-                arco_val = arco_modelo if arco_modelo and arco_modelo > 0 else 0
-                pick_arco_display = pick_arco.replace("Over", "Over").replace("Under", "Under") if pick_arco else "N/A"
+                arco_val = int(arco_modelo) if arco_modelo and arco_modelo > 0 else 0
+                pick_arco_txt = "Mas" if "Over" in (pick_arco or "") else "Menos"
                 st.markdown(f"""
                 <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_arco};">
                     <p style="color: #888; font-size: 12px; margin: 0;">🎯 Tiros Arco</p>
-                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{arco_val:.0f}</p>
-                    <p style="color: {color_arco}; font-size: 14px; margin: 0;" translate="no">{icon_arco} {pick_arco_display} ({prob_arco or 0:.0f}%)</p>
+                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{arco_val}</p>
+                    <p style="color: {color_arco}; font-size: 14px; margin: 0;">{icon_arco} {pick_arco_txt} ({int(prob_arco or 0)}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -2288,12 +2295,12 @@ def render_login_form():
                 icon_tar = "📲" if "Over" in (pick_tarjetas or "") else "🔽"
                 color_tar = "#00ff88" if "Over" in (pick_tarjetas or "") else "#ff6b6b"
                 tarjetas_val = tarjetas_modelo if tarjetas_modelo and tarjetas_modelo > 0 else 0
-                pick_tarjetas_display = pick_tarjetas.replace("Over", "Over").replace("Under", "Under") if pick_tarjetas else "N/A"
+                pick_tarjetas_txt = "Mas" if "Over" in (pick_tarjetas or "") else "Menos"
                 st.markdown(f"""
                 <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tar};">
                     <p style="color: #888; font-size: 12px; margin: 0;">🟨 Amarillas</p>
                     <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{tarjetas_val:.1f}</p>
-                    <p style="color: {color_tar}; font-size: 14px; margin: 0;" translate="no">{icon_tar} {pick_tarjetas_display} ({prob_tarjetas or 0:.0f}%)</p>
+                    <p style="color: {color_tar}; font-size: 14px; margin: 0;">{icon_tar} {pick_tarjetas_txt} ({int(prob_tarjetas or 0)}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
