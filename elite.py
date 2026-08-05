@@ -971,6 +971,10 @@ def render_login_form():
                                     score_local = score.get('fulltime', {}).get('home') if score.get('fulltime') else goals.get('home') or 0
                                     score_visitante = score.get('fulltime', {}).get('away') if score.get('fulltime') else goals.get('away') or 0
                                     
+                                    # DEBUG: Mostrar valores de score
+                                    if estado == 'FT':
+                                        st.caption(f"DEBUG: {equipo_local} vs {equipo_visitante} - Local: {score_local}, Visitante: {score_visitante}")
+                                    
                                     # ★ CORREGIDO: SIEMPRE agregar equipos a equipos_unicos para actualizar stats
                                     # Independientemente de si el partido es nuevo o existente
                                     if team_id_local:
