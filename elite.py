@@ -1849,7 +1849,7 @@ def render_login_form():
         
         # Mostrar error si faltan equipos
         if equipos_faltantes and not error_conexion:
-            st.error(f"⚠️ Equipos sin datos completos: ', '.join(set(equipos_faltantes))")
+            st.error(f"⚠️ Equipos sin datos completos: {', '.join(set(equipos_faltantes))}")
             st.info("💡 Ejecuta Sincronizar para obtener estadísticas de estos equipos.")
         
 
@@ -1883,10 +1883,9 @@ def render_login_form():
                             partidos_total_l = promedios_dinamicos_local.get('partidos_total', 0)
                         else:
                             # Estimar basado en lambda (si no hay datos en Supabase)
-                            # Sin datos
                             corners_l = None
                             tiros_l = None
-                            tiros_arco_l = round(lambda_est * 1.5, 1)
+                            tiros_arco_l = round(lambda_local_cal * 1.5, 1)
                             amarillas_l = 2.5
                             partidos_total_l = 0
                         
@@ -1898,10 +1897,9 @@ def render_login_form():
                             partidos_total_v = promedios_dinamicos_visitante.get('partidos_total', 0)
                         else:
                             # Estimar basado en lambda (si no hay datos en Supabase)
-                            # Sin datos
                             corners_v = None
                             tiros_v = None
-                            tiros_arco_v = round(lambda_est * 1.5, 1)
+                            tiros_arco_v = round(lambda_visitante_cal * 1.5, 1)
                             amarillas_v = 2.5
                             partidos_total_v = 0
                         
