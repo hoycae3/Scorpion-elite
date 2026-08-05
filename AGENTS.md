@@ -905,3 +905,113 @@ BOTÓN: 📊 Stats Ayer
 - Solo consume API credits para partidos de ayer
 - No descarga partidos nuevos
 - Actualiza stats incrementales solo donde es necesario
+
+---
+
+## 📅 Sesión 2026-08-04 - Corrección Goals Extraction
+
+### 🎯 Problema Identificado:
+La API de Football devuelve los `goals` en la **raíz del fixture** (`f`), NO dentro de `teams`.
+
+### 🔧 Corrección Aplicada:
+
+#### elite.py (línea 967):
+```python
+# ❌ INCORRECTO (antes):
+goals = teams.get('goals', {})
+
+# ✅ CORRECTO (ahora):
+goals = f.get('goals', {}) or {}
+```
+
+#### funciones_stats.py (línea 111):
+```python
+# ❌ INCORRECTO (antes):
+goals = teams.get('goals', {})
+
+# ✅ CORRECTO (ahora):
+goals = f.get('goals', {}) or {}
+```
+
+### 📋 Estructura Correcta de la API:
+```python
+# El fixture 'f' tiene esta estructura:
+{
+    'fixture': {...},
+    'teams': {'home': {...}, 'away': {...}},  # Nombres, IDs, winner
+    'goals': {'home': 2, 'away': 1},  # ← Goles AQUÍ
+    'score': {...}
+}
+```
+
+### 🔄 Lógica de Local vs Visitante:
+```python
+# Determinar si el equipo es local o visitante
+if home_team.get('id') == team_id:
+    es_local = True
+    gf = goals.get('home')  # Goles a favor si es local
+    gv = goals.get('away')  # Goles en contra si es local
+else:
+    es_local = False
+    gf = goals.get('away')  # Goles a favor si es visitante
+    gv = goals.get('home')  # Goles en contra si es visitante
+```
+
+---
+
+## 📅 Sesión 2026-08-04 - Resumen Final de Configuración
+
+### 🔧 Configuración Actual del Botón "🔄 Sincronizar":
+
+| Configuración | Valor |
+|---------------|-------|
+| **Ventana de fechas** | HOY-2 a HOY+6 |
+| **Ligas habilitadas** | 55 ligas mundiales |
+| **Equipos únicos** | TODOS los equipos de fixtures (nuevos y existentes) |
+| **Goals extraction** | `f.get('goals', {})` ✅ |
+| **Upsert** | Sin DELETE, solo inserta/actualiza |
+
+### 📋 Botones de Sincronización:
+
+| Botón | Función |
+|-------|---------|
+| **🔄 Sincronizar** | Descarga partidos HOY-2 a HOY+6, actualiza stats de equipos |
+| **📊 Stats Ayer** | Actualiza stats SOLO de partidos de ayer |
+
+### 📊 Flujo de Uso Diario:
+
+```
+DÍA 1 (MAÑANA):
+├── Click "🔄 Sincronizar"
+│   └── Descarga partidos de HOY-2 a HOY+6
+│   └── Guarda stats de equipos nuevos
+│   └── Guarda fixtures FT recientes
+│
+DÍA 2 (MAÑANA SIGUIENTE):
+├── Click "🔄 Sincronizar"
+│   └── Descarga partidos de ayer (ahora FT)
+│   └── Click "📊 Stats Ayer"
+│       └── Actualiza stats de partidos de ayer
+```
+
+### 📁 Archivos Clave:
+
+| Archivo | Propósito |
+|---------|-----------|
+| `elite.py` | App principal, lógica de sincronización |
+| `funciones_stats.py` | Funciones para obtener stats de partidos |
+| `equipos_stats` | Tabla: stats acumuladas por equipo |
+| `equipo_partidos_stats` | Tabla: historial de partidos con stats |
+| `partidos` | Tabla: partidos descargados |
+
+### ✅ Estado Verificado:
+
+| Componente | Estado |
+|------------|--------|
+| Goals extraction | ✅ `f.get('goals', {})` en elite.py línea 967 |
+| Goals extraction | ✅ `f.get('goals', {})` en funciones_stats.py línea 111 |
+| Ventana fechas | ✅ HOY-2 a HOY+6 |
+| 55 ligas | ✅ Habilitadas |
+| Filtro Argentina | ✅ ELIMINADO |
+| Upsert sin DELETE | ✅ Implementado |
+
