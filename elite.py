@@ -1583,20 +1583,16 @@ def render_login_form():
             st.markdown("⚽ **No hay partidos.** Clic en 🔄 🔄 Sincronizar para obtener partidos.")
             partidos = []
         
-        # Filtro por período
+        # Filtro por calendario
         col_f1, col_f2 = st.columns([1, 3])
         with col_f1:
-            filtro_opcion = st.selectbox("📅 Ver", ["Todos", "Hoy", "MaГұana", "Esta semana"])
+            hoy = datetime.now(timezone(timedelta(hours=-5))).date()
+            fecha_seleccionada = st.date_input("📅 Fecha", value=hoy, format="DD/MM/YYYY")
         
-        # Filtrar segГәn opción
-        hoy = datetime.now(timezone(timedelta(hours=-5))).date()
-        if filtro_opcion == "Hoy":
-            partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] == hoy.strftime('%Y-%m-%d')]
-        elif filtro_opcion == "MaГұana":
-            partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] == (hoy + timedelta(days=1)).strftime('%Y-%m-%d')]
-        elif filtro_opcion == "Esta semana":
-            semana = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
-            partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] <= semana]
+        # Filtrar por fecha seleccionada
+        if fecha_seleccionada:
+            fecha_str = fecha_seleccionada.strftime('%Y-%m-%d')
+            partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] == fecha_str]
         
         # Procesar partidos con hora colombiana
         partidos_procesados = []
