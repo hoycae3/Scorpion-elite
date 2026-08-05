@@ -774,6 +774,10 @@ def render_login_form():
                 # ═══════════════════════════════════════════════════════════════
         # LISTA DE LIGAS - TODAS CON IDS CORRECTOS
         # ═══════════════════════════════════════════════════════════════
+        
+        # ★ DEBUG: Descomenta para probar solo Argentina (ahorra API calls)
+        # LIGAS = [{"id": 128, "name": "Liga Profesional Argentina", "pais": "Argentina"}]
+        
         LIGAS = [
             # 🏆 TORNEOS INTERNACIONALES
             {"id": 2, "name": "UEFA Champions League", "pais": "Mundial"},
