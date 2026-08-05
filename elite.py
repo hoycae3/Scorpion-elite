@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
-# рҹҺЁ SISTEMA DE DISEГ‘O - COLORES Y ESTILOS
+# 📋 SISTEMA DE DISEГ'O - COLORES Y ESTILOS
 # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
 # Colores principales (coinciden con styles.css)
 COLORS = {
@@ -82,7 +82,7 @@ from calibration import (
     resetear_calibracion
 )
 
-st.set_page_config(page_title="Scorpion Elite", page_icon="рҹҰӮ", layout="wide")
+st.set_page_config(page_title="Scorpion Elite", page_icon="🐸", layout="wide")
 
 # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
 # CONFIGURACION - Variables de entorno
@@ -326,9 +326,9 @@ def render_public_landing():
     st.markdown("""
     <div class="hero-section">
         <h1 class="hero-title">
-            <span class="scorpion-icon">рҹҰӮ</span>
+            <span class="scorpion-icon">🐸</span>
             <span class="title-text">SCORPION ELITE</span>
-            <span class="scorpion-icon">рҹҰӮ</span>
+            <span class="scorpion-icon">🐸</span>
         </h1>
         <p class="hero-subtitle">Inteligencia Artificial para Pronósticos Deportivos</p>
         <p class="hero-description">Sistema predictivo con 4 modelos matemáticos avanzados</p>
@@ -338,7 +338,7 @@ def render_public_landing():
     # Botón 🔑 Acceder arriba
     col_btn1, col_btn2, col_btn3 = st.columns([2, 1, 2])
     with col_btn2:
-        if st.button("рҹ”җ 🔑 Acceder", use_container_width=True, type="primary"):
+        if st.button("🔑 🔑 Acceder", use_container_width=True, type="primary"):
             st.session_state.show_login = True
             st.rerun()
             pass
@@ -423,7 +423,7 @@ def render_public_landing():
             st.caption(f"🏆 {liga}")
         
         # Botón para volver
-        if st.button("вҶҗ Volver", key="volver_partidos"):
+        if st.button("↩️җ Volver", key="volver_partidos"):
             st.session_state.preview_partido = None
             pass
         
@@ -455,8 +455,8 @@ def render_public_landing():
                         stats_visit = resp_by_id.data[0]
 
                 # DEBUG
-                st.write(f"рҹ”Қ Local: '{local}' вҶ’ {'✅' if stats_local else '❌'} (team_id: {team_id_local})")
-                st.write(f"рҹ”Қ Visit: '{visitante}' вҶ’ {'✅' if stats_visit else '❌'} (team_id: {team_id_visitante})")
+                st.write(f"📤 Local: '{local}' ↩️' {'✅' if stats_local else '❌'} (team_id: {team_id_local})")
+                st.write(f"📤 Visit: '{visitante}' ↩️' {'✅' if stats_visit else '❌'} (team_id: {team_id_visitante})")
 
                 if stats_local and stats_visit:
                     st.markdown("---")
@@ -464,7 +464,7 @@ def render_public_landing():
                     
                     col1, col2 = st.columns(2)
                     with col1:
-                        st.markdown(f"**рҹҸ  {local}**")
+                        st.markdown(f"**📊 {local}**")
                         forma_l = stats_local.get('forma', 'N/A')
                         if forma_l and forma_l != 'N/A':
                             forma_html = ''.join([{'W': '<span class="se-result-w">W</span>', 'L': '<span class="se-result-l">L</span>', 'D': '<span class="se-result-d">D</span>'}.get(c, c) for c in str(forma_l)])
@@ -513,7 +513,7 @@ def render_public_landing():
                     prom_l = (gf_l + gc_v) / 2
                     prom_v = (gf_v + gc_l) / 2
                     
-                    st.markdown("### рҹҺҜ Predicciones")
+                    st.markdown("### 🎯 Predicciones")
                     
                     # 1X2
                     if prom_l > prom_v * 1.2:
@@ -533,7 +533,7 @@ def render_public_landing():
                     st.info(f"**Ambos Marcan (BTTS):** {btts}")
                     
                     st.markdown("---")
-                    st.caption("рҹ”җ Accede con tu cuenta para análisis completo con 4 modelos matemáticos.")
+                    st.caption("🔑 Accede con tu cuenta para análisis completo con 4 modelos matemáticos.")
                 else:
                     st.warning(f"No hay estadísticas para {local} o {visitante}")
         except Exception as e:
@@ -574,7 +574,7 @@ def render_public_landing():
             
             # Mostrar por país
             for pais, lista_partidos in paises_agrupados.items():
-                with st.expander(f"рҹҢҚ {pais} ({len(lista_partidos)} partidos)", expanded=True):
+                with st.expander(f"🏴 {pais} ({len(lista_partidos)} partidos)", expanded=True):
                     cols = st.columns(2)
                     for i, partido in enumerate(lista_partidos):
                         local = partido.get('equipo_local', 'Local')
@@ -592,14 +592,14 @@ def render_public_landing():
                                 st.session_state['show_analizador'] = True
                                 st.query_params["page"] = "analizador"
                             
-                            st.caption(f"рҹ•җ {hora_col} | 📅 {datetime.strptime(fecha, '%Y-%m-%d').strftime('%d/%m/%Y')} | {liga}")
+                            st.caption(f"⚽ {hora_col} | 📅 {datetime.strptime(fecha, '%Y-%m-%d').strftime('%d/%m/%Y')} | {liga}")
         else:
             st.info("⚽ No hay partidos cargados. Ve a la pestaГұa **Carga** para subir datos.")
 
 
 
     # --- CÓMO FUNCIONA ---
-    st.markdown("### рҹ”Қ ВҝCómo Funciona?")
+    st.markdown("### 📤 ВҝCómo Funciona?")
     st.markdown("*El analizador usa 4 modelos matemáticos para predecir resultados*")
 
     modelos_col1, modelos_col2 = st.columns(2)
@@ -608,7 +608,7 @@ def render_public_landing():
         st.markdown("- **Poisson:** Distribución de goles")
         st.markdown("- **Dixon-Coles:** Efecto tiempo/partido")
     with modelos_col2:
-        st.markdown("**рҹҺҜ Modelos Avanzados:**")
+        st.markdown("**🎯 Modelos Avanzados:**")
         st.markdown("- **Monte Carlo:** Simulaciones")
         st.markdown("- **Elo:** Rating de equipos")
 
@@ -636,7 +636,7 @@ def render_public_landing():
             <td>Pase 1 Semana</td>
         </tr>
         <tr class="popular">
-            <td class="se-duration">30 Días <span class="se-badge se-badge-hot">MГҒS POPULAR рҹ”Ҙ</span></td>
+            <td class="se-duration">30 Días <span class="se-badge se-badge-hot">MГҒS POPULAR 📘</span></td>
             <td class="se-price">$24.99</td>
             <td>Plan 1 Mes</td>
         </tr>
@@ -654,7 +654,7 @@ def render_public_landing():
     # --- FOOTER ---
     st.markdown("""
     <div class="footer">
-        <p>рҹҰӮ Scorpion Elite - Todos los derechos reservados</p>
+        <p>🐸 Scorpion Elite - Todos los derechos reservados</p>
         <p>El análisis deportivo no garantiza resultados. Apuesta responsablemente.</p>
     </div>
     """, unsafe_allow_html=True)
@@ -678,7 +678,7 @@ def render_login_form():
         
         # Si está mostrando login, mostrar SOLO el formulario
         st.markdown("---")
-        st.markdown("### рҹ”җ Iniciar Sesión")
+        st.markdown("### 🔑 Iniciar Sesión")
 
         password = st.text_input("ContraseГұa", type="password", placeholder="Ingresa tu contraseГұa", key="login_password")
 
@@ -699,7 +699,7 @@ def render_login_form():
                         st.error("❌ ContraseГұa incorrecta")
 
         with col_cancel:
-            if st.button("вҶҗ Volver", use_container_width=True):
+            if st.button("↩️җ Volver", use_container_width=True):
                 st.session_state.show_login = False
                 pass
 
@@ -707,41 +707,41 @@ def render_login_form():
 
     # Sidebar con información del usuario
     with st.sidebar:
-        st.markdown("## рҹҰӮ Scorpion Elite")
+        st.markdown("## 🐸 Scorpion Elite")
         user_plan = st.session_state.user_data.get('plan', 'vip') if st.session_state.user_data else 'vip'
         dias = st.session_state.user_data.get('dias', 0) if st.session_state.user_data else 0
         is_admin = st.session_state.user_data.get('es_admin', 0) == 1 if st.session_state.user_data else False
         
-        plan_icon = {"admin": "вҡҷпёҸ", "elite": "рҹ‘‘", "vip": "рҹ‘‘", "mes": "рҹ‘‘", "free": "рҹҶ“"}.get(user_plan, "рҹ“Ұ")
+        plan_icon = {"admin": "⚡пёҸ", "elite": "👑", "vip": "👑", "mes": "👑", "free": "⭐"}.get(user_plan, "🐸")
         st.markdown(f"{plan_icon} **{user_plan.upper()}**")
         if not is_admin:
             st.caption(f"вҸұпёҸ {dias} días restantes")
         
         st.markdown("---")
-        if st.button("рҹ”“ Logout", use_container_width=True):
+        if st.button("👑 Logout", use_container_width=True):
             st.session_state.logged = False
             st.session_state.user_data = None
             st.session_state.is_admin = False
             pass
     
-    # MenГә horizontal arriba - ж №жҚ®з”ЁжҲ·зұ»еһӢжҳҫзӨә
-    st.markdown('<h1 class="title">рҹҰӮ Scorpion Elite</h1>', unsafe_allow_html=True)
+    # MenГә horizontal arriba - ж №жҚ®з"ЁжҲ·зұ»еһӢжҳҫзӨә
+    st.markdown('<h1 class="title">🐸 Scorpion Elite</h1>', unsafe_allow_html=True)
     
     # Construir menГә dinámicamente segГәn tipo de usuario
     # VIP va de primeras y es la página por defecto
     if is_admin:
         # Admin: ve todo
         menu_pages = [
-            ("рҹ‘‘ VIP", "VIP"),
-            ("рҹҸ  Partidos", "Partidos"),
+            ("👑 VIP", "VIP"),
+            ("📊 Partidos", "Partidos"),
             ("📥 Analizador", "Analizador"),
-            ("рҹ”‘ Claves", "Claves"),
+            ("👑 Claves", "Claves"),
         ]
     else:
         # VIP: VIP primero, luego Partidos, Analizador
         menu_pages = [
-            ("рҹ‘‘ VIP", "VIP"),
-            ("рҹҸ  Partidos", "Partidos"),
+            ("👑 VIP", "VIP"),
+            ("📊 Partidos", "Partidos"),
             ("📥 Analizador", "Analizador"),
         ]
     
@@ -763,7 +763,7 @@ def render_login_form():
         import requests
         import time
         
-        st.markdown("### рҹҸ  Partidos de los Próximos 7 Días")
+        st.markdown("### 📊 Partidos de los Próximos 7 Días")
         
         # API-Football config
         API_KEY = os.getenv("API_FOOTBALL_KEY", "")
@@ -789,7 +789,7 @@ def render_login_form():
         col_btn1, col_btn2, col_btn3, col_btn4, col_btn5, col_info = st.columns([1, 1, 1, 1, 1, 1.5])
         
         with col_btn1:
-            if st.button("рҹ—‘пёҸ Limpiar", type="secondary", use_container_width=True):
+            if st.button("🗑️ Limpiar", type="secondary", use_container_width=True):
                 client = get_client()
                 try:
                     # Contar antes de borrar
@@ -832,7 +832,7 @@ def render_login_form():
                     hoy = datetime.now(timezone(timedelta(hours=-5))).date()
                     hoy_str = hoy.strftime('%Y-%m-%d')
                     
-                    # Calcular temporada dinámicamente: Ago-Dic вҶ’ season actual, Ene-Jul вҶ’ season anterior
+                    # Calcular temporada dinámicamente: Ago-Dic ↩️' season actual, Ene-Jul ↩️' season anterior
                     season = hoy.year if hoy.month >= 8 else hoy.year - 1
                     # Usar la misma temporada para stats (la API ya tiene stats de la temporada actual)
                     season_stats = season
@@ -1496,12 +1496,12 @@ def render_login_form():
                 resp_del = client.table('partidos').delete().lt('fecha', fecha_limite).execute()
                 eliminados = len(resp_del.data) if resp_del.data else 0
                 if eliminados > 0:
-                    st.info(f"рҹ—‘пёҸ {eliminados} partidos de más de 1 aГұo eliminados")
+                    st.info(f"🗑️ {eliminados} partidos de más de 1 aГұo eliminados")
             except Exception as e:
                 pass
 
         with col_info:
-            st.markdown(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | рҹ“Ў Requests: {st.session_state.api_requests_today}/999")
+            st.markdown(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 🔻 Requests: {st.session_state.api_requests_today}/999")
         
         # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
         # MOSTRAR PARTIDOS (AGRUPADOS POR PAГҚS, HORA COLOMBIANA)
@@ -1559,14 +1559,14 @@ def render_login_form():
         # Emoji por país
         def get_pais_emoji(pais):
             emojis = {
-                'Argentina': 'рҹҮҰрҹҮ·', 'Brasil': 'рҹҮ§рҹҮ·', 'Colombia': 'рҹҮЁрҹҮҙ', 'Chile': 'рҹҮЁрҹҮұ',
-                'México': 'рҹҮІрҹҮҪ', 'USA': 'рҹҮәрҹҮё', 'Uruguay': 'рҹҮәрҹҮҫ', 'PerГә': 'рҹҮөрҹҮӘ',
-                'Paraguay': 'рҹҮөрҹҮҫ', 'Ecuador': 'рҹҮӘрҹҮЁ', 'EspaГұa': 'рҹҮӘрҹҮё', 'Inglaterra': 'рҹҸҙу Ғ§у Ғўу ҒҘу Ғ®у Ғ§у Ғҝ',
-                'Alemania': 'рҹҮ©рҹҮӘ', 'Italia': 'рҹҮ®рҹҮ№', 'Francia': 'рҹҮ«рҹҮ·', 'Portugal': 'рҹҮөрҹҮ№',
-                'Holanda': 'рҹҮірҹҮұ', 'Turquía': 'рҹҮ№рҹҮ·', 'Escocia': 'рҹҸҙу Ғ§у Ғўу Ғіу ҒЈу Ғҙу Ғҝ',
-                'Bélgica': 'рҹҮ§рҹҮӘ', 'Mundial': 'рҹҢҚ'
+                'Argentina': '🇦🇷🇦🇹', 'Brasil': '🇧🇷🇦🇹', 'Colombia': '🇨🇴🇨🇱', 'Chile': '🇨🇴🇭🇺',
+                'México': '🇲🇽🇲🇽', 'USA': '🇸🇦', 'Uruguay': '🇺🇾', 'PerГә': '🇵🇾🇪🇸',
+                'Paraguay': '🇵🇾🇺🇾', 'Ecuador': '🇪🇸🇨🇴', 'EspaГұa': '🇪🇸🇸🇦', 'Inglaterra': ' Ғ§у Ғўу ҒҘу Ғ®у Ғ§у Ғҝ',
+                'Alemania': '©🇪🇸', 'Italia': '🇮🇹🇹🇷', 'Francia': '🇫🇷🇦🇹', 'Portugal': '🇵🇾🇹🇷',
+                'Holanda': '🇳🇱🇭🇺', 'Turquía': '🇹🇷🇦🇹', 'Escocia': ' Ғ§у Ғўу Ғіу ҒЈу Ғҙу Ғҝ',
+                'Bélgica': '🇧🇷🇪🇸', 'Mundial': '🏴'
             }
-            return emojis.get(pais, 'рҹҢҚ')
+            return emojis.get(pais, '🏴')
         
         # Mostrar cada país como expander
         for pais in sorted(paises_partidos.keys()):
@@ -1609,14 +1609,14 @@ def render_login_form():
 
                         # Badge de estado
                         if tiene_stats is True:
-                            badge = "рҹҹў"
+                            badge = "🔴"
                         elif tiene_stats is False:
-                            badge = "рҹ”ҙ"
+                            badge = "🔽"
                         else:
                             badge = "вҡӘ"
                         
                         # Todo en un solo botón
-                        label = f"📅 {fecha_fmt}  рҹ•җ {hora_col}  |  {badge} {equipo_local} vs {equipo_visitante}"
+                        label = f"📅 {fecha_fmt}  ⚽ {hora_col}  |  {badge} {equipo_local} vs {equipo_visitante}"
                         if st.button(label, key=f"btn_{pais}_{liga}_{i}", use_container_width=True):
                             st.session_state.selected_local = equipo_local
                             st.session_state.selected_away = equipo_visitante
@@ -1651,7 +1651,7 @@ def render_login_form():
             local_nombre = st.session_state.selected_local
             visitante_nombre = st.session_state.selected_away
             st.markdown("---")
-            st.markdown(f"### рҹҺҜ Analizando: **{local_nombre}** VS **{visitante_nombre}**")
+            st.markdown(f"### 🎯 Analizando: **{local_nombre}** VS **{visitante_nombre}**")
             
             # Buscar stats de los equipos en Supabase
             stats_local = None
@@ -1740,7 +1740,7 @@ def render_login_form():
 
             col_space, col1, col2, col_space2 = st.columns([2, 1, 1, 2])
             with col1:
-                home_team = st.selectbox("рҹҸ  Local", [""] + equipos_disponibles, key="home_select")
+                home_team = st.selectbox("📊 Local", [""] + equipos_disponibles, key="home_select")
             with col2:
                 away_team = st.selectbox("вңҲпёҸ Visitante", [""] + equipos_disponibles, key="away_select")
         
@@ -1811,12 +1811,12 @@ def render_login_form():
         # Mostrar error si faltan equipos
         if equipos_faltantes and not error_conexion:
             st.error(f"⚠️ Equipos no encontrados en la base de datos: {', '.join(set(equipos_faltantes))}")
-            st.info("рҹ“қ Ve a la pestaГұa 'Estadísticas' вҶ’ 'Agregar Equipo Manual' para agregar los datos.")
+            st.info("қ Ve a la pestaГұa 'Estadísticas' ↩️' 'Agregar Equipo Manual' para agregar los datos.")
         
         # Botón analizar - solo si ambos equipos existen
         analizar_disabled = not (equipo_local_ok and equipo_visitante_ok)
         
-        if st.button("рҹҺҜ ANALIZAR", type="primary", use_container_width=True, disabled=analizar_disabled):
+        if st.button("🎯 ANALIZAR", type="primary", use_container_width=True, disabled=analizar_disabled):
             try:
                 if home_team and away_team and lambda_local is not None and lambda_visitante is not None and stats_local and stats_visitante:
                     with st.spinner("Analizando..."):
@@ -1952,7 +1952,7 @@ def render_login_form():
                     st.error("⚠️ Ambos equipos deben tener estadísticas. Ejecuta el robot primero.")
             except Exception as e:
                 st.error(f"❌ Error en análisis: {str(e)[:100]}")
-                st.info("рҹ’Ў Intenta de nuevo o verifica que los equipos existan.")
+                st.info("🔻 Intenta de nuevo o verifica que los equipos existan.")
         
         # Mostrar resultados
         if 'analysis_result' in st.session_state:
@@ -1976,7 +1976,7 @@ def render_login_form():
                 st.markdown("##### 📥 Estadísticas Avanzadas (Calibradas)")
                 
                 # Fuentes de datos en una línea
-                st.markdown(f"рҹҸҰ **Fuente:** Local `{source_local}` | Visitante `{source_visitante}`")
+                st.markdown(f"📊 **Fuente:** Local `{source_local}` | Visitante `{source_visitante}`")
                 
                 # Obtener lambdas ajustadas
                 lambda_local_adj = get_lambda_ajustada(home, stats_local.get('lambda_local', 0), como_local=True)
@@ -2013,7 +2013,7 @@ def render_login_form():
                 emp_l = stats_local.get('empates', 0) or 0
                 der_l = stats_local.get('derrotas', 0) or 0
                 
-                icono_ajuste_local = "рҹ”ј" if lambda_local_adj['factor'] > 1 else ("рҹ”Ҫ" if lambda_local_adj['factor'] < 1 else "вһ–")
+                icono_ajuste_local = "🔼" if lambda_local_adj['factor'] > 1 else ("🔽" if lambda_local_adj['factor'] < 1 else "вһ–")
                 color_ajuste_local = "#00ff88" if lambda_local_adj['factor'] > 1 else ("#ff6b6b" if lambda_local_adj['factor'] < 1 else "#00d4ff")
                 
                 # Calcular promedios VISITANTE
@@ -2024,7 +2024,7 @@ def render_login_form():
                 emp_v = stats_visitante.get('empates', 0) or 0
                 der_v = stats_visitante.get('derrotas', 0) or 0
                 
-                icono_ajuste_vis = "рҹ”ј" if lambda_visitante_adj['factor'] > 1 else ("рҹ”Ҫ" if lambda_visitante_adj['factor'] < 1 else "вһ–")
+                icono_ajuste_vis = "🔼" if lambda_visitante_adj['factor'] > 1 else ("🔽" if lambda_visitante_adj['factor'] < 1 else "вһ–")
                 color_ajuste_vis = "#00ff88" if lambda_visitante_adj['factor'] > 1 else ("#ff6b6b" if lambda_visitante_adj['factor'] < 1 else "#00d4ff")
                 
                 # DOS COLUMNAS - stats de equipos simplificado
@@ -2037,7 +2037,7 @@ def render_login_form():
                 with col_local:
                     st.markdown(f"""
                     <div style='background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; padding: 15px; margin: 5px 0;'>
-                        <h4 style='text-align: center; color: #00ff88; margin: 0 0 10px 0;'>рҹҸ  {html.escape(str(home))}</h4>
+                        <h4 style='text-align: center; color: #00ff88; margin: 0 0 10px 0;'>📊 {html.escape(str(home))}</h4>
                         <p style='text-align: center; color: #00d4ff; font-size: 11px; margin: 0;'>📥 {partidos_acum_l if partidos_acum_l > 0 else pj_l} partidos históricos</p>
                     </div>
                     """, unsafe_allow_html=True)
@@ -2072,10 +2072,10 @@ def render_login_form():
                     <div style='background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
                         <p style='color: #00d4ff; font-size: 11px; margin: 0 0 8px 0;'>📲 Promedios por partido:</p>
                         <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 12px;'>
-                            <div><span style='color: #888;'>рҹ”« Tiros</span> <span style='color: #fff; float: right;'>{prom_tiros_l:.1f}</span></div>
-                            <div><span style='color: #888;'>рҹҺҜ Arco</span> <span style='color: #fff; float: right;'>{prom_tiros_arco_l:.1f}</span></div>
-                            <div><span style='color: #888;'>рҹҹЁ Amarillas</span> <span style='color: #fff; float: right;'>{prom_amarillas_l:.1f}</span></div>
-                            <div><span style='color: #888;'>рҹҢҪ Córners</span> <span style='color: #fff; float: right;'>{prom_corners_l:.1f}</span></div>
+                            <div><span style='color: #888;'>📍 Tiros</span> <span style='color: #fff; float: right;'>{prom_tiros_l:.1f}</span></div>
+                            <div><span style='color: #888;'>🎯 Arco</span> <span style='color: #fff; float: right;'>{prom_tiros_arco_l:.1f}</span></div>
+                            <div><span style='color: #888;'> Amarillas</span> <span style='color: #fff; float: right;'>{prom_amarillas_l:.1f}</span></div>
+                            <div><span style='color: #888;'>🌽 Córners</span> <span style='color: #fff; float: right;'>{prom_corners_l:.1f}</span></div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -2118,10 +2118,10 @@ def render_login_form():
                     <div style='background: #0d1b2a; border-radius: 8px; padding: 10px; margin: 5px 0;'>
                         <p style='color: #00d4ff; font-size: 11px; margin: 0 0 8px 0;'>📲 Promedios por partido:</p>
                         <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 12px;'>
-                            <div><span style='color: #888;'>рҹ”« Tiros</span> <span style='color: #fff; float: right;'>{prom_tiros_v:.1f}</span></div>
-                            <div><span style='color: #888;'>рҹҺҜ Arco</span> <span style='color: #fff; float: right;'>{prom_tiros_arco_v:.1f}</span></div>
-                            <div><span style='color: #888;'>рҹҹЁ Amarillas</span> <span style='color: #fff; float: right;'>{prom_amarillas_v:.1f}</span></div>
-                            <div><span style='color: #888;'>рҹҢҪ Córners</span> <span style='color: #fff; float: right;'>{prom_corners_v:.1f}</span></div>
+                            <div><span style='color: #888;'>📍 Tiros</span> <span style='color: #fff; float: right;'>{prom_tiros_v:.1f}</span></div>
+                            <div><span style='color: #888;'>🎯 Arco</span> <span style='color: #fff; float: right;'>{prom_tiros_arco_v:.1f}</span></div>
+                            <div><span style='color: #888;'> Amarillas</span> <span style='color: #fff; float: right;'>{prom_amarillas_v:.1f}</span></div>
+                            <div><span style='color: #888;'>🌽 Córners</span> <span style='color: #fff; float: right;'>{prom_corners_v:.1f}</span></div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -2142,7 +2142,7 @@ def render_login_form():
             if r and stats_local and stats_visitante:
                 col_btn, col_info = st.columns([1, 3])
                 with col_btn:
-                    if st.button("рҹ’ҫ GUARDAR PARTIDO", type="primary", use_container_width=True):
+                    if st.button("💾 GUARDAR PARTIDO", type="primary", use_container_width=True):
                         try:
                             client = get_client()
                             
@@ -2203,7 +2203,7 @@ def render_login_form():
             # ========================
             # PROBABILIDADES 1X2 (CUADROS MEJORADOS)
             # ========================
-            st.markdown("##### рҹҺҜ Probabilidades (1X2)")
+            st.markdown("##### 🎯 Probabilidades (1X2)")
             
             p1 = r.get('p1', 0)
             px = r.get('px', 0)
@@ -2219,7 +2219,7 @@ def render_login_form():
                 clase = "caja-1x2 caja-local" if es_local_max else "caja-1x2"
                 st.markdown(f"""
                 <div class="{clase}">
-                    <p class="etiqueta-equipo etiqueta-local">рҹҸ  {home}</p>
+                    <p class="etiqueta-equipo etiqueta-local">📊 {home}</p>
                     <p class="probabilidad">{p1:.1f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
@@ -2227,7 +2227,7 @@ def render_login_form():
                 clase = "caja-1x2 caja-empate" if es_empate_max else "caja-1x2"
                 st.markdown(f"""
                 <div class="{clase}">
-                    <p class="etiqueta-equipo etiqueta-empate">рҹӨқ Empate</p>
+                    <p class="etiqueta-equipo etiqueta-empate">⚖️ Empate</p>
                     <p class="probabilidad">{px:.1f}%</p>
                 </div>
                 """, unsafe_allow_html=True)
@@ -2324,40 +2324,40 @@ def render_login_form():
                 pick_corner_symbol = "+" if pick_corners == "+" else "-"
                 st.markdown(f"""
                 <div class="caja-prediccion">
-                    <p class="titulo-caja">рҹҢҪ Córners Total</p>
+                    <p class="titulo-caja">🌽 Córners Total</p>
                     <p class="valor-caja" style="color: #00d2d3;">{total_c:.0f}</p>
                     <p class="pick-caja">{pick_corner_symbol} {total_c:.0f}</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_remates:
-                remates_icon = "📲" if "Over" in pick_tiros else "рҹ“ү"
+                remates_icon = "📲" if "Over" in pick_tiros else "🔽"
                 remates_color_class = "pick-over" if "Over" in pick_tiros else "pick-under"
                 st.markdown(f"""
                 <div class="caja-prediccion">
-                    <p class="titulo-caja">рҹ”« Tiros Total</p>
+                    <p class="titulo-caja">📍 Tiros Total</p>
                     <p class="valor-caja" style="color: #00ff88;">{remates_modelo:.0f}</p>
                     <p class="pick-caja {remates_color_class}">{remates_icon} {pick_tiros} ({prob_tiros:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_arco:
-                arco_icon = "📲" if "Over" in pick_arco else "рҹ“ү"
+                arco_icon = "📲" if "Over" in pick_arco else "🔽"
                 arco_color_class = "pick-over" if "Over" in pick_arco else "pick-under"
                 st.markdown(f"""
                 <div class="caja-prediccion">
-                    <p class="titulo-caja">рҹҺҜ Tiros Arco</p>
+                    <p class="titulo-caja">🎯 Tiros Arco</p>
                     <p class="valor-caja" style="color: #ff9f43;">{arco_modelo:.0f}</p>
                     <p class="pick-caja {arco_color_class}">{arco_icon} {pick_arco} ({prob_arco:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_tarjetas:
-                tarjetas_icon = "📲" if "Over" in pick_tarjetas else "рҹ“ү"
+                tarjetas_icon = "📲" if "Over" in pick_tarjetas else "🔽"
                 tarjetas_color_class = "pick-over" if "Over" in pick_tarjetas else "pick-under"
                 st.markdown(f"""
                 <div class="caja-prediccion">
-                    <p class="titulo-caja">рҹҹЁ Amarillas Total</p>
+                    <p class="titulo-caja"> Amarillas Total</p>
                     <p class="valor-caja" style="color: #ffd700;">{tarjetas_modelo:.1f}</p>
                     <p class="pick-caja {tarjetas_color_class}">{tarjetas_icon} {pick_tarjetas} ({prob_tarjetas:.0f}%)</p>
                 </div>
@@ -2366,7 +2366,7 @@ def render_login_form():
             with col_score:
                 st.markdown(f"""
                 <div class="caja-prediccion">
-                    <p class="titulo-caja">рҹҺҜ Marcador Probable</p>
+                    <p class="titulo-caja">🎯 Marcador Probable</p>
                     <p class="valor-caja" style="color: #ff6b6b;">{score_mas_probable}</p>
                     <p class="pick-caja" style="color: #888;">Más probable</p>
                 </div>
@@ -2386,36 +2386,36 @@ def render_login_form():
             col_pred1, col_pred2, col_pred3 = st.columns(3)
             
             with col_pred1:
-                icon_tiros = "📲" if "Over" in (pick_tiros or "") else "рҹ“ү"
+                icon_tiros = "📲" if "Over" in (pick_tiros or "") else "🔽"
                 color_tiros = "#00ff88" if "Over" in (pick_tiros or "") else "#ff6b6b"
                 remates_val = remates_modelo if remates_modelo and remates_modelo > 0 else 0
                 st.markdown(f"""
                 <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tiros};">
-                    <p style="color: #888; font-size: 12px; margin: 0;">рҹ”« Tiros Total</p>
+                    <p style="color: #888; font-size: 12px; margin: 0;">📍 Tiros Total</p>
                     <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{remates_val:.0f}</p>
                     <p style="color: {color_tiros}; font-size: 14px; margin: 0;">{icon_tiros} {pick_tiros or "N/A"} ({prob_tiros or 0:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_pred2:
-                icon_arco = "📲" if "Over" in (pick_arco or "") else "рҹ“ү"
+                icon_arco = "📲" if "Over" in (pick_arco or "") else "🔽"
                 color_arco = "#00ff88" if "Over" in (pick_arco or "") else "#ff6b6b"
                 arco_val = arco_modelo if arco_modelo and arco_modelo > 0 else 0
                 st.markdown(f"""
                 <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_arco};">
-                    <p style="color: #888; font-size: 12px; margin: 0;">рҹҺҜ Tiros Arco</p>
+                    <p style="color: #888; font-size: 12px; margin: 0;">🎯 Tiros Arco</p>
                     <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{arco_val:.0f}</p>
                     <p style="color: {color_arco}; font-size: 14px; margin: 0;">{icon_arco} {pick_arco or "N/A"} ({prob_arco or 0:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_pred3:
-                icon_tar = "📲" if "Over" in (pick_tarjetas or "") else "рҹ“ү"
+                icon_tar = "📲" if "Over" in (pick_tarjetas or "") else "🔽"
                 color_tar = "#00ff88" if "Over" in (pick_tarjetas or "") else "#ff6b6b"
                 tarjetas_val = tarjetas_modelo if tarjetas_modelo and tarjetas_modelo > 0 else 0
                 st.markdown(f"""
                 <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tar};">
-                    <p style="color: #888; font-size: 12px; margin: 0;">рҹҹЁ Amarillas</p>
+                    <p style="color: #888; font-size: 12px; margin: 0;"> Amarillas</p>
                     <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{tarjetas_val:.1f}</p>
                     <p style="color: {color_tar}; font-size: 14px; margin: 0;">{icon_tar} {pick_tarjetas or "N/A"} ({prob_tarjetas or 0:.0f}%)</p>
                 </div>
@@ -2442,7 +2442,7 @@ def render_login_form():
             
             # Si no hay datos, mostrar mensaje
             if not letras and not letras_v:
-                st.info("рҹ“қ Los datos de forma reciente requieren ejecutar el Robot de equipos")
+                st.info("қ Los datos de forma reciente requieren ejecutar el Robot de equipos")
             else:
                 col_space1, col_forma_local, col_forma_away, col_space2 = st.columns([1, 2, 2, 1])
                 
@@ -2460,7 +2460,7 @@ def render_login_form():
                     
                     st.markdown(f"""
                     <div class="caja-forma caja-forma-local">
-                        <p class="forma-titulo">рҹҸ  {home}</p>
+                        <p class="forma-titulo">📊 {home}</p>
                         <div class="forma-letras">{badges_forma}</div>
                         <p class="forma-stats">
                             Puntos: <span>{puntos:.0f}%</span> | 
@@ -2526,7 +2526,7 @@ def render_login_form():
                         
                         # Mostrar 1X2 con VALUE
                         if cuotas_1x2:
-                            st.markdown("**рҹҺҜ 1X2**")
+                            st.markdown("**🎯 1X2**")
                             col_c1, col_c2, col_c3 = st.columns(3)
                             
                             for i, cuota in enumerate(cuotas_1x2[:3]):
@@ -2548,16 +2548,16 @@ def render_login_form():
                                         
                                         # Color segГәn VALUE
                                         if value > 5:
-                                            value_color = "рҹҹў"
+                                            value_color = "🔴"
                                             value_text = f"+{value:.1f}%"
                                         elif value > 0:
-                                            value_color = "рҹҹЎ"
+                                            value_color = "🟠"
                                             value_text = f"+{value:.1f}%"
                                         else:
-                                            value_color = "рҹ”ҙ"
+                                            value_color = "🔽"
                                             value_text = f"{value:.1f}%"
                                         
-                                        label = f"{'рҹҸ  Local' if 'Home' in opcion or '1' in opcion else ('рҹӨқ Empate' if 'Draw' in opcion or 'X' in opcion else 'вңҲпёҸ Visita')}"
+                                        label = f"{'📊 Local' if 'Home' in opcion or '1' in opcion else ('⚖️ Empate' if 'Draw' in opcion or 'X' in opcion else 'вңҲпёҸ Visita')}"
                                         st.metric(f"{label}", f"@ {valor:.2f}", f"{value_color} {value_text} VALUE")
                         
                         # Mostrar BTTS con VALUE
@@ -2573,11 +2573,11 @@ def render_login_form():
                                 value, prob_imp = calcular_value(prob_modelo_btts, valor)
                                 
                                 if value > 5:
-                                    value_color = "рҹҹў"
+                                    value_color = "🔴"
                                 elif value > 0:
-                                    value_color = "рҹҹЎ"
+                                    value_color = "🟠"
                                 else:
-                                    value_color = "рҹ”ҙ"
+                                    value_color = "🔽"
                                 
                                 st.write(f"{opcion}: **@ {valor:.2f}** | {value_color} VALUE: {value:+.1f}% | Modelo: {prob_modelo_btts:.0f}% | Implicita: {prob_imp:.0f}% ({bookie})")
                         
@@ -2598,11 +2598,11 @@ def render_login_form():
                                 value, prob_imp = calcular_value(prob_modelo_ou, valor)
                                 
                                 if value > 5:
-                                    value_color = "рҹҹў"
+                                    value_color = "🔴"
                                 elif value > 0:
-                                    value_color = "рҹҹЎ"
+                                    value_color = "🟠"
                                 else:
-                                    value_color = "рҹ”ҙ"
+                                    value_color = "🔽"
                                 
                                 st.write(f"{opcion}: **@ {valor:.2f}** | {value_color} VALUE: {value:+.1f}% | Modelo: {prob_modelo_ou:.0f}% | Implicita: {prob_imp:.0f}% ({bookie})")
                         
@@ -2659,18 +2659,18 @@ def render_login_form():
                             for vb in value_bets[:5]:
                                 st.success(f"✅ **{vb['opcion']}** @ {vb['cuota']:.2f} | VALUE: +{vb['value']:.1f}% | {vb['bookie']}")
                         else:
-                            st.info("рҹ”ҙ Sin value bets en este momento")
+                            st.info("🔽 Sin value bets en este momento")
                     else:
-                        st.info("рҹ’Ў Sin cuotas guardadas para este partido. Actualiza los partidos desde Carga.")
+                        st.info("🔻 Sin cuotas guardadas para este partido. Actualiza los partidos desde Carga.")
                 except Exception as e:
                     logger.warning(f"Error consultando cuotas: {e}")
     
     # Página: Estadísticas
     elif st.session_state.page == "Claves":
-        st.markdown("### рҹ”‘ Gestión de ContraseГұas")
+        st.markdown("### 👑 Gestión de ContraseГұas")
         
         # Tabs
-        tab_crear, tab_gestionar = st.tabs(["вһ• Crear ContraseГұa", "рҹ“Ӣ Ver ContraseГұas"])
+        tab_crear, tab_gestionar = st.tabs(["вһ• Crear ContraseГұa", "📋 Ver ContraseГұas"])
         
         # ========== TAB: CREAR ==========
         with tab_crear:
@@ -2679,19 +2679,19 @@ def render_login_form():
             with st.form("form_crear_clave", clear_on_submit=True):
                 col_nom, col_plan = st.columns(2)
                 with col_nom:
-                    nombre = st.text_input("рҹ“қ Nombre / Cliente", placeholder="Ej: Juan, Carlos VIP").strip()
+                    nombre = st.text_input("қ Nombre / Cliente", placeholder="Ej: Juan, Carlos VIP").strip()
                 with col_plan:
-                    plan = st.selectbox("рҹ“Ұ Plan", ["semana", "mes", "elite", "vip"])
+                    plan = st.selectbox("🐸 Plan", ["semana", "mes", "elite", "vip"])
                 
-                nueva_clave = st.text_input("рҹ”җ Nueva ContraseГұa", placeholder="Escribe la contraseГұa Гәnica").strip()
+                nueva_clave = st.text_input("🔑 Nueva ContraseГұa", placeholder="Escribe la contraseГұa Гәnica").strip()
                 
                 dias_opciones = {"semana": 7, "mes": 30, "elite": 90, "vip": 90}
                 dias = dias_opciones.get(plan, 30)
                 
                 col_info, col_btn = st.columns([2, 1])
                 with col_info:
-                    plan_icon = {"semana": "📦", "mes": "рҹ‘‘", "elite": "рҹ”Ҙ", "vip": "вӯҗ"}
-                    st.info(f"{plan_icon.get(plan, 'рҹ“Ұ')} Plan: {plan.upper()} - {dias} días")
+                    plan_icon = {"semana": "📦", "mes": "👑", "elite": "📘", "vip": "вӯҗ"}
+                    st.info(f"{plan_icon.get(plan, '🐸')} Plan: {plan.upper()} - {dias} días")
                 
                 submitted = st.form_submit_button("✅ Crear ContraseГұa", use_container_width=True, type="primary")
                 
@@ -2713,16 +2713,16 @@ def render_login_form():
                             st.error("❌ Esta contraseГұa ya existe. Usa otra.")
             
             st.markdown("---")
-            st.markdown("##### рҹ“Ӣ Planes")
+            st.markdown("##### 📋 Planes")
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.markdown("**рҹҶ“ GRATIS** - Sin VIP")
+                st.markdown("**⭐ GRATIS** - Sin VIP")
             with col2:
                 st.markdown("**📦 SEMANA** - 7 días VIP")
         
         # ========== TAB: GESTIONAR ==========
         with tab_gestionar:
-            st.markdown("#### рҹ“Ӣ ContraseГұas Creadas")
+            st.markdown("#### 📋 ContraseГұas Creadas")
             
             # Botón recargar
             if st.button("🔄 Recargar Lista"):
@@ -2754,13 +2754,13 @@ def render_login_form():
                     nombre = u.get('nombre', 'Sin nombre')
                     
                     if es_admin:
-                        icono = "вҡҷпёҸ"
+                        icono = "⚡пёҸ"
                         color = "blue"
                     elif es_vip:
-                        icono = "рҹ‘‘"
+                        icono = "👑"
                         color = "green"
                     else:
-                        icono = "рҹҶ“"
+                        icono = "⭐"
                         color = "gray"
                     
                     with st.container():
@@ -2777,7 +2777,7 @@ def render_login_form():
                                 col_a, col_b, col_c = st.columns(3)
                                 with col_a:
                                     nueva_pass = st.text_input("Nueva contraseГұa", placeholder="Nueva...", key=f"pass_{clave_id}", type="password")
-                                    if st.button("рҹ”җ Cambiar", key=f"btn_pass_{clave_id}"):
+                                    if st.button("🔑 Cambiar", key=f"btn_pass_{clave_id}"):
                                         if nueva_pass and len(nueva_pass) >= 4:
                                             if db_cambiar_password(clave_id, nueva_pass):
                                                 st.success("✅ ContraseГұa cambiada")
@@ -2791,7 +2791,7 @@ def render_login_form():
                                                              index=["semana", "mes", "elite", "vip"].index(plan) if plan in ["semana", "mes", "elite", "vip"] else 0,
                                                              key=f"plan_{clave_id}")
                                     dias_nuevos = {"semana": 7, "mes": 30, "elite": 90, "vip": 90}.get(plan_nuevo, 30)
-                                    if st.button("рҹ“Ұ Cambiar Plan", key=f"btn_plan_{clave_id}"):
+                                    if st.button("🐸 Cambiar Plan", key=f"btn_plan_{clave_id}"):
                                         if db_actualizar_plan(clave_id, plan_nuevo if plan_nuevo != "elite" else "elite", dias_nuevos):
                                             st.success(f"✅ Plan cambiado a {plan_nuevo.upper()}")
                                             pass
@@ -2799,14 +2799,14 @@ def render_login_form():
                                             st.error("❌ Error")
                                 with col_c:
                                     st.write("")  # Espacio
-                                    if st.button("рҹ—‘пёҸ Eliminar", key=f"btn_del_{clave_id}", type="primary"):
+                                    if st.button("🗑️ Eliminar", key=f"btn_del_{clave_id}", type="primary"):
                                         if db_eliminar_usuario(clave_id):
                                             st.success("✅ Eliminada")
                                             pass
                                         else:
                                             st.error("❌ No se pudo eliminar")
                             else:
-                                st.info("вҡҷпёҸ Cuenta del administrador")
+                                st.info("⚡пёҸ Cuenta del administrador")
                         st.markdown("---")
 
 
@@ -2823,7 +2823,7 @@ def render_login_form():
             # Mostrar pantalla de upgrade
             st.markdown("""
             <div style="text-align: center; padding: 50px 20px;">
-                <h1>рҹ”’ Contenido Exclusivo para Miembros VIP</h1>
+                <h1>👑 Contenido Exclusivo para Miembros VIP</h1>
                 <p style="font-size: 1.2em; color: #666; margin: 30px 0;">
                     El Dashboard VIP está disponible solo para miembros con plan <strong>Elite VIP</strong>
                 </p>
@@ -2833,7 +2833,7 @@ def render_login_form():
             # Plan card
             st.markdown("""
             <div class="plan-card plan-vip" style="max-width: 400px; margin: 0 auto; text-align: center;">
-                <h3>рҹ‘‘ Plan Elite VIP</h3>
+                <h3>👑 Plan Elite VIP</h3>
                 <p class="plan-price">$29.99 <span>/mes</span></p>
                 <ul style="text-align: left;">
                     <li>✅ Dashboard VIP completo</li>
@@ -2844,19 +2844,19 @@ def render_login_form():
                     <li>✅ Ranking mensual</li>
                     <li>✅ Reportes exportables</li>
                 </ul>
-                <p style="margin-top: 20px;"><strong>рҹҺҒ 7 días GRATIS - Sin tarjeta</strong></p>
+                <p style="margin-top: 20px;"><strong> 7 días GRATIS - Sin tarjeta</strong></p>
             </div>
             """, unsafe_allow_html=True)
             
             # Mostrar plan actual
             st.markdown("---")
-            st.info(f"рҹ“§ Tu plan actual: **{user_plan.upper()}**")
+            st.info(f"💰 Tu plan actual: **{user_plan.upper()}**")
             st.markdown("ВҝQuieres hacer upgrade? Contacta al administrador.")
             
             st.stop()
         
         # Usuario VIP - mostrar dashboard
-        st.markdown("### рҹ‘‘ Dashboard VIP - Gestión Inteligente de Apuestas")
+        st.markdown("### 👑 Dashboard VIP - Gestión Inteligente de Apuestas")
         
         # Obtener datos de Supabase
         client = get_client()
@@ -2864,7 +2864,7 @@ def render_login_form():
         
         # ==================== TABS VIP ====================
         tab_roi, tab_resultados, tab_bankroll, tab_value, tab_alertas, tab_ranking, tab_export = st.tabs([
-            "📥 ROI", "рҹ“қ Resultados", "🏆 Bankroll", "рҹҺҜ Value Bets", "рҹ”” Alertas", "🏆 Ranking", "рҹ“„ Exportar"
+            "📥 ROI", "📊 Resultados", "🏆 Bankroll", "🎯 Value Bets", "🔔 Alertas", "🏆 Ranking", "🔄 Exportar"
         ])
         
         # ========== TAB 1: ROI POR MODELO ==========
@@ -2885,7 +2885,7 @@ def render_login_form():
                 
                 if picks_resueltos:
                     # ROI POR TIPO DE MERCADO
-                    st.markdown("#### рҹ’№ ROI por Tipo de Pick")
+                    st.markdown("#### № ROI por Tipo de Pick")
                     
                     # 1X2
                     picks_1x2 = [p for p in picks_resueltos if p.get('acertado_1x2') is not None]
@@ -2920,7 +2920,7 @@ def render_login_form():
                     # Mostrar métricas en cards
                     col1, col2, col3 = st.columns(3)
                     with col1:
-                        st.metric("рҹҺҜ 1X2", f"{acertados_1x2}/{len(picks_1x2)}", f"{pct_1x2:.1f}% acierto")
+                        st.metric("🎯 1X2", f"{acertados_1x2}/{len(picks_1x2)}", f"{pct_1x2:.1f}% acierto")
                         if pct_1x2 > 55: st.success("✅ Rentable")
                         elif pct_1x2 < 45: st.error("❌ Perjudicial")
                         else: st.info("📥 Neutral")
@@ -2932,17 +2932,17 @@ def render_login_form():
                     
                     col4, col5, col6 = st.columns(3)
                     with col4:
-                        st.metric("рҹ“җ Corners", f"{acertados_corners}/{len(picks_corners)}", f"{pct_corners:.1f}% acierto")
+                        st.metric("🔑 Corners", f"{acertados_corners}/{len(picks_corners)}", f"{pct_corners:.1f}% acierto")
                         if pct_corners > 55: st.success("✅ Rentable")
                         elif pct_corners < 45: st.error("❌ Perjudicial")
                         else: st.info("📥 Neutral")
                     with col5:
-                        st.metric("рҹҹЁ Tarjetas", f"{acertados_tarjetas}/{len(picks_tarjetas)}", f"{pct_tarjetas:.1f}% acierto")
+                        st.metric(" Tarjetas", f"{acertados_tarjetas}/{len(picks_tarjetas)}", f"{pct_tarjetas:.1f}% acierto")
                         if pct_tarjetas > 55: st.success("✅ Rentable")
                         elif pct_tarjetas < 45: st.error("❌ Perjudicial")
                         else: st.info("📥 Neutral")
                     with col6:
-                        st.metric("рҹҺҜ Remates", f"{acertados_remates}/{len(picks_remates)}", f"{pct_remates:.1f}% acierto")
+                        st.metric("🎯 Remates", f"{acertados_remates}/{len(picks_remates)}", f"{pct_remates:.1f}% acierto")
                         if pct_remates > 55: st.success("✅ Rentable")
                         elif pct_remates < 45: st.error("❌ Perjudicial")
                         else: st.info("📥 Neutral")
@@ -2950,14 +2950,14 @@ def render_login_form():
                     st.markdown("---")
                     
                     # ROI POR RANGO DE CONFIANZA
-                    st.markdown("#### рҹҺҡпёҸ ROI por Rango de Confianza")
+                    st.markdown("####  ROI por Rango de Confianza")
                     
                     confianza_ranges = [
-                        ("95%+ (рҹ”Ҙрҹ”Ҙ)", 95, 100),
-                        ("90-95% (рҹ”Ҙ)", 90, 95),
+                        ("95%+ (📘📘)", 95, 100),
+                        ("90-95% (📘)", 90, 95),
                         ("80-90% (вҡЎ)", 80, 90),
                         ("70-80% (📥)", 70, 80),
-                        ("<70% (рҹ“ү)", 0, 70),
+                        ("<70% (🔽)", 0, 70),
                     ]
                     
                     conf_cols = st.columns(len(confianza_ranges))
@@ -2972,7 +2972,7 @@ def render_login_form():
                     st.markdown("---")
                     
                     # RECOMENDACIÓN
-                    st.markdown("#### рҹ’Ў Recomendaciones Inteligentes")
+                    st.markdown("#### 🔻 Recomendaciones Inteligentes")
                     
                     tipos = [
                         ("1X2", pct_1x2, acertados_1x2, len(picks_1x2)),
@@ -3005,7 +3005,7 @@ def render_login_form():
                         acertados_95 = len([p for p in confianza_95plus if p.get('acertado_1x2')])
                         pct_95 = (acertados_95 / len(confianza_95plus) * 100)
                         if pct_95 >= 80:
-                            st.info(f"рҹ”Ҙ Los picks de ALTA CONFIANZA (95%+) tienen {pct_95:.1f}% de aciertos. ВЎSigue así!")
+                            st.info(f"📘 Los picks de ALTA CONFIANZA (95%+) tienen {pct_95:.1f}% de aciertos. ВЎSigue así!")
                         elif pct_95 < 60:
                             st.warning(f"⚠️ Los picks de alta confianza solo acertaron {pct_95:.1f}%. Revisar calibración.")
                 else:
@@ -3015,8 +3015,8 @@ def render_login_form():
         
         # ========== TAB 2: INGRESAR RESULTADOS ==========
         with tab_resultados:
-            st.markdown("### рҹ“қ Ingresar Resultados")
-            st.info("рҹ’Ў Completa el marcador de los partidos para calibrar las predicciones")
+            st.markdown("### қ Ingresar Resultados")
+            st.info("🔻 Completa el marcador de los partidos para calibrar las predicciones")
             
             # Obtener picks sin resultado
             try:
@@ -3030,7 +3030,7 @@ def render_login_form():
             picks_sin_resultado = [p for p in picks if not p.get('marcador') or p.get('marcador') == '?']
             
             if picks_sin_resultado:
-                st.markdown(f"#### рҹ“Ӣ {len(picks_sin_resultado)} picks pendientes de resultado")
+                st.markdown(f"#### 📋 {len(picks_sin_resultado)} picks pendientes de resultado")
                 
                 for p in picks_sin_resultado:
                     pick_id = p.get('id')
@@ -3053,7 +3053,7 @@ def render_login_form():
                         with col6:
                             pass
                         
-                        if st.button("рҹ’ҫ Guardar Resultado", key=f"btn_res_{pick_id}"):
+                        if st.button("💾 Guardar Resultado", key=f"btn_res_{pick_id}"):
                             # Calcular resultado 1X2
                             if gl > gv:
                                 resultado_1x2 = "1"
@@ -3121,7 +3121,7 @@ def render_login_form():
                             except Exception as e:
                                 st.error(f"Error: {str(e)[:50]}")
             else:
-                st.success("рҹҺү ВЎTodos los picks tienen resultado!")
+                st.success("📊 ВЎTodos los picks tienen resultado!")
                 st.info("Los resultados ayudan a calibrar las próximas predicciones.")
 
 
@@ -3173,7 +3173,7 @@ def render_login_form():
                 apuestas = []
             
             # ==================== SUBTABS ====================
-            sub_tab1, sub_tab2, sub_tab3 = st.tabs(["📥 Dashboard", "вһ• Agregar Apuesta", "рҹ“Ӣ Mis Apuestas"])
+            sub_tab1, sub_tab2, sub_tab3 = st.tabs(["📥 Dashboard", "вһ• Agregar Apuesta", "📋 Mis Apuestas"])
             
             # ========== SUBTAB 1: DASHBOARD ==========
             with sub_tab1:
@@ -3182,13 +3182,13 @@ def render_login_form():
                 # Selector de moneda y banco inicial
                 col_money1, col_money2 = st.columns([1, 2])
                 with col_money1:
-                    moneda_select = st.selectbox("рҹ’ұ Moneda", options=list(MONEDAS.keys()), 
+                    moneda_select = st.selectbox("ұ Moneda", options=list(MONEDAS.keys()), 
                                                format_func=lambda x: f"{MONEDAS[x]['simbolo']} {MONEDAS[x]['nombre']}",
                                                index=0)
                     simbolo = MONEDAS[moneda_select]["simbolo"]
                 
                 with col_money2:
-                    bankroll_inicial = st.number_input(f"рҹ’ө Bankroll Inicial", value=1000.0, min_value=100.0, step=100.0, key="bankroll_inicial")
+                    bankroll_inicial = st.number_input(f"ө Bankroll Inicial", value=1000.0, min_value=100.0, step=100.0, key="bankroll_inicial")
                 
                 # Reset bankroll
                 col_reset = st.columns(1)[0]
@@ -3217,11 +3217,11 @@ def render_login_form():
                     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
                     with col_m1:
                         delta_gan = f"{'+' if ganancias >= 0 else ''}{format_money(ganancias, simbolo)}"
-                        st.metric("рҹ’ө Bankroll Actual", format_money(bankroll_actual, simbolo), delta=delta_gan)
+                        st.metric("ө Bankroll Actual", format_money(bankroll_actual, simbolo), delta=delta_gan)
                     with col_m2:
                         st.metric("📥 ROI", f"{roi:.1f}%", delta=f"{'+' if roi >= 0 else ''}{roi:.1f}%")
                     with col_m3:
-                        st.metric("рҹҺҜ Tasa Acierto", f"{tasa_acierto_real:.1f}%", delta=f"{apuestas_ganadas}/{total_apuestas}")
+                        st.metric("🎯 Tasa Acierto", f"{tasa_acierto_real:.1f}%", delta=f"{apuestas_ganadas}/{total_apuestas}")
                     with col_m4:
                         st.metric("🏆 Ganado/Perdido", format_money(ganancias, simbolo))
                     
@@ -3231,7 +3231,7 @@ def render_login_form():
                     elif bankroll_actual >= bankroll_inicial * 0.9:
                         st.warning(f"⚠️ Bankroll estable: {((bankroll_actual/bankroll_inicial)-1)*100:.1f}%")
                     else:
-                        st.error(f"рҹ”ҙ Bankroll en riesgo: {((bankroll_actual/bankroll_inicial)-1)*100:.1f}%")
+                        st.error(f"🔽 Bankroll en riesgo: {((bankroll_actual/bankroll_inicial)-1)*100:.1f}%")
                     
                     # Gráfico de evolución
                     st.markdown("#### 📲 Evolución del Bankroll")
@@ -3252,7 +3252,7 @@ def render_login_form():
                     
                     # Pronóstico
                     if total_apuestas >= 10:
-                        st.markdown("#### рҹ”® Pronóstico")
+                        st.markdown("#### ® Pronóstico")
                         media_ganancia = ganancias / total_apuestas
                         proy_mensual = media_ganancia * 30
                         proy_anual = media_ganancia * 365
@@ -3269,7 +3269,7 @@ def render_login_form():
             with sub_tab2:
                 st.markdown("#### вһ• Agregar Nueva Apuesta")
                 
-                tab_origen1, tab_origen2 = st.tabs(["рҹ“Ӣ Desde Picks", "вңҸпёҸ Manual"])
+                tab_origen1, tab_origen2 = st.tabs(["📋 Desde Picks", "вңҸпёҸ Manual"])
                 
                 with tab_origen1:
                     if picks_disponibles:
@@ -3291,7 +3291,7 @@ def render_login_form():
                                 st.write(f"**📲 Detalle:** {pick.get('detalle', 'N/A')}")
                             with col_p2:
                                 st.write(f"**🏆 Cuota:** {pick.get('cuota', 'N/A')}")
-                                st.write(f"**рҹҺҜ Confianza:** {pick.get('confianza', 'N/A')}%")
+                                st.write(f"**🎯 Confianza:** {pick.get('confianza', 'N/A')}%")
                         else:
                             st.info("Todos tus picks ya tienen resultado")
                     else:
@@ -3306,7 +3306,7 @@ def render_login_form():
                     with col_d2:
                         cuota = st.number_input("🏆 Cuota", value=2.0, min_value=1.01, max_value=100.0, step=0.1)
                     with col_d3:
-                        cantidad = st.number_input(f"рҹ’ө Cantidad ({simbolo})", value=20.0, min_value=1.0, step=5.0)
+                        cantidad = st.number_input(f"ө Cantidad ({simbolo})", value=20.0, min_value=1.0, step=5.0)
                     
                     col_d4, col_d5 = st.columns(2)
                     with col_d4:
@@ -3350,7 +3350,7 @@ def render_login_form():
             
             # ========== SUBTAB 3: MIS APUESTAS ==========
             with sub_tab3:
-                st.markdown("#### рҹ“Ӣ Historial de Apuestas")
+                st.markdown("#### 📋 Historial de Apuestas")
                 
                 if apuestas:
                     # Filtros
@@ -3381,7 +3381,7 @@ def render_login_form():
                             cantidad_fmt = format_money(a.get('cantidad', 0), simbolo)
                             
                             st.markdown(f"{estado_icon} **{a.get('equipo', 'N/A')}** - {a.get('fecha', 'N/A')}")
-                            st.caption(f"🏆 {cantidad_fmt} @ {a.get('cuota', 'N/A')} | {a.get('mercado', 'N/A')} вҶ’ **Ganancia: {ganancia_fmt}**")
+                            st.caption(f"🏆 {cantidad_fmt} @ {a.get('cuota', 'N/A')} | {a.get('mercado', 'N/A')} ↩️' **Ganancia: {ganancia_fmt}**")
                         
                         with col_a2:
                             # Actualizar resultado
@@ -3389,7 +3389,7 @@ def render_login_form():
                                                           index=0 if a.get('resultado') is None else (1 if a.get('resultado') else 2),
                                                           key=f"res_{i}_{a.get('id', i)}")
                             
-                            if st.button("рҹ’ҫ Guardar", key=f"btn_res_{i}_{a.get('id', i)}"):
+                            if st.button("💾 Guardar", key=f"btn_res_{i}_{a.get('id', i)}"):
                                 cantidad = a.get('cantidad', 0)
                                 cuota = a.get('cuota', 2.0)
                                 resultado_new = None
@@ -3418,7 +3418,7 @@ def render_login_form():
         
         # ========== TAB 4: VALUE BETS ==========
         with tab_value:
-            st.markdown("### рҹҺҜ Detector de Value Bets")
+            st.markdown("### 🎯 Detector de Value Bets")
             st.markdown("_Encuentra apuestas donde la probabilidad del modelo es MAYOR que la cuota del mercado_")
             
             # Ingresar datos del pick
@@ -3428,7 +3428,7 @@ def render_login_form():
             with col_v2:
                 cuota_mercado = st.number_input("🏆 Cuota del Mercado", value=2.0, min_value=1.01, max_value=20.0, step=0.05)
             with col_v3:
-                tipo_apuesta = st.selectbox("рҹ“Ӣ Tipo de Apuesta", ["1X2", "Over/Under", "BTTS", "Corners", "Tarjetas"])
+                tipo_apuesta = st.selectbox("📋 Tipo de Apuesta", ["1X2", "Over/Under", "BTTS", "Corners", "Tarjetas"])
             
             # Calcular value
             prob_implicita = (1 / cuota_mercado) * 100
@@ -3438,18 +3438,18 @@ def render_login_form():
             with col_calc1:
                 st.metric("📥 Prob. Modelo", f"{prob_modelo:.1f}%")
             with col_calc2:
-                st.metric("рҹ“ү Prob. Implícita", f"{prob_implicita:.1f}%")
+                st.metric("🔽 Prob. Implícita", f"{prob_implicita:.1f}%")
             with col_calc3:
                 if value > 5:
-                    st.metric("рҹҺҜ VALUE", f"+{value:.1f}%", delta="рҹ”Ҙрҹ”Ҙ ALTO VALUE")
+                    st.metric("🎯 VALUE", f"+{value:.1f}%", delta="📘📘 ALTO VALUE")
                 elif value > 0:
-                    st.metric("рҹҺҜ VALUE", f"+{value:.1f}%", delta="✅ Value positivo")
+                    st.metric("🎯 VALUE", f"+{value:.1f}%", delta="✅ Value positivo")
                 else:
-                    st.metric("рҹҺҜ VALUE", f"{value:.1f}%", delta="❌ Sin value")
+                    st.metric("🎯 VALUE", f"{value:.1f}%", delta="❌ Sin value")
             
             # Recomendación
             if value >= 10:
-                st.success("рҹ”Ҙрҹ”Ҙ **APUESTA FUERTE** - Value muy alto, alta confianza")
+                st.success("📘📘 **APUESTA FUERTE** - Value muy alto, alta confianza")
             elif value >= 5:
                 st.success("✅ **APUESTA** - Value positivo, buena oportunidad")
             elif value >= 0:
@@ -3460,7 +3460,7 @@ def render_login_form():
             st.markdown("---")
             
             # Tabla de value bets guardados
-            st.markdown("#### рҹ“Ӣ Value Bets Registrados")
+            st.markdown("#### 📋 Value Bets Registrados")
             
             try:
                 vb_response = client.table('value_bets').select('*').eq('usuario_id', usuario_id).order('value', desc=True).limit(20).execute()
@@ -3487,10 +3487,10 @@ def render_login_form():
         
         # ========== TAB 5: ALERTAS ==========
         with tab_alertas:
-            st.markdown("### рҹ”” Centro de Alertas VIP")
+            st.markdown("### 🔔 Centro de Alertas VIP")
             
             # Crear alertas
-            st.markdown("#### рҹ“қ Crear Nueva Alerta")
+            st.markdown("#### 🔊 Crear Nueva Alerta")
             
             col_al1, col_al2, col_al3 = st.columns(3)
             with col_al1:
@@ -3503,7 +3503,7 @@ def render_login_form():
             titulo = st.text_input("Título de la Alerta")
             mensaje = st.text_area("Mensaje")
             
-            if st.button("рҹ”” Crear Alerta", type="primary"):
+            if st.button("🔔 Crear Alerta", type="primary"):
                 try:
                     client.table('alertas').insert({
                         'usuario_id': usuario_id,
@@ -3520,7 +3520,7 @@ def render_login_form():
             st.markdown("---")
             
             # Ver alertas
-            st.markdown("#### рҹ“¬ Alertas Recientes")
+            st.markdown("#### 🎯 Alertas Recientes")
             
             try:
                 alertas_response = client.table('alertas').select('*').eq('usuario_id', usuario_id).order('creado_en', desc=True).limit(20).execute()
@@ -3534,14 +3534,14 @@ def render_login_form():
                     
                     col_alerta1, col_alerta2, col_alerta3 = st.columns(3)
                     with col_alerta1:
-                        st.metric("рҹ”Ҙ Alta Prioridad", len(alertas_alta))
+                        st.metric("📘 Alta Prioridad", len(alertas_alta))
                     with col_alerta2:
                         st.metric("вҡЎ Media Prioridad", len(alertas_media))
                     with col_alerta3:
-                        st.metric("рҹ“ү Baja Prioridad", len(alertas_baja))
+                        st.metric("🔽 Baja Prioridad", len(alertas_baja))
                     
                     for alerta in alertas[:10]:
-                        color = "рҹ”ҙ" if alerta.get('prioridad') == 'alta' else "рҹҹЎ" if alerta.get('prioridad') == 'media' else "рҹҹў"
+                        color = "🔽" if alerta.get('prioridad') == 'alta' else "🟠" if alerta.get('prioridad') == 'media' else "🔴"
                         with st.expander(f"{color} [{alerta.get('tipo', '')}] {alerta.get('titulo', '')}"):
                             st.write(alerta.get('mensaje', ''))
                             st.caption(f"Creada: {alerta.get('creado_en', '')}")
@@ -3563,7 +3563,7 @@ def render_login_form():
             st.markdown("### 🏆 Ranking Mensual VIP")
             
             # Ranking de la comunidad
-            st.markdown("#### рҹҢҹ Top Pickers del Mes")
+            st.markdown("####  Top Pickers del Mes")
             
             try:
                 ranking_response = client.table('ranking').select('*').order('posicion').limit(10).execute()
@@ -3572,8 +3572,8 @@ def render_login_form():
                 if ranking:
                     df_ranking = pd.DataFrame([
                         {
-                            "рҹҘҮ Posición": r.get('posicion', i+1),
-                            "рҹ‘Ө Usuario": r.get('nombre', 'Anon'),
+                            " Posición": r.get('posicion', i+1),
+                            "💰 Usuario": r.get('nombre', 'Anon'),
                             "📥 Picks": r.get('total_picks', 0),
                             "📲 ROI": f"{r.get('roi', 0):.1f}%",
                             "🏆 Yield": f"{r.get('yield', 0):.1f}%",
@@ -3595,17 +3595,17 @@ def render_login_form():
             st.markdown("---")
             
             # Badges y Logros
-            st.markdown("#### рҹҸ… Mis Badges y Logros")
+            st.markdown("#### … Mis Badges y Logros")
             
             # Badges predefinidos
             badges_disponibles = {
-                "рҹҺҜ Primer Pick": len(picks) >= 1,
+                "🎯 Primer Pick": len(picks) >= 1,
                 "📥 10 Picks": len(picks) >= 10,
-                "рҹ”Ҙ 50 Picks": len(picks) >= 50,
-                "рҹ‘‘ 100 Picks": len(picks) >= 100,
+                "📘 50 Picks": len(picks) >= 50,
+                "👑 100 Picks": len(picks) >= 100,
                 "🏆 ROI 10%": True,  # Calcular
-                "рҹҺҜ Racha 5": True,  # Calcular
-                "рҹ”Ҙ Racha 10": True,  # Calcular
+                "🎯 Racha 5": True,  # Calcular
+                "📘 Racha 10": True,  # Calcular
                 "вӯҗ Valoración 5вҳ…": False,
             }
             
@@ -3615,11 +3615,11 @@ def render_login_form():
                     if unlocked:
                         st.success(badge)
                     else:
-                        st.info(f"рҹ”’ {badge}")
+                        st.info(f"👑 {badge}")
         
         # ========== TAB 7: EXPORTAR ==========
         with tab_export:
-            st.markdown("### рҹ“„ Exportar Reportes")
+            st.markdown("### 🔄 Exportar Reportes")
             
             # Selector de formato
             col_exp1, col_exp2 = st.columns(2)
@@ -3729,7 +3729,7 @@ def render_login_form():
         
         # Mostrar Consensus Meter
         st.markdown("---")
-        st.markdown("### рҹӨ– Consensus de Modelos")
+        st.markdown("### 🎲 Consensus de Modelos")
         st.markdown("_ВҝCuántos modelos están de acuerdo en el Гәltimo pick?_")
         
         # Obtener Гәltimo pick
@@ -3755,10 +3755,10 @@ def render_login_form():
                 with col_cons2:
                     st.metric("📲 Máx", f"{max(probabilidades):.1f}%")
                 with col_cons3:
-                    st.metric("рҹ“ү Mín", f"{min(probabilidades):.1f}%")
+                    st.metric("🔽 Mín", f"{min(probabilidades):.1f}%")
                 
                 if discrepancia < 10:
-                    st.success("рҹ”Ҙ **ALTO CONSENSO** - Los 4 modelos están de acuerdo")
+                    st.success("📘 **ALTO CONSENSO** - Los 4 modelos están de acuerdo")
                 elif discrepancia < 20:
                     st.info("📥 **CONSENSO MODERADO** - Buena seГұal")
                 else:
