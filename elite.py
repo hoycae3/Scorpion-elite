@@ -1826,31 +1826,25 @@ def render_login_form():
         
         if st.button("🎯 ANALIZAR", type="primary", use_container_width=True, disabled=analizar_disabled):
             try:
-                if home_team and away_team and lambda_local is not None and lambda_visitante is not None and stats_local and stats_visitante:
+                if home_team and away_team and stats_local and stats_visitante:
+                    # LAMBDA DESDE equipo_partidos_stats (NO desde equipos_stats)
+                    if not promedios_dinamicos_local or not promedios_dinamicos_local.get('lambda_ponderado'):
+                        st.error(f"ERROR: {home_team} no tiene datos en equipo_partidos_stats. Ejecuta Sincronizar.")
+                        st.stop()
+                    if not promedios_dinamicos_visitante or not promedios_dinamicos_visitante.get('lambda_ponderado'):
+                        st.error(f"ERROR: {away_team} no tiene datos en equipo_partidos_stats. Ejecuta Sincronizar.")
+                        st.stop()
+                    
                     with st.spinner("Analizando..."):
-                        # вҳ… LAMBDA DINГҒMICO: Si hay datos de equipo_partidos_stats, usar lambda_ponderado
-                        # Si no, usar lambda base de equipos_stats
-                        lambda_base_local = lambda_local
-                        lambda_base_visitante = lambda_visitante
+                        # Usar lambda_ponderado directamente (calculado con decaimiento exponencial)
+                        lambda_local_cal = promedios_dinamicos_local['lambda_ponderado']
+                        lambda_visitante_cal = promedios_dinamicos_visitante['lambda_ponderado']
                         
-                        if promedios_dinamicos_local and promedios_dinamicos_local.get('lambda_ponderado'):
-                            # Combinar lambda base con lambda ponderado (70% ponderado, 30% base)
-                            lambda_ponderada_local = promedios_dinamicos_local['lambda_ponderado']
-                            lambda_final_local = lambda_ponderada_local * 0.7 + lambda_base_local * 0.3
-                        else:
-                            lambda_final_local = lambda_base_local
-                        
-                        if promedios_dinamicos_visitante and promedios_dinamicos_visitante.get('lambda_ponderado'):
-                            lambda_ponderada_visitante = promedios_dinamicos_visitante['lambda_ponderado']
-                            lambda_final_visitante = lambda_ponderada_visitante * 0.7 + lambda_base_visitante * 0.3
-                        else:
-                            lambda_final_visitante = lambda_base_visitante
-                        
-                        # Aplicar calibración
-                        lambda_local_adj = get_lambda_ajustada(home_team, lambda_final_local, como_local=True)
-                        lambda_visitante_adj = get_lambda_ajustada(away_team, lambda_final_visitante, como_local=False)
-                        lambda_local_cal = lambda_local_adj['lambda_ajustada']
-                        lambda_visitante_cal = lambda_visitante_adj['lambda_ajustada']
+                        # Aplicar calibración (ajuste fino)
+                        lambda_local_adj = get_lambda_ajustada(home_team, lambda_local_cal, como_local=True)
+                        lambda_visitante_adj = get_lambda_ajustada(away_team, lambda_visitante_cal, como_local=False)
+                        lambda_local_final = lambda_local_adj['lambda_ajustada']
+                        lambda_visitante_final = lambda_visitante_adj['lambda_ajustada']
                         
                         # вҳ… USAR PROMEDIOS DINГҒMICOS si están disponibles
                         if promedios_dinamicos_local:
