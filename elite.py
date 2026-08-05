@@ -2335,6 +2335,14 @@ def render_login_form():
             tiene_datos_local = promedios_dinamicos_local and promedios_dinamicos_local.get('partidos_total', 0) > 0
             tiene_datos_visitante = promedios_dinamicos_visitante and promedios_dinamicos_visitante.get('partidos_total', 0) > 0
             
+            # DEBUG: mostrar qué tenemos
+            st.write(f"DEBUG tiene_datos_local: {tiene_datos_local}")
+            st.write(f"DEBUG tiene_datos_visitante: {tiene_datos_visitante}")
+            if promedios_dinamicos_local:
+                st.write(f"DEBUG local partidos_total: {promedios_dinamicos_local.get('partidos_total', 0)}")
+            if promedios_dinamicos_visitante:
+                st.write(f"DEBUG visitante partidos_total: {promedios_dinamicos_visitante.get('partidos_total', 0)}")
+            
             if not (tiene_datos_local or tiene_datos_visitante):
                 st.warning("⚠️ **Sin datos históricos** - Sincroniza equipos para ver predicciones adicionales.")
                 st.stop()
