@@ -1834,11 +1834,15 @@ def render_login_form():
         # USAR team_id DIRECTO del partido para buscar en equipo_partidos_stats
         # Buscar equipo_partidos_stats por team_id directo
         if home_team:
+            st.write(f"DEBUG: home_team = '{home_team}'")
             # Primero buscar team_id en equipos_stats por nombre
             resp_l = client.table('equipos_stats').select('team_id').ilike('equipo', f'%{home_team}%').limit(1).execute()
+            st.write(f"DEBUG: resp_l.data = {resp_l.data}")
             if resp_l.data:
                 tid_local = resp_l.data[0].get('team_id')
+                st.write(f"DEBUG: tid_local = {tid_local}")
                 promedios_dinamicos_local = calcular_promedios_equipo(client, tid_local)
+                st.write(f"DEBUG: promedios_local = {promedios_dinamicos_local}")
                 equipo_local_ok = True
             else:
                 equipos_faltantes.append(home_team)
