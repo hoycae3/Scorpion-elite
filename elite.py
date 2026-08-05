@@ -226,7 +226,6 @@ def utc_to_colombia(utc_datetime_str):
         except:
             return utc_datetime_str[11:16] if len(utc_datetime_str) > 16 else ""
 
-
 def db_todos():
     """Obtiene todos los usuarios"""
     client = get_client()
@@ -454,7 +453,6 @@ def render_public_landing():
                     if resp_by_id.data:
                         stats_visit = resp_by_id.data[0]
 
-
                 # Buscar promedios dinámicos directamente por team_id (más confiable)
                 promedios_dinamicos_local = None
                 promedios_dinamicos_visitante = None
@@ -463,22 +461,16 @@ def render_public_landing():
                 tid_local = partido.get('team_id_local')
                 tid_visitante = partido.get('team_id_visitante')
                 
-                st.write(f"DEBUG team_id_local={tid_local} team_id_visitante={tid_visitante}")
-                
                 # Buscar directamente por team_id
                 if tid_local:
                     resp_eps_l = client.table("equipo_partidos_stats").select("team_id").eq("team_id", tid_local).limit(1).execute()
                     if resp_eps_l.data:
                         promedios_dinamicos_local = calcular_promedios_equipo(client, tid_local)
-                        st.write(f"DEBUG Local: team_id={tid_local} -> {len(calcular_promedios_equipo(client, tid_local).get('partidos', [])) if promedios_dinamicos_local else 0} partidos")
                 
                 if tid_visitante:
                     resp_eps_v = client.table("equipo_partidos_stats").select("team_id").eq("team_id", tid_visitante).limit(1).execute()
                     if resp_eps_v.data:
                         promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
-                        st.write(f"DEBUG Visitante: team_id={tid_visitante} -> {len(calcular_promedios_equipo(client, tid_visitante).get('partidos', [])) if promedios_dinamicos_visitante else 0} partidos")
-
-                # DEBUG
                 st.write(f"📤 Local: '{local}' ↩️' {'✅' if stats_local else '❌'} (team_id: {team_id_local})")
                 st.write(f"📤 Visit: '{visitante}' ↩️' {'✅' if stats_visit else '❌'} (team_id: {team_id_visitante})")
 
@@ -620,8 +612,6 @@ def render_public_landing():
         else:
             st.info("⚽ No hay partidos cargados. Ve a la pestaГұa **Carga** para subir datos.")
 
-
-
     # --- CÓMO FUNCIONA ---
     st.markdown("### 📤 ВҝCómo Funciona?")
     st.markdown("*El analizador usa 4 modelos matemáticos para predecir resultados*")
@@ -682,7 +672,6 @@ def render_public_landing():
         <p>El análisis deportivo no garantiza resultados. Apuesta responsablemente.</p>
     </div>
     """, unsafe_allow_html=True)
-
 
 # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
 # SISTEMA DE LOGIN - Solo contraseГұa
@@ -996,8 +985,6 @@ def render_login_form():
                                     score_local = score.get('fulltime', {}).get('home') if score.get('fulltime') else goals.get('home') or 0
                                     score_visitante = score.get('fulltime', {}).get('away') if score.get('fulltime') else goals.get('away') or 0
                                     
-                                    # DEBUG: Mostrar valores de score
-                                    
                                     # вҳ… CORREGIDO: SIEMPRE agregar equipos a equipos_unicos para actualizar stats
                                     # Independientemente de si el partido es nuevo o existente
                                     if team_id_local:
@@ -1278,8 +1265,6 @@ def render_login_form():
                                                 'goles_contra': fix_info['goles_contra'] if fix_info.get('goles_contra') is not None else 0,
                                             }
                                             
-                                            # DEBUG: Mostrar qué se guarda
-                                            
                                             # Agregar stats si están disponibles
                                             if stats_partido:
                                                 partido_data.update(stats_partido)
@@ -1325,7 +1310,6 @@ def render_login_form():
                         
                 except Exception as e:
                     st.error(f"❌ Error en sincronización: {e}")
-
 
         with col_btn3:
             if st.button("🧹 Limpiar Equipos", type="secondary", use_container_width=True):
@@ -1735,8 +1719,6 @@ def render_login_form():
                     stats_visitante = resp_visitante.data[0]
             except:
                 pass
-            
-            # DEBUG
                                     
             # Limpiar session_state después de usar
             del st.session_state.selected_local
@@ -1854,25 +1836,12 @@ def render_login_form():
         tid_local = partido_data.get('team_id_local')
         tid_visitante = partido_data.get('team_id_visitante')
         
-        st.write(f"DEBUG team_id del partido: local={tid_local}, visitante={tid_visitante}")
-        
         # Buscar promedios dinámicos directamente por team_id
         if tid_local:
             promedios_dinamicos_local = calcular_promedios_equipo(client, tid_local)
-            st.write(f"DEBUG Local: team_id={tid_local}, resultado={type(promedios_dinamicos_local)}")
-            if promedios_dinamicos_local:
-                st.write(f"DEBUG Local tiene datos: {bool(promedios_dinamicos_local)}")
-                st.write(f"DEBUG Local partidos_total: {promedios_dinamicos_local.get('partidos_total', 'N/A')}")
-            else:
-                st.write("DEBUG Local: calcular_promedios_equipo retornó None")
         
         if tid_visitante:
             promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
-            st.write(f"DEBUG Visitante: team_id={tid_visitante}, resultado={type(promedios_dinamicos_visitante)}")
-            if promedios_dinamicos_visitante:
-                st.write(f"DEBUG Visitante tiene datos: {bool(promedios_dinamicos_visitante)}")
-            else:
-                st.write("DEBUG Visitante: calcular_promedios_equipo retornó None")
         
         # Mostrar info de equipos disponibles
         if not equipos_disponibles:
@@ -1883,12 +1852,6 @@ def render_login_form():
             st.error(f"⚠️ Equipos sin datos completos: ', '.join(set(equipos_faltantes))")
             st.info("💡 Ejecuta Sincronizar para obtener estadísticas de estos equipos.")
         
-
-        # Debug: estado de equipos
-        with st.expander("DEBUG"):
-            st.write(f"home: {home_team} | ok: {equipo_local_ok} | lambda: {stats_local.get('lambda_local') if stats_local else 'N/A'}")
-            st.write(f"away: {away_team} | ok: {equipo_visitante_ok} | lambda: {stats_visitante.get('lambda_visitante') if stats_visitante else 'N/A'}")
-            st.write(f"Faltantes: {equipos_faltantes}")
 
         # Botón analizar - solo si ambos equipos existen
         analizar_disabled = not (equipo_local_ok and equipo_visitante_ok)
@@ -2319,38 +2282,28 @@ def render_login_form():
             promedios_dinamicos_local = st.session_state.get('promedios_dinamicos_local')
             promedios_dinamicos_visitante = st.session_state.get('promedios_dinamicos_visitante')
             
-            st.write(f"DEBUG Recuperado: local={bool(promedios_dinamicos_local)}, visitante={bool(promedios_dinamicos_visitante)}")
-            
             tiene_datos_local = promedios_dinamicos_local and promedios_dinamicos_local.get('partidos_total', 0) > 0
             tiene_datos_visitante = promedios_dinamicos_visitante and promedios_dinamicos_visitante.get('partidos_total', 0) > 0
-            
-            # DEBUG: mostrar qué tenemos
-            st.write(f"DEBUG tiene_datos_local: {tiene_datos_local}")
-            st.write(f"DEBUG tiene_datos_visitante: {tiene_datos_visitante}")
-            if promedios_dinamicos_local:
-                st.write(f"DEBUG local partidos_total: {promedios_dinamicos_local.get('partidos_total', 0)}")
-            if promedios_dinamicos_visitante:
-                st.write(f"DEBUG visitante partidos_total: {promedios_dinamicos_visitante.get('partidos_total', 0)}")
             
             if not (tiene_datos_local or tiene_datos_visitante):
                 st.warning("⚠️ **Sin datos históricos** - Sincroniza equipos para ver predicciones adicionales.")
                 st.stop()
-            else:
-                # Usar datos reales
-                datos_local = promedios_dinamicos_local or {}
-                datos_visitante = promedios_dinamicos_visitante or {}
-                
-                ta_local = datos_local.get('promedio_amarillas', 0) if tiene_datos_local else 0
-                ta_visitante = datos_visitante.get('promedio_amarillas', 0) if tiene_datos_visitante else 0
-                tarjetas_total = ta_local + ta_visitante
+            
+            # Usar datos reales
+            datos_local = promedios_dinamicos_local or {}
+            datos_visitante = promedios_dinamicos_visitante or {}
+            
+            ta_local = datos_local.get('promedio_amarillas', 0) if tiene_datos_local else 0
+            ta_visitante = datos_visitante.get('promedio_amarillas', 0) if tiene_datos_visitante else 0
+            tarjetas_total = ta_local + ta_visitante
 
-                ti_local = datos_local.get('promedio_tiros', 0) if tiene_datos_local else 0
-                ti_visitante = datos_visitante.get('promedio_tiros', 0) if tiene_datos_visitante else 0
-                remates_total = ti_local + ti_visitante
+            ti_local = datos_local.get('promedio_tiros', 0) if tiene_datos_local else 0
+            ti_visitante = datos_visitante.get('promedio_tiros', 0) if tiene_datos_visitante else 0
+            remates_total = ti_local + ti_visitante
 
-                arco_local = datos_local.get('promedio_tiros_arco', 0) if tiene_datos_local else 0
-                arco_visitante = datos_visitante.get('promedio_tiros_arco', 0) if tiene_datos_visitante else 0
-                arco_total = arco_local + arco_visitante
+            arco_local = datos_local.get('promedio_tiros_arco', 0) if tiene_datos_local else 0
+            arco_visitante = datos_visitante.get('promedio_tiros_arco', 0) if tiene_datos_visitante else 0
+            arco_total = arco_local + arco_visitante
 
             # Obtener predicciones del modelo matemático
             pred_tiros = r.get('tiros', {})
@@ -2894,7 +2847,6 @@ def render_login_form():
                                 st.info("⚡пёҸ Cuenta del administrador")
                         st.markdown("---")
 
-
     # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
     # PГҒGINA VIP DASHBOARD - Solo para usuarios Elite/Premium
     # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
@@ -3208,7 +3160,6 @@ def render_login_form():
             else:
                 st.success("📊 ВЎTodos los picks tienen resultado!")
                 st.info("Los resultados ayudan a calibrar las próximas predicciones.")
-
 
         # ========== TAB 3: BANKROLL ==========
         with tab_bankroll:
