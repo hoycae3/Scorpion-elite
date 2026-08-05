@@ -1,204 +1,219 @@
-# 🦂 Scorpion Elite V4 Pro
+# 🦂 Scorpion Elite
 
-**Sistema de análisis estadístico para apuestas deportivas de fútbol**
-
-Scorpion Elite es una aplicación web que combina múltiples modelos matemáticos con datos reales de equipos para generar predicciones sobre partidos de fútbol y distintos mercados de apuestas.
+**Sistema de análisis estadístico para fútbol con modelos matemáticos avanzados**
 
 ---
 
-## ¿Cómo funciona?
+## 📊 Sistema de Lambdas (Predicción de Goles)
 
-### 1. Motor de Análisis Matemático
+El corazón del sistema es el cálculo del **lambda (λ)** - la tasa promedio de goles esperados por partido.
 
-El sistema utiliza **4 modelos estadísticos** combinados mediante ponderación:
+### Fuentes de Lambda
+
+| Fuente | Descripción | Peso en Final |
+|--------|-------------|---------------|
+| **λ Dinámico** | Calculado con los últimos partidos guardados (ponderación exponencial) | 60% |
+| **λ Histórico** | Promedio general de la temporada (de equipos_stats) | 40% |
+
+### Ponderación Exponencial
+
+Los partidos recientes pesan más que los antiguos:
+
+```
+Partidos más recientes: peso = 1.0, 0.92, 0.85, 0.78, 0.72...
+ decay = 0.92 (aproximadamente 50% de peso al último tercio)
+```
+
+### Lambda Final
+
+```
+λ Final = (λ Dinámico × 0.6) + (λ Histórico × 0.4)
+```
+
+**¿Cuándo es útil?**
+- Si un equipo está en racha (marca mucho), el λ dinámico sube más rápido
+- Si un equipo está en mala racha, el λ dinámico baja más rápido
+- El λ histórico mantiene estabilidad y no se afecta por rachas temporales
+
+---
+
+## 🧮 Modelos Matemáticos
+
+El sistema combina **4 modelos estadísticos** para generar predicciones:
 
 | Modelo | Peso | Descripción |
 |--------|------|-------------|
-| **Poisson** | 35% | Distribución de probabilidad para predecir goles |
-| **Dixon-Coles** | 30% | Corrige la dependencia entre goles marcados y recibidos |
-| **Monte Carlo** | 20% | Simulación de 3,000 partidos para estimar probabilidades |
-| **Elo** | 15% | Rating histórico del equipo (forma y fortaleza) |
+| **Poisson** | 35% | Distribución de Poisson para predecir goles |
+| **Dixon-Coles** | 30% | Corrige dependencia entre goles marcados/recibidos |
+| **Monte Carlo** | 20% | 3,000 simulaciones de partidos |
+| **Elo** | 15% | Rating histórico del equipo |
 
-El sistema combina estos 4 resultados para dar una **probabilidad final** con un nivel de **confianza** (0-100%).
+### Mercados Analizados
 
-### 2. Fuentes de Datos
-
-El sistema consulta automáticamente múltiples APIs:
-
-- **API-Football**: Stats oficiales de temporada (goles, tiros, tarjetas)
-- **Understat**: xG (goles esperados) para ligas europeas top
-- **TheSportsDB**: Resultados últimos partidos de cualquier equipo
-- **ClubElo**: Ratings Elo de equipos europeos
-
-### 3. Mercados Analizados
-
-Para cada partido, el sistema calcula probabilidades para:
-
-- **Resultado 1X2**: Victoria local, empate, victoria visitante
-- **Over/Under**: 0.5, 1.5, 2.5, 3.5 goles
+- **1X2**: Victoria local, empate, victoria visitante
+- **Over/Under 2.5**: Más/menos de 2.5 goles
 - **BTTS**: Ambos equipos marcan (Sí/No)
-- **Corners**: Over 7.5, 8.5, 9.5, 10.5
-- **Tarjetas**: Over 1.5, 2.5, 3.5
-- **Tiros al arco**: Estimados por equipo
-
-### 4. Clasificación de Picks
-
-Cada análisis recibe una clasificación:
-
-| Rango | Condición | Descripción |
-|-------|-----------|-------------|
-| **A+** | Confianza ≥75% + datos reales + liga top | Mejor selección |
-| **B** | Confianza ≥55% | Buena opción |
-| **C** | Confianza ≥40% | Especulativa |
-| **D** | Confianza <40% | Baja confianza |
+- **Corners Total**: Total de córners estimados
+- **Tiros Total**: Estimación de remates al arco
+- **Tarjetas**: Total de tarjetas amarillas
+- **Tiros al Arco**: Remates entre los 3 palos
 
 ---
 
-## Estructura del Proyecto
+## 🔄 Fuentes de Datos (SUPERROBOT)
+
+El sistema consulta múltiples fuentes automáticamente:
+
+| Fuente | Datos | Anti-Bloqueo | Cobertura |
+|--------|-------|--------------|-----------|
+| **football-data.co.uk** | Partidos, GF, GC, V/E/D | Requests | 20+ ligas europeas |
+| **API-Football** | Stats completas | API oficial | Mundial (88/mes) |
+| **Soccerway** | Resultados históricos | cloudscraper | Mundial |
+| **WhoScored** | Corners, Tarjetas, Posesión | cloudscraper | Mundial |
+| **FBref** | Stats detalladas | cloudscraper | 7 ligas top europeas |
+
+### Flujo del Robot
+
+```
+1. football-data.co.uk → Equipos europeos (sin límite)
+   ↓ (si no encuentra)
+2. API-Football → Equipos no encontrados (máx 88)
+   ↓ (si se acaban los 88)
+3. Soccerway → Equipos no encontrados (mundial)
+   ↓ (si no encuentra)
+4. WhoScored → Equipos no encontrados (mundial)
+   ↓ (si no encuentra)
+5. FBref → Equipos no encontrados (europa +)
+```
+
+---
+
+## 🗄️ Base de Datos (Supabase)
+
+### Tablas Principales
+
+| Tabla | Descripción |
+|-------|-------------|
+| `partidos` | Partidos del día con fixtures |
+| `equipos_stats` | Stats acumuladas por equipo (V/E/D, GF/GC, lambdas) |
+| `equipo_partidos_stats` | Historial de partidos con stats detalladas |
+| `picks` | Picks generados y guardados |
+| `calibracion_equipos` | Factores de corrección por equipo |
+| `calibracion_historico` | Registro de resultados para calibración |
+
+### Estructura equipo_partidos_stats
+
+```sql
+- team_id, fixture_id, fecha, liga
+- goles_favor, goles_contra
+- tiros_totales, tiros_arco, corners
+- amarillas, rojas
+- posesion, faltas
+```
+
+---
+
+## 📁 Estructura del Proyecto
 
 ```
 Scorpion-elite/
-├── app.py              # Aplicación principal (Streamlit)
-├── requirements.txt    # Dependencias Python
-└── README.md          # Este archivo
+├── elite.py                 # App principal Streamlit (~2800 líneas)
+├── robot_extractor.py      # SUPERROBOT - Todos los scrapers
+├── funciones_stats.py       # Funciones de stats y promedios
+├── analysis_models.py       # Modelos matemáticos (Poisson, etc.)
+├── calibration.py           # Sistema de calibración automática
+├── supabase_schema.sql     # Schema completo de DB
+├── requirements.txt         # Dependencias
+├── styles.css              # Estilos CSS
+└── backups/                # Backups de archivos
 ```
 
 ---
 
-## Requisitos e Instalación
+## 🚀 Despliegue
 
-### Dependencias
-
-```
-streamlit>=1.32.0
-requests>=2.31.0
-beautifulsoup4>=4.12.0
-lxml>=5.1.0
-openpyxl>=3.1.2
-Pillow>=10.0.0
-```
-
-### Instalación local
-
+### Render
 ```bash
-pip install -r requirements.txt
-streamlit run app.py
+# Deploy automático desde GitHub
+curl -X POST "https://api.render.com/v1/services/srv-XXX/deploys" \
+  -H "Authorization: Bearer $RENDER_API_KEY"
 ```
 
-La aplicación estará disponible en `http://localhost:8501`
+### URL Producción
+- **App**: https://scorpion-elite.onrender.com
+- **DB**: Supabase (jjtifureeygvygxtpuku.supabase.co)
 
-### Variables de Entorno (Opcionales)
+---
 
-Para mejorar la calidad de los datos, puedes configurar:
+## ⚙️ Configuración
 
-```bash
-export API_FOOTBALL_KEY="tu_api_key"           # https://www.api-football.com
-export ADMIN_PASSWORD="tu_contrasena_segura"   # Contraseña admin
+### Sincronización
+
+El botón "🔄 Sincronizar" descarga:
+- Partidos de **HOY-2 a HOY+6**
+- Stats de equipos de **55 ligas** mundiales
+- Stats de partidos **incrementales** (solo nuevos fixtures)
+
+### Login
+- **Contraseña**: `scorpion2026`
+- Ubicado en landing page
+
+---
+
+## 🔧 Calibración Automática
+
+El sistema ajusta los lambdas según resultados reales:
+
+1. Después de cada partido, se compara λ predicho vs resultado real
+2. Si el equipo marcó MÁS de lo predicho → factor sube (ej: 1.1)
+3. Si el equipo marcó MENOS de lo predicho → factor baja (ej: 0.9)
+
 ```
-
----
-
-## Funcionalidades por Plan de Usuario
-
-| Característica | Gratis | Día | Semana | Mes |
-|----------------|--------|-----|--------|-----|
-| Análisis individual | ✅ 5/día | ✅ | ✅ | ✅ |
-| Análisis por liga | ❌ | ✅ | ✅ | ✅ |
-| Datos reales de API | Limitado | ✅ | ✅ | ✅ |
-| Exportar Excel | ❌ | ✅ | ✅ | ✅ |
-| Escalera | ❌ | ❌ | ✅ | ✅ |
-| Combinadas | ❌ | ❌ | ❌ | ✅ |
-| Historial personal | ❌ | ❌ | ✅ | ✅ |
-
----
-
-## Flujo de Uso
-
-### Para Administradores
-
-1. **Acceder** con credenciales admin
-2. **Analizar partido**: Escribir equipo local, visitante y liga
-3. **Revisar modelos**: Ver comparación de los 4 modelos estadísticos
-4. **Publicar picks**: Seleccionar mercados para compartir con clientes
-5. **Gestionar usuarios**: Ver clientes activos y sus planes
-
-### Para Clientes
-
-1. **Iniciar sesión** con su número de documento
-2. **Ver picks del día**: Picks publicados por el administrador
-3. **Analizar partido**: Análisis individual (según plan)
-4. **Exportar Excel**: Descargar análisis completo con formato profesional
-5. **Escalera/Combinadas**: Construir apuestas progresivas (planes superiores)
-
----
-
-## Ligas y Torneos Soportados
-
-**Europa:**
-- Premier League, La Liga, Bundesliga, Serie A, Ligue 1
-- Champions League, Europa League, Conference League
-- Eredivisie, Primeira Liga, Super Lig, Saudi Pro League
-
-**América:**
-- Libertadores, Sudamericana, Copa America
-- MLS, Liga MX, Primera Colombia, Primera Argentina, Brasileirao
-
-**Otros:**
-- Mundial FIFA, Eurocopa, Nations League
-
----
-
-## Arquitectura Técnica
-
-### Base de Datos (SQLite)
-
-El sistema usa SQLite para almacenar:
-
-- **usuarios**: Credenciales y planes de clientes
-- **picks**: Picks publicados por el admin
-- **historial**: Análisis realizados por usuarios
-- **escalera**: Estado de escaleras activas
-
-### Modelos Matemáticos
-
-```python
-# Cálculo de probabilidades combinadas
-p1 = p1_po * 0.35 + p1_dc * 0.30 + p1_mc * 0.20 + p1_el * 0.15
-```
-
-### Cálculo de xG Ajustado
-
-```python
-# xG local ajustado por estadísticas del oponente
-xl = gml * (gcv / promedio_gc_liga) * factor_local
+λ Ajustado = λ Original × Factor de Corrección
 ```
 
 ---
 
-## Despliegue en Streamlit Cloud
+## 📈 Progreso del Proyecto
 
-1. Crear repositorio en GitHub
-2. Subir `app.py` y `requirements.txt`
-3. Conectar con Streamlit Cloud
-4. Configurar Secrets en Streamlit (opcional):
-   ```
-   API_FOOTBALL_KEY = "tu_clave"
-   ADMIN_PASSWORD = "tu_contrasena"
-   ```
+### ✅ Implementado
+
+| Funcionalidad | Estado |
+|--------------|--------|
+| Login con contraseña | ✅ |
+| Landing page pública | ✅ |
+| Sincronización con 55 ligas | ✅ |
+| Scraping de 5 fuentes | ✅ |
+| 4 modelos matemáticos | ✅ |
+| Predicciones: 1X2, O/U, BTTS, Corners, Tiros, Tarjetas | ✅ |
+| Sistema de calibración | ✅ |
+| Ponderación exponencial de partidos | ✅ |
+| Mostrar λ dinámico + histórico + final | ✅ |
+| Dashboard con métricas | ✅ |
+| Guardar picks en Supabase | ✅ |
+| Panel VIP | ✅ |
+
+### 🔄 En Desarrollo
+
+| Funcionalidad | Estado |
+|--------------|--------|
+| Mejorar UI del análisis preview | 🔄 |
+| Exportar picks a PDF | 🔄 |
+| Notificaciones de alta confianza | 🔄 |
+| Modo claro/oscuro | 🔄 |
 
 ---
 
-## Descargo de Responsabilidad
+## ⚠️ Descargo de Responsabilidad
 
-⚠️ **IMPORTANTE**: Este sistema es solo para uso informativo y estadístico. Las apuestas deportivas implican riesgo real de pérdida económica. El sistema no garantiza resultados y no debe usarse como única fuente de decisión para apostar dinero real.
+Este sistema es solo para uso informativo y estadístico. Las apuestas deportivas implican riesgo real de pérdida económica. No garantiza resultados.
 
 ---
 
-## Tecnologías
+## 🛠️ Tecnologías
 
-- **Python 3.8+**
-- **Streamlit**: Framework web
-- **SQLite**: Base de datos ligera
-- **Requests + BeautifulSoup**: Obtención de datos web
-- **OpenPyXL**: Exportación a Excel
-- **APIs Externas**: API-Football, Understat, TheSportsDB, ClubElo
+- **Python 3.8+** - Lenguaje principal
+- **Streamlit** - Framework web
+- **Supabase** - Base de datos PostgreSQL
+- **cloudscraper** - Anti-bloqueo para scrapers
+- **Render** - Hosting
