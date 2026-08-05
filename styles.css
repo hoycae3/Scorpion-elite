@@ -608,3 +608,57 @@
     margin: 0 !important;
     font-size: 13px !important;
 }
+
+/* ============================================
+   📊 TABLAS - ESTILO TABLE COMPARATIVA
+   ============================================ */
+/* Tablas HTML personalizadas */
+table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 0 auto !important;
+    display: table !important;
+    visibility: visible !important;
+}
+
+table tr td {
+    padding: 10px 15px !important;
+    text-align: center !important;
+    color: #fff !important;
+    border: none !important;
+    display: table-cell !important;
+}
+
+table tr {
+    background: transparent !important;
+    display: table-row !important;
+}
+
+/* Elementos contenedor */
+.element-container {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.stMarkdown {
+    display: block !important;
+    visibility: visible !important;
+}
+
+/* Contenedor de tablas */
+.stMarkdown table,
+.stTabs table,
+.element-container table {
+    width: 100% !important;
+    display: table !important;
+    visibility: visible !important;
+}
+
+/* Forzar visibilidad de tablas */
+div table,
+div[style*="background"] table {
+    display: table !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
