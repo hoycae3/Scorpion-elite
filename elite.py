@@ -2007,6 +2007,10 @@ def render_login_form():
             stats_local = st.session_state.get('stats_local', {})
             stats_visitante = st.session_state.get('stats_visitante', {})
             
+            # OBTENER promedios_dinamicos del session_state
+            promedios_dinamicos_local = st.session_state.get('promedios_dinamicos_local')
+            promedios_dinamicos_visitante = st.session_state.get('promedios_dinamicos_visitante')
+            
             if stats_local and stats_visitante:
                 # Fuente de datos
                 source_local = stats_local.get('source', 'Supabase')
