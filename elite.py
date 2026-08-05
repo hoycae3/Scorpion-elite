@@ -1837,19 +1837,18 @@ def render_login_form():
         tid_local = st.session_state.get('selected_team_id_local')
         tid_visitante = st.session_state.get('selected_team_id_visitante')
         
-        # Limpiar session_state de team_ids después de usar
         if tid_local:
             promedios_dinamicos_local = calcular_promedios_equipo(client, tid_local)
             equipo_local_ok = True
-            # Limpiar
+        
+        if tid_visitante:
+            promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
+            equipo_visitante_ok = True
+        
+        # Limpiar session_state DESPUÉS de usar
+        if tid_local or tid_visitante:
             st.session_state.pop('selected_team_id_local', None)
             st.session_state.pop('selected_team_id_visitante', None)
-        
-        if away_team:
-            tid_visitante = tid_visitante or st.session_state.get('selected_team_id_visitante')
-            if tid_visitante:
-                promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
-                equipo_visitante_ok = True
         
         # Mostrar info de equipos disponibles
         if not equipos_disponibles:
