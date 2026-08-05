@@ -1065,6 +1065,21 @@ def render_login_form():
                     stats_ft_nuevos = 0
                     
                     if equipos_unicos:
+                        # ★ FILTRO: Solo procesar equipos de ligas Argentinas
+                        # IDs: 128=Liga Profesional, 129=Primera Nacional, 131=Primera B Metropolitana
+                        LIGAS_ARGENTINAS = {128, 129, 131}
+                        equipos_argentinos = {tid: eq for tid, eq in equipos_unicos.items() 
+                                              if eq.get('league_id') in LIGAS_ARGENTINAS}
+                        
+                        st.info(f"📊 Equipos detectados: {len(equipos_unicos)}, Argentinos: {len(equipos_argentinos)}")
+                        
+                        # Reemplazar equipos_unicos con los filtrados
+                        equipos_unicos = equipos_argentinos
+                        
+                        if not equipos_unicos:
+                            st.warning("⚠️ No hay equipos Argentinos para procesar.")
+                            st.stop()
+                        
                         # Paso 2a: Identificar equipos existentes en DB
                         equipos_existentes_ids = set()
                         try:
