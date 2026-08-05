@@ -1970,7 +1970,7 @@ def render_login_form():
                             <span style='color: #888;'>⚽ GC</span><span style='color: #fff;'>{gc_l}</span>
                         </div>
                         <div style='display: flex; justify-content: space-between; font-size: 12px;'>
-                            <span style='color: #888;'>⚡ Dinámico</span><span style='color: #00ff88;'>{lambda_dinamico_local:.2f if lambda_dinamico_local else 0:.2f}</span>
+                            <span style='color: #888;'>⚡ Dinámico</span><span style='color: #00ff88;'>{f"{lambda_dinamico_local:.2f}" if lambda_dinamico_local else "0.00"}</span>
                         </div>
                         <div style='display: flex; justify-content: space-between; font-size: 12px;'>
                             <span style='color: #888;'>📊 Histórico</span><span style='color: #00d4ff;'>{lambda_historico_local:.2f}</span>
@@ -2022,7 +2022,7 @@ def render_login_form():
                             <span style='color: #888;'>⚽ GC</span><span style='color: #fff;'>{gc_v}</span>
                         </div>
                         <div style='display: flex; justify-content: space-between; font-size: 12px;'>
-                            <span style='color: #888;'>⚡ Dinámico</span><span style='color: #00ff88;'>{lambda_dinamico_visit:.2f if lambda_dinamico_visit else 0:.2f}</span>
+                            <span style='color: #888;'>⚡ Dinámico</span><span style='color: #00ff88;'>{f"{lambda_dinamico_visit:.2f}" if lambda_dinamico_visit else "0.00"}</span>
                         </div>
                         <div style='display: flex; justify-content: space-between; font-size: 12px;'>
                             <span style='color: #888;'>📊 Histórico</span><span style='color: #00d4ff;'>{lambda_historico_visit:.2f}</span>
