@@ -2230,33 +2230,37 @@ def render_login_form():
             with col_remates:
                 remates_icon = "📲" if "Over" in pick_tiros else "🔽"
                 remates_color_class = "pick-over" if "Over" in pick_tiros else "pick-under"
+                # Traducir pick a español para evitar confusión
+                pick_tiros_es = pick_tiros.replace("Over", "Over").replace("Under", "Under")
                 st.markdown(f"""
                 <div class="caja-prediccion">
                     <p class="titulo-caja">📍 Tiros Total</p>
                     <p class="valor-caja" style="color: #00ff88;">{remates_modelo:.0f}</p>
-                    <p class="pick-caja {remates_color_class}">{remates_icon} {pick_tiros} ({prob_tiros:.0f}%)</p>
+                    <p class="pick-caja {remates_color_class}" translate="no">{remates_icon} {pick_tiros_es} ({prob_tiros:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_arco:
                 arco_icon = "📲" if "Over" in pick_arco else "🔽"
                 arco_color_class = "pick-over" if "Over" in pick_arco else "pick-under"
+                pick_arco_es = pick_arco.replace("Over", "Over").replace("Under", "Under")
                 st.markdown(f"""
                 <div class="caja-prediccion">
                     <p class="titulo-caja">🎯 Tiros Arco</p>
                     <p class="valor-caja" style="color: #ff9f43;">{arco_modelo:.0f}</p>
-                    <p class="pick-caja {arco_color_class}">{arco_icon} {pick_arco} ({prob_arco:.0f}%)</p>
+                    <p class="pick-caja {arco_color_class}" translate="no">{arco_icon} {pick_arco_es} ({prob_arco:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_tarjetas:
                 tarjetas_icon = "📲" if "Over" in pick_tarjetas else "🔽"
                 tarjetas_color_class = "pick-over" if "Over" in pick_tarjetas else "pick-under"
+                pick_tarjetas_es = pick_tarjetas.replace("Over", "Over").replace("Under", "Under")
                 st.markdown(f"""
                 <div class="caja-prediccion">
-                    <p class="titulo-caja"> Amarillas Total</p>
+                    <p class="titulo-caja">🟨 Amarillas Total</p>
                     <p class="valor-caja" style="color: #ffd700;">{tarjetas_modelo:.1f}</p>
-                    <p class="pick-caja {tarjetas_color_class}">{tarjetas_icon} {pick_tarjetas} ({prob_tarjetas:.0f}%)</p>
+                    <p class="pick-caja {tarjetas_color_class}" translate="no">{tarjetas_icon} {pick_tarjetas_es} ({prob_tarjetas:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -2286,11 +2290,12 @@ def render_login_form():
                 icon_tiros = "📲" if "Over" in (pick_tiros or "") else "🔽"
                 color_tiros = "#00ff88" if "Over" in (pick_tiros or "") else "#ff6b6b"
                 remates_val = remates_modelo if remates_modelo and remates_modelo > 0 else 0
+                pick_tiros_display = pick_tiros.replace("Over", "Over").replace("Under", "Under") if pick_tiros else "N/A"
                 st.markdown(f"""
                 <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tiros};">
                     <p style="color: #888; font-size: 12px; margin: 0;">📍 Tiros Total</p>
                     <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{remates_val:.0f}</p>
-                    <p style="color: {color_tiros}; font-size: 14px; margin: 0;">{icon_tiros} {pick_tiros or "N/A"} ({prob_tiros or 0:.0f}%)</p>
+                    <p style="color: {color_tiros}; font-size: 14px; margin: 0;" translate="no">{icon_tiros} {pick_tiros_display} ({prob_tiros or 0:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -2298,11 +2303,12 @@ def render_login_form():
                 icon_arco = "📲" if "Over" in (pick_arco or "") else "🔽"
                 color_arco = "#00ff88" if "Over" in (pick_arco or "") else "#ff6b6b"
                 arco_val = arco_modelo if arco_modelo and arco_modelo > 0 else 0
+                pick_arco_display = pick_arco.replace("Over", "Over").replace("Under", "Under") if pick_arco else "N/A"
                 st.markdown(f"""
                 <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_arco};">
                     <p style="color: #888; font-size: 12px; margin: 0;">🎯 Tiros Arco</p>
                     <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{arco_val:.0f}</p>
-                    <p style="color: {color_arco}; font-size: 14px; margin: 0;">{icon_arco} {pick_arco or "N/A"} ({prob_arco or 0:.0f}%)</p>
+                    <p style="color: {color_arco}; font-size: 14px; margin: 0;" translate="no">{icon_arco} {pick_arco_display} ({prob_arco or 0:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -2310,18 +2316,27 @@ def render_login_form():
                 icon_tar = "📲" if "Over" in (pick_tarjetas or "") else "🔽"
                 color_tar = "#00ff88" if "Over" in (pick_tarjetas or "") else "#ff6b6b"
                 tarjetas_val = tarjetas_modelo if tarjetas_modelo and tarjetas_modelo > 0 else 0
+                pick_tarjetas_display = pick_tarjetas.replace("Over", "Over").replace("Under", "Under") if pick_tarjetas else "N/A"
                 st.markdown(f"""
                 <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tar};">
-                    <p style="color: #888; font-size: 12px; margin: 0;"> Amarillas</p>
+                    <p style="color: #888; font-size: 12px; margin: 0;">🟨 Amarillas</p>
                     <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{tarjetas_val:.1f}</p>
-                    <p style="color: {color_tar}; font-size: 14px; margin: 0;">{icon_tar} {pick_tarjetas or "N/A"} ({prob_tarjetas or 0:.0f}%)</p>
+                    <p style="color: {color_tar}; font-size: 14px; margin: 0;" translate="no">{icon_tar} {pick_tarjetas_display} ({prob_tarjetas or 0:.0f}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             # ========================
-            # FORMA RECIENTE (CUADROS MEJORADOS)
+            # FORMA RECIENTE (últimos 5 partidos)
             # ========================
-            st.markdown("##### 📅 Forma Reciente (Гҡltimos 5)")
+            st.markdown("##### 📅 Forma Reciente (Últimos 5)")
+            
+            # Obtener forma de los promedios_dinamicos guardados en session_state
+            promedios_dinamicos_local = st.session_state.get('promedios_dinamicos_local')
+            promedios_dinamicos_visitante = st.session_state.get('promedios_dinamicos_visitante')
+            
+            # Verificar si hay datos de forma en los promedios_dinamicos
+            tiene_forma_local = promedios_dinamicos_local and len(promedios_dinamicos_local.get('partidos', [])) > 0
+            tiene_forma_visitante = promedios_dinamicos_visitante and len(promedios_dinamicos_visitante.get('partidos', [])) > 0
             
             forma_l = r.get('forma_local', {})
             forma_v = r.get('forma_visitante', {})
@@ -2337,9 +2352,9 @@ def render_login_form():
             gf_v = forma_v.get('goles_favor_5', 0)
             gc_v = forma_v.get('goles_contra_5', 0)
             
-            # Si no hay datos, mostrar mensaje
-            if not letras and not letras_v:
-                st.info("қ Los datos de forma reciente requieren ejecutar el Robot de equipos")
+            # Si no hay datos, mostrar mensaje mejorado
+            if not tiene_forma_local and not tiene_forma_visitante:
+                st.info("⚠️ Sin datos de forma reciente. Haz clic en **Sincronizar** para descargar estadísticas de partidos.")
             else:
                 col_space1, col_forma_local, col_forma_away, col_space2 = st.columns([1, 2, 2, 1])
                 
