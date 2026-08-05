@@ -455,44 +455,28 @@ def render_public_landing():
                         stats_visit = resp_by_id.data[0]
 
 
-                # Buscar promedios dinámicos de equipo_partidos_stats (robusto)
+                # Buscar promedios dinámicos directamente por team_id (más confiable)
                 promedios_dinamicos_local = None
                 promedios_dinamicos_visitante = None
                 
-                def buscar_en_eps(client, nombre):
-                    """Busca en equipo_partidos_stats por nombre completo o palabras individuales"""
-                    # Buscar por nombre completo primero
-                    resp = client.table("equipo_partidos_stats").select("team_id, equipo").ilike("equipo", f"%{nombre}%").limit(5).execute()
-                    if resp.data:
-                        return resp.data[0]
-                    # Si no encuentra, buscar por cada palabra del nombre
-                    palabras = nombre.split()
-                    for palabra in palabras:
-                        if len(palabra) > 3:  # Ignorar palabras muy cortas
-                            resp = client.table("equipo_partidos_stats").select("team_id, equipo").ilike("equipo", f"%{palabra}%").limit(1).execute()
-                            if resp.data:
-                                return resp.data[0]
-                    return None
+                # Obtener team_ids del partido seleccionado
+                tid_local = partido.get('team_id_local')
+                tid_visitante = partido.get('team_id_visitante')
                 
-                st.write(f"DEBUG local='{local}' visitante='{visitante}'")
-                if local:
-                    # DEBUG: mostrar qué estamos buscando
-                    resp_test = client.table("equipo_partidos_stats").select("equipo").ilike("equipo", f"%{local}%").limit(3).execute()
-                    st.write(f"DEBUG Busqueda local '{local}': {len(resp_test.data)} encontrados")
-                    if resp_test.data:
-                        for r in resp_test.data[:3]:
-                            st.write(f"  - {r.get('equipo')}")
-                    result_l = buscar_en_eps(client, local)
-                    if result_l:
-                        promedios_dinamicos_local = calcular_promedios_equipo(client, result_l["team_id"])
-                        st.write(f"DEBUG EPS Local: '{local}' -> encontrado '{result_l.get('equipo')}'")
+                st.write(f"DEBUG team_id_local={tid_local} team_id_visitante={tid_visitante}")
                 
-                if visitante:
-                    result_v = buscar_en_eps(client, visitante)
-                    if result_v:
-                        promedios_dinamicos_visitante = calcular_promedios_equipo(client, result_v["team_id"])
-                        st.write(f"DEBUG EPS Visit: '{visitante}' -> encontrado '{result_v.get('equipo')}'")
-                st.write(f"HistLocal: {len(promedios_dinamicos_local.get('partidos_total', 0)) if promedios_dinamicos_local else 0} partidos | HistVisit: {len(promedios_dinamicos_visitante.get('partidos_total', 0)) if promedios_dinamicos_visitante else 0} partidos")
+                # Buscar directamente por team_id
+                if tid_local:
+                    resp_eps_l = client.table("equipo_partidos_stats").select("team_id").eq("team_id", tid_local).limit(1).execute()
+                    if resp_eps_l.data:
+                        promedios_dinamicos_local = calcular_promedios_equipo(client, tid_local)
+                        st.write(f"DEBUG Local: team_id={tid_local} -> {len(calcular_promedios_equipo(client, tid_local).get('partidos', [])) if promedios_dinamicos_local else 0} partidos")
+                
+                if tid_visitante:
+                    resp_eps_v = client.table("equipo_partidos_stats").select("team_id").eq("team_id", tid_visitante).limit(1).execute()
+                    if resp_eps_v.data:
+                        promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
+                        st.write(f"DEBUG Visitante: team_id={tid_visitante} -> {len(calcular_promedios_equipo(client, tid_visitante).get('partidos', [])) if promedios_dinamicos_visitante else 0} partidos")
 
                 # DEBUG
                 st.write(f"📤 Local: '{local}' ↩️' {'✅' if stats_local else '❌'} (team_id: {team_id_local})")
