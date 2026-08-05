@@ -851,8 +851,8 @@ def render_login_form():
                         st.warning(f"вҡ пёҸ Error al obtener partidos existentes: {e}")
                     
                     # вҳ… RANGO DE BГҡSQUEDA: -2 dГӯas (partidos recientes) a +6 dГӯas (prГіximos partidos)
-                    fecha_inicio = hoy.strftime('%Y-%m-%d')
-                    fecha_fin = (hoy + timedelta(days=2)).strftime('%Y-%m-%d')
+                    fecha_inicio = (hoy - timedelta(days=2)).strftime('%Y-%m-%d')
+                    fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
                     st.markdown(f"рҹ“… Rango: **{fecha_inicio}** al **{fecha_fin}**")
                     
                     # вң… MODO PRODUCCIГ“N - Todas las ligas
