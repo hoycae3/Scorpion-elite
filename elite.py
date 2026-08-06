@@ -1977,6 +1977,29 @@ def render_login_form():
                 vic_v = int(stats_visitante.get('victorias') or 0)
                 emp_v = int(stats_visitante.get('empates') or 0)
                 der_v = int(stats_visitante.get('derrotas') or 0)
+
+                # Calcular lambda_historico (basado en goles/pj)
+                lambda_historico_local = gf_l / pj_l if pj_l > 0 else 1.3
+                lambda_historico_visit = gf_v / pj_v if pj_v > 0 else 1.1
+                
+                # Calcular lambda_dinamico desde promedios_dinamicos
+                lambda_dinamico_local_calc = promedios_dinamicos_local.get('lambda_ponderado') if promedios_dinamicos_local else None
+                lambda_dinamico_visit_calc = promedios_dinamicos_visitante.get('lambda_ponderado') if promedios_dinamicos_visitante else None
+                
+                # Lambda FINAL = 60% dinamico + 40% historico
+                if lambda_dinamico_local_calc is not None:
+                    lambda_local_final = lambda_dinamico_local_calc * 0.6 + lambda_historico_local * 0.4
+                    lambda_dinamico_local = lambda_dinamico_local_calc
+                else:
+                    lambda_local_final = lambda_historico_local
+                    lambda_dinamico_local = None
+                
+                if lambda_dinamico_visit_calc is not None:
+                    lambda_visit_final = lambda_dinamico_visit_calc * 0.6 + lambda_historico_visit * 0.4
+                    lambda_dinamico_visit = lambda_dinamico_visit_calc
+                else:
+                    lambda_visit_final = lambda_historico_visit
+                    lambda_dinamico_visit = None
                 
                 # вҳ… INFO DINГҒMICA: Obtener datos de partidos acumulados
                 partidos_acum_l = r.get('partidos_acumulados_local', 0)
