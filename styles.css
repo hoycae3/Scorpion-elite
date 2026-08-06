@@ -668,12 +668,13 @@ div[style*="background"] table {
    FOOTBALL FIELD - PREDICCIONES (DORADO ELEGANTE)
    ============================================ */
 .field-container {
-    background: linear-gradient(180deg, #2d2a1f 0%, #4a4422 50%, #2d2a1f 100%);
+    background: #111111;
     border-radius: 20px;
     padding: 15px;
     position: relative;
     overflow: hidden;
     margin: 15px 0;
+    border: 1px solid #333;
 }
 .field-container::before {
     content: '';
@@ -681,9 +682,9 @@ div[style*="background"] table {
     top: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: 2px;
+    width: 1px;
     height: 100%;
-    background: rgba(255,215,0,0.3);
+    background: rgba(255,255,255,0.1);
 }
 .field-container::after {
     content: '';
@@ -691,8 +692,8 @@ div[style*="background"] table {
     top: 50%;
     left: 0;
     width: 100%;
-    height: 2px;
-    background: rgba(255,215,0,0.3);
+    height: 1px;
+    background: rgba(255,255,255,0.1);
 }
 .field-center-circle {
     position: absolute;
@@ -701,7 +702,7 @@ div[style*="background"] table {
     transform: translate(-50%, -50%);
     width: 80px;
     height: 80px;
-    border: 2px solid rgba(255,215,0,0.3);
+    border: 1px solid rgba(255,255,255,0.2);
     border-radius: 50%;
     z-index: 1;
 }
