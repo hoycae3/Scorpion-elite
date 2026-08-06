@@ -1906,6 +1906,21 @@ def render_login_form():
             # ========================
             stats_local = st.session_state.get('stats_local', {})
             stats_visitante = st.session_state.get('stats_visitante', {})
+
+            # VALORES POR DEFECTO PARA EVITAR ERRORES NONE
+            pj_l_display = pj_v_display = 0
+            vic_l = emp_l = der_l = vic_v = emp_v = der_v = 0
+            gf_l = gc_l = gf_v = gc_v = 0.0
+            prom_tiros_l = prom_tiros_v = 13.0
+            prom_tiros_arco_l = prom_tiros_arco_v = 4.5
+            prom_amarillas_l = prom_amarillas_v = 2.5
+            prom_corners_l = prom_corners_v = 5.5
+            puntos = puntos_v = 0
+            gf_forma = gc_forma = gf_v_forma = gc_v_forma = 0
+            badges_local = badges_visitante = ''
+            lambda_din_l = lambda_din_v = '0.00'
+            lambda_historico_local = lambda_historico_visit = 0.0
+            lambda_local_final = lambda_visit_final = 0.0
             
             # OBTENER promedios_dinamicos del session_state
             promedios_dinamicos_local = st.session_state.get('promedios_dinamicos_local')
@@ -1948,20 +1963,20 @@ def render_login_form():
                 
                 # Calcular promedios LOCAL (para PJ, victorias, etc - de equipos_stats)
                 pj_l = stats_local.get('partidos_jugados', 1) or 1
-                gf_l = stats_local.get('goles_favor', 0) or 0
-                gc_l = stats_local.get('goles_contra', 0) or 0
-                vic_l = stats_local.get('victorias', 0) or 0
-                emp_l = stats_local.get('empates', 0) or 0
-                der_l = stats_local.get('derrotas', 0) or 0
+                gf_l = float(stats_local.get('goles_favor') or 0)
+                gc_l = float(stats_local.get('goles_contra') or 0)
+                vic_l = int(stats_local.get('victorias') or 0)
+                emp_l = int(stats_local.get('empates') or 0)
+                der_l = int(stats_local.get('derrotas') or 0)
                 
                 
                 # Calcular promedios VISITANTE
                 pj_v = stats_visitante.get('partidos_jugados', 1) or 1
-                gf_v = stats_visitante.get('goles_favor', 0) or 0
-                gc_v = stats_visitante.get('goles_contra', 0) or 0
-                vic_v = stats_visitante.get('victorias', 0) or 0
-                emp_v = stats_visitante.get('empates', 0) or 0
-                der_v = stats_visitante.get('derrotas', 0) or 0
+                gf_v = float(stats_visitante.get('goles_favor') or 0)
+                gc_v = float(stats_visitante.get('goles_contra') or 0)
+                vic_v = int(stats_visitante.get('victorias') or 0)
+                emp_v = int(stats_visitante.get('empates') or 0)
+                der_v = int(stats_visitante.get('derrotas') or 0)
                 
                 # вҳ… INFO DINГҒMICA: Obtener datos de partidos acumulados
                 partidos_acum_l = r.get('partidos_acumulados_local', 0)
@@ -2046,6 +2061,21 @@ def render_login_form():
             r = st.session_state.get('analysis_result', {})
             stats_local = st.session_state.get('stats_local', {})
             stats_visitante = st.session_state.get('stats_visitante', {})
+
+            # VALORES POR DEFECTO PARA EVITAR ERRORES NONE
+            pj_l_display = pj_v_display = 0
+            vic_l = emp_l = der_l = vic_v = emp_v = der_v = 0
+            gf_l = gc_l = gf_v = gc_v = 0.0
+            prom_tiros_l = prom_tiros_v = 13.0
+            prom_tiros_arco_l = prom_tiros_arco_v = 4.5
+            prom_amarillas_l = prom_amarillas_v = 2.5
+            prom_corners_l = prom_corners_v = 5.5
+            puntos = puntos_v = 0
+            gf_forma = gc_forma = gf_v_forma = gc_v_forma = 0
+            badges_local = badges_visitante = ''
+            lambda_din_l = lambda_din_v = '0.00'
+            lambda_historico_local = lambda_historico_visit = 0.0
+            lambda_local_final = lambda_visit_final = 0.0
             home = st.session_state.get('home', '')
             away = st.session_state.get('away', '')
             confianza = r.get('confianza', 0)
