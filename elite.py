@@ -2283,7 +2283,7 @@ def render_login_form():
                 arco_modelo = float(pred_arco.get('total_estimado') or arco_total or 0)
                 modelos = r.get('modelos') or {}
                 mc = modelos.get('monte_carlo') or {}
-                top_scores = mc.get('top_scores') or {}
+                top_scores = r.get('top_scores') or {}
                 score_mas_probable = list(top_scores.keys())[0] if top_scores else "?"
                 pick_ou = r.get('pick_over_under', 'Over 2.5')
                 prob_ou = r.get('prob_over_under', 50)
@@ -2413,7 +2413,7 @@ def render_login_form():
 
                 modelos = r.get('modelos') or {}
                 mc = modelos.get('monte_carlo') or {}
-                top_scores = mc.get('top_scores') or {}
+                top_scores = r.get('top_scores') or {}
                 score_mas_probable = list(top_scores.keys())[0] if top_scores else "?"
 
                 # Over/Under 2.5
