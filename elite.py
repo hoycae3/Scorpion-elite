@@ -1613,6 +1613,9 @@ def render_login_form():
             for key in ['selected_local', 'selected_away', 'selected_team_id_local', 'selected_team_id_visitante']:
                 st.session_state.pop(key, None)
 
+        # ★ DETECTAR SI VIENE DE LA LISTA
+        vino_de_lista = 'selected_local' in st.session_state and 'selected_away' in st.session_state
+        
         # Verificar si se puede analizar
         puede_analizar = stats_local is not None and stats_visitante is not None
 
@@ -1620,12 +1623,21 @@ def render_login_form():
             if local_nombre or visitante_nombre:
                 st.info("⚠️ Selecciona equipos que tengan estadísticas. Ejecuta Sincronizar si es necesario.")
 
-        # Botón analizar
-        analizar_key = f"analizar_{local_nombre}_{visitante_nombre}"
-        if st.button("🎯 ANALIZAR", type="primary", use_container_width=True, disabled=not puede_analizar, key=analizar_key):
-            if puede_analizar:
-                with st.spinner("Analizando..."):
-                    # Lambda histórico
+        # Si viene de la lista Y hay stats, hacer análisis automático
+        # Si usa dropdowns, mostrar botón ANALIZAR
+        if puede_analizar and vino_de_lista:
+            # Análisis automático desde lista
+            debe_analizar = True
+        elif puede_analizar:
+            # Mostrar botón para dropdowns
+            analizar_key = f"analizar_{local_nombre}_{visitante_nombre}"
+            debe_analizar = st.button("🎯 ANALIZAR", type="primary", use_container_width=True, key=analizar_key)
+        else:
+            debe_analizar = False
+
+        if debe_analizar:
+            with st.spinner("Analizando..."):
+                # Lambda histórico
                     lambda_historico_local = stats_local.get('lambda_local', 1.3)
                     lambda_historico_visit = stats_visitante.get('lambda_visitante', 1.1)
 
