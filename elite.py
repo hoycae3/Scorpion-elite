@@ -1551,6 +1551,8 @@ def render_login_form():
             # Buscar stats de los equipos en Supabase
             stats_local = None
             stats_visitante = None
+            lambda_dinamico_local = None
+            lambda_dinamico_visit = None
             promedios_dinamicos_local = None
             promedios_dinamicos_visitante = None
             
