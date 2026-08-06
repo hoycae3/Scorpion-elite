@@ -2532,68 +2532,29 @@ def render_login_form():
             st.html(field_html)
             
             # ========================
-            # RESUMEN DE PREDICCIONES CON PROBABILIDADES
             # ========================
+            # FORMA RECIENTE DE EQUIPOS
             st.markdown("---")
-            st.markdown("""
-            <div style="background: linear-gradient(135deg, #111111 0%, #0d0d0d 100%); border-radius: 12px; padding: 15px; margin: 10px 0;">
-                <h4 style="color: #00d4ff; text-align: center; margin: 0 0 15px 0;">📥 Predicciones del Modelo Matemático</h4>
-            </div>
-            """, unsafe_allow_html=True)
-            # RESUMEN DE PREDICCIONES CON PROBABILIDADES
-            # ========================
-            st.markdown("---")
-            st.markdown("""
-            <div style="background: linear-gradient(135deg, #111111 0%, #0d0d0d 100%); border-radius: 12px; padding: 15px; margin: 10px 0;">
-                <h4 style="color: #00d4ff; text-align: center; margin: 0 0 15px 0;">📥 Predicciones del Modelo Matemático</h4>
-            </div>
-            """, unsafe_allow_html=True)
+            forma_local_html = badges_local if badges_local else "?"
+            forma_visit_html = badges_visitante if badges_visitante else "?"
             
-            # Crear las 3 predicciones con flechas
-            col_pred1, col_pred2, col_pred3 = st.columns(3)
-            
-            with col_pred1:
-                icon_tiros = "📲" if "Over" in (pick_tiros or "") else "🔽"
-                color_tiros = "#fff" if "Over" in (pick_tiros or "") else "#fff"
-                remates_val = int(remates_modelo) if remates_modelo and remates_modelo > 0 else 0
-                pick_tiros_txt = "Mas" if "Over" in (pick_tiros or "") else "Menos"
+            col_f1, col_f2 = st.columns(2)
+            with col_f1:
                 st.markdown(f"""
-                <div style="background: #0a0a0a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tiros};">
-                    <p style="color: #888; font-size: 12px; margin: 0;">📍 Tiros Total</p>
-                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{remates_val}</p>
-                    <p style="color: {color_tiros}; font-size: 14px; margin: 0;">{icon_tiros} {pick_tiros_txt} ({int(prob_tiros or 0)}%)</p>
+                <div style="background: #111111; border-radius: 12px; padding: 15px; text-align: center; border: 1px solid #333;">
+                    <h5 style="color: #00d4ff; margin: 0 0 10px 0;">📊 {html.escape(str(home))}</h5>
+                    <div style="font-size: 24px; letter-spacing: 5px;">{forma_local_html}</div>
                 </div>
                 """, unsafe_allow_html=True)
             
-            with col_pred2:
-                icon_arco = "📲" if "Over" in (pick_arco or "") else "🔽"
-                color_arco = "#fff" if "Over" in (pick_arco or "") else "#fff"
-                arco_val = int(arco_modelo) if arco_modelo and arco_modelo > 0 else 0
-                pick_arco_txt = "Mas" if "Over" in (pick_arco or "") else "Menos"
+            with col_f2:
                 st.markdown(f"""
-                <div style="background: #0a0a0a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_arco};">
-                    <p style="color: #888; font-size: 12px; margin: 0;">🎯 Tiros Arco</p>
-                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{arco_val}</p>
-                    <p style="color: {color_arco}; font-size: 14px; margin: 0;">{icon_arco} {pick_arco_txt} ({int(prob_arco or 0)}%)</p>
+                <div style="background: #111111; border-radius: 12px; padding: 15px; text-align: center; border: 1px solid #333;">
+                    <h5 style="color: #00d4ff; margin: 0 0 10px 0;">📊 {html.escape(str(away))}</h5>
+                    <div style="font-size: 24px; letter-spacing: 5px;">{forma_visit_html}</div>
                 </div>
                 """, unsafe_allow_html=True)
-            
-            with col_pred3:
-                icon_tar = "📲" if "Over" in (pick_tarjetas or "") else "🔽"
-                color_tar = "#fff" if "Over" in (pick_tarjetas or "") else "#fff"
-                tarjetas_val = tarjetas_modelo if tarjetas_modelo and tarjetas_modelo > 0 else 0
-                pick_tarjetas_txt = "Mas" if "Over" in (pick_tarjetas or "") else "Menos"
-                st.markdown(f"""
-                <div style="background: #0a0a0a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tar};">
-                    <p style="color: #888; font-size: 12px; margin: 0;">🟨 Amarillas</p>
-                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{tarjetas_val:.1f}</p>
-                    <p style="color: {color_tar}; font-size: 14px; margin: 0;">{icon_tar} {pick_tarjetas_txt} ({int(prob_tarjetas or 0)}%)</p>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            # ========================
-            # CUOTAS DEL PARTIDO (de Supabase) CON VALUE
-            # ========================
+
             fixture_id_partido = r.get('fixture_id')
             if fixture_id_partido:
                 try:
