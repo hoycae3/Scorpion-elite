@@ -458,6 +458,8 @@ def render_public_landing():
                 # Buscar promedios dinámicos directamente por team_id (más confiable)
                 promedios_dinamicos_local = None
                 promedios_dinamicos_visitante = None
+                lambda_historico_local = None
+                lambda_historico_visit = None
                 
                 # Obtener team_ids del partido seleccionado
                 tid_local = partido.get('team_id_local')
@@ -1555,6 +1557,8 @@ def render_login_form():
             lambda_dinamico_visit = None
             promedios_dinamicos_local = None
             promedios_dinamicos_visitante = None
+            lambda_historico_local = None
+            lambda_historico_visit = None
             
             try:
                 resp_local = client.table('equipos_stats').select('*').ilike('equipo', f'%{local_nombre}%').execute()
@@ -1689,6 +1693,8 @@ def render_login_form():
         team_id_visitante = None
         promedios_dinamicos_local = None
         promedios_dinamicos_visitante = None
+        lambda_historico_local = None
+        lambda_historico_visit = None
         
         # FUNCIÓN AUXILIAR: Buscar promedios dinámicos (por team_id directamente)
         def obtener_promedios_dinamicos(client, equipo_nombre, team_id=None):
