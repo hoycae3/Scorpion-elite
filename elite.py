@@ -868,16 +868,55 @@ def render_login_form():
                     except Exception as e:
                         pass
                     
-                    # вҳ… LГ“GICA INCREMENTAL: Solo descargar desde el día siguiente a la fecha máxima en DB
-                    if fecha_max_db:
-                        # Ya hay datos: descargar solo desde el día siguiente a la fecha máxima
-                        fecha_inicio = (datetime.strptime(fecha_max_db, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
-                    else:
-                        # Primera vez: descargar desde ayer
-                        fecha_inicio = (hoy - timedelta(days=1)).strftime('%Y-%m-%d')
+                    # вҡҪ LГ“GICA INTELIGENTE:
+                    # 1. Base vacГ­a: Descargar HOY a HOY+6
+                    # 2. Base con datos: Descargar HOY-1 (resultados) + siguiente dГ­a de Гєltima fecha FUTURA
                     
-                    # Siempre descargar hasta HOY+6 (7 días hacia adelante)
-                    fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
+                    ayer_date = hoy - timedelta(days=1)
+                    ayer = ayer_date.strftime('%Y-%m-%d')
+                    
+                    try:
+                        # Obtener todas las fechas Гєnicas en la base
+                        resp_fechas = client.table('partidos').select('fecha').execute()
+                        
+                        if not resp_fechas.data:
+                            # Base vacГ­a в†’ descargar ventana completa
+                            fecha_inicio = hoy_str
+                            fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
+                            modo_sync = "вҳ• Completa (base vacГ­a)"
+                        else:
+                            # Analizar fechas existentes
+                            fechas_futuras = []
+                            for p in resp_fechas.data:
+                                try:
+                                    f = datetime.strptime(str(p['fecha'])[:10], '%Y-%m-%d').date()
+                                    if f >= hoy:
+                                        fechas_futuras.append(f)
+                                except:
+                                    pass
+                            
+                            # Siempre descargar resultados de ayer
+                            fecha_inicio = ayer
+                            
+                            if fechas_futuras:
+                                # Ya hay fechas futuras в†’ buscar la Гєltima y descargar el siguiente
+                                ultima_futura = max(fechas_futuras)
+                                siguiente_dia = (ultima_futura + timedelta(days=1)).strftime('%Y-%m-%d')
+                                fecha_fin = siguiente_dia
+                                modo_sync = f"вҳ” Incremental (Гєltima futura: {ultima_futura.strftime('%d/%m')})"
+                            else:
+                                # No hay fechas futuras в†’ descargar HOY+1
+                                fecha_fin = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
+                                modo_sync = "вҳ” Actualizar"
+                                
+                    except Exception as e:
+                        # Si hay error, descargar ventana completa por seguridad
+                        fecha_inicio = hoy_str
+                        fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
+                        modo_sync = "вҳ• Completa (fallback)"
+                        st.warning(f"вҡҪ Error: {e}")
+                    
+                    st.markdown(f"{modo_sync} вҡҪ Rango: **{fecha_inicio}** al **{fecha_fin}**")
                     
                     # ✅ MODO PRODUCCIÓN - Todas las ligas
                     LIGAS = [
