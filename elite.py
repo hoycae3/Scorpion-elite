@@ -12,7 +12,7 @@ COLORS = {
     'empate': '#eab308',        # Amarillo
     'primary': '#00d4aa',       # Cyan/acento
     'local': '#fff',         # Verde brillante
-    'visitante': '#d4af37',     # Rojo suave
+    'visitante': '#fff',     # Rojo suave
     'hora': '#fff',          # Dorado
     'bg_dark': '#0f172a',       # Fondo oscuro
     'bg_card': '#111111',       # Fondo cards
@@ -2554,7 +2554,7 @@ def render_login_form():
             
             with col_pred1:
                 icon_tiros = "📲" if "Over" in (pick_tiros or "") else "🔽"
-                color_tiros = "#fff" if "Over" in (pick_tiros or "") else "#d4af37"
+                color_tiros = "#fff" if "Over" in (pick_tiros or "") else "#fff"
                 remates_val = int(remates_modelo) if remates_modelo and remates_modelo > 0 else 0
                 pick_tiros_txt = "Mas" if "Over" in (pick_tiros or "") else "Menos"
                 st.markdown(f"""
@@ -2567,7 +2567,7 @@ def render_login_form():
             
             with col_pred2:
                 icon_arco = "📲" if "Over" in (pick_arco or "") else "🔽"
-                color_arco = "#fff" if "Over" in (pick_arco or "") else "#d4af37"
+                color_arco = "#fff" if "Over" in (pick_arco or "") else "#fff"
                 arco_val = int(arco_modelo) if arco_modelo and arco_modelo > 0 else 0
                 pick_arco_txt = "Mas" if "Over" in (pick_arco or "") else "Menos"
                 st.markdown(f"""
@@ -2580,7 +2580,7 @@ def render_login_form():
             
             with col_pred3:
                 icon_tar = "📲" if "Over" in (pick_tarjetas or "") else "🔽"
-                color_tar = "#fff" if "Over" in (pick_tarjetas or "") else "#d4af37"
+                color_tar = "#fff" if "Over" in (pick_tarjetas or "") else "#fff"
                 tarjetas_val = tarjetas_modelo if tarjetas_modelo and tarjetas_modelo > 0 else 0
                 pick_tarjetas_txt = "Mas" if "Over" in (pick_tarjetas or "") else "Menos"
                 st.markdown(f"""
