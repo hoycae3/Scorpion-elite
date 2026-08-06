@@ -2271,7 +2271,7 @@ def render_login_form():
                 </div>
             </div>
             """
-            st.markdown(field_html, unsafe_allow_html=True)
+            st.html(field_html)
             
             # ========================
             # RESUMEN DE PREDICCIONES CON PROBABILIDADES
