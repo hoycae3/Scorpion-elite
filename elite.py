@@ -1523,190 +1523,106 @@ def render_login_form():
         
     # Página: Analizador
     elif st.session_state.page == "Analizador":
-        st.markdown("### 🎯 Analizador de Partidos")
-
+        pass  # Sin título
+        
+        # Inicializar selected_match en session_state
+        if 'selected_match_data' not in st.session_state:
+            st.session_state.selected_match_data = None
+        
         client = get_client()
-
-        # ★ SIEMPRE CARGAR EQUIPOS Y MOSTRAR SELECTBOX
-        try:
-            resp_equipos = client.table('equipos_stats').select('equipo,team_id').execute()
-            equipos_data = resp_equipos.data
-            equipos_disponibles = sorted(list(set([e.get('equipo', '') for e in equipos_data if e.get('equipo')])))
-            equipos_dict = {e.get('equipo', ''): e.get('team_id') for e in equipos_data}
-            st.caption(f"📊 {len(equipos_disponibles)} equipos disponibles | Selecciona o elige de la lista de partidos")
-        except Exception as ex:
-            equipos_disponibles = []
-            equipos_dict = {}
-            st.error(f"Error conectando a Supabase: {ex}")
-
-        # MOSTRAR SELECTBOX SIEMPRE
-        col_space, col1, col2, col_space2 = st.columns([1, 2, 2, 1])
-        with col1:
-            home_team = st.selectbox("🏠 Local", [""] + equipos_disponibles, key="home_select")
-        with col2:
-            away_team = st.selectbox("✈️ Visitante", [""] + equipos_disponibles, key="away_select")
-
-        # Variables para el análisis
-        local_nombre = home_team
-        visitante_nombre = away_team
-        tid_local = equipos_dict.get(home_team) if home_team else None
-        tid_visitante = equipos_dict.get(away_team) if away_team else None
-        stats_local = None
-        stats_visitante = None
-        promedios_dinamicos_local = None
-        promedios_dinamicos_visitante = None
-        lambda_historico_local = None
-        lambda_historico_visit = None
-
-        # Si hay equipos seleccionados, buscar stats
-        if local_nombre and visitante_nombre:
-            try:
-                resp_local = client.table('equipos_stats').select('*').ilike('equipo', f'%{local_nombre}%').execute()
-                if resp_local.data:
-                    stats_local = resp_local.data[0]
-            except:
-                pass
-
-            try:
-                resp_visitante = client.table('equipos_stats').select('*').ilike('equipo', f'%{visitante_nombre}%').execute()
-                if resp_visitante.data:
-                    stats_visitante = resp_visitante.data[0]
-            except:
-                pass
-
-            # Buscar promedios_dinamicos por team_id
-            if tid_local:
-                promedios_dinamicos_local = calcular_promedios_equipo(client, tid_local)
-            if tid_visitante:
-                promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
-
-        # ★ SI HAY PARTIDO SELECCIONADO DE LA LISTA, USAR ESOS EQUIPOS
-        if st.session_state.get('selected_local') and st.session_state.get('selected_away'):
+        
+        # Si no hay partido seleccionado, terminar silenciosamente
+        if not st.session_state.selected_match_data and not ('selected_local' in st.session_state and 'selected_away' in st.session_state):
+            st.stop()  # Terminar aquí
+        
+        # Emoji por país
+        # Si hay un partido seleccionado, hacer análisis automático
+        if st.session_state.selected_match_data:
+            p = st.session_state.selected_match_data
+            local_nombre = p.get('equipo_local', '')
+            visitante_nombre = p.get('equipo_visitante', '')
+        
+        # Si viene de la página Partidos con equipos en session_state
+        elif 'selected_local' in st.session_state and 'selected_away' in st.session_state:
             local_nombre = st.session_state.selected_local
             visitante_nombre = st.session_state.selected_away
             tid_local = st.session_state.get('selected_team_id_local')
             tid_visitante = st.session_state.get('selected_team_id_visitante')
-
-            st.markdown(f"#### 📋 Analizando: **{local_nombre}** VS **{visitante_nombre}**")
-
-            # Buscar stats
+            
+            st.markdown("---")
+            st.markdown(f"### 🎯 Analizando: **{local_nombre}** VS **{visitante_nombre}**")
+            
+            # Buscar stats de los equipos en Supabase
+            stats_local = None
+            stats_visitante = None
+            lambda_dinamico_local = None
+            lambda_dinamico_visit = None
+            promedios_dinamicos_local = None
+            promedios_dinamicos_visitante = None
+            lambda_historico_local = None
+            lambda_historico_visit = None
+            lambda_local_final = None
+            lambda_visit_final = None
+            
             try:
                 resp_local = client.table('equipos_stats').select('*').ilike('equipo', f'%{local_nombre}%').execute()
                 if resp_local.data:
                     stats_local = resp_local.data[0]
             except:
                 pass
-
+            
             try:
                 resp_visitante = client.table('equipos_stats').select('*').ilike('equipo', f'%{visitante_nombre}%').execute()
                 if resp_visitante.data:
                     stats_visitante = resp_visitante.data[0]
             except:
                 pass
-
+            
+            # Buscar promedios_dinamicos por team_id directo
             if tid_local:
                 promedios_dinamicos_local = calcular_promedios_equipo(client, tid_local)
             if tid_visitante:
                 promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
-
-        # ★ DETECTAR SI VIENE DE LA LISTA (antes de limpiar)
-
-        # Limpiar session_state DESPUÉS de detectar
-        vino_de_lista = 'selected_local' in st.session_state and 'selected_away' in st.session_state
-        if vino_de_lista:
+            
+            # Limpiar session_state después de usar
             for key in ['selected_local', 'selected_away', 'selected_team_id_local', 'selected_team_id_visitante']:
                 st.session_state.pop(key, None)
-        
-        # Verificar si se puede analizar
-        puede_analizar = stats_local is not None and stats_visitante is not None
-
-        if not puede_analizar:
-            if local_nombre or visitante_nombre:
-                st.info("⚠️ Selecciona equipos que tengan estadísticas. Ejecuta Sincronizar si es necesario.")
-
-        # Si viene de la lista Y hay stats, hacer análisis automático
-        # Si usa dropdowns, mostrar botón ANALIZAR
-        if puede_analizar and vino_de_lista:
-            # Análisis automático desde lista
-            debe_analizar = True
-        elif puede_analizar:
-            # Mostrar botón para dropdowns
-            analizar_key = f"analizar_{local_nombre}_{visitante_nombre}"
-            debe_analizar = st.button("🎯 ANALIZAR", type="primary", use_container_width=True, key=analizar_key)
-        else:
-            debe_analizar = False
-
-        if debe_analizar:
-            with st.spinner("Analizando..."):
-                # Lambda histórico
-                    lambda_historico_local = stats_local.get('lambda_local', 1.3)
-                    lambda_historico_visit = stats_visitante.get('lambda_visitante', 1.1)
-
-                    # Promedios dinámicos
-                    if promedios_dinamicos_local:
-                        corners_l = promedios_dinamicos_local.get('promedio_corners', 5.5)
-                        tiros_l = promedios_dinamicos_local.get('promedio_tiros', 13.0)
-                        tiros_arco_l = promedios_dinamicos_local.get('promedio_tiros_arco', 4.5)
-                        tarjetas_l = promedios_dinamicos_local.get('promedio_amarillas', 2.5)
-                    else:
-                        corners_l = stats_local.get('promedio_corners', 5.5) or 5.5
-                        tiros_l = stats_local.get('promedio_tiros', 13.0) or 13.0
-                        tiros_arco_l = stats_local.get('promedio_tiros_arco', 4.5) or 4.5
-                        tarjetas_l = stats_local.get('promedio_tarjetas', 2.5) or 2.5
-
-                    if promedios_dinamicos_visitante:
-                        corners_v = promedios_dinamicos_visitante.get('promedio_corners', 5.5)
-                        tiros_v = promedios_dinamicos_visitante.get('promedio_tiros', 13.0)
-                        tiros_arco_v = promedios_dinamicos_visitante.get('promedio_tiros_arco', 4.5)
-                        tarjetas_v = promedios_dinamicos_visitante.get('promedio_amarillas', 2.5)
-                    else:
-                        corners_v = stats_visitante.get('promedio_corners', 5.5) or 5.5
-                        tiros_v = stats_visitante.get('promedio_tiros', 13.0) or 13.0
-                        tiros_arco_v = stats_visitante.get('promedio_tiros_arco', 4.5) or 4.5
-                        tarjetas_v = stats_visitante.get('promedio_tarjetas', 2.5) or 2.5
-
-                    # Lambda con calibración
-                    lambda_local_adj = get_lambda_ajustada(local_nombre, lambda_historico_local, como_local=True)
-                    lambda_visitante_adj = get_lambda_ajustada(visitante_nombre, lambda_historico_visit, como_local=False)
-                    lambda_local_cal = lambda_local_adj['lambda_ajustada']
-                    lambda_visitante_cal = lambda_visitante_adj['lambda_ajustada']
-
-                    # Obtener últimos partidos
-                    ultimos_5_local = promedios_dinamicos_local.get('partidos', [])[:5] if promedios_dinamicos_local else []
-                    ultimos_5_visitante = promedios_dinamicos_visitante.get('partidos', [])[:5] if promedios_dinamicos_visitante else []
-
-                    # Si no hay partidos en DB, obtener de API
-                    if not ultimos_5_local and tid_local:
-                        try:
-                            headers = {'x-apisports-key': API_KEY, 'Accept': 'application/json'}
-                            mes_actual = datetime.now().month
-                            temporada = datetime.now().year if mes_actual >= 8 else datetime.now().year - 1
-                            league_id = stats_local.get('liga_id', 39) if stats_local else 39
-                            partidos_api = obtener_ultimos_partidos_equipo(tid_local, local_nombre, league_id, temporada, headers, API_URL, max_partidos=10)
-                            if partidos_api:
-                                ultimos_5_local = partidos_api[:5]
-                                guardar_stats_equipo(client, tid_local, local_nombre, partidos_api)
-                        except:
-                            pass
-
-                    if not ultimos_5_visitante and tid_visitante:
-                        try:
-                            headers = {'x-apisports-key': API_KEY, 'Accept': 'application/json'}
-                            mes_actual = datetime.now().month
-                            temporada = datetime.now().year if mes_actual >= 8 else datetime.now().year - 1
-                            league_id = stats_visitante.get('liga_id', 39) if stats_visitante else 39
-                            partidos_api = obtener_ultimos_partidos_equipo(tid_visitante, visitante_nombre, league_id, temporada, headers, API_URL, max_partidos=10)
-                            if partidos_api:
-                                ultimos_5_visitante = partidos_api[:5]
-                                guardar_stats_equipo(client, tid_visitante, visitante_nombre, partidos_api)
-                        except:
-                            pass
-
-                    # Guardar promedios en session
-                    st.session_state.promedios_dinamicos_local = promedios_dinamicos_local
-                    st.session_state.promedios_dinamicos_visitante = promedios_dinamicos_visitante
-
-                    # Llamar al modelo
+            st.session_state.selected_match_data = None
+            
+            if stats_local and stats_visitante:
+                lambda_local = stats_local.get('lambda_local', 0)
+                lambda_visitante = stats_visitante.get('lambda_visitante', 0)
+                
+                # Usar promedios_dinamicos si existen
+                if promedios_dinamicos_local:
+                    corners_l = promedios_dinamicos_local.get('promedio_corners', 5.5)
+                    tiros_l = promedios_dinamicos_local.get('promedio_tiros', 13.0)
+                    tiros_arco_l = promedios_dinamicos_local.get('promedio_tiros_arco', 4.5)
+                    tarjetas_l = promedios_dinamicos_local.get('promedio_amarillas', 2.5)
+                else:
+                    corners_l = stats_local.get('promedio_corners', 5.5) or 5.5
+                    tiros_l = stats_local.get('promedio_tiros', 13.0) or 13.0
+                    tiros_arco_l = stats_local.get('promedio_tiros_arco', 4.5) or 4.5
+                    tarjetas_l = stats_local.get('promedio_tarjetas', 2.5) or 2.5
+                
+                if promedios_dinamicos_visitante:
+                    corners_v = promedios_dinamicos_visitante.get('promedio_corners', 5.5)
+                    tiros_v = promedios_dinamicos_visitante.get('promedio_tiros', 13.0)
+                    tiros_arco_v = promedios_dinamicos_visitante.get('promedio_tiros_arco', 4.5)
+                    tarjetas_v = promedios_dinamicos_visitante.get('promedio_amarillas', 2.5)
+                else:
+                    corners_v = stats_visitante.get('promedio_corners', 5.5) or 5.5
+                    tiros_v = stats_visitante.get('promedio_tiros', 13.0) or 13.0
+                    tiros_arco_v = stats_visitante.get('promedio_tiros_arco', 4.5) or 4.5
+                    tarjetas_v = stats_visitante.get('promedio_tarjetas', 2.5) or 2.5
+                
+                # Aplicar calibración
+                lambda_local_adj = get_lambda_ajustada(local_nombre, lambda_local, como_local=True)
+                lambda_visitante_adj = get_lambda_ajustada(visitante_nombre, lambda_visitante, como_local=False)
+                lambda_local_cal = lambda_local_adj['lambda_ajustada']
+                lambda_visitante_cal = lambda_visitante_adj['lambda_ajustada']
+                
+                with st.spinner("Analizando..."):
                     result = calcular(
                         lambda_local=lambda_local_cal,
                         lambda_visitante=lambda_visitante_cal,
@@ -1718,107 +1634,1109 @@ def render_login_form():
                         tiros_visitante=float(tiros_v),
                         tiros_arco_local=float(tiros_arco_l),
                         tiros_arco_visitante=float(tiros_arco_v),
-                        ultimos_5_local=ultimos_5_local,
-                        ultimos_5_visitante=ultimos_5_visitante,
+                        ultimos_5_local=[],
+                        ultimos_5_visitante=[],
                     )
-
+                    
+                    # Guardar promedios_dinamicos en session_state
+                    st.session_state.promedios_dinamicos_local = promedios_dinamicos_local
+                    st.session_state.promedios_dinamicos_visitante = promedios_dinamicos_visitante
+                    
                     st.session_state.analysis_result = result
                     st.session_state.home = local_nombre
                     st.session_state.away = visitante_nombre
                     st.session_state.stats_local = stats_local
                     st.session_state.stats_visitante = stats_visitante
+            else:
+                st.stop()  # No continuar si no hay stats
+        
+        
+        
+        # Si hay un partido seleccionado de la lista, usar esos equipos
+        # Bloque comentado
+        #             local_nombre = selected_match.get('equipo_local', '')
+        #             visitante_nombre = selected_match.get('equipo_visitante', '')
+        #             
+        #             # Buscar coincidencia en equipos disponibles
+        #             local_match = next((e for e in equipos_disponibles if local_nombre.lower() in e.lower() or e.lower() in local_nombre.lower()), None)
+        #             visitante_match = next((e for e in equipos_disponibles if visitante_nombre.lower() in e.lower() or e.lower() in visitante_nombre.lower()), None)
+        #             
+        #             home_team = local_match if local_match else (local_nombre.title() if local_nombre else "")
+        #             away_team = visitante_match if visitante_match else (visitante_nombre.title() if visitante_nombre else "")
+        #         else:
+        #             # Usar selectores si no hay partido seleccionado
+            # Obtener equipos disponibles de Supabase
+            try:
+                resp_equipos = client.table('equipos_stats').select('equipo,lambda_local').execute()
+                equipos_disponibles = sorted(list(set([e.get('equipo', '') for e in resp_equipos.data if e.get('equipo')])))
+                # Debug: mostrar equipos con lambda válido
+                equipos_con_lambda = [e for e in resp_equipos.data if e.get('lambda_local', 0) >= 0]
+                st.caption(f"📊 {len(equipos_disponibles)} equipos | {len(equipos_con_lambda)} con stats")
+            except Exception as ex:
+                equipos_disponibles = []
+                st.error(f"Error conectando a Supabase: {ex}")
 
-        # ★ MOSTRAR RESULTADOS SI EXISTEN
+            col_space, col1, col2, col_space2 = st.columns([2, 1, 1, 2])
+            with col1:
+                home_team = st.selectbox("📊 Local", [""] + equipos_disponibles, key="home_select")
+            with col2:
+                away_team = st.selectbox("вңҲпёҸ Visitante", [""] + equipos_disponibles, key="away_select")
+        
+        # Validar que ambos equipos tengan DATOS REALES en Supabase
+        lambda_local = None
+        lambda_visitante = None
+        equipo_local_ok = False
+        equipo_visitante_ok = False
+        equipos_faltantes = []
+        error_conexion = False
+        
+        # Datos completos de los equipos
+        stats_local = None
+        stats_visitante = None
+        team_id_local = None
+        team_id_visitante = None
+        promedios_dinamicos_local = None
+        promedios_dinamicos_visitante = None
+        lambda_historico_local = None
+        lambda_historico_visit = None
+        lambda_local_final = None
+        lambda_visit_final = None
+        
+        # FUNCIÓN AUXILIAR: Buscar promedios dinámicos (por team_id directamente)
+        def obtener_promedios_dinamicos(client, equipo_nombre, team_id=None):
+            # SIEMPRE usar team_id si está disponible (más confiable)
+            if team_id:
+                resp_check = client.table('equipo_partidos_stats').select('team_id').eq('team_id', team_id).limit(1).execute()
+                if resp_check.data:
+                    return calcular_promedios_equipo(client, team_id)
+            # Fallback: buscar por nombre
+            resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{equipo_nombre}%').limit(5).execute()
+            if resp_eps.data:
+                return calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
+            # Si no encuentra, buscar por cada palabra
+            palabras = equipo_nombre.split()
+            for palabra in palabras:
+                if len(palabra) > 3:
+                    resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{palabra}%').limit(1).execute()
+                    if resp_eps.data:
+                        return calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
+            return None
+
+        # USAR team_id DIRECTO del partido para buscar en equipo_partidos_stats
+        tid_local = st.session_state.get('selected_team_id_local')
+        tid_visitante = st.session_state.get('selected_team_id_visitante')
+        
+        if tid_local:
+            promedios_dinamicos_local = calcular_promedios_equipo(client, tid_local)
+            equipo_local_ok = True
+        
+        if tid_visitante:
+            promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
+            equipo_visitante_ok = True
+        
+        # Limpiar session_state DESPUÉS de usar
+        if tid_local or tid_visitante:
+            st.session_state.pop('selected_team_id_local', None)
+            st.session_state.pop('selected_team_id_visitante', None)
+        
+        # Mostrar info de equipos disponibles
+        if not equipos_disponibles:
+            st.warning("⚠️ No hay equipos en la base de datos. Ejecuta Sincronizar primero.")
+        
+        # Mostrar error si faltan equipos
+        if equipos_faltantes and not error_conexion:
+            st.error(f"⚠️ Equipos sin datos completos: {', '.join(set(equipos_faltantes))}")
+            st.info("💡 Ejecuta Sincronizar para obtener estadísticas de estos equipos.")
+        
+
+        # Botón analizar - solo si ambos equipos existen
+        analizar_disabled = not (equipo_local_ok and equipo_visitante_ok)
+        
+        # ★ ANÁLISIS AUTOMÁTICO SI VIENE DE LA LISTA
+        vino_de_lista = 'selected_local' in st.session_state and 'selected_away' in st.session_state
+        
+        # Si viene de lista y tiene stats, análisis automático
+        if vino_de_lista and equipo_local_ok and equipo_visitante_ok:
+            debe_analizar = True
+        elif st.button("🎯 ANALIZAR", type="primary", use_container_width=True, disabled=analizar_disabled):
+            debe_analizar = True
+        else:
+            debe_analizar = False
+        
+        if debe_analizar:
+            try:
+                if home_team and away_team and stats_local and stats_visitante:
+                    # LAMBDA HISTÓRICO desde equipos_stats
+                    lambda_historico_local = stats_local.get('lambda_local', 1.3)
+                    lambda_historico_visit = stats_visitante.get('lambda_visitante', 1.1)
+                    
+                    if lambda_historico_local <= 0 or lambda_historico_visit <= 0:
+                        st.error("ERROR: Lambda invalido. Sincroniza los equipos primero.")
+                        st.stop()
+                    
+                    with st.spinner("Analizando..."):
+                        # LAMBDA DINÁMICO desde promedios ponderados
+                        lambda_dinamico_local = promedios_dinamicos_local.get('lambda_ponderado') if promedios_dinamicos_local else None
+                        lambda_dinamico_visit = promedios_dinamicos_visitante.get('lambda_ponderado') if promedios_dinamicos_visitante else None
+                        
+                        # λ FINAL = 60% Dinámico + 40% Histórico
+                        if lambda_dinamico_local and lambda_dinamico_visit:
+                            lambda_local_final = lambda_dinamico_local * 0.6 + lambda_historico_local * 0.4
+                            lambda_visit_final = lambda_dinamico_visit * 0.6 + lambda_historico_visit * 0.4
+                        else:
+                            # Si no hay datos dinámicos, usar solo histórico
+                            lambda_local_final = lambda_historico_local
+                            lambda_visit_final = lambda_historico_visit
+                        
+                        # Usar λ FINAL para los modelos
+                        lambda_local_cal = lambda_local_final
+                        lambda_visitante_cal = lambda_visit_final
+                        
+                        # вҳ… USAR PROMEDIOS DINГҒMICOS si están disponibles
+                        if promedios_dinamicos_local:
+                            corners_l = promedios_dinamicos_local.get('promedio_corners', 5.5)
+                            tiros_l = promedios_dinamicos_local.get('promedio_tiros', 13.0)
+                            tiros_arco_l = promedios_dinamicos_local.get('promedio_tiros_arco', 4.5)
+                            amarillas_l = promedios_dinamicos_local.get('promedio_amarillas', 2.5)
+                            partidos_total_l = promedios_dinamicos_local.get('partidos_total', 0)
+                        else:
+                            # Estimar basado en lambda (si no hay datos en Supabase)
+                            corners_l = None
+                            tiros_l = None
+                            tiros_arco_l = round(lambda_local_cal * 1.5, 1)
+                            amarillas_l = 2.5
+                            partidos_total_l = 0
+                        
+                        if promedios_dinamicos_visitante:
+                            corners_v = promedios_dinamicos_visitante.get('promedio_corners', 5.5)
+                            tiros_v = promedios_dinamicos_visitante.get('promedio_tiros', 13.0)
+                            tiros_arco_v = promedios_dinamicos_visitante.get('promedio_tiros_arco', 4.5)
+                            amarillas_v = promedios_dinamicos_visitante.get('promedio_amarillas', 2.5)
+                            partidos_total_v = promedios_dinamicos_visitante.get('partidos_total', 0)
+                        else:
+                            # Estimar basado en lambda (si no hay datos en Supabase)
+                            corners_v = None
+                            tiros_v = None
+                            tiros_arco_v = round(lambda_visitante_cal * 1.5, 1)
+                            amarillas_v = 2.5
+                            partidos_total_v = 0
+                        
+                        # вҳ… OBTENER ГҡLTIMOS 5 PARTIDOS de equipo_partidos_stats
+                        ultimos_5_local = []
+                        ultimos_5_visitante = []
+                        
+                        if promedios_dinamicos_local:
+                            ultimos_5_local = promedios_dinamicos_local.get('partidos', [])[:5]
+                        if promedios_dinamicos_visitante:
+                            ultimos_5_visitante = promedios_dinamicos_visitante.get('partidos', [])[:5]
+                        
+                        # GUARDAR promedios_dinamicos en session_state para usarlos después
+                        st.session_state.promedios_dinamicos_local = promedios_dinamicos_local
+                        st.session_state.promedios_dinamicos_visitante = promedios_dinamicos_visitante
+                        
+                        # Llamar al modelo con TODOS los datos
+                        result = calcular(
+                            lambda_local=lambda_local_cal,
+                            lambda_visitante=lambda_visitante_cal,
+                            corners_local=corners_l,
+                            corners_visitante=corners_v,
+                            tarjetas_local=amarillas_l,
+                            tarjetas_visitante=amarillas_v,
+                            tiros_local=tiros_l,
+                            tiros_visitante=tiros_v,
+                            tiros_arco_local=tiros_arco_l,
+                            tiros_arco_visitante=tiros_arco_v,
+                            ultimos_5_local=ultimos_5_local,
+                            ultimos_5_visitante=ultimos_5_visitante,
+                        )
+                        
+                        # Guardar info de partidos dinámicos en result
+                        result['partidos_acumulados_local'] = partidos_total_l
+                        result['partidos_acumulados_visitante'] = partidos_total_v
+                        
+                        st.session_state.analysis_result = result
+                        st.session_state.home = home_team
+                        st.session_state.away = away_team
+                        st.session_state.stats_local = stats_local
+                        st.session_state.stats_visitante = stats_visitante
+                        
+                        # Guardar TODAS las predicciones en session_state (NO en Supabase aun)
+                        st.session_state.predicciones_actuales = {
+                            '1x2': {
+                                'pick': result.get('pick_1x2', ''),
+                                'prob': float(result.get('prob_1x2', 0))
+                            },
+                            'over_under': {
+                                'pick': result.get('pick_over_under', ''),
+                                'prob': float(result.get('prob_over_under', 0)),
+                                'over_25': float(result.get('over_under', {}).get('over_25', 0)),
+                                'under_25': float(result.get('over_under', {}).get('under_25', 0))
+                            },
+                            'btts': {
+                                'pick': result.get('pick_btts', ''),
+                                'prob': float(result.get('btts_yes', 0)),
+                                'yes': float(result.get('btts_yes', 0)),
+                                'no': float(result.get('btts_no', 0))
+                            },
+                            'corners': {
+                                'pick': result.get('pick_corners', ''),
+                                'total': float(result.get('corners', {}).get('total_estimado', 0))
+                            },
+                            'remates': {
+                                'pick': result.get('pick_tiros', ''),
+                                'total': float(result.get('tiros', {}).get('total_estimado', 0)),
+                                'local': float(result.get('tiros', {}).get('tiros_local_estimado', 0)),
+                                'visitante': float(result.get('tiros', {}).get('tiros_visitante_estimado', 0)),
+                                'over_prob': float(result.get('prob_tiros', 0)),
+                                'under_prob': float(result.get('tiros', {}).get('under_24', 0))
+                            },
+                            'tarjetas': {
+                                'pick': result.get('pick_tarjetas', ''),
+                                'total': float(result.get('tarjetas', {}).get('total_estimado', 0)),
+                                'over_prob': float(result.get('prob_tarjetas', 0)),
+                                'under_prob': float(result.get('tarjetas', {}).get('under_6', 0))
+                            }
+                        }
+                            
+                else:
+                    st.error("⚠️ Ambos equipos deben tener estadísticas. Ejecuta el robot primero.")
+            except Exception as e:
+                st.error(f"❌ Error en análisis: {str(e)[:100]}")
+                st.info("🔻 Intenta de nuevo o verifica que los equipos existan.")
+        
+        # Mostrar resultados
         if 'analysis_result' in st.session_state:
             r = st.session_state.analysis_result
             home = st.session_state.home
             away = st.session_state.away
+            
+            st.markdown("---")
+            
+            # ========================
+            # ESTADГҚSTICAS AVANZADAS DEL ROBOT
+            # ========================
             stats_local = st.session_state.get('stats_local', {})
             stats_visitante = st.session_state.get('stats_visitante', {})
-            tid_local = st.session_state.get('tid_local')
-            tid_visitante = st.session_state.get('tid_visitante')
 
+            # VALORES POR DEFECTO PARA EVITAR ERRORES NONE
+            pj_l_display = pj_v_display = 0
+            vic_l = emp_l = der_l = vic_v = emp_v = der_v = 0
+            gf_l = gc_l = gf_v = gc_v = 0.0
+            prom_tiros_l = prom_tiros_v = 13.0
+            prom_tiros_arco_l = prom_tiros_arco_v = 4.5
+            prom_amarillas_l = prom_amarillas_v = 2.5
+            prom_corners_l = prom_corners_v = 5.5
+            puntos = puntos_v = 0
+            gf_forma = gc_forma = gf_v_forma = gc_v_forma = 0
+            badges_local = badges_visitante = ''
+            lambda_din_l = lambda_din_v = '0.00'
+            lambda_historico_local = lambda_historico_visit = 0.0
+            lambda_local_final = lambda_visit_final = 0.0
+            
+            # OBTENER promedios_dinamicos del session_state
+            promedios_dinamicos_local = st.session_state.get('promedios_dinamicos_local')
+            promedios_dinamicos_visitante = st.session_state.get('promedios_dinamicos_visitante')
+            
+            if stats_local and stats_visitante:
+                # Fuente de datos
+                source_local = stats_local.get('source', 'Supabase')
+                source_visitante = stats_visitante.get('source', 'Supabase')
+                
+                st.markdown("##### 📥 Estadísticas Avanzadas")
+                
+                # Fuentes de datos en una línea
+                st.markdown(f"📊 **Fuente:** Local `{source_local}` | Visitante `{source_visitante}`")
+                
+                st.caption("⚡ Lambda: 60% dinámico (últimos partidos) + 40% histórico")
+                
+                # вҳ… USAR PROMEDIOS DINГҒMICOS si están disponibles (ponderación exponencial)
+                if promedios_dinamicos_local:
+                    prom_corners_l = promedios_dinamicos_local.get('promedio_corners', 5.5)
+                    prom_amarillas_l = promedios_dinamicos_local.get('promedio_amarillas', 3.0)
+                    prom_tiros_l = promedios_dinamicos_local.get('promedio_tiros', 13.0)
+                    prom_tiros_arco_l = promedios_dinamicos_local.get('promedio_tiros_arco', 4.5)
+                else:
+                    prom_corners_l = stats_local.get('promedio_corners', 10) or 10
+                    prom_amarillas_l = stats_local.get('promedio_amarillas', 2.5) or 0
+                    prom_tiros_l = stats_local.get('promedio_tiros', 13.0) or 0
+                    prom_tiros_arco_l = stats_local.get('promedio_tiros_arco', 4.5) or 0
+                
+                if promedios_dinamicos_visitante:
+                    prom_corners_v = promedios_dinamicos_visitante.get('promedio_corners', 5.5)
+                    prom_amarillas_v = promedios_dinamicos_visitante.get('promedio_amarillas', 3.0)
+                    prom_tiros_v = promedios_dinamicos_visitante.get('promedio_tiros', 13.0)
+                    prom_tiros_arco_v = promedios_dinamicos_visitante.get('promedio_tiros_arco', 4.5)
+                else:
+                    prom_corners_v = stats_visitante.get('promedio_corners', 10) or 10
+                    prom_amarillas_v = stats_visitante.get('promedio_amarillas', 2.5) or 0
+                    prom_tiros_v = stats_visitante.get('promedio_tiros', 13.0) or 0
+                    prom_tiros_arco_v = stats_visitante.get('promedio_tiros_arco', 4.5) or 0
+                
+                # Calcular promedios LOCAL (para PJ, victorias, etc - de equipos_stats)
+                pj_l = stats_local.get('partidos_jugados', 1) or 1
+                gf_l = float(stats_local.get('goles_favor') or 0)
+                gc_l = float(stats_local.get('goles_contra') or 0)
+                vic_l = int(stats_local.get('victorias') or 0)
+                emp_l = int(stats_local.get('empates') or 0)
+                der_l = int(stats_local.get('derrotas') or 0)
+                
+                
+                # Calcular promedios VISITANTE
+                pj_v = stats_visitante.get('partidos_jugados', 1) or 1
+                gf_v = float(stats_visitante.get('goles_favor') or 0)
+                gc_v = float(stats_visitante.get('goles_contra') or 0)
+                vic_v = int(stats_visitante.get('victorias') or 0)
+                emp_v = int(stats_visitante.get('empates') or 0)
+                der_v = int(stats_visitante.get('derrotas') or 0)
+
+                # Calcular lambda_historico (basado en goles/pj)
+                lambda_historico_local = gf_l / pj_l if pj_l > 0 else 1.3
+                lambda_historico_visit = gf_v / pj_v if pj_v > 0 else 1.1
+                
+                # Calcular lambda_dinamico desde promedios_dinamicos
+                lambda_dinamico_local_calc = promedios_dinamicos_local.get('lambda_ponderado') if promedios_dinamicos_local else None
+                lambda_dinamico_visit_calc = promedios_dinamicos_visitante.get('lambda_ponderado') if promedios_dinamicos_visitante else None
+                
+                # Lambda FINAL = 60% dinamico + 40% historico
+                if lambda_dinamico_local_calc is not None:
+                    lambda_local_final = lambda_dinamico_local_calc * 0.6 + lambda_historico_local * 0.4
+                    lambda_dinamico_local = lambda_dinamico_local_calc
+                else:
+                    lambda_local_final = lambda_historico_local
+                    lambda_dinamico_local = None
+                
+                if lambda_dinamico_visit_calc is not None:
+                    lambda_visit_final = lambda_dinamico_visit_calc * 0.6 + lambda_historico_visit * 0.4
+                    lambda_dinamico_visit = lambda_dinamico_visit_calc
+                else:
+                    lambda_visit_final = lambda_historico_visit
+                    lambda_dinamico_visit = None
+                
+                # вҳ… INFO DINГҒMICA: Obtener datos de partidos acumulados
+                partidos_acum_l = r.get('partidos_acumulados_local', 0)
+                partidos_acum_v = r.get('partidos_acumulados_visitante', 0)
+                pj_l_display = partidos_acum_l if partidos_acum_l > 0 else pj_l
+                pj_v_display = partidos_acum_v if partidos_acum_v > 0 else pj_v
+                
+                # Lambda dinámico con fallback
+                lambda_din_l = f"{lambda_dinamico_local:.2f}" if lambda_dinamico_local is not None else "?"
+                lambda_din_v = f"{lambda_dinamico_visit:.2f}" if lambda_dinamico_visit is not None else "?"
+                
+                # FORMA RECIENTE - Obtener datos de forma
+                forma_l_data = r.get('forma_local', {})
+                forma_v_data = r.get('forma_visitante', {})
+                letras = forma_l_data.get('forma_letras', [])
+                puntos = forma_l_data.get('forma_puntos', 0)
+                gf_forma = forma_l_data.get('goles_favor_5', 0)
+                gc_forma = forma_l_data.get('goles_contra_5', 0)
+                letras_v = forma_v_data.get('forma_letras', [])
+                puntos_v = forma_v_data.get('forma_puntos', 0)
+                gf_v_forma = forma_v_data.get('goles_favor_5', 0)
+                gc_v_forma = forma_v_data.get('goles_contra_5', 0)
+                
+                # Crear badges de forma
+                def crear_badges(lista):
+                    if not lista:
+                        return "Sin datos"
+                    badges = ""
+                    for c in lista:
+                        if c in ['G','W']:
+                            badges += f"🟢{c} "
+                        elif c == 'D':
+                            badges += f"🟡{c} "
+                        else:
+                            badges += f"🔴{c} "
+                    return badges.strip()
+                
+                badges_local = crear_badges(letras)
+                badges_visitante = crear_badges(letras_v)
+                
+                # Función auxiliar para crear fila de datos
+                def fila_dato(valor_l, indicador, valor_v, color_val='white', bg_par=False):
+                    bg = '#162031' if bg_par else '#0a0a0a'
+                    return f"""<div style='background:{bg};padding:8px 5px;border-radius:4px;margin:2px 0;display:flex;'><div style='width:33%;text-align:center;color:{color_val};font-size:13px;'>{valor_l}</div><div style='width:34%;text-align:center;color:#fff;font-size:12px;'>{indicador}</div><div style='width:33%;text-align:center;color:{color_val};font-size:13px;'>{valor_v}</div></div>"""
+                
+                # Calcular valores seguros para lambda antes del f-string
+                lambda_hist_l_val = f'{lambda_historico_local:.2f}' if lambda_historico_local is not None else '?'
+                lambda_hist_v_val = f'{lambda_historico_visit:.2f}' if lambda_historico_visit is not None else '?'
+                lambda_final_l_val = f'{lambda_local_final:.2f}' if lambda_local_final is not None else '?'
+
+                # FUNCIÓN AUXILIAR PARA CONVERTIR VALORES A STRING SIN ERRORES DE FORMATO
+                def safe_fmt(val, fmt='.1f'):
+                    """Convierte valor a string, manteniendo '?' si no hay datos"""
+                    if val == '?' or val is None:
+                        return '?'
+                    try:
+                        return f'{float(val):{fmt}}'
+                    except:
+                        return str(val)
+
+                def safe_fmt_int(val):
+                    """Convierte valor a string entero"""
+                    if val == '?' or val is None:
+                        return '?'
+                    try:
+                        return f'{int(float(val))}'
+                    except:
+                        return str(val)
+
+                # CONVERTIR TODAS LAS VARIABLES A STRINGS PARA EL F-STRING
+                pj_l_str = safe_fmt_int(pj_l_display)
+                pj_v_str = safe_fmt_int(pj_v_display)
+                vic_l_str = safe_fmt_int(vic_l)
+                emp_l_str = safe_fmt_int(emp_l)
+                der_l_str = safe_fmt_int(der_l)
+                vic_v_str = safe_fmt_int(vic_v)
+                emp_v_str = safe_fmt_int(emp_v)
+                der_v_str = safe_fmt_int(der_v)
+                gf_l_str = safe_fmt(gf_l)
+                gc_l_str = safe_fmt(gc_l)
+                gf_v_str = safe_fmt(gf_v)
+                gc_v_str = safe_fmt(gc_v)
+                prom_tiros_l_str = safe_fmt(prom_tiros_l)
+                prom_tiros_v_str = safe_fmt(prom_tiros_v)
+                prom_tiros_arco_l_str = safe_fmt(prom_tiros_arco_l)
+                prom_tiros_arco_v_str = safe_fmt(prom_tiros_arco_v)
+                prom_amarillas_l_str = safe_fmt(prom_amarillas_l)
+                prom_amarillas_v_str = safe_fmt(prom_amarillas_v)
+                prom_corners_l_str = safe_fmt(prom_corners_l)
+                prom_corners_v_str = safe_fmt(prom_corners_v)
+                puntos_str = safe_fmt(puntos)
+                puntos_v_str = safe_fmt(puntos_v)
+                gf_forma_str = safe_fmt_int(gf_forma)
+                gc_forma_str = safe_fmt_int(gc_forma)
+                gf_v_forma_str = safe_fmt_int(gf_v_forma)
+                gc_v_forma_str = safe_fmt_int(gc_v_forma)
+
+                lambda_final_v_val = f'{lambda_visit_final:.2f}' if lambda_visit_final is not None else '?' 
+
+                # Contenedor principal usando st.html()
+                html_content = f"""
+                <div style='background:#0a0a0a;border-radius:12px;padding:10px;margin:10px 0;'>
+                    <div style='background:linear-gradient(135deg,#111111,#0d0d0d);padding:15px;border-radius:10px;margin-bottom:10px;text-align:center;'>
+                        <h3 style='color:#fff;margin:0;font-size:18px;'>📊 {html.escape(str(home))} <span style='color:#fff;'>vs</span> {html.escape(str(away))}</h3>
+                        <p style='color:#00d4ff;font-size:11px;margin:5px 0 0;'>({pj_l_str} PJ) vs ({pj_v_str} PJ)</p>
+                    </div>
+                    <div style='display:flex;background:#111111;padding:10px;border-radius:8px;margin-bottom:5px;'>
+                        <div style='width:33%;text-align:center;color:#fff;font-weight:bold;font-size:13px;'>{html.escape(str(home))}</div>
+                        <div style='width:34%;text-align:center;color:#00d4ff;font-weight:bold;font-size:13px;'>📊 COMPARATIVA</div>
+                        <div style='width:33%;text-align:center;color:#fff;font-weight:bold;font-size:13px;'>{html.escape(str(away))}</div>
+                    </div>
+                    {fila_dato(f'{vic_l_str}-{emp_l_str}-{der_l_str}', 'Récord (V-E-D)', f'{vic_v_str}-{emp_v_str}-{der_v_str}')}
+                    {fila_dato(gf_l, 'Goles Favor', gf_v, bg_par=True)}
+                    {fila_dato(gc_l, 'Goles Contra', gc_v)}
+                    {fila_dato(lambda_din_l, 'λ Dinámico', lambda_din_v, '#fff', bg_par=True)}
+                    {fila_dato(lambda_hist_l_val, 'λ Histórico', lambda_hist_v_val, '#00d4ff')}
+                    <div style='background:#111111;padding:10px 5px;border-radius:4px;margin:2px 0;display:flex;'><div style='width:33%;text-align:center;color:#fff;font-weight:bold;font-size:15px;'>🔥 {lambda_final_l_val}</div><div style='width:34%;text-align:center;color:#00d4ff;font-weight:bold;font-size:13px;'>λ FINAL</div><div style='width:33%;text-align:center;color:#fff;font-weight:bold;font-size:15px;'>🔥 {lambda_final_v_val}</div></div>
+                    <div style='background:#0a0a0a;padding:10px;border-radius:8px;margin-top:15px;margin-bottom:5px;text-align:center;'><span style='color:#00d4ff;font-weight:bold;'>📈 PROMEDIOS POR PARTIDO</span></div>
+                    {fila_dato(f'{prom_tiros_l_str}', 'Tiros Total', f'{prom_tiros_v_str}', bg_par=True)}
+                    {fila_dato(f'{prom_tiros_arco_l_str}', 'Tiros Arco', f'{prom_tiros_arco_v_str}')}
+                    {fila_dato(f'{prom_amarillas_l_str}', 'Amarillas', f'{prom_amarillas_v_str}', bg_par=True)}
+                    {fila_dato(f'{prom_corners_l_str}', 'Esquinas', f'{prom_corners_v_str}')}
+                    <div style='background:#0a0a0a;padding:10px;border-radius:8px;margin-top:15px;margin-bottom:5px;text-align:center;'><span style='color:#00d4ff;font-weight:bold;'>📅 FORMA RECIENTE (Últimos 5)</span></div>
+                    {fila_dato(f'{puntos_str}%', 'Puntos %', f'{puntos_v_str}%', bg_par=True)}
+                    {fila_dato(f'{gf_forma_str}f/{gc_forma_str}c', 'Goles (5 Part)', f'{gf_v_forma_str}f/{gc_v_forma_str}c')}
+                    {fila_dato(badges_local, 'Resultados', badges_visitante, bg_par=True)}
+                </div>
+                """
+                # Centrar tabla comparativa usando columnas de Streamlit
+                col_izq, col_centro, col_der = st.columns([1, 2, 1])
+                with col_centro:
+                    st.html(html_content)
+            # ========================
+            # GUARDAR PARTIDO (TODAS LAS PREDICCIONES)
+            # ========================
             st.markdown("---")
-            st.markdown(f"### 📊 Análisis: {home} vs {away}")
+            
+            # Verificar si hay resultado de análisis
+            r = st.session_state.get('analysis_result', {})
+            stats_local = st.session_state.get('stats_local', {})
+            stats_visitante = st.session_state.get('stats_visitante', {})
 
-            # Mostrar predicciones principales
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                p1 = r.get('p1', 0)
-                st.metric("🏠 Local", f"{p1:.1f}%")
-            with col2:
-                px = r.get('px', 0)
-                st.metric("🤝 Empate", f"{px:.1f}%")
-            with col3:
-                p2 = r.get('p2', 0)
-                st.metric("✈️ Visitante", f"{p2:.1f}%")
-
-            # Predicción 1X2
-            pick_1x2 = r.get('pick_1x2', '-')
-            prob_1x2 = r.get('prob_1x2', 0)
+            # VALORES POR DEFECTO PARA EVITAR ERRORES NONE
+            pj_l_display = pj_v_display = 0
+            vic_l = emp_l = der_l = vic_v = emp_v = der_v = 0
+            gf_l = gc_l = gf_v = gc_v = 0.0
+            prom_tiros_l = prom_tiros_v = 13.0
+            prom_tiros_arco_l = prom_tiros_arco_v = 4.5
+            prom_amarillas_l = prom_amarillas_v = 2.5
+            prom_corners_l = prom_corners_v = 5.5
+            puntos = puntos_v = 0
+            gf_forma = gc_forma = gf_v_forma = gc_v_forma = 0
+            badges_local = badges_visitante = ''
+            lambda_din_l = lambda_din_v = '0.00'
+            lambda_historico_local = lambda_historico_visit = 0.0
+            lambda_local_final = lambda_visit_final = 0.0
+            home = st.session_state.get('home', '')
+            away = st.session_state.get('away', '')
             confianza = r.get('confianza', 0)
             rango = r.get('rango', 'D')
+            
+            if r and stats_local and stats_visitante:
+                col_btn, col_info = st.columns([1, 3])
+                with col_btn:
+                    if st.button("💾 GUARDAR PARTIDO", type="primary", use_container_width=True):
+                        try:
+                            client = get_client()
+                            
+                            # Obtener datos de predicciones del resultado
+                            pred_tiros = r.get('tiros', {})
+                            pred_tarjetas = r.get('tarjetas', {})
+                            pred_arco = r.get('tiros_arco', {})
+                            pred_corners = r.get('corners', {})
+                            
+                            # Guardar TODAS las predicciones
+                            pick_1x2 = r.get('pick_1x2', '')
+                            pick_data = {
+                                'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
+                                'liga': stats_local.get('liga', 'Desconocida'),
+                                'equipo_local': home,
+                                'equipo_visitante': away,
+                                'pick': pick_1x2,
+                                'prediccion_1x2': pick_1x2,
+                                'prob_1x2': float(r.get('prob_1x2', 0)),
+                                'p1': float(r.get('p1', 0)),
+                                'px': float(r.get('px', 0)),
+                                'p2': float(r.get('p2', 0)),
+                                # Over/Under
+                                'prediccion_ou': r.get('pick_over_under', ''),
+                                'prob_ou': r.get('prob_over_under', 0),
+                                # BTTS
+                                'prediccion_btts': r.get('pick_btts', ''),
+                                'btts_yes': r.get('btts_yes', 0),
+                                # Corners
+                                'prediccion_corners': r.get('pick_corners', ''),
+                                'corners_total_estimado': pred_corners.get('total_estimado', 0),
+                                # Remates/Tiros
+                                'prediccion_remates': r.get('pick_tiros', ''),
+                                'remates_total_estimado': pred_tiros.get('total_estimado', 0),
+                                'remates_local': pred_tiros.get('tiros_local_estimado', 0),
+                                'remates_visitante': pred_tiros.get('tiros_visitante_estimado', 0),
+                                'over_remates': r.get('prob_tiros', 0),
+                                # Tarjetas
+                                'prediccion_tarjetas': r.get('pick_tarjetas', ''),
+                                'tarjetas_total_estimado': pred_tarjetas.get('total_estimado', 0),
+                                'tarjetas_over_prob': r.get('prob_tarjetas', 0),
+                                # Tiros Arco
+                                'prediccion_arco': r.get('pick_tiros_arco', ''),
+                                'arco_total_estimado': pred_arco.get('total_estimado', 0),
+                                'arco_over_prob': r.get('prob_tiros_arco', 0),
+                                # Confianza
+                                'confianza': int(confianza),
+                                'rango': rango,
+                            }
+                            
+                            client.table('picks').insert(pick_data).execute()
+                            st.success("✅ Partido guardado!")
+                            st.balloons()
+                            
+                        except Exception as e:
+                            st.error(f"❌ Error: {str(e)}")
+            
+            # ========================
+            # ========================
+            # DISEÑO FOOTBALL FIELD - PREDICCIONES
+            # ========================
+            p1 = r.get('p1', 0)
+            px = r.get('px', 0)
+            p2 = r.get('p2', 0)
+            
+            es_local_max = p1 > px and p1 > p2
+            es_empate_max = px > p1 and px > p2
+            es_visita_max = p2 > p1 and p2 > px
+            
+            p1_fmt = int(p1)
+            px_fmt = int(px)
+            p2_fmt = int(p2)
+            
+            # Verificar si hay datos reales para predicciones adicionales
+            promedios_dinamicos_local = st.session_state.get('promedios_dinamicos_local')
+            promedios_dinamicos_visitante = st.session_state.get('promedios_dinamicos_visitante')
+            
+            tiene_datos_local = promedios_dinamicos_local and promedios_dinamicos_local.get('partidos_total', 0) > 0
+            tiene_datos_visitante = promedios_dinamicos_visitante and promedios_dinamicos_visitante.get('partidos_total', 0) > 0
+            
+            if not (tiene_datos_local or tiene_datos_visitante):
+                st.warning("⚠️ **Sin datos históricos** - Sincroniza equipos para ver predicciones adicionales.")
+            
+            # Obtener datos
+            datos_local = promedios_dinamicos_local or {}
+            datos_visitante = promedios_dinamicos_visitante or {}
+            
+            ta_local = datos_local.get('promedio_amarillas', 0) if tiene_datos_local else 0
+            ta_visitante = datos_visitante.get('promedio_amarillas', 0) if tiene_datos_visitante else 0
+            tarjetas_total = ta_local + ta_visitante
+            
+            ti_local = datos_local.get('promedio_tiros', 0) if tiene_datos_local else 0
+            ti_visitante = datos_visitante.get('promedio_tiros', 0) if tiene_datos_visitante else 0
+            remates_total = ti_local + ti_visitante
+            
+            arco_local = datos_local.get('promedio_tiros_arco', 0) if tiene_datos_local else 0
+            arco_visitante = datos_visitante.get('promedio_tiros_arco', 0) if tiene_datos_visitante else 0
+            arco_total = arco_local + arco_visitante
+            
+            # PREDICCIONES: Calcular basándose en datos disponibles
+            tiene_stats_basicos = bool(stats_local and stats_visitante)
+            
+            if r:
+                # Análisis completo del modelo
+                pred_tiros = r.get('tiros', {})
+                pred_tarjetas = r.get('tarjetas', {})
+                pred_arco = r.get('tiros_arco', {})
+                pick_tiros = r.get('pick_tiros') or 'Over 24'
+                prob_tiros = float(r.get('prob_tiros') or 50)
+                remates_modelo = float(pred_tiros.get('total_estimado') or remates_total or 0)
+                pick_tarjetas = r.get('pick_tarjetas') or 'Over 6'
+                prob_tarjetas = float(r.get('prob_tarjetas') or 50)
+                tarjetas_modelo = float(pred_tarjetas.get('total_estimado') or tarjetas_total or 0)
+                pick_arco = r.get('pick_tiros_arco') or 'Over 8'
+                prob_arco = float(r.get('prob_tiros_arco') or 50)
+                arco_modelo = float(pred_arco.get('total_estimado') or arco_total or 0)
+                modelos = r.get('modelos') or {}
+                mc = modelos.get('monte_carlo') or {}
+                top_scores = r.get('top_scores') or {}
+                score_mas_probable = list(top_scores.keys())[0] if top_scores else "?"
+                pick_ou = r.get('pick_over_under', 'Over 2.5')
+                prob_ou = r.get('prob_over_under', 50)
+                ou_class = "up" if "Over" in pick_ou else "down"
+                ou_text = "Mas" if "Over" in pick_ou else "Menos"
+                pick_btts = r.get('pick_btts', 'No')
+                btts_yes = r.get('btts_yes', 50)
+                btts_icon = "Si" if pick_btts == "Si" else "No"
+                btts_class = "up" if pick_btts == "Si" else "down"
+                corners = r.get('corners', {})
+                total_c = corners.get('total_estimado', 10)
+                pick_corners = r.get('pick_corners', '+')
+                ti_class = "up" if "Over" in pick_tiros else "down"
+                ti_icon = "Mas" if "Over" in pick_tiros else "Menos"
+                arco_class = "up" if "Over" in pick_arco else "down"
+                arco_icon = "Mas" if "Over" in pick_arco else "Menos"
+                tar_class = "up" if "Over" in pick_tarjetas else "down"
+                tar_icon = "Mas" if "Over" in pick_tarjetas else "Menos"
+            elif tiene_stats_basicos:
+                # Hay stats pero no hay análisis del modelo - calcular predicciones básicas
+                pred_tiros = {}
+                pred_tarjetas = {}
+                pred_arco = {}
+                # Calcular lambda basado en stats
+                pj_l = stats_local.get('partidos_jugados', 1) or 1
+                pj_v = stats_visitante.get('partidos_jugados', 1) or 1
+                gf_l = float(stats_local.get('goles_favor', 0) or 0)
+                gf_v = float(stats_visitante.get('goles_favor', 0) or 0)
+                lambda_l = gf_l / pj_l if pj_l > 0 else 1.3
+                lambda_v = gf_v / pj_v if pj_v > 0 else 1.1
+                
+                # Calcular score más probable con Poisson simple
+                import math
+                def pp(lmbda, k):
+                    return (lmbda ** k) * math.exp(-lmbda) / math.factorial(k) if lmbda > 0 and k >= 0 else 0
+                
+                scores = {}
+                for gl in range(5):
+                    for gv in range(5):
+                        p = pp(lambda_l, gl) * pp(lambda_v, gv)
+                        if p > 0.01:
+                            scores[f"{gl}-{gv}"] = p
+                top_scores_calc = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:3]
+                score_mas_probable = top_scores_calc[0][0] if top_scores_calc else "?"
+                
+                # Calcular Over/Under
+                ou_prob = sum(p for (k), p in scores.items() if sum(map(int, k.split('-'))) > 2.5)
+                pick_ou = "Over 2.5" if ou_prob > 0.5 else "Under 2.5"
+                prob_ou = ou_prob * 100
+                ou_class = "up" if "Over" in pick_ou else "down"
+                ou_text = "Mas" if "Over" in pick_ou else "Menos"
+                
+                # BTTS
+                btts_yes = (1 - pp(lambda_l, 0)) * (1 - pp(lambda_v, 0)) * 100
+                pick_btts = "Si" if btts_yes > 50 else "No"
+                btts_icon = pick_btts
+                btts_class = "up" if pick_btts == "Si" else "down"
+                
+                # Otros valores por defecto
+                pick_tiros = "?"
+                prob_tiros = 0
+                remates_modelo = 0
+                pick_tarjetas = "?"
+                prob_tarjetas = 0
+                tarjetas_modelo = 0
+                pick_arco = "?"
+                prob_arco = 0
+                arco_modelo = 0
+                corners = {}
+                total_c = 0
+                pick_corners = "?"
+                ti_class = ""
+                ti_icon = "?"
+                arco_class = ""
+                arco_icon = "?"
+                tar_class = ""
+                tar_icon = "?"
+            else:
+                # Sin datos - mostrar "?"
+                pred_tiros = {}
+                pred_tarjetas = {}
+                pred_arco = {}
+                pick_tiros = '?'
+                prob_tiros = 0
+                remates_modelo = 0
+                pick_tarjetas = '?'
+                prob_tarjetas = 0
+                tarjetas_modelo = 0
+                pick_arco = '?'
+                prob_arco = 0
+                arco_modelo = 0
+                score_mas_probable = "?"
+                pick_ou = '?'
+                prob_ou = 0
+                ou_class = ""
+                ou_text = "?"
+                pick_btts = '?'
+                btts_yes = 0
+                btts_icon = "?"
+                btts_class = ""
+                corners = {}
+                total_c = 0
+                pick_corners = '?'
+                ti_class = ""
+                ti_icon = "?"
+                arco_class = ""
+                arco_icon = "?"
+                tar_class = ""
+                tar_icon = "?"
+            # Fin de lógica de predicciones
+                # Con análisis - usar valores reales
+                pred_tiros = r.get('tiros', {})
+                pred_tarjetas = r.get('tarjetas', {})
+                pred_arco = r.get('tiros_arco', {})
 
-            st.markdown(f"""
-            <div class="field-container">
-                <div class="field-label">🎯 PRONÓSTICO 1X2</div>
-                <div class="field-value">{pick_1x2}</div>
-                <div class="field-sublabel">Probabilidad: {prob_1x2:.1f}% | Confianza: {confianza}% ({rango})</div>
+                pick_tiros = r.get('pick_tiros') or 'Over 24'
+                prob_tiros = float(r.get('prob_tiros') or 50)
+                remates_modelo = float(pred_tiros.get('total_estimado') or remates_total or 0)
+
+                pick_tarjetas = r.get('pick_tarjetas') or 'Over 6'
+                prob_tarjetas = float(r.get('prob_tarjetas') or 50)
+                tarjetas_modelo = float(pred_tarjetas.get('total_estimado') or tarjetas_total or 0)
+
+                pick_arco = r.get('pick_tiros_arco') or 'Over 8'
+                prob_arco = float(r.get('prob_tiros_arco') or 50)
+                arco_modelo = float(pred_arco.get('total_estimado') or arco_total or 0)
+
+                modelos = r.get('modelos') or {}
+                mc = modelos.get('monte_carlo') or {}
+                top_scores = r.get('top_scores') or {}
+                score_mas_probable = list(top_scores.keys())[0] if top_scores else "?"
+
+                # Over/Under 2.5
+                pick_ou = r.get('pick_over_under', 'Over 2.5')
+                prob_ou = r.get('prob_over_under', 50)
+                ou_class = "up" if "Over" in pick_ou else "down"
+                ou_text = "Mas" if "Over" in pick_ou else "Menos"
+
+                # BTTS
+                pick_btts = r.get('pick_btts', 'No')
+                btts_yes = r.get('btts_yes', 50)
+                btts_icon = "Si" if pick_btts == "Si" else "No"
+                btts_class = "up" if pick_btts == "Si" else "down"
+
+                # Corners
+                corners = r.get('corners', {})
+                total_c = corners.get('total_estimado', 10)
+                pick_corners = r.get('pick_corners', '+')
+
+                # Tiros
+                ti_class = "up" if "Over" in pick_tiros else "down"
+                ti_icon = "Mas" if "Over" in pick_tiros else "Menos"
+
+                # Arco
+                arco_class = "up" if "Over" in pick_arco else "down"
+                arco_icon = "Mas" if "Over" in pick_arco else "Menos"
+
+                # Tarjetas
+                tar_class = "up" if "Over" in pick_tarjetas else "down"
+                tar_icon = "Mas" if "Over" in pick_tarjetas else "Menos"
+
+            # Variables comunes
+            ou_symbol = "+" if "Over" in pick_ou else "-"
+            pick_corner_symbol = "+" if pick_corners == "+" else "-"
+            # Tarjetas
+            tar_class = "up" if "Over" in pick_tarjetas else "down"
+            tar_icon = "Mas" if "Over" in pick_tarjetas else "Menos"
+            
+                        # Generar HTML del diseño Football Field
+            winner_local = "winner" if es_local_max else ""
+            winner_empate = "winner" if es_empate_max else ""
+            winner_visita = "winner" if es_visita_max else ""
+
+            field_html = f"""
+            <div class="field-container" translate="no">
+                <div class="field-center-circle"></div>
+                
+                <div class="field-header">
+                    <div class="field-teams">
+                        <span class="field-team" translate="no">{home}</span>
+                        <span class="field-vs">VS</span>
+                        <span class="field-team" translate="no">{away}</span>
+                    </div>
+                </div>
+                
+                <div class="field-1x2">
+                    <div class="field-odds {winner_local}">
+                        <div class="field-odds-label" translate="no">L</div>
+                        <div class="field-odds-value">{p1_fmt}%</div>
+                    </div>
+                    <div class="field-odds {winner_empate}">
+                        <div class="field-odds-label" translate="no">E</div>
+                        <div class="field-odds-value">{px_fmt}%</div>
+                    </div>
+                    <div class="field-odds {winner_visita}">
+                        <div class="field-odds-label" translate="no">V</div>
+                        <div class="field-odds-value">{p2_fmt}%</div>
+                    </div>
+                </div>
+                
+                <div class="field-preds">
+                    <div class="field-pred">
+                        <div class="field-pred-icon">📊</div>
+                        <div class="field-pred-label" translate="no">OU 2.5</div>
+                        <div class="field-pred-value">2.5</div>
+                        <span class="field-pred-pick {ou_class}" translate="no">{ou_text} {prob_ou:.0f}%</span>
+                    </div>
+                    <div class="field-pred">
+                        <div class="field-pred-icon">⚽</div>
+                        <div class="field-pred-label" translate="no">BTTS</div>
+                        <div class="field-pred-value" translate="no">{btts_icon}</div>
+                        <span class="field-pred-pick {btts_class}">{btts_yes:.0f}%</span>
+                    </div>
+                    <div class="field-pred">
+                        <div class="field-pred-icon">🌽</div>
+                        <div class="field-pred-label" translate="no">CK</div>
+                        <div class="field-pred-value">{total_c:.0f}</div>
+                        <span class="field-pred-pick down" translate="no">Under</span>
+                    </div>
+                    <div class="field-pred">
+                        <div class="field-pred-icon">📍</div>
+                        <div class="field-pred-label" translate="no">Tiros</div>
+                        <div class="field-pred-value">{int(remates_modelo)}</div>
+                        <span class="field-pred-pick {ti_class}" translate="no">{ti_icon} {int(prob_tiros)}%</span>
+                    </div>
+                    <div class="field-pred">
+                        <div class="field-pred-icon">🎯</div>
+                        <div class="field-pred-label" translate="no">TArco</div>
+                        <div class="field-pred-value">{int(arco_modelo)}</div>
+                        <span class="field-pred-pick {arco_class}" translate="no">{arco_icon} {int(prob_arco)}%</span>
+                    </div>
+                    <div class="field-pred">
+                        <div class="field-pred-icon">🟨</div>
+                        <div class="field-pred-label" translate="no">TARJ</div>
+                        <div class="field-pred-value">{tarjetas_modelo:.1f}</div>
+                        <span class="field-pred-pick {tar_class}" translate="no">{tar_icon} {int(prob_tarjetas)}%</span>
+                    </div>
+                </div>
+                
+                <div class="field-score">
+                    <div class="field-score-label" translate="no">Score</div>
+                    <div class="field-score-value">{score_mas_probable}</div>
+                </div>
             </div>
-            """, unsafe_allow_html=True)
-
-            # Otras predicciones
-            st.markdown("#### 📈 Predicciones Adicionales")
-            col_pred1, col_pred2, col_pred3 = st.columns(3)
-            with col_pred1:
-                ou = r.get('pick_over_under', '-')
-                ou_prob = r.get('prob_over_under', 0)
-                st.metric("📈 Over/Under 2.5", f"{ou} ({ou_prob:.0f}%)")
-            with col_pred2:
-                btts = r.get('pick_btts', '-')
-                btts_prob = r.get('btts_yes', 0)
-                st.metric("⚽ BTTS", f"{btts} ({btts_prob:.0f}%)")
-            with col_pred3:
-                corners = r.get('pick_corners', '-')
-                corners_total = r.get('corners', {}).get('total_estimado', 0)
-                st.metric("🌽 Corners", f"{corners} ({corners_total:.1f})")
-
-            # ★ BOTÓN GUARDAR SIEMPRE VISIBLE
+            """
+            st.html(field_html)
+            
+            # ========================
+            # ========================
+            # FORMA RECIENTE DE EQUIPOS
             st.markdown("---")
-            col_btn_guardar, col_info = st.columns([1, 3])
-            with col_btn_guardar:
-                if st.button("💾 GUARDAR PICK", type="primary", use_container_width=True):
-                    try:
-                        pick_data = {
-                            'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
-                            'liga': stats_local.get('liga', 'Desconocida'),
-                            'equipo_local': home,
-                            'equipo_visitante': away,
-                            'pick': pick_1x2,
-                            'prediccion_1x2': pick_1x2,
-                            'prob_1x2': float(prob_1x2),
-                            'p1': float(p1),
-                            'px': float(px),
-                            'p2': float(p2),
-                            'prediccion_ou': r.get('pick_over_under', ''),
-                            'prob_ou': float(r.get('prob_over_under', 0)),
-                            'prediccion_btts': r.get('pick_btts', ''),
-                            'btts_yes': float(r.get('btts_yes', 0)),
-                            'btts_no': float(r.get('btts_no', 0)),
-                            'prediccion_corners': r.get('pick_corners', ''),
-                            'corners_total_estimado': float(r.get('corners', {}).get('total_estimado', 0)),
-                            'confianza': float(confianza),
-                            'rango': rango,
-                            'lambda_local': float(stats_local.get('lambda_local', 0)),
-                            'lambda_visitante': float(stats_visitante.get('lambda_visitante', 0)),
-                        }
-                        client.table('picks').insert(pick_data).execute()
-                        st.success("✅ ¡Pick guardado exitosamente!")
-                    except Exception as e:
-                        st.error(f"❌ Error al guardar: {e}")
-            with col_info:
-                st.info("💡 Guarda este análisis para hacer seguimiento y verificar aciertos.")
+            forma_local_html = badges_local if badges_local else "?"
+            forma_visit_html = badges_visitante if badges_visitante else "?"
+            
+            col_f1, col_f2 = st.columns(2)
+            with col_f1:
+                st.markdown(f"""
+                <div style="background: #111111; border-radius: 12px; padding: 15px; text-align: center; border: 1px solid #333;">
+                    <h5 style="color: #00d4ff; margin: 0 0 10px 0;">📊 {html.escape(str(home))}</h5>
+                    <div style="font-size: 24px; letter-spacing: 5px;">{forma_local_html}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col_f2:
+                st.markdown(f"""
+                <div style="background: #111111; border-radius: 12px; padding: 15px; text-align: center; border: 1px solid #333;">
+                    <h5 style="color: #00d4ff; margin: 0 0 10px 0;">📊 {html.escape(str(away))}</h5>
+                    <div style="font-size: 24px; letter-spacing: 5px;">{forma_visit_html}</div>
+                </div>
+                """, unsafe_allow_html=True)
 
+            fixture_id_partido = r.get('fixture_id')
+            if fixture_id_partido:
+                try:
+                    client = get_client()
+                    cuotas_resp = client.table('cuotas').select('*').eq('fixture_id', fixture_id_partido).execute()
+                    
+                    if cuotas_resp.data:
+                        st.markdown("##### 🏆 Cuotas del Mercado")
+                        
+                        # Obtener probabilidades del modelo
+                        prob_1 = r.get('p1', 0)
+                        prob_x = r.get('px', 0)
+                        prob_2 = r.get('p2', 0)
+                        prob_ou = r.get('prob_over_under', 50)
+                        prob_btts = r.get('btts_yes', 50)
+                        
+                        # Agrupar por tipo de apuesta
+                        cuotas_1x2 = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Match Winner']
+                        cuotas_btts = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Both Teams To Score']
+                        cuotas_ou = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Over/Under']
+                        
+                        # Función para calcular VALUE
+                        def calcular_value(prob_modelo, cuota):
+                            if cuota <= 0:
+                                return 0, 0
+                            prob_implicita = (1 / cuota) * 100
+                            value = prob_modelo - prob_implicita
+                            return value, prob_implicita
+                        
+                        # Mostrar 1X2 con VALUE
+                        if cuotas_1x2:
+                            st.markdown("**🎯 1X2**")
+                            col_c1, col_c2, col_c3 = st.columns(3)
+                            
+                            for i, cuota in enumerate(cuotas_1x2[:3]):
+                                opcion = cuota.get('opcion', '')
+                                valor = cuota.get('cuota', 0)
+                                bookie = cuota.get('bookmaker', '')
+                                col = [col_c1, col_c2, col_c3][i] if i < 3 else None
+                                
+                                if col:
+                                    with col:
+                                        if 'Home' in opcion or '1' in opcion:
+                                            value, prob_imp = calcular_value(prob_1, valor)
+                                        elif 'Draw' in opcion or 'X' in opcion:
+                                            value, prob_imp = calcular_value(prob_x, valor)
+                                        elif 'Away' in opcion or '2' in opcion:
+                                            value, prob_imp = calcular_value(prob_2, valor)
+                                        else:
+                                            value, prob_imp = calcular_value(33, valor)
+                                        
+                                        # Color segГәn VALUE
+                                        if value > 5:
+                                            value_color = "🔴"
+                                            value_text = f"+{value:.1f}%"
+                                        elif value > 0:
+                                            value_color = "🟠"
+                                            value_text = f"+{value:.1f}%"
+                                        else:
+                                            value_color = "🔽"
+                                            value_text = f"{value:.1f}%"
+                                        
+                                        label = f"{'📊 Local' if 'Home' in opcion or '1' in opcion else ('⚖️ Empate' if 'Draw' in opcion or 'X' in opcion else 'вңҲпёҸ Visita')}"
+                                        st.metric(f"{label}", f"@ {valor:.2f}", f"{value_color} {value_text} VALUE")
+                        
+                        # Mostrar BTTS con VALUE
+                        if cuotas_btts:
+                            st.markdown("**⚽ Ambos Marcan (BTTS)**")
+                            for cuota in cuotas_btts[:4]:
+                                opcion = cuota.get('opcion', '')
+                                valor = cuota.get('cuota', 0)
+                                bookie = cuota.get('bookmaker', '')
+                                
+                                # Probabilidad del modelo para BTTS
+                                prob_modelo_btts = prob_btts if 'Yes' in opcion else (100 - prob_btts)
+                                value, prob_imp = calcular_value(prob_modelo_btts, valor)
+                                
+                                if value > 5:
+                                    value_color = "🔴"
+                                elif value > 0:
+                                    value_color = "🟠"
+                                else:
+                                    value_color = "🔽"
+                                
+                                st.write(f"{opcion}: **@ {valor:.2f}** | {value_color} VALUE: {value:+.1f}% | Modelo: {prob_modelo_btts:.0f}% | Implicita: {prob_imp:.0f}% ({bookie})")
+                        
+                        # Mostrar Over/Under con VALUE
+                        if cuotas_ou:
+                            st.markdown("**📲 Over/Under**")
+                            for cuota in cuotas_ou[:6]:
+                                opcion = cuota.get('opcion', '')
+                                valor = cuota.get('cuota', 0)
+                                bookie = cuota.get('bookmaker', '')
+                                
+                                # Extraer línea (ej: "Over 2.5" -> 2.5)
+                                if 'Over' in opcion:
+                                    prob_modelo_ou = prob_ou
+                                else:
+                                    prob_modelo_ou = 100 - prob_ou
+                                
+                                value, prob_imp = calcular_value(prob_modelo_ou, valor)
+                                
+                                if value > 5:
+                                    value_color = "🔴"
+                                elif value > 0:
+                                    value_color = "🟠"
+                                else:
+                                    value_color = "🔽"
+                                
+                                st.write(f"{opcion}: **@ {valor:.2f}** | {value_color} VALUE: {value:+.1f}% | Modelo: {prob_modelo_ou:.0f}% | Implicita: {prob_imp:.0f}% ({bookie})")
+                        
+                        # Resumen de VALUE bets
+                        st.markdown("---")
+                        st.markdown("**📥 Resumen de Value Bets:**")
+                        
+                        value_bets = []
+                        for cuota in cuotas_resp.data:
+                            if not isinstance(cuota, dict):
+                                continue
+                            
+                            tipo = cuota.get('tipo_apuesta', '')
+                            opcion = cuota.get('opcion', '')
+                            valor_raw = cuota.get('cuota', 0)
+                            
+                            # Convertir a float si es string
+                            try:
+                                valor = float(valor_raw) if valor_raw else 0
+                            except (ValueError, TypeError):
+                                continue
+                            
+                            bookie = cuota.get('bookmaker', '')
+                            
+                            if tipo == 'Match Winner':
+                                if 'Home' in opcion or '1' in opcion:
+                                    prob = prob_1
+                                elif 'Draw' in opcion or 'X' in opcion:
+                                    prob = prob_x
+                                else:
+                                    prob = prob_2
+                            elif tipo == 'Both Teams To Score':
+                                prob = prob_btts if 'Yes' in opcion else (100 - prob_btts)
+                            elif tipo == 'Over/Under':
+                                prob = prob_ou if 'Over' in opcion else (100 - prob_ou)
+                            else:
+                                continue
+                            
+                            value, _ = calcular_value(prob, valor)
+                            if value > 0:
+                                value_bets.append({
+                                    'tipo': tipo,
+                                    'opcion': opcion,
+                                    'cuota': valor,
+                                    'value': value,
+                                    'bookie': bookie,
+                                    'prob_modelo': prob
+                                })
+                        
+                        if value_bets:
+                            # Ordenar por VALUE
+                            value_bets.sort(key=lambda x: x['value'], reverse=True)
+                            
+                            for vb in value_bets[:5]:
+                                st.success(f"✅ **{vb['opcion']}** @ {vb['cuota']:.2f} | VALUE: +{vb['value']:.1f}% | {vb['bookie']}")
+                        else:
+                            st.info("🔽 Sin value bets en este momento")
+                    else:
+                        st.info("🔻 Sin cuotas guardadas para este partido. Actualiza los partidos desde Carga.")
+                except Exception as e:
+                    logger.warning(f"Error consultando cuotas: {e}")
+    
+    # Página: Estadísticas
     elif st.session_state.page == "Claves":
         st.markdown("### 👑 Gestión de ContraseГұas")
         
