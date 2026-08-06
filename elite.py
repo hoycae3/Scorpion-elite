@@ -11,9 +11,9 @@ COLORS = {
     'derrota': '#ef4444',       # Rojo error
     'empate': '#eab308',        # Amarillo
     'primary': '#00d4aa',       # Cyan/acento
-    'local': '#00ff88',         # Verde brillante
-    'visitante': '#ff6b6b',     # Rojo suave
-    'hora': '#ffd700',          # Dorado
+    'local': '#c9a227',         # Verde brillante
+    'visitante': '#d4af37',     # Rojo suave
+    'hora': '#c9a227',          # Dorado
     'bg_dark': '#0f172a',       # Fondo oscuro
     'bg_card': '#1e293b',       # Fondo cards
     'bg_header': '#121824',     # Fondo headers
@@ -24,7 +24,7 @@ COLORS = {
 # Función helper para formatear colores en HTML
 def css(color_key, extra=''):
     """Retorna estilo CSS inline con el color de COLORS"""
-    return f"color:{COLORS.get(color_key, '#fff')};{extra}"
+    return f"color:{COLORS.get(color_key, '#f5f5f5')};{extra}"
 
 # CSS global cargado desde archivo (version forzada para cache busting)
 try:
@@ -2042,7 +2042,7 @@ def render_login_form():
                 
                 # Función auxiliar para crear fila de datos
                 def fila_dato(valor_l, indicador, valor_v, color_val='white', bg_par=False):
-                    bg = '#162031' if bg_par else '#0f1923'
+                    bg = '#162031' if bg_par else '#0f0f0f'
                     return f"""<div style='background:{bg};padding:8px 5px;border-radius:4px;margin:2px 0;display:flex;'><div style='width:33%;text-align:center;color:{color_val};font-size:13px;'>{valor_l}</div><div style='width:34%;text-align:center;color:#888;font-size:12px;'>{indicador}</div><div style='width:33%;text-align:center;color:{color_val};font-size:13px;'>{valor_v}</div></div>"""
                 
                 # Calcular valores seguros para lambda antes del f-string
@@ -2101,28 +2101,28 @@ def render_login_form():
 
                 # Contenedor principal usando st.html()
                 html_content = f"""
-                <div style='background:#0d1b2a;border-radius:12px;padding:10px;margin:10px 0;'>
-                    <div style='background:linear-gradient(135deg,#1a1a2e,#16213e);padding:15px;border-radius:10px;margin-bottom:10px;text-align:center;'>
-                        <h3 style='color:#fff;margin:0;font-size:18px;'>📊 {html.escape(str(home))} <span style='color:#ffd700;'>vs</span> {html.escape(str(away))}</h3>
-                        <p style='color:#00d4ff;font-size:11px;margin:5px 0 0;'>({pj_l_str} PJ) vs ({pj_v_str} PJ)</p>
+                <div style='background:#0a0a0a;border-radius:12px;padding:10px;margin:10px 0;'>
+                    <div style='background:linear-gradient(135deg,#141414,#1a1a1a);padding:15px;border-radius:10px;margin-bottom:10px;text-align:center;'>
+                        <h3 style='color:#f5f5f5;margin:0;font-size:18px;'>📊 {html.escape(str(home))} <span style='color:#c9a227;'>vs</span> {html.escape(str(away))}</h3>
+                        <p style='color:#e0e0e0;font-size:11px;margin:5px 0 0;'>({pj_l_str} PJ) vs ({pj_v_str} PJ)</p>
                     </div>
                     <div style='display:flex;background:#1e2a3a;padding:10px;border-radius:8px;margin-bottom:5px;'>
-                        <div style='width:33%;text-align:center;color:#00ff88;font-weight:bold;font-size:13px;'>{html.escape(str(home))}</div>
-                        <div style='width:34%;text-align:center;color:#00d4ff;font-weight:bold;font-size:13px;'>📊 COMPARATIVA</div>
-                        <div style='width:33%;text-align:center;color:#ff6b6b;font-weight:bold;font-size:13px;'>{html.escape(str(away))}</div>
+                        <div style='width:33%;text-align:center;color:#c9a227;font-weight:bold;font-size:13px;'>{html.escape(str(home))}</div>
+                        <div style='width:34%;text-align:center;color:#e0e0e0;font-weight:bold;font-size:13px;'>📊 COMPARATIVA</div>
+                        <div style='width:33%;text-align:center;color:#d4af37;font-weight:bold;font-size:13px;'>{html.escape(str(away))}</div>
                     </div>
                     {fila_dato(f'{vic_l_str}-{emp_l_str}-{der_l_str}', 'Récord (V-E-D)', f'{vic_v_str}-{emp_v_str}-{der_v_str}')}
                     {fila_dato(gf_l, 'Goles Favor', gf_v, bg_par=True)}
                     {fila_dato(gc_l, 'Goles Contra', gc_v)}
-                    {fila_dato(lambda_din_l, 'λ Dinámico', lambda_din_v, '#00ff88', bg_par=True)}
-                    {fila_dato(lambda_hist_l_val, 'λ Histórico', lambda_hist_v_val, '#00d4ff')}
-                    <div style='background:#1a1a2e;padding:10px 5px;border-radius:4px;margin:2px 0;display:flex;'><div style='width:33%;text-align:center;color:#ffd700;font-weight:bold;font-size:15px;'>🔥 {lambda_final_l_val}</div><div style='width:34%;text-align:center;color:#ffd700;font-weight:bold;font-size:13px;'>λ FINAL</div><div style='width:33%;text-align:center;color:#ffd700;font-weight:bold;font-size:15px;'>🔥 {lambda_final_v_val}</div></div>
-                    <div style='background:#0f1923;padding:10px;border-radius:8px;margin-top:15px;margin-bottom:5px;text-align:center;'><span style='color:#00d4ff;font-weight:bold;'>📈 PROMEDIOS POR PARTIDO</span></div>
+                    {fila_dato(lambda_din_l, 'λ Dinámico', lambda_din_v, '#c9a227', bg_par=True)}
+                    {fila_dato(lambda_hist_l_val, 'λ Histórico', lambda_hist_v_val, '#e0e0e0')}
+                    <div style='background:#141414;padding:10px 5px;border-radius:4px;margin:2px 0;display:flex;'><div style='width:33%;text-align:center;color:#c9a227;font-weight:bold;font-size:15px;'>🔥 {lambda_final_l_val}</div><div style='width:34%;text-align:center;color:#c9a227;font-weight:bold;font-size:13px;'>λ FINAL</div><div style='width:33%;text-align:center;color:#c9a227;font-weight:bold;font-size:15px;'>🔥 {lambda_final_v_val}</div></div>
+                    <div style='background:#0f0f0f;padding:10px;border-radius:8px;margin-top:15px;margin-bottom:5px;text-align:center;'><span style='color:#e0e0e0;font-weight:bold;'>📈 PROMEDIOS POR PARTIDO</span></div>
                     {fila_dato(f'{prom_tiros_l_str}', 'Tiros Total', f'{prom_tiros_v_str}', bg_par=True)}
                     {fila_dato(f'{prom_tiros_arco_l_str}', 'Tiros Arco', f'{prom_tiros_arco_v_str}')}
                     {fila_dato(f'{prom_amarillas_l_str}', 'Amarillas', f'{prom_amarillas_v_str}', bg_par=True)}
                     {fila_dato(f'{prom_corners_l_str}', 'Esquinas', f'{prom_corners_v_str}')}
-                    <div style='background:#0f1923;padding:10px;border-radius:8px;margin-top:15px;margin-bottom:5px;text-align:center;'><span style='color:#00d4ff;font-weight:bold;'>📅 FORMA RECIENTE (Últimos 5)</span></div>
+                    <div style='background:#0f0f0f;padding:10px;border-radius:8px;margin-top:15px;margin-bottom:5px;text-align:center;'><span style='color:#e0e0e0;font-weight:bold;'>📅 FORMA RECIENTE (Últimos 5)</span></div>
                     {fila_dato(f'{puntos_str}%', 'Puntos %', f'{puntos_v_str}%', bg_par=True)}
                     {fila_dato(f'{gf_forma_str}f/{gc_forma_str}c', 'Goles (5 Part)', f'{gf_v_forma_str}f/{gc_v_forma_str}c')}
                     {fila_dato(badges_local, 'Resultados', badges_visitante, bg_par=True)}
@@ -2533,16 +2533,16 @@ def render_login_form():
             # ========================
             st.markdown("---")
             st.markdown("""
-            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; padding: 15px; margin: 10px 0;">
-                <h4 style="color: #00d4ff; text-align: center; margin: 0 0 15px 0;">📥 Predicciones del Modelo Matemático</h4>
+            <div style="background: linear-gradient(135deg, #141414 0%, #1a1a1a 100%); border-radius: 12px; padding: 15px; margin: 10px 0;">
+                <h4 style="color: #e0e0e0; text-align: center; margin: 0 0 15px 0;">📥 Predicciones del Modelo Matemático</h4>
             </div>
             """, unsafe_allow_html=True)
             # RESUMEN DE PREDICCIONES CON PROBABILIDADES
             # ========================
             st.markdown("---")
             st.markdown("""
-            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; padding: 15px; margin: 10px 0;">
-                <h4 style="color: #00d4ff; text-align: center; margin: 0 0 15px 0;">📥 Predicciones del Modelo Matemático</h4>
+            <div style="background: linear-gradient(135deg, #141414 0%, #1a1a1a 100%); border-radius: 12px; padding: 15px; margin: 10px 0;">
+                <h4 style="color: #e0e0e0; text-align: center; margin: 0 0 15px 0;">📥 Predicciones del Modelo Matemático</h4>
             </div>
             """, unsafe_allow_html=True)
             
@@ -2551,39 +2551,39 @@ def render_login_form():
             
             with col_pred1:
                 icon_tiros = "📲" if "Over" in (pick_tiros or "") else "🔽"
-                color_tiros = "#00ff88" if "Over" in (pick_tiros or "") else "#ff6b6b"
+                color_tiros = "#c9a227" if "Over" in (pick_tiros or "") else "#d4af37"
                 remates_val = int(remates_modelo) if remates_modelo and remates_modelo > 0 else 0
                 pick_tiros_txt = "Mas" if "Over" in (pick_tiros or "") else "Menos"
                 st.markdown(f"""
-                <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tiros};">
+                <div style="background: #0a0a0a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tiros};">
                     <p style="color: #888; font-size: 12px; margin: 0;">📍 Tiros Total</p>
-                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{remates_val}</p>
+                    <p style="color: #f5f5f5; font-size: 18px; font-weight: bold; margin: 5px 0;">{remates_val}</p>
                     <p style="color: {color_tiros}; font-size: 14px; margin: 0;">{icon_tiros} {pick_tiros_txt} ({int(prob_tiros or 0)}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_pred2:
                 icon_arco = "📲" if "Over" in (pick_arco or "") else "🔽"
-                color_arco = "#00ff88" if "Over" in (pick_arco or "") else "#ff6b6b"
+                color_arco = "#c9a227" if "Over" in (pick_arco or "") else "#d4af37"
                 arco_val = int(arco_modelo) if arco_modelo and arco_modelo > 0 else 0
                 pick_arco_txt = "Mas" if "Over" in (pick_arco or "") else "Menos"
                 st.markdown(f"""
-                <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_arco};">
+                <div style="background: #0a0a0a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_arco};">
                     <p style="color: #888; font-size: 12px; margin: 0;">🎯 Tiros Arco</p>
-                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{arco_val}</p>
+                    <p style="color: #f5f5f5; font-size: 18px; font-weight: bold; margin: 5px 0;">{arco_val}</p>
                     <p style="color: {color_arco}; font-size: 14px; margin: 0;">{icon_arco} {pick_arco_txt} ({int(prob_arco or 0)}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_pred3:
                 icon_tar = "📲" if "Over" in (pick_tarjetas or "") else "🔽"
-                color_tar = "#00ff88" if "Over" in (pick_tarjetas or "") else "#ff6b6b"
+                color_tar = "#c9a227" if "Over" in (pick_tarjetas or "") else "#d4af37"
                 tarjetas_val = tarjetas_modelo if tarjetas_modelo and tarjetas_modelo > 0 else 0
                 pick_tarjetas_txt = "Mas" if "Over" in (pick_tarjetas or "") else "Menos"
                 st.markdown(f"""
-                <div style="background: #0d1b2a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tar};">
+                <div style="background: #0a0a0a; border-radius: 10px; padding: 15px; text-align: center; border-left: 4px solid {color_tar};">
                     <p style="color: #888; font-size: 12px; margin: 0;">🟨 Amarillas</p>
-                    <p style="color: #fff; font-size: 18px; font-weight: bold; margin: 5px 0;">{tarjetas_val:.1f}</p>
+                    <p style="color: #f5f5f5; font-size: 18px; font-weight: bold; margin: 5px 0;">{tarjetas_val:.1f}</p>
                     <p style="color: {color_tar}; font-size: 14px; margin: 0;">{icon_tar} {pick_tarjetas_txt} ({int(prob_tarjetas or 0)}%)</p>
                 </div>
                 """, unsafe_allow_html=True)
