@@ -854,20 +854,30 @@ def render_login_form():
                     # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
                     # PASO 1: DESCARGAR PARTIDOS (SIN ESTADГҚSTICAS DE EQUIPOS)
                     # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
-                    st.info("📘 **PASO 1:** Descargando partidos...")
-                    
                     # Obtener partidos existentes para evitar duplicados
                     partidos_existentes = set()
+                    fecha_max_db = None
                     try:
-                        resp_ex = client.table('partidos').select('fixture_id').execute()
-                        partidos_existentes = {p['fixture_id'] for p in resp_ex.data} if resp_ex.data else set()
+                        resp_ex = client.table('partidos').select('fixture_id,fecha').execute()
+                        if resp_ex.data:
+                            partidos_existentes = {p['fixture_id'] for p in resp_ex.data}
+                            # Encontrar la fecha máxima en la DB
+                            fechas = [p['fecha'] for p in resp_ex.data if p.get('fecha')]
+                            if fechas:
+                                fecha_max_db = max(fechas)
                     except Exception as e:
-                        st.warning(f"⚠️ Error al obtener partidos existentes: {e}")
+                        pass
                     
-                    # вҳ… RANGO DE BГҡSQUEDA: -2 días (partidos recientes) a +6 días (próximos partidos)
-                    fecha_inicio = (hoy - timedelta(days=2)).strftime('%Y-%m-%d')
+                    # вҳ… LГ“GICA INCREMENTAL: Solo descargar desde el día siguiente a la fecha máxima en DB
+                    if fecha_max_db:
+                        # Ya hay datos: descargar solo desde el día siguiente a la fecha máxima
+                        fecha_inicio = (datetime.strptime(fecha_max_db, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
+                    else:
+                        # Primera vez: descargar desde ayer
+                        fecha_inicio = (hoy - timedelta(days=1)).strftime('%Y-%m-%d')
+                    
+                    # Siempre descargar hasta HOY+6 (7 días hacia adelante)
                     fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
-                    st.markdown(f"📅 Rango: **{fecha_inicio}** al **{fecha_fin}**")
                     
                     # ✅ MODO PRODUCCIÓN - Todas las ligas
                     LIGAS = [
