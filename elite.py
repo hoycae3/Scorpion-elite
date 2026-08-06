@@ -1609,12 +1609,13 @@ def render_login_form():
             if tid_visitante:
                 promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
 
-            # Limpiar session_state
+        # ★ DETECTAR SI VIENE DE LA LISTA (antes de limpiar)
+
+        # Limpiar session_state DESPUÉS de detectar
+        vino_de_lista = 'selected_local' in st.session_state and 'selected_away' in st.session_state
+        if vino_de_lista:
             for key in ['selected_local', 'selected_away', 'selected_team_id_local', 'selected_team_id_visitante']:
                 st.session_state.pop(key, None)
-
-        # ★ DETECTAR SI VIENE DE LA LISTA
-        vino_de_lista = 'selected_local' in st.session_state and 'selected_away' in st.session_state
         
         # Verificar si se puede analizar
         puede_analizar = stats_local is not None and stats_visitante is not None
