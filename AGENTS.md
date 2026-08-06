@@ -1034,3 +1034,81 @@ DÍA 2 (MAÑANA SIGUIENTE):
 - 🔔 Alertas
 - 📋 Listas
 
+---
+
+## 📅 Sesión 2026-08-05 - Corrección Errores de Formato y Datos "Sin Datos"
+
+### 🔧 Errores Corregidos:
+
+| Error | Descripción | Solución |
+|-------|-------------|----------|
+| `ValueError: Invalid format specifier` | Expresiones ternarias dentro de f-strings con formato | Pre-calcular valores antes del f-string |
+| `ValueError: Código de formato desconocido 'f'` | Variables '?' usadas con `:.Xf` | Función `safe_fmt()` para convertir a string |
+| Lambda mostrando 0.00 | Variables lambda no calculadas | Calcular `lambda_historico = gf/pj` |
+
+### 📊 Sistema de "Sin Datos":
+
+Cuando NO hay datos reales (equipos sin sincronizar), ahora muestra `?` en todos los campos.
+
+| Campo | Sin datos |
+|-------|-----------|
+| PJ | `?` |
+| VED | `?-?-?` |
+| Goles | `?` |
+| Promedios | `?` |
+| Lambda | `?` |
+| Forma | `?` |
+| OU 2.5 | `?` |
+| BTTS | `?` |
+| Corners | `?` |
+| Tiros | `?` |
+| TArco | `?` |
+| Tarjetas | `?` |
+| Marcador | `?` |
+
+### 🔧 Código Clave:
+
+```python
+def safe_fmt(val, fmt='.1f'):
+    """Convierte valor a string, manteniendo '?' si no hay datos"""
+    if val == '?' or val is None:
+        return '?'
+    try:
+        return f'{float(val):{fmt}}'
+    except:
+        return str(val)
+
+def safe_fmt_int(val):
+    """Convierte valor a string entero"""
+    if val == '?' or val is None:
+        return '?'
+    try:
+        return f'{int(float(val))}'
+    except:
+        return str(val)
+```
+
+### 📝 Lógica de Lambda:
+
+```python
+# Calcular lambda_historico (basado en goles/pj)
+lambda_historico_local = gf_l / pj_l if pj_l > 0 else 1.3
+
+# Lambda FINAL = 60% dinamico + 40% historico
+if lambda_dinamico_local_calc is not None:
+    lambda_local_final = lambda_dinamico_local_calc * 0.6 + lambda_historico_local * 0.4
+else:
+    lambda_local_final = lambda_historico_local
+```
+
+### 📋 Linter para VS Code:
+
+```json
+{
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.lintOnSave": true,
+    "python.analysis.typeCheckingMode": "basic"
+}
+```
+
