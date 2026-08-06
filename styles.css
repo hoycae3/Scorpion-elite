@@ -1,5 +1,10 @@
 /* Scorpion Elite - Sistema de Diseño Centralizado */
-/* Actualizado: 2026-08-01 */
+/* Actualizado: 2026-08-06 */
+
+/* ============================================
+   📥 IMPORTAR FUENTE DE GOOGLE FONTS
+   ============================================ */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800;900&display=swap');
 
 /* ============================================
    🎨 VARIABLES CSS - COLORES PRINCIPALES
@@ -843,11 +848,37 @@ div[style*="background"] table {
 @media (max-width: 768px) {
     .field-preds { grid-template-columns: repeat(3, 1fr); }
     .field-odds-value { font-size: 1.8rem; }
-    .field-score-value { font-size: 0.85rem; }
+    .field-score-value { font-size: 1.8rem; }
 }
 
 /* Tabla comparativa centrada */
 [data-testid="stHorizontalBlock"] > [data-testid="stVerticalBlock"]:nth-child(2) {
     max-width: 800px !important;
     margin: 0 auto !important;
+}
+
+/* ============================================
+   🔧 SELECTORES MODERNOS STREAMLIT
+   ============================================ */
+div[data-testid="stElementContainer"],
+div[data-testid="stMarkdownContainer"] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* ============================================
+   🔘 ESTILOS DE BOTONES CON VARIABLES CSS
+   ============================================ */
+.stButton button,
+[data-testid="stExpander"] button {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+    border-radius: var(--radius-md) !important;
+}
+
+.stButton button:hover {
+    border-color: var(--color-primary) !important;
+    background: var(--bg-hover) !important;
 }
