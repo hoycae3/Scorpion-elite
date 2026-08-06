@@ -1724,9 +1724,89 @@ def render_login_form():
             away = st.session_state.away
             stats_local = st.session_state.get('stats_local', {})
             stats_visitante = st.session_state.get('stats_visitante', {})
+            tid_local = st.session_state.get('tid_local')
+            tid_visitante = st.session_state.get('tid_visitante')
 
             st.markdown("---")
             st.markdown(f"### 📊 Análisis: {home} vs {away}")
+
+            # Mostrar predicciones principales
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                p1 = r.get('p1', 0)
+                st.metric("🏠 Local", f"{p1:.1f}%")
+            with col2:
+                px = r.get('px', 0)
+                st.metric("🤝 Empate", f"{px:.1f}%")
+            with col3:
+                p2 = r.get('p2', 0)
+                st.metric("✈️ Visitante", f"{p2:.1f}%")
+
+            # Predicción 1X2
+            pick_1x2 = r.get('pick_1x2', '-')
+            prob_1x2 = r.get('prob_1x2', 0)
+            confianza = r.get('confianza', 0)
+            rango = r.get('rango', 'D')
+
+            st.markdown(f"""
+            <div class="field-container">
+                <div class="field-label">🎯 PRONÓSTICO 1X2</div>
+                <div class="field-value">{pick_1x2}</div>
+                <div class="field-sublabel">Probabilidad: {prob_1x2:.1f}% | Confianza: {confianza}% ({rango})</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Otras predicciones
+            st.markdown("#### 📈 Predicciones Adicionales")
+            col_pred1, col_pred2, col_pred3 = st.columns(3)
+            with col_pred1:
+                ou = r.get('pick_over_under', '-')
+                ou_prob = r.get('prob_over_under', 0)
+                st.metric("📈 Over/Under 2.5", f"{ou} ({ou_prob:.0f}%)")
+            with col_pred2:
+                btts = r.get('pick_btts', '-')
+                btts_prob = r.get('btts_yes', 0)
+                st.metric("⚽ BTTS", f"{btts} ({btts_prob:.0f}%)")
+            with col_pred3:
+                corners = r.get('pick_corners', '-')
+                corners_total = r.get('corners', {}).get('total_estimado', 0)
+                st.metric("🌽 Corners", f"{corners} ({corners_total:.1f})")
+
+            # ★ BOTÓN GUARDAR SIEMPRE VISIBLE
+            st.markdown("---")
+            col_btn_guardar, col_info = st.columns([1, 3])
+            with col_btn_guardar:
+                if st.button("💾 GUARDAR PICK", type="primary", use_container_width=True):
+                    try:
+                        pick_data = {
+                            'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
+                            'liga': stats_local.get('liga', 'Desconocida'),
+                            'equipo_local': home,
+                            'equipo_visitante': away,
+                            'pick': pick_1x2,
+                            'prediccion_1x2': pick_1x2,
+                            'prob_1x2': float(prob_1x2),
+                            'p1': float(p1),
+                            'px': float(px),
+                            'p2': float(p2),
+                            'prediccion_ou': r.get('pick_over_under', ''),
+                            'prob_ou': float(r.get('prob_over_under', 0)),
+                            'prediccion_btts': r.get('pick_btts', ''),
+                            'btts_yes': float(r.get('btts_yes', 0)),
+                            'btts_no': float(r.get('btts_no', 0)),
+                            'prediccion_corners': r.get('pick_corners', ''),
+                            'corners_total_estimado': float(r.get('corners', {}).get('total_estimado', 0)),
+                            'confianza': float(confianza),
+                            'rango': rango,
+                            'lambda_local': float(stats_local.get('lambda_local', 0)),
+                            'lambda_visitante': float(stats_visitante.get('lambda_visitante', 0)),
+                        }
+                        client.table('picks').insert(pick_data).execute()
+                        st.success("✅ ¡Pick guardado exitosamente!")
+                    except Exception as e:
+                        st.error(f"❌ Error al guardar: {e}")
+            with col_info:
+                st.info("💡 Guarda este análisis para hacer seguimiento y verificar aciertos.")
 
     elif st.session_state.page == "Claves":
         st.markdown("### 👑 Gestión de ContraseГұas")
