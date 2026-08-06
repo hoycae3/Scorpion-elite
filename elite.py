@@ -1678,7 +1678,6 @@ def render_login_form():
                     if not ultimos_5_local and tid_local:
                         try:
                             headers = {'x-apisports-key': API_KEY, 'Accept': 'application/json'}
-                            from datetime import datetime
                             mes_actual = datetime.now().month
                             temporada = datetime.now().year if mes_actual >= 8 else datetime.now().year - 1
                             league_id = stats_local.get('liga_id', 39) if stats_local else 39
@@ -1692,7 +1691,6 @@ def render_login_form():
                     if not ultimos_5_visitante and tid_visitante:
                         try:
                             headers = {'x-apisports-key': API_KEY, 'Accept': 'application/json'}
-                            from datetime import datetime
                             mes_actual = datetime.now().month
                             temporada = datetime.now().year if mes_actual >= 8 else datetime.now().year - 1
                             league_id = stats_visitante.get('liga_id', 39) if stats_visitante else 39
