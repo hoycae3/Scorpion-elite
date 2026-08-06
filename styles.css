@@ -670,7 +670,7 @@ div[style*="background"] table {
 .field-container {
     background: linear-gradient(180deg, #2d2a1f 0%, #4a4422 50%, #2d2a1f 100%);
     border-radius: 20px;
-    padding: 25px;
+    padding: 15px;
     position: relative;
     overflow: hidden;
     margin: 15px 0;
@@ -709,8 +709,8 @@ div[style*="background"] table {
     text-align: center;
     margin-bottom: 20px;
     background: rgba(0,0,0,0.35);
-    padding: 12px 20px;
-    border-radius: 12px;
+    padding: 8px 15px;
+    border-radius: 8px;
     position: relative;
     z-index: 2;
 }
@@ -718,17 +718,17 @@ div[style*="background"] table {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 25px;
+    gap: 15px;
 }
 .field-team {
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     font-weight: 700;
     color: #fff;
     text-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
 .field-vs {
     background: rgba(255,255,255,0.2);
-    padding: 6px 14px;
+    padding: 4px 10px;
     border-radius: 8px;
     font-weight: 600;
     font-size: 0.85rem;
@@ -737,16 +737,16 @@ div[style*="background"] table {
 .field-1x2 {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin: 25px 0;
+    gap: 8px;
+    margin: 15px 0;
     position: relative;
     z-index: 2;
 }
 .field-odds {
     background: rgba(0,0,0,0.4);
     backdrop-filter: blur(8px);
-    border-radius: 14px;
-    padding: 18px 15px;
+    border-radius: 10px;
+    padding: 10px 8px;
     text-align: center;
     border: 1px solid rgba(255,255,255,0.15);
 }
@@ -763,7 +763,7 @@ div[style*="background"] table {
     letter-spacing: 0.5px;
 }
 .field-odds-value {
-    font-size: 2.2rem;
+    font-size: 0.85rem;
     font-weight: 800;
     color: #fff;
     font-family: 'Space Grotesk', monospace;
@@ -775,24 +775,24 @@ div[style*="background"] table {
 .field-preds {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 10px;
+    gap: 6px;
     position: relative;
     z-index: 2;
 }
 .field-pred {
     background: rgba(0,0,0,0.4);
     backdrop-filter: blur(8px);
-    border-radius: 12px;
-    padding: 15px 10px;
+    border-radius: 8px;
+    padding: 10px 6px;
     text-align: center;
     border: 1px solid rgba(255,255,255,0.1);
 }
 .field-pred-icon {
-    font-size: 1.4rem;
+    font-size: 0.85rem;
     margin-bottom: 8px;
 }
 .field-pred-label {
-    font-size: 0.65rem;
+    font-size: 0.55rem;
     color: rgba(255,255,255,0.7);
     margin-bottom: 6px;
     text-transform: uppercase;
@@ -820,7 +820,7 @@ div[style*="background"] table {
 .field-score {
     margin-top: 20px;
     background: rgba(45,42,31,0.8);
-    border-radius: 14px;
+    border-radius: 10px;
     padding: 18px 25px;
     text-align: center;
     position: relative;
@@ -843,5 +843,5 @@ div[style*="background"] table {
 @media (max-width: 768px) {
     .field-preds { grid-template-columns: repeat(3, 1fr); }
     .field-odds-value { font-size: 1.8rem; }
-    .field-score-value { font-size: 2.2rem; }
+    .field-score-value { font-size: 0.85rem; }
 }
