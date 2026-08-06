@@ -1985,8 +1985,8 @@ def render_login_form():
                 pj_v_display = partidos_acum_v if partidos_acum_v > 0 else pj_v
                 
                 # Lambda dinámico con fallback
-                lambda_din_l = f"{lambda_dinamico_local:.2f}" if lambda_dinamico_local else "0.00"
-                lambda_din_v = f"{lambda_dinamico_visit:.2f}" if lambda_dinamico_visit else "0.00"
+                lambda_din_l = f"{lambda_dinamico_local:.2f}" if lambda_dinamico_local is not None else "0.00"
+                lambda_din_v = f"{lambda_dinamico_visit:.2f}" if lambda_dinamico_visit is not None else "0.00"
                 
                 # FORMA RECIENTE - Obtener datos de forma
                 forma_l_data = r.get('forma_local', {})
@@ -2038,7 +2038,7 @@ def render_login_form():
                     {fila_dato(gf_l, 'Goles Favor', gf_v, bg_par=True)}
                     {fila_dato(gc_l, 'Goles Contra', gc_v)}
                     {fila_dato(lambda_din_l, 'λ Dinámico', lambda_din_v, '#00ff88', bg_par=True)}
-                    {fila_dato(f'{lambda_historico_local:.2f}' if lambda_historico_local else '0.00', 'λ Histórico', f'{lambda_historico_visit:.2f}' if lambda_historico_visit else '0.00', '#00d4ff')}
+                    {fila_dato((f'{lambda_historico_local:.2f}' if lambda_historico_local is not None else '0.00'), 'λ Histórico', (f'{lambda_historico_visit:.2f}' if lambda_historico_visit is not None else '0.00'), '#00d4ff')}
                     <div style='background:#1a1a2e;padding:10px 5px;border-radius:4px;margin:2px 0;display:flex;'><div style='width:33%;text-align:center;color:#ffd700;font-weight:bold;font-size:15px;'>🔥 {(lambda_local_final if lambda_local_final else 0.0):.2f}</div><div style='width:34%;text-align:center;color:#ffd700;font-weight:bold;font-size:13px;'>λ FINAL</div><div style='width:33%;text-align:center;color:#ffd700;font-weight:bold;font-size:15px;'>🔥 {(lambda_visit_final if lambda_visit_final else 0.0):.2f}</div></div>
                     <div style='background:#0f1923;padding:10px;border-radius:8px;margin-top:15px;margin-bottom:5px;text-align:center;'><span style='color:#00d4ff;font-weight:bold;'>📈 PROMEDIOS POR PARTIDO</span></div>
                     {fila_dato(f'{prom_tiros_l:.1f}', 'Tiros Total', f'{prom_tiros_v:.1f}', bg_par=True)}
