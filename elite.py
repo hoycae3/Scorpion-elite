@@ -2887,7 +2887,9 @@ def render_login_form():
         
         # Verificar si el usuario es VIP/Elite
         user_plan = st.session_state.user_data.get('plan', 'vip') if st.session_state.user_data else 'vip'
-        es_vip = user_plan.lower() in ['vip', 'elite', 'admin', 'mes', 'premium']
+        is_admin = st.session_state.user_data.get('es_admin', 0) == 1 if st.session_state.user_data else False
+        # Admin siempre tiene acceso VIP
+        es_vip = is_admin or user_plan.lower() in ['vip', 'elite', 'admin', 'mes', 'premium']
         
         if not es_vip:
             # Mostrar pantalla de upgrade
