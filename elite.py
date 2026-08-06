@@ -2008,8 +2008,8 @@ def render_login_form():
                 pj_v_display = partidos_acum_v if partidos_acum_v > 0 else pj_v
                 
                 # Lambda dinámico con fallback
-                lambda_din_l = f"{lambda_dinamico_local:.2f}" if lambda_dinamico_local is not None else "0.00"
-                lambda_din_v = f"{lambda_dinamico_visit:.2f}" if lambda_dinamico_visit is not None else "0.00"
+                lambda_din_l = f"{lambda_dinamico_local:.2f}" if lambda_dinamico_local is not None else "?"
+                lambda_din_v = f"{lambda_dinamico_visit:.2f}" if lambda_dinamico_visit is not None else "?"
                 
                 # FORMA RECIENTE - Obtener datos de forma
                 forma_l_data = r.get('forma_local', {})
@@ -2046,10 +2046,10 @@ def render_login_form():
                     return f"""<div style='background:{bg};padding:8px 5px;border-radius:4px;margin:2px 0;display:flex;'><div style='width:33%;text-align:center;color:{color_val};font-size:13px;'>{valor_l}</div><div style='width:34%;text-align:center;color:#888;font-size:12px;'>{indicador}</div><div style='width:33%;text-align:center;color:{color_val};font-size:13px;'>{valor_v}</div></div>"""
                 
                 # Calcular valores seguros para lambda antes del f-string
-                lambda_hist_l_val = f'{lambda_historico_local:.2f}' if lambda_historico_local is not None else '0.00'
-                lambda_hist_v_val = f'{lambda_historico_visit:.2f}' if lambda_historico_visit is not None else '0.00'
-                lambda_final_l_val = (lambda_local_final if lambda_local_final else 0.0)
-                lambda_final_v_val = (lambda_visit_final if lambda_visit_final else 0.0)
+                lambda_hist_l_val = f'{lambda_historico_local:.2f}' if lambda_historico_local is not None else '?'
+                lambda_hist_v_val = f'{lambda_historico_visit:.2f}' if lambda_historico_visit is not None else '?'
+                lambda_final_l_val = f'{lambda_local_final:.2f}' if lambda_local_final is not None else '?'
+                lambda_final_v_val = f'{lambda_visit_final:.2f}' if lambda_visit_final is not None else '?' 
 
                 # Contenedor principal usando st.html()
                 html_content = f"""
