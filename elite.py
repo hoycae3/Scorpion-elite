@@ -2261,9 +2261,105 @@ def render_login_form():
             arco_visitante = datos_visitante.get('promedio_tiros_arco', 0) if tiene_datos_visitante else 0
             arco_total = arco_local + arco_visitante
             
-            # PREDICCIONES: Mostrar "?" si no hay análisis
-            if not r:
-                # Sin análisis - mostrar "?"
+            # PREDICCIONES: Calcular basándose en datos disponibles
+            tiene_stats_basicos = bool(stats_local and stats_visitante)
+            
+            if r:
+                # Análisis completo del modelo
+                pred_tiros = r.get('tiros', {})
+                pred_tarjetas = r.get('tarjetas', {})
+                pred_arco = r.get('tiros_arco', {})
+                pick_tiros = r.get('pick_tiros') or 'Over 24'
+                prob_tiros = float(r.get('prob_tiros') or 50)
+                remates_modelo = float(pred_tiros.get('total_estimado') or remates_total or 0)
+                pick_tarjetas = r.get('pick_tarjetas') or 'Over 6'
+                prob_tarjetas = float(r.get('prob_tarjetas') or 50)
+                tarjetas_modelo = float(pred_tarjetas.get('total_estimado') or tarjetas_total or 0)
+                pick_arco = r.get('pick_tiros_arco') or 'Over 8'
+                prob_arco = float(r.get('prob_tiros_arco') or 50)
+                arco_modelo = float(pred_arco.get('total_estimado') or arco_total or 0)
+                modelos = r.get('modelos') or {}
+                mc = modelos.get('monte_carlo') or {}
+                top_scores = mc.get('top_scores') or {}
+                score_mas_probable = list(top_scores.keys())[0] if top_scores else "?"
+                pick_ou = r.get('pick_over_under', 'Over 2.5')
+                prob_ou = r.get('prob_over_under', 50)
+                ou_class = "up" if "Over" in pick_ou else "down"
+                ou_text = "Mas" if "Over" in pick_ou else "Menos"
+                pick_btts = r.get('pick_btts', 'No')
+                btts_yes = r.get('btts_yes', 50)
+                btts_icon = "Si" if pick_btts == "Si" else "No"
+                btts_class = "up" if pick_btts == "Si" else "down"
+                corners = r.get('corners', {})
+                total_c = corners.get('total_estimado', 10)
+                pick_corners = r.get('pick_corners', '+')
+                ti_class = "up" if "Over" in pick_tiros else "down"
+                ti_icon = "Mas" if "Over" in pick_tiros else "Menos"
+                arco_class = "up" if "Over" in pick_arco else "down"
+                arco_icon = "Mas" if "Over" in pick_arco else "Menos"
+                tar_class = "up" if "Over" in pick_tarjetas else "down"
+                tar_icon = "Mas" if "Over" in pick_tarjetas else "Menos"
+            elif tiene_stats_basicos:
+                # Hay stats pero no hay análisis del modelo - calcular predicciones básicas
+                pred_tiros = {}
+                pred_tarjetas = {}
+                pred_arco = {}
+                # Calcular lambda basado en stats
+                pj_l = stats_local.get('partidos_jugados', 1) or 1
+                pj_v = stats_visitante.get('partidos_jugados', 1) or 1
+                gf_l = float(stats_local.get('goles_favor', 0) or 0)
+                gf_v = float(stats_visitante.get('goles_favor', 0) or 0)
+                lambda_l = gf_l / pj_l if pj_l > 0 else 1.3
+                lambda_v = gf_v / pj_v if pj_v > 0 else 1.1
+                
+                # Calcular score más probable con Poisson simple
+                import math
+                def pp(lmbda, k):
+                    return (lmbda ** k) * math.exp(-lmbda) / math.factorial(k) if lmbda > 0 and k >= 0 else 0
+                
+                scores = {}
+                for gl in range(5):
+                    for gv in range(5):
+                        p = pp(lambda_l, gl) * pp(lambda_v, gv)
+                        if p > 0.01:
+                            scores[f"{gl}-{gv}"] = p
+                top_scores_calc = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:3]
+                score_mas_probable = top_scores_calc[0][0] if top_scores_calc else "?"
+                
+                # Calcular Over/Under
+                ou_prob = sum(p for (k), p in scores.items() if sum(map(int, k.split('-'))) > 2.5)
+                pick_ou = "Over 2.5" if ou_prob > 0.5 else "Under 2.5"
+                prob_ou = ou_prob * 100
+                ou_class = "up" if "Over" in pick_ou else "down"
+                ou_text = "Mas" if "Over" in pick_ou else "Menos"
+                
+                # BTTS
+                btts_yes = (1 - pp(lambda_l, 0)) * (1 - pp(lambda_v, 0)) * 100
+                pick_btts = "Si" if btts_yes > 50 else "No"
+                btts_icon = pick_btts
+                btts_class = "up" if pick_btts == "Si" else "down"
+                
+                # Otros valores por defecto
+                pick_tiros = "?"
+                prob_tiros = 0
+                remates_modelo = 0
+                pick_tarjetas = "?"
+                prob_tarjetas = 0
+                tarjetas_modelo = 0
+                pick_arco = "?"
+                prob_arco = 0
+                arco_modelo = 0
+                corners = {}
+                total_c = 0
+                pick_corners = "?"
+                ti_class = ""
+                ti_icon = "?"
+                arco_class = ""
+                arco_icon = "?"
+                tar_class = ""
+                tar_icon = "?"
+            else:
+                # Sin datos - mostrar "?"
                 pred_tiros = {}
                 pred_tarjetas = {}
                 pred_arco = {}
@@ -2294,7 +2390,7 @@ def render_login_form():
                 arco_icon = "?"
                 tar_class = ""
                 tar_icon = "?"
-            else:
+            # Fin de lógica de predicciones
                 # Con análisis - usar valores reales
                 pred_tiros = r.get('tiros', {})
                 pred_tarjetas = r.get('tarjetas', {})
