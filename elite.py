@@ -1077,6 +1077,8 @@ def render_login_form():
                     equipos_nuevos = 0
                     equipos_existentes = 0
                     stats_ft_nuevos = 0
+                    errores_equipos = 0
+                    partidos_iniciales_cargados = 0
                     
                     if equipos_unicos:
                         
@@ -1087,9 +1089,7 @@ def render_login_form():
                             resp_existing = client.table('equipo_partidos_stats').select('team_id').execute()
                             if resp_existing.data:
                                 equipos_existentes_ids = {p['team_id'] for p in resp_existing.data}
-                            st.info(f"📥 Equipos en DB: {len(equipos_existentes_ids)}")
                         except Exception as e:
-                            st.error(f"❌ Error Supabase (equipos existentes): {e}")
                             equipos_existentes_ids = set()
                         
                         # Paso 2b: Para cada equipo, determinar si es nuevo o existente
@@ -1165,9 +1165,8 @@ def render_login_form():
                                                     on_conflict='equipo,temporada'
                                                 ).execute()
                                                 equipos_stats_descargados += 1
-                                                st.success(f"GUARDADO: {team_name} - lambda_l: {round(gf_h / max(pj_h, 1), 2)}")
                                             except Exception as e:
-                                                st.error(f"❌ Error Supabase ({team_name}): {e}")
+                                                errores_equipos += 1
                                     
                                     # вҳ… Fetch 5 partidos iniciales para equipo nuevo
                                     partidos_iniciales = obtener_ultimos_partidos_equipo(
@@ -1183,12 +1182,10 @@ def render_login_form():
                                     if partidos_iniciales and len(partidos_iniciales) > 0:
                                         success, msg, count = guardar_stats_equipo(client, team_id, team_name, partidos_iniciales)
                                         if success and count > 0:
-                                            st.info(f"🆕 {team_name}: {count} partidos iniciales cargados")
-                                        else:
-                                            st.warning(f"⚠️ {team_name}: {msg}")
+                                            partidos_iniciales_cargados += count
                                     
                                 except Exception as e:
-                                    st.warning(f"⚠️ Error {team_name}: {str(e)[:80]}")
+                                    errores_equipos += 1
                             
                             # вҳ… CASO B: EQUIPO EXISTENTE (ya tiene records en DB)
                             else:
@@ -1276,22 +1273,14 @@ def render_login_form():
                                                 ).execute()
                                                 stats_ft_nuevos += 1
                                             except Exception as e:
-                                                st.error(f"❌ Error Supabase ({team_name} - fixture {fix_info['fixture_id']}): {e}")
+                                                pass
                                             
                                         except Exception as e:
-                                            st.warning(f"⚠️ {team_name}: error fetching fixture {fix_info['fixture_id']}: {str(e)[:60]}")
+                                            pass
                     
-                    else:
-                        st.info("ℹ️пёҸ No hay equipos para procesar.")
-
-                    st.success(f"✅ **{equipos_stats_descargados}** equipos con stats | 🆕 {equipos_nuevos} nuevos | ♻️пёҸ {equipos_existentes} existentes")
-                    if stats_ft_nuevos > 0:
-                        st.info(f"📥 **{stats_ft_nuevos}** stats FT incrementales guardadas")
                     st.session_state.sincronizacion_ok = True
                     
-                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
                     # RESUMEN FINAL
-                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
                     st.success("✅ **SINCRONIZACIÓN COMPLETADA**")
                     
                     st.markdown(f"""
@@ -1301,11 +1290,13 @@ def render_login_form():
                     |---------|-------|
                     | 🏆 **Ligas procesadas** | {ligas_procesadas} |
                     | 📅 **Partidos guardados** | {partidos_guardados} |
-                    | 👨 **Equipos detectados** | {len(equipos_unicos)} |
+                    | 👥 **Equipos detectados** | {len(equipos_unicos)} |
                     | 🆕 **Equipos nuevos** | {equipos_nuevos} |
-                    | ♻️пёҸ **Equipos existentes** | {equipos_existentes} |
+                    | ♻️ **Equipos existentes** | {equipos_existentes} |
                     | 📥 **Stats equipos descargadas** | {equipos_stats_descargados} |
-                    | 📲 **Stats FT incrementales** | {stats_ft_nuevos} |
+                    | 📲 **Stats partidos nuevos** | {partidos_iniciales_cargados} |
+                    | 📊 **Stats FT incrementales** | {stats_ft_nuevos} |
+                    | ⚠️ **Errores** | {errores_equipos} |
                     """)
                         
                 except Exception as e:
