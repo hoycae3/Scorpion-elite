@@ -31,7 +31,8 @@ try:
     with open('styles.css', 'r') as f:
         css_content = f.read()
         # Forzar cache bust con version
-        st.markdown(f'<style>/* v20260805 */ {css_content}</style>', unsafe_allow_html=True)
+        <meta name="google" content="notranslate">
+st.markdown(f'<style>/* v20260805 */ {css_content}</style>', unsafe_allow_html=True)
 except Exception as e:
     pass
 
@@ -2194,34 +2195,34 @@ def render_login_form():
             tar_class = "up" if "Over" in pick_tarjetas else "down"
             tar_icon = "Mas" if "Over" in pick_tarjetas else "Menos"
             
-            # Generar HTML del diseño Football Field
+                        # Generar HTML del diseño Football Field
             winner_local = "winner" if es_local_max else ""
             winner_empate = "winner" if es_empate_max else ""
             winner_visita = "winner" if es_visita_max else ""
-            
+
             field_html = f"""
-            <div class="field-container">
+            <div class="field-container" translate="no">
                 <div class="field-center-circle"></div>
                 
                 <div class="field-header">
                     <div class="field-teams">
-                        <span class="field-team">{home}</span>
+                        <span class="field-team" translate="no">{home}</span>
                         <span class="field-vs">VS</span>
-                        <span class="field-team">{away}</span>
+                        <span class="field-team" translate="no">{away}</span>
                     </div>
                 </div>
                 
                 <div class="field-1x2">
                     <div class="field-odds {winner_local}">
-                        <div class="field-odds-label">Local</div>
+                        <div class="field-odds-label" translate="no">L</div>
                         <div class="field-odds-value">{p1_fmt}%</div>
                     </div>
                     <div class="field-odds {winner_empate}">
-                        <div class="field-odds-label">Empate</div>
+                        <div class="field-odds-label" translate="no">E</div>
                         <div class="field-odds-value">{px_fmt}%</div>
                     </div>
                     <div class="field-odds {winner_visita}">
-                        <div class="field-odds-label">Visitante</div>
+                        <div class="field-odds-label" translate="no">V</div>
                         <div class="field-odds-value">{p2_fmt}%</div>
                     </div>
                 </div>
@@ -2229,44 +2230,44 @@ def render_login_form():
                 <div class="field-preds">
                     <div class="field-pred">
                         <div class="field-pred-icon">📊</div>
-                        <div class="field-pred-label">O/U 2.5</div>
+                        <div class="field-pred-label" translate="no">OU 2.5</div>
                         <div class="field-pred-value">2.5</div>
-                        <span class="field-pred-pick {ou_class}">{ou_text} {prob_ou:.0f}%</span>
+                        <span class="field-pred-pick {ou_class}" translate="no">{ou_text} {prob_ou:.0f}%</span>
                     </div>
                     <div class="field-pred">
                         <div class="field-pred-icon">⚽</div>
-                        <div class="field-pred-label">BTTS</div>
-                        <div class="field-pred-value">{btts_icon}</div>
+                        <div class="field-pred-label" translate="no">BTTS</div>
+                        <div class="field-pred-value" translate="no">{btts_icon}</div>
                         <span class="field-pred-pick {btts_class}">{btts_yes:.0f}%</span>
                     </div>
                     <div class="field-pred">
                         <div class="field-pred-icon">🌽</div>
-                        <div class="field-pred-label">Esquinas</div>
+                        <div class="field-pred-label" translate="no">CK</div>
                         <div class="field-pred-value">{total_c:.0f}</div>
-                        <span class="field-pred-pick down">{pick_corner_symbol}{total_c:.0f}</span>
+                        <span class="field-pred-pick down" translate="no">Under</span>
                     </div>
                     <div class="field-pred">
                         <div class="field-pred-icon">📍</div>
-                        <div class="field-pred-label">Tiros</div>
+                        <div class="field-pred-label" translate="no">Tiros</div>
                         <div class="field-pred-value">{int(remates_modelo)}</div>
-                        <span class="field-pred-pick {ti_class}">{ti_icon} {int(prob_tiros)}%</span>
+                        <span class="field-pred-pick {ti_class}" translate="no">{ti_icon} {int(prob_tiros)}%</span>
                     </div>
                     <div class="field-pred">
                         <div class="field-pred-icon">🎯</div>
-                        <div class="field-pred-label">T Arco</div>
+                        <div class="field-pred-label" translate="no">TArco</div>
                         <div class="field-pred-value">{int(arco_modelo)}</div>
-                        <span class="field-pred-pick {arco_class}">{arco_icon} {int(prob_arco)}%</span>
+                        <span class="field-pred-pick {arco_class}" translate="no">{arco_icon} {int(prob_arco)}%</span>
                     </div>
                     <div class="field-pred">
                         <div class="field-pred-icon">🟨</div>
-                        <div class="field-pred-label">Amarillas</div>
+                        <div class="field-pred-label" translate="no">TARJ</div>
                         <div class="field-pred-value">{tarjetas_modelo:.1f}</div>
-                        <span class="field-pred-pick {tar_class}">{tar_icon} {int(prob_tarjetas)}%</span>
+                        <span class="field-pred-pick {tar_class}" translate="no">{tar_icon} {int(prob_tarjetas)}%</span>
                     </div>
                 </div>
                 
                 <div class="field-score">
-                    <div class="field-score-label">Marcador Probable</div>
+                    <div class="field-score-label" translate="no">Score</div>
                     <div class="field-score-value">{score_mas_probable}</div>
                 </div>
             </div>
