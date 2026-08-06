@@ -501,7 +501,7 @@ def render_public_landing():
                         else:
                             gf_l = stats_local.get('goles_favor', 0)
                             gc_l = stats_local.get('goles_contra', 0)
-                        st.markdown(f"**GF/GC:** <span style='color:black;font-weight:bold'>{gf_l:.2f}/{gc_l:.2f}</span>", unsafe_allow_html=True)
+                        st.markdown(f"**GF/GC:** <span style='color:black;font-weight:bold'>{gf_l_str}/{gc_l_str}</span>", unsafe_allow_html=True)
                         lambda_l = promedios_dinamicos_local.get('lambda_ponderado', stats_local.get('lambda_local', 0)) if promedios_dinamicos_local else stats_local.get('lambda_local', 0)
                         st.markdown(f"**Ataque:** <span style='color:black;font-weight:bold'>{lambda_l:.2f}</span> goles/partido", unsafe_allow_html=True)
                     with col2:
@@ -520,7 +520,7 @@ def render_public_landing():
                         else:
                             gf_v = stats_visit.get('goles_favor', 0)
                             gc_v = stats_visit.get('goles_contra', 0)
-                        st.markdown(f"**GF/GC:** <span style='color:black;font-weight:bold'>{gf_v:.2f}/{gc_v:.2f}</span>", unsafe_allow_html=True)
+                        st.markdown(f"**GF/GC:** <span style='color:black;font-weight:bold'>{gf_v_str}/{gc_v_str}</span>", unsafe_allow_html=True)
                         lambda_v = promedios_dinamicos_visitante.get('lambda_ponderado', stats_visit.get('lambda_visitante', 0)) if promedios_dinamicos_visitante else stats_visit.get('lambda_visitante', 0)
                         st.markdown(f"**Ataque:** <span style='color:black;font-weight:bold'>{lambda_v:.2f}</span> goles/partido", unsafe_allow_html=True)
                     
@@ -2056,27 +2056,27 @@ def render_login_form():
                 <div style='background:#0d1b2a;border-radius:12px;padding:10px;margin:10px 0;'>
                     <div style='background:linear-gradient(135deg,#1a1a2e,#16213e);padding:15px;border-radius:10px;margin-bottom:10px;text-align:center;'>
                         <h3 style='color:#fff;margin:0;font-size:18px;'>📊 {html.escape(str(home))} <span style='color:#ffd700;'>vs</span> {html.escape(str(away))}</h3>
-                        <p style='color:#00d4ff;font-size:11px;margin:5px 0 0;'>({pj_l_display} PJ) vs ({pj_v_display} PJ)</p>
+                        <p style='color:#00d4ff;font-size:11px;margin:5px 0 0;'>({pj_l_str} PJ) vs ({pj_v_str} PJ)</p>
                     </div>
                     <div style='display:flex;background:#1e2a3a;padding:10px;border-radius:8px;margin-bottom:5px;'>
                         <div style='width:33%;text-align:center;color:#00ff88;font-weight:bold;font-size:13px;'>{html.escape(str(home))}</div>
                         <div style='width:34%;text-align:center;color:#00d4ff;font-weight:bold;font-size:13px;'>📊 COMPARATIVA</div>
                         <div style='width:33%;text-align:center;color:#ff6b6b;font-weight:bold;font-size:13px;'>{html.escape(str(away))}</div>
                     </div>
-                    {fila_dato(f'{vic_l}-{emp_l}-{der_l}', 'Récord (V-E-D)', f'{vic_v}-{emp_v}-{der_v}')}
+                    {fila_dato(f'{vic_l_str}-{emp_l_str}-{der_l_str}', 'Récord (V-E-D)', f'{vic_v_str}-{emp_v_str}-{der_v_str}')}
                     {fila_dato(gf_l, 'Goles Favor', gf_v, bg_par=True)}
                     {fila_dato(gc_l, 'Goles Contra', gc_v)}
                     {fila_dato(lambda_din_l, 'λ Dinámico', lambda_din_v, '#00ff88', bg_par=True)}
                     {fila_dato(lambda_hist_l_val, 'λ Histórico', lambda_hist_v_val, '#00d4ff')}
-                    <div style='background:#1a1a2e;padding:10px 5px;border-radius:4px;margin:2px 0;display:flex;'><div style='width:33%;text-align:center;color:#ffd700;font-weight:bold;font-size:15px;'>🔥 {lambda_final_l_val:.2f}</div><div style='width:34%;text-align:center;color:#ffd700;font-weight:bold;font-size:13px;'>λ FINAL</div><div style='width:33%;text-align:center;color:#ffd700;font-weight:bold;font-size:15px;'>🔥 {lambda_final_v_val:.2f}</div></div>
+                    <div style='background:#1a1a2e;padding:10px 5px;border-radius:4px;margin:2px 0;display:flex;'><div style='width:33%;text-align:center;color:#ffd700;font-weight:bold;font-size:15px;'>🔥 {lambda_final_l_val}</div><div style='width:34%;text-align:center;color:#ffd700;font-weight:bold;font-size:13px;'>λ FINAL</div><div style='width:33%;text-align:center;color:#ffd700;font-weight:bold;font-size:15px;'>🔥 {lambda_final_v_val}</div></div>
                     <div style='background:#0f1923;padding:10px;border-radius:8px;margin-top:15px;margin-bottom:5px;text-align:center;'><span style='color:#00d4ff;font-weight:bold;'>📈 PROMEDIOS POR PARTIDO</span></div>
-                    {fila_dato(f'{prom_tiros_l:.1f}', 'Tiros Total', f'{prom_tiros_v:.1f}', bg_par=True)}
-                    {fila_dato(f'{prom_tiros_arco_l:.1f}', 'Tiros Arco', f'{prom_tiros_arco_v:.1f}')}
-                    {fila_dato(f'{prom_amarillas_l:.1f}', 'Amarillas', f'{prom_amarillas_v:.1f}', bg_par=True)}
-                    {fila_dato(f'{prom_corners_l:.1f}', 'Esquinas', f'{prom_corners_v:.1f}')}
+                    {fila_dato(f'{prom_tiros_l_str}', 'Tiros Total', f'{prom_tiros_v_str}', bg_par=True)}
+                    {fila_dato(f'{prom_tiros_arco_l_str}', 'Tiros Arco', f'{prom_tiros_arco_v_str}')}
+                    {fila_dato(f'{prom_amarillas_l_str}', 'Amarillas', f'{prom_amarillas_v_str}', bg_par=True)}
+                    {fila_dato(f'{prom_corners_l_str}', 'Esquinas', f'{prom_corners_v_str}')}
                     <div style='background:#0f1923;padding:10px;border-radius:8px;margin-top:15px;margin-bottom:5px;text-align:center;'><span style='color:#00d4ff;font-weight:bold;'>📅 FORMA RECIENTE (Últimos 5)</span></div>
-                    {fila_dato(f'{puntos:.0f}%', 'Puntos %', f'{puntos_v:.0f}%', bg_par=True)}
-                    {fila_dato(f'{gf_forma:.0f}f/{gc_forma:.0f}c', 'Goles (5 Part)', f'{gf_v_forma:.0f}f/{gc_v_forma:.0f}c')}
+                    {fila_dato(f'{puntos_str}%', 'Puntos %', f'{puntos_v_str}%', bg_par=True)}
+                    {fila_dato(f'{gf_forma_str}f/{gc_forma_str}c', 'Goles (5 Part)', f'{gf_v_forma_str}f/{gc_v_forma_str}c')}
                     {fila_dato(badges_local, 'Resultados', badges_visitante, bg_par=True)}
                 </div>
                 """
