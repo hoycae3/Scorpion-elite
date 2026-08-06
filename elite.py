@@ -2128,7 +2128,10 @@ def render_login_form():
                     {fila_dato(badges_local, 'Resultados', badges_visitante, bg_par=True)}
                 </div>
                 """
-                st.html(html_content)
+                # Centrar tabla comparativa usando columnas de Streamlit
+                col_izq, col_centro, col_der = st.columns([1, 2, 1])
+                with col_centro:
+                    st.html(html_content)
             # ========================
             # GUARDAR PARTIDO (TODAS LAS PREDICCIONES)
             # ========================

@@ -844,3 +844,9 @@ div[style*="background"] table {
     .field-odds-value { font-size: 1.8rem; }
     .field-score-value { font-size: 0.85rem; }
 }
+
+/* Tabla comparativa centrada */
+[data-testid="stHorizontalBlock"] > [data-testid="stVerticalBlock"]:nth-child(2) {
+    max-width: 800px !important;
+    margin: 0 auto !important;
+}
