@@ -1742,20 +1742,31 @@ def render_login_form():
         if st.button("🎯 ANALIZAR", type="primary", use_container_width=True, disabled=analizar_disabled):
             try:
                 if home_team and away_team and stats_local and stats_visitante:
-                    # LAMBDA DESDE equipos_stats (calculado durante sincronizacion)
-                    lambda_local_cal = stats_local.get('lambda_local', 1.3)
-                    lambda_visitante_cal = stats_visitante.get('lambda_visitante', 1.1)
+                    # LAMBDA HISTÓRICO desde equipos_stats
+                    lambda_historico_local = stats_local.get('lambda_local', 1.3)
+                    lambda_historico_visit = stats_visitante.get('lambda_visitante', 1.1)
                     
-                    if lambda_local_cal <= 0 or lambda_visitante_cal <= 0:
+                    if lambda_historico_local <= 0 or lambda_historico_visit <= 0:
                         st.error("ERROR: Lambda invalido. Sincroniza los equipos primero.")
                         st.stop()
                     
                     with st.spinner("Analizando..."):
-                        # Aplicar calibracion (ajuste fino)
-                        lambda_local_adj = get_lambda_ajustada(home_team, lambda_local_cal, como_local=True)
-                        lambda_visitante_adj = get_lambda_ajustada(away_team, lambda_visitante_cal, como_local=False)
-                        lambda_local_final = lambda_local_adj['lambda_ajustada']
-                        lambda_visitante_final = lambda_visitante_adj['lambda_ajustada']
+                        # LAMBDA DINÁMICO desde promedios ponderados
+                        lambda_dinamico_local = promedios_dinamicos_local.get('lambda_ponderado') if promedios_dinamicos_local else None
+                        lambda_dinamico_visit = promedios_dinamicos_visitante.get('lambda_ponderado') if promedios_dinamicos_visitante else None
+                        
+                        # λ FINAL = 60% Dinámico + 40% Histórico
+                        if lambda_dinamico_local and lambda_dinamico_visit:
+                            lambda_local_final = lambda_dinamico_local * 0.6 + lambda_historico_local * 0.4
+                            lambda_visit_final = lambda_dinamico_visit * 0.6 + lambda_historico_visit * 0.4
+                        else:
+                            # Si no hay datos dinámicos, usar solo histórico
+                            lambda_local_final = lambda_historico_local
+                            lambda_visit_final = lambda_historico_visit
+                        
+                        # Usar λ FINAL para los modelos
+                        lambda_local_cal = lambda_local_final
+                        lambda_visitante_cal = lambda_visit_final
                         
                         # вҳ… USAR PROMEDIOS DINГҒMICOS si están disponibles
                         if promedios_dinamicos_local:
@@ -1897,18 +1908,6 @@ def render_login_form():
                 # Fuentes de datos en una línea
                 st.markdown(f"📊 **Fuente:** Local `{source_local}` | Visitante `{source_visitante}`")
                 
-                # LAMBDA 1: De equipos_stats (promedio histórico)
-                lambda_historico_local = stats_local.get('lambda_local', 0)
-                lambda_historico_visit = stats_visitante.get('lambda_visitante', 0)
-                
-                # LAMBDA 2: De equipo_partidos_stats (ponderación exponencial de últimos partidos)
-                lambda_dinamico_local = promedios_dinamicos_local.get('lambda_ponderado') if promedios_dinamicos_local else None
-                lambda_dinamico_visit = promedios_dinamicos_visitante.get('lambda_ponderado') if promedios_dinamicos_visitante else None
-                
-                # Lambda final: combinar ambos (60% dinámico, 40% histórico)
-                if lambda_dinamico_local and lambda_dinamico_visit:
-                    lambda_local_final = lambda_dinamico_local * 0.6 + lambda_historico_local * 0.4
-                    lambda_visit_final = lambda_dinamico_visit * 0.6 + lambda_historico_visit * 0.4
                     st.caption("⚡ Lambda: 60% dinámico (últimos partidos) + 40% histórico")
                 
                 # вҳ… USAR PROMEDIOS DINГҒMICOS si están disponibles (ponderación exponencial)
