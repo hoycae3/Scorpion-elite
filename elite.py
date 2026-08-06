@@ -1907,7 +1907,7 @@ def render_login_form():
                 # Fuentes de datos en una línea
                 st.markdown(f"📊 **Fuente:** Local `{source_local}` | Visitante `{source_visitante}`")
                 
-                    st.caption("⚡ Lambda: 60% dinámico (últimos partidos) + 40% histórico")
+                st.caption("⚡ Lambda: 60% dinámico (últimos partidos) + 40% histórico")
                 
                 # вҳ… USAR PROMEDIOS DINГҒMICOS si están disponibles (ponderación exponencial)
                 if promedios_dinamicos_local:
