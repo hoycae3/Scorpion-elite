@@ -2189,6 +2189,7 @@ def render_login_form():
                             pick_1x2 = r.get('pick_1x2', '')
                             pick_data = {
                                 'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
+                                'usuario': usuario_id,
                                 'liga': stats_local.get('liga', 'Desconocida'),
                                 'equipo_local': home,
                                 'equipo_visitante': away,
@@ -3347,26 +3348,92 @@ def render_login_form():
                         st.markdown("##### Selecciona un Pick")
                         
                         # Filtrar picks sin resultado
-                        picks_sin_resultado = [p for p in picks_disponibles if p.get('acertado_1x2') is None and p.get('resultado') is None]
-                        
+                        picks_sin_resultado = [p for p in picks_disponibles if p.get('acertado_1x2') is None]
+
                         if picks_sin_resultado:
-                            opciones_pick = [f"{p.get('local', '?')} VS {p.get('visitante', '?')} - {p.get('mercado', '?')} @ {p.get('cuota', '?')}" for p in picks_sin_resultado]
-                            pick_seleccionado = st.selectbox("Pick", options=range(len(opciones_pick)), format_func=lambda x: opciones_pick[x])
-                            
-                            pick = picks_sin_resultado[pick_seleccionado]
-                            
-                            col_p1, col_p2 = st.columns(2)
-                            with col_p1:
-                                st.write(f"**📅 Fecha:** {pick.get('fecha', 'N/A')}")
-                                st.write(f"**📥 Mercado:** {pick.get('mercado', 'N/A')}")
-                                st.write(f"**📲 Detalle:** {pick.get('detalle', 'N/A')}")
-                            with col_p2:
-                                st.write(f"**🏆 Cuota:** {pick.get('cuota', 'N/A')}")
-                                st.write(f"**🎯 Confianza:** {pick.get('confianza', 'N/A')}%")
+                            # Mostrar partidos con sus mercados disponibles
+                            opciones_pick = []
+                            for p in picks_sin_resultado:
+                                local = p.get('equipo_local', '?')
+                                visitante = p.get('equipo_visitante', '?')
+                                mercados = []
+                                if p.get('prediccion_1x2'): mercados.append("1X2")
+                                if p.get('prediccion_ou'): mercados.append("O/U")
+                                if p.get('prediccion_btts'): mercados.append("BTTS")
+                                if p.get('prediccion_corners'): mercados.append("Corners")
+                                if p.get('prediccion_tarjetas'): mercados.append("Tarjetas")
+                                if p.get('prediccion_remates'): mercados.append("Remates")
+                                opts = ", ".join(mercados) if mercados else "1X2"
+                                opciones_pick.append(f"{local} vs {visitante} [{opts}]")
+
+                            pick_idx = st.selectbox("Partido", options=range(len(opciones_pick)), format_func=lambda x: opciones_pick[x])
+                            pick = picks_sin_resultado[pick_idx]
+
+                            # Seleccionar tipo de mercado
+                            merca_opts = []
+                            if pick.get('prediccion_1x2'): merca_opts.append("1X2")
+                            if pick.get('prediccion_ou'): merca_opts.append("Over/Under")
+                            if pick.get('prediccion_btts'): merca_opts.append("BTTS")
+                            if pick.get('prediccion_corners'): merca_opts.append("Corners")
+                            if pick.get('prediccion_tarjetas'): merca_opts.append("Tarjetas")
+                            if pick.get('prediccion_remates'): merca_opts.append("Remates")
+                            merca_sel = st.selectbox("Mercado", options=merca_opts)
+
+                            # Obtener prediccion
+                            preds = {
+                                "1X2": pick.get('prediccion_1x2', 'N/A'),
+                                "Over/Under": pick.get('prediccion_ou', 'N/A'),
+                                "BTTS": pick.get('prediccion_btts', 'N/A'),
+                                "Corners": pick.get('prediccion_corners', 'N/A'),
+                                "Tarjetas": pick.get('prediccion_tarjetas', 'N/A'),
+                                "Remates": pick.get('prediccion_remates', 'N/A'),
+                            }
+                            prediccion = preds.get(merca_sel, 'N/A')
+
+                            # Info del pick
+                            c1, c2, c3 = st.columns(3)
+                            with c1:
+                                st.write(f"**Fecha:** {pick.get('fecha', 'N/A')}")
+                                st.write(f"**Liga:** {pick.get('liga', 'N/A')}")
+                            with c2:
+                                st.write(f"**{pick.get('equipo_local', '?')} vs {pick.get('equipo_visitante', '?')}")
+                                st.write(f"**Pick:** {prediccion}")
+                            with c3:
+                                st.write(f"**Confianza:** {pick.get('confianza', '?')}%")
+                                prob = pick.get('prob_1x2', 0) if merca_sel == "1X2" else pick.get('prob_ou', 0)
+                                st.write(f"**Prob:** {prob:.1f}%")
+
+                            # Inputs apuesta
+                            a1, a2, a3 = st.columns(3)
+                            with a1:
+                                cuota = st.number_input("Cuota", value=2.0, min_value=1.01, max_value=100.0, step=0.05)
+                            with a2:
+                                cantidad = st.number_input(f"Apuesta ({simbolo})", value=50.0, min_value=1.0, step=10.0)
+                            with a3:
+                                st.write(f"**Ganancia:** {format_money(cantidad * (cuota - 1), simbolo)}")
+
+                            if st.button("APOSTAR", type="primary", use_container_width=True):
+                                try:
+                                    client.table('bankroll_apuestas').insert({
+                                        'usuario': usuario_id,
+                                        'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
+                                        'equipo': f"{pick.get('equipo_local', '')} vs {pick.get('equipo_visitante', '')}",
+                                        'cuota': float(cuota),
+                                        'cantidad': float(cantidad),
+                                        'mercado': merca_sel,
+                                        'pick_id': pick.get('id'),
+                                        'ganancia': 0,
+                                        'resultado': None
+                                    }).execute()
+                                    st.success(f"Apuesta registrada: {prediccion} @ {cuota}")
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Error: {e}")
                         else:
-                            st.info("Todos tus picks ya tienen resultado")
+                            st.info("Todos tus picks ya tienen apuesta")
                     else:
-                        st.info("No tienes picks disponibles. Ve al Analizador para generar picks.")
+                        st.info("No tienes picks. Ve al Analizador y guarda un partido")
+
                 
                 with tab_origen2:
                     st.markdown("##### Datos de la Apuesta")
