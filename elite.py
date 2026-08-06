@@ -2213,55 +2213,94 @@ def render_login_form():
             arco_visitante = datos_visitante.get('promedio_tiros_arco', 0) if tiene_datos_visitante else 0
             arco_total = arco_local + arco_visitante
             
-            # Predicciones del modelo
-            pred_tiros = r.get('tiros', {})
-            pred_tarjetas = r.get('tarjetas', {})
-            pred_arco = r.get('tiros_arco', {})
-            
-            pick_tiros = r.get('pick_tiros') or 'Over 24'
-            prob_tiros = float(r.get('prob_tiros') or 50)
-            remates_modelo = float(pred_tiros.get('total_estimado') or remates_total or 0)
-            
-            pick_tarjetas = r.get('pick_tarjetas') or 'Over 6'
-            prob_tarjetas = float(r.get('prob_tarjetas') or 50)
-            tarjetas_modelo = float(pred_tarjetas.get('total_estimado') or tarjetas_total or 0)
-            
-            pick_arco = r.get('pick_tiros_arco') or 'Over 8'
-            prob_arco = float(r.get('prob_tiros_arco') or 50)
-            arco_modelo = float(pred_arco.get('total_estimado') or arco_total or 0)
-            
-            modelos = r.get('modelos') or {}
-            mc = modelos.get('monte_carlo') or {}
-            top_scores = mc.get('top_scores') or {}
-            score_mas_probable = list(top_scores.keys())[0] if top_scores else "2-1"
-            
-            # Over/Under 2.5
-            pick_ou = r.get('pick_over_under', 'Over 2.5')
-            prob_ou = r.get('prob_over_under', 50)
+            # PREDICCIONES: Mostrar "?" si no hay análisis
+            if not r:
+                # Sin análisis - mostrar "?"
+                pred_tiros = {}
+                pred_tarjetas = {}
+                pred_arco = {}
+                pick_tiros = '?'
+                prob_tiros = 0
+                remates_modelo = 0
+                pick_tarjetas = '?'
+                prob_tarjetas = 0
+                tarjetas_modelo = 0
+                pick_arco = '?'
+                prob_arco = 0
+                arco_modelo = 0
+                score_mas_probable = "?"
+                pick_ou = '?'
+                prob_ou = 0
+                ou_class = ""
+                ou_text = "?"
+                pick_btts = '?'
+                btts_yes = 0
+                btts_icon = "?"
+                btts_class = ""
+                corners = {}
+                total_c = 0
+                pick_corners = '?'
+                ti_class = ""
+                ti_icon = "?"
+                arco_class = ""
+                arco_icon = "?"
+                tar_class = ""
+                tar_icon = "?"
+            else:
+                # Con análisis - usar valores reales
+                pred_tiros = r.get('tiros', {})
+                pred_tarjetas = r.get('tarjetas', {})
+                pred_arco = r.get('tiros_arco', {})
+
+                pick_tiros = r.get('pick_tiros') or 'Over 24'
+                prob_tiros = float(r.get('prob_tiros') or 50)
+                remates_modelo = float(pred_tiros.get('total_estimado') or remates_total or 0)
+
+                pick_tarjetas = r.get('pick_tarjetas') or 'Over 6'
+                prob_tarjetas = float(r.get('prob_tarjetas') or 50)
+                tarjetas_modelo = float(pred_tarjetas.get('total_estimado') or tarjetas_total or 0)
+
+                pick_arco = r.get('pick_tiros_arco') or 'Over 8'
+                prob_arco = float(r.get('prob_tiros_arco') or 50)
+                arco_modelo = float(pred_arco.get('total_estimado') or arco_total or 0)
+
+                modelos = r.get('modelos') or {}
+                mc = modelos.get('monte_carlo') or {}
+                top_scores = mc.get('top_scores') or {}
+                score_mas_probable = list(top_scores.keys())[0] if top_scores else "?"
+
+                # Over/Under 2.5
+                pick_ou = r.get('pick_over_under', 'Over 2.5')
+                prob_ou = r.get('prob_over_under', 50)
+                ou_class = "up" if "Over" in pick_ou else "down"
+                ou_text = "Mas" if "Over" in pick_ou else "Menos"
+
+                # BTTS
+                pick_btts = r.get('pick_btts', 'No')
+                btts_yes = r.get('btts_yes', 50)
+                btts_icon = "Si" if pick_btts == "Si" else "No"
+                btts_class = "up" if pick_btts == "Si" else "down"
+
+                # Corners
+                corners = r.get('corners', {})
+                total_c = corners.get('total_estimado', 10)
+                pick_corners = r.get('pick_corners', '+')
+
+                # Tiros
+                ti_class = "up" if "Over" in pick_tiros else "down"
+                ti_icon = "Mas" if "Over" in pick_tiros else "Menos"
+
+                # Arco
+                arco_class = "up" if "Over" in pick_arco else "down"
+                arco_icon = "Mas" if "Over" in pick_arco else "Menos"
+
+                # Tarjetas
+                tar_class = "up" if "Over" in pick_tarjetas else "down"
+                tar_icon = "Mas" if "Over" in pick_tarjetas else "Menos"
+
+            # Variables comunes
             ou_symbol = "+" if "Over" in pick_ou else "-"
-            ou_class = "up" if "Over" in pick_ou else "down"
-            ou_text = "Mas" if "Over" in pick_ou else "Menos"
-            
-            # BTTS
-            pick_btts = r.get('pick_btts', 'No')
-            btts_yes = r.get('btts_yes', 50)
-            btts_icon = "Si" if pick_btts == "Si" else "No"
-            btts_class = "up" if pick_btts == "Si" else "down"
-            
-            # Corners
-            corners = r.get('corners', {})
-            total_c = corners.get('total_estimado', 10)
-            pick_corners = r.get('pick_corners', '+')
             pick_corner_symbol = "+" if pick_corners == "+" else "-"
-            
-            # Tiros
-            ti_class = "up" if "Over" in pick_tiros else "down"
-            ti_icon = "Mas" if "Over" in pick_tiros else "Menos"
-            
-            # Arco
-            arco_class = "up" if "Over" in pick_arco else "down"
-            arco_icon = "Mas" if "Over" in pick_arco else "Menos"
-            
             # Tarjetas
             tar_class = "up" if "Over" in pick_tarjetas else "down"
             tar_icon = "Mas" if "Over" in pick_tarjetas else "Menos"
