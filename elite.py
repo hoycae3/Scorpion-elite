@@ -26,11 +26,13 @@ def css(color_key, extra=''):
     """Retorna estilo CSS inline con el color de COLORS"""
     return f"color:{COLORS.get(color_key, '#fff')};{extra}"
 
-# CSS global cargado desde archivo
+# CSS global cargado desde archivo (version forzada para cache busting)
 try:
     with open('styles.css', 'r') as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-except:
+        css_content = f.read()
+        # Forzar cache bust con version
+        st.markdown(f'<style>/* v20260805 */ {css_content}</style>', unsafe_allow_html=True)
+except Exception as e:
     pass
 
 # Mapeo de league_id por nombre de liga
