@@ -751,9 +751,9 @@ div[style*="background"] table {
     border: 1px solid rgba(255,255,255,0.15);
 }
 .field-odds.winner {
-    background: rgba(255, 215, 0, 0.3);
-    border: 2px solid #ffd700;
-    box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #fff;
+    box-shadow: 0 0 25px rgba(255, 255, 255, 0.2);
 }
 .field-odds-label {
     font-size: 0.8rem;
@@ -769,8 +769,8 @@ div[style*="background"] table {
     font-family: 'Space Grotesk', monospace;
 }
 .field-odds.winner .field-odds-value {
-    color: #ffd700;
-    text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    color: #fff;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
 }
 .field-preds {
     display: grid;
@@ -810,8 +810,8 @@ div[style*="background"] table {
     display: inline-block;
 }
 .field-pred-pick.up {
-    background: rgba(255,215,0,0.2);
-    color: #ffd700;
+    background: rgba(255,255,255,0.1);
+    color: #fff;
 }
 .field-pred-pick.down {
     background: rgba(255,100,100,0.25);
@@ -819,17 +819,17 @@ div[style*="background"] table {
 }
 .field-score {
     margin-top: 20px;
-    background: rgba(45,42,31,0.8);
+    background: #111111;
     border-radius: 10px;
     padding: 18px 25px;
     text-align: center;
     position: relative;
     z-index: 2;
-    border: 2px solid #ffd700;
+    border: 1px solid #333;
 }
 .field-score-label {
     font-size: 0.85rem;
-    color: #ffd700;
+    color: #fff;
     margin-bottom: 8px;
     text-transform: uppercase;
 }
@@ -838,7 +838,6 @@ div[style*="background"] table {
     font-weight: 900;
     color: #fff;
     font-family: 'Space Grotesk', monospace;
-    text-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
 }
 @media (max-width: 768px) {
     .field-preds { grid-template-columns: repeat(3, 1fr); }
