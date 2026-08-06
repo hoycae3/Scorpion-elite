@@ -2098,55 +2098,22 @@ def render_login_form():
                             st.error(f"❌ Error: {str(e)}")
             
             # ========================
-            # PROBABILIDADES 1X2 (CUADROS MEJORADOS)
             # ========================
-            st.markdown("##### 🎯 Probabilidades (1X2)")
-            
+            # DISEÑO FOOTBALL FIELD - PREDICCIONES
+            # ========================
             p1 = r.get('p1', 0)
             px = r.get('px', 0)
             p2 = r.get('p2', 0)
             
-            # Determinar cuál tiene mayor probabilidad
             es_local_max = p1 > px and p1 > p2
             es_empate_max = px > p1 and px > p2
             es_visita_max = p2 > p1 and p2 > px
             
-            # Formatear sin decimales (evitar coma)
             p1_fmt = int(p1)
             px_fmt = int(px)
             p2_fmt = int(p2)
             
-            col1, col2, col3 = st.columns([1.5, 1.2, 1.5])
-            with col1:
-                clase = "caja-1x2 caja-local" if es_local_max else "caja-1x2"
-                st.markdown(f"""
-                <div class="{clase}">
-                    <p class="etiqueta-equipo etiqueta-local">📊 {home}</p>
-                    <p class="probabilidad">{p1_fmt}%</p>
-                </div>
-                """, unsafe_allow_html=True)
-            with col2:
-                clase = "caja-1x2 caja-empate" if es_empate_max else "caja-1x2"
-                st.markdown(f"""
-                <div class="{clase}">
-                    <p class="etiqueta-equipo etiqueta-empate">⚖️ Empate</p>
-                    <p class="probabilidad">{px_fmt}%</p>
-                </div>
-                """, unsafe_allow_html=True)
-            with col3:
-                clase = "caja-1x2 caja-visita" if es_visita_max else "caja-1x2"
-                st.markdown(f"""
-                <div class="{clase}">
-                    <p class="etiqueta-equipo etiqueta-visita">✈️ {away}</p>
-                    <p class="probabilidad">{p2_fmt}%</p>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            # ========================
-            # PREDICCIONES ADICIONALES (CUADROS MEJORADOS)
-            # ========================
-            # вҳ… Verificar si hay datos reales para mostrar predicciones
-            # RECUPERAR promedios_dinamicos del session_state
+            # Verificar si hay datos reales para predicciones adicionales
             promedios_dinamicos_local = st.session_state.get('promedios_dinamicos_local')
             promedios_dinamicos_visitante = st.session_state.get('promedios_dinamicos_visitante')
             
@@ -2155,25 +2122,24 @@ def render_login_form():
             
             if not (tiene_datos_local or tiene_datos_visitante):
                 st.warning("⚠️ **Sin datos históricos** - Sincroniza equipos para ver predicciones adicionales.")
-                st.stop()
             
-            # Usar datos reales
+            # Obtener datos
             datos_local = promedios_dinamicos_local or {}
             datos_visitante = promedios_dinamicos_visitante or {}
             
             ta_local = datos_local.get('promedio_amarillas', 0) if tiene_datos_local else 0
             ta_visitante = datos_visitante.get('promedio_amarillas', 0) if tiene_datos_visitante else 0
             tarjetas_total = ta_local + ta_visitante
-
+            
             ti_local = datos_local.get('promedio_tiros', 0) if tiene_datos_local else 0
             ti_visitante = datos_visitante.get('promedio_tiros', 0) if tiene_datos_visitante else 0
             remates_total = ti_local + ti_visitante
-
+            
             arco_local = datos_local.get('promedio_tiros_arco', 0) if tiene_datos_local else 0
             arco_visitante = datos_visitante.get('promedio_tiros_arco', 0) if tiene_datos_visitante else 0
             arco_total = arco_local + arco_visitante
-
-            # Obtener predicciones del modelo matemático
+            
+            # Predicciones del modelo
             pred_tiros = r.get('tiros', {})
             pred_tarjetas = r.get('tarjetas', {})
             pred_arco = r.get('tiros_arco', {})
@@ -2195,96 +2161,125 @@ def render_login_form():
             top_scores = mc.get('top_scores') or {}
             score_mas_probable = list(top_scores.keys())[0] if top_scores else "2-1"
             
-            col_space, col_ou, col_btts, col_corners, col_remates, col_arco, col_tarjetas, col_score, col_space2 = st.columns([0.3, 1, 1, 1, 1, 1, 1, 1, 0.3])
+            # Over/Under 2.5
+            pick_ou = r.get('pick_over_under', 'Over 2.5')
+            prob_ou = r.get('prob_over_under', 50)
+            ou_symbol = "+" if "Over" in pick_ou else "-"
+            ou_class = "up" if "Over" in pick_ou else "down"
+            ou_text = "Mas" if "Over" in pick_ou else "Menos"
             
-            with col_ou:
-                pick_ou = r.get('pick_over_under', 'Over 2.5')
-                prob_ou = r.get('prob_over_under', 50)
-                # Cambiar texto para evitar traduccion
-                ou_display = "Over" if "Over" in pick_ou else "Menos"
-                ou_symbol = "+" if "Over" in pick_ou else "-"
-                ou_color_class = "pick-over" if "Over" in pick_ou else "pick-under"
-                st.markdown(f"""
-                <div class="caja-prediccion">
-                    <p class="titulo-caja">📲 Mas/Menos 2.5</p>
-                    <p class="valor-caja {ou_color_class}">{ou_symbol} 2.5</p>
-                    <p class="pick-caja">{ou_display} {prob_ou:.0f}%</p>
-                </div>
-                """, unsafe_allow_html=True)
+            # BTTS
+            pick_btts = r.get('pick_btts', 'No')
+            btts_yes = r.get('btts_yes', 50)
+            btts_icon = "Si" if pick_btts == "Si" else "No"
+            btts_class = "up" if pick_btts == "Si" else "down"
             
-            with col_btts:
-                pick_btts = r.get('pick_btts', 'No')
-                btts_yes = r.get('btts_yes', 50)
-                btts_icon = "✅" if pick_btts == "Sí" else "❌"
-                btts_color_class = "pick-si" if pick_btts == "Sí" else "pick-no"
-                st.markdown(f"""
-                <div class="caja-prediccion">
-                    <p class="titulo-caja">⚽ Ambos Marcan</p>
-                    <p class="valor-caja {btts_color_class}">{btts_icon} {pick_btts}</p>
-                    <p class="pick-caja">{btts_yes:.0f}%</p>
-                </div>
-                """, unsafe_allow_html=True)
+            # Corners
+            corners = r.get('corners', {})
+            total_c = corners.get('total_estimado', 10)
+            pick_corners = r.get('pick_corners', '+')
+            pick_corner_symbol = "+" if pick_corners == "+" else "-"
             
-            with col_corners:
-                corners = r.get('corners', {})
-                total_c = corners.get('total_estimado', 10)
-                pick_corners = r.get('pick_corners', '+')
-                pick_corner_symbol = "+" if pick_corners == "+" else "-"
-                st.markdown(f"""
-                <div class="caja-prediccion">
-                    <p class="titulo-caja">🌽 Córners Total</p>
-                    <p class="valor-caja" style="color: #00d2d3;">{total_c:.0f}</p>
-                    <p class="pick-caja">{pick_corner_symbol} {total_c:.0f}</p>
-                </div>
-                """, unsafe_allow_html=True)
+            # Tiros
+            ti_class = "up" if "Over" in pick_tiros else "down"
+            ti_icon = "Mas" if "Over" in pick_tiros else "Menos"
             
-            with col_remates:
-                remates_icon = "📲" if "Over" in pick_tiros else "🔽"
-                remates_color_class = "pick-over" if "Over" in pick_tiros else "pick-under"
-                # Usar "Mas" o "Menos" para evitar traduccion automatica
-                pick_tiros_display = "Mas" if "Over" in pick_tiros else "Menos"
-                st.markdown(f"""
-                <div class="caja-prediccion">
-                    <p class="titulo-caja">📍 Tiros Total</p>
-                    <p class="valor-caja" style="color: #00ff88;">{int(remates_modelo)}</p>
-                    <p class="pick-caja {remates_color_class}">{remates_icon} {pick_tiros_display} ({int(prob_tiros)}%)</p>
-                </div>
-                """, unsafe_allow_html=True)
+            # Arco
+            arco_class = "up" if "Over" in pick_arco else "down"
+            arco_icon = "Mas" if "Over" in pick_arco else "Menos"
             
-            with col_arco:
-                arco_icon = "📲" if "Over" in pick_arco else "🔽"
-                arco_color_class = "pick-over" if "Over" in pick_arco else "pick-under"
-                pick_arco_display = "Mas" if "Over" in pick_arco else "Menos"
-                st.markdown(f"""
-                <div class="caja-prediccion">
-                    <p class="titulo-caja">🎯 Tiros Arco</p>
-                    <p class="valor-caja" style="color: #ff9f43;">{int(arco_modelo)}</p>
-                    <p class="pick-caja {arco_color_class}">{arco_icon} {pick_arco_display} ({int(prob_arco)}%)</p>
-                </div>
-                """, unsafe_allow_html=True)
+            # Tarjetas
+            tar_class = "up" if "Over" in pick_tarjetas else "down"
+            tar_icon = "Mas" if "Over" in pick_tarjetas else "Menos"
             
-            with col_tarjetas:
-                tarjetas_icon = "📲" if "Over" in pick_tarjetas else "🔽"
-                tarjetas_color_class = "pick-over" if "Over" in pick_tarjetas else "pick-under"
-                pick_tarjetas_display = "Mas" if "Over" in pick_tarjetas else "Menos"
-                st.markdown(f"""
-                <div class="caja-prediccion">
-                    <p class="titulo-caja">🟨 Amarillas Total</p>
-                    <p class="valor-caja" style="color: #ffd700;">{tarjetas_modelo:.1f}</p>
-                    <p class="pick-caja {tarjetas_color_class}">{tarjetas_icon} {pick_tarjetas_display} ({int(prob_tarjetas)}%)</p>
-                </div>
-                """, unsafe_allow_html=True)
+            # Generar HTML del diseño Football Field
+            winner_local = "winner" if es_local_max else ""
+            winner_empate = "winner" if es_empate_max else ""
+            winner_visita = "winner" if es_visita_max else ""
             
-            with col_score:
-                st.markdown(f"""
-                <div class="caja-prediccion">
-                    <p class="titulo-caja">🎯 Marcador Probable</p>
-                    <p class="valor-caja" style="color: #ff6b6b;">{score_mas_probable}</p>
-                    <p class="pick-caja" style="color: #888;">Más probable</p>
+            field_html = f"""
+            <div class="field-container">
+                <div class="field-center-circle"></div>
+                
+                <div class="field-header">
+                    <div class="field-teams">
+                        <span class="field-team">{home}</span>
+                        <span class="field-vs">VS</span>
+                        <span class="field-team">{away}</span>
+                    </div>
                 </div>
-                """, unsafe_allow_html=True)
+                
+                <div class="field-1x2">
+                    <div class="field-odds {winner_local}">
+                        <div class="field-odds-label">Local</div>
+                        <div class="field-odds-value">{p1_fmt}%</div>
+                    </div>
+                    <div class="field-odds {winner_empate}">
+                        <div class="field-odds-label">Empate</div>
+                        <div class="field-odds-value">{px_fmt}%</div>
+                    </div>
+                    <div class="field-odds {winner_visita}">
+                        <div class="field-odds-label">Visitante</div>
+                        <div class="field-odds-value">{p2_fmt}%</div>
+                    </div>
+                </div>
+                
+                <div class="field-preds">
+                    <div class="field-pred">
+                        <div class="field-pred-icon">📊</div>
+                        <div class="field-pred-label">O/U 2.5</div>
+                        <div class="field-pred-value">2.5</div>
+                        <span class="field-pred-pick {ou_class}">{ou_text} {prob_ou:.0f}%</span>
+                    </div>
+                    <div class="field-pred">
+                        <div class="field-pred-icon">⚽</div>
+                        <div class="field-pred-label">BTTS</div>
+                        <div class="field-pred-value">{btts_icon}</div>
+                        <span class="field-pred-pick {btts_class}">{btts_yes:.0f}%</span>
+                    </div>
+                    <div class="field-pred">
+                        <div class="field-pred-icon">🌽</div>
+                        <div class="field-pred-label">Esquinas</div>
+                        <div class="field-pred-value">{total_c:.0f}</div>
+                        <span class="field-pred-pick down">{pick_corner_symbol}{total_c:.0f}</span>
+                    </div>
+                    <div class="field-pred">
+                        <div class="field-pred-icon">📍</div>
+                        <div class="field-pred-label">Tiros</div>
+                        <div class="field-pred-value">{int(remates_modelo)}</div>
+                        <span class="field-pred-pick {ti_class}">{ti_icon} {int(prob_tiros)}%</span>
+                    </div>
+                    <div class="field-pred">
+                        <div class="field-pred-icon">🎯</div>
+                        <div class="field-pred-label">T Arco</div>
+                        <div class="field-pred-value">{int(arco_modelo)}</div>
+                        <span class="field-pred-pick {arco_class}">{arco_icon} {int(prob_arco)}%</span>
+                    </div>
+                    <div class="field-pred">
+                        <div class="field-pred-icon">🟨</div>
+                        <div class="field-pred-label">Amarillas</div>
+                        <div class="field-pred-value">{tarjetas_modelo:.1f}</div>
+                        <span class="field-pred-pick {tar_class}">{tar_icon} {int(prob_tarjetas)}%</span>
+                    </div>
+                </div>
+                
+                <div class="field-score">
+                    <div class="field-score-label">Marcador Probable</div>
+                    <div class="field-score-value">{score_mas_probable}</div>
+                </div>
+            </div>
+            """
+            st.markdown(field_html, unsafe_allow_html=True)
             
             # ========================
+            # RESUMEN DE PREDICCIONES CON PROBABILIDADES
+            # ========================
+            st.markdown("---")
+            st.markdown("""
+            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; padding: 15px; margin: 10px 0;">
+                <h4 style="color: #00d4ff; text-align: center; margin: 0 0 15px 0;">📥 Predicciones del Modelo Matemático</h4>
+            </div>
+            """, unsafe_allow_html=True)
             # RESUMEN DE PREDICCIONES CON PROBABILIDADES
             # ========================
             st.markdown("---")
