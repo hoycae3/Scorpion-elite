@@ -2049,6 +2049,54 @@ def render_login_form():
                 lambda_hist_l_val = f'{lambda_historico_local:.2f}' if lambda_historico_local is not None else '?'
                 lambda_hist_v_val = f'{lambda_historico_visit:.2f}' if lambda_historico_visit is not None else '?'
                 lambda_final_l_val = f'{lambda_local_final:.2f}' if lambda_local_final is not None else '?'
+
+                # FUNCIÓN AUXILIAR PARA CONVERTIR VALORES A STRING SIN ERRORES DE FORMATO
+                def safe_fmt(val, fmt='.1f'):
+                    """Convierte valor a string, manteniendo '?' si no hay datos"""
+                    if val == '?' or val is None:
+                        return '?'
+                    try:
+                        return f'{float(val):{fmt}}'
+                    except:
+                        return str(val)
+
+                def safe_fmt_int(val):
+                    """Convierte valor a string entero"""
+                    if val == '?' or val is None:
+                        return '?'
+                    try:
+                        return f'{int(float(val))}'
+                    except:
+                        return str(val)
+
+                # CONVERTIR TODAS LAS VARIABLES A STRINGS PARA EL F-STRING
+                pj_l_str = safe_fmt_int(pj_l_display)
+                pj_v_str = safe_fmt_int(pj_v_display)
+                vic_l_str = safe_fmt_int(vic_l)
+                emp_l_str = safe_fmt_int(emp_l)
+                der_l_str = safe_fmt_int(der_l)
+                vic_v_str = safe_fmt_int(vic_v)
+                emp_v_str = safe_fmt_int(emp_v)
+                der_v_str = safe_fmt_int(der_v)
+                gf_l_str = safe_fmt(gf_l)
+                gc_l_str = safe_fmt(gc_l)
+                gf_v_str = safe_fmt(gf_v)
+                gc_v_str = safe_fmt(gc_v)
+                prom_tiros_l_str = safe_fmt(prom_tiros_l)
+                prom_tiros_v_str = safe_fmt(prom_tiros_v)
+                prom_tiros_arco_l_str = safe_fmt(prom_tiros_arco_l)
+                prom_tiros_arco_v_str = safe_fmt(prom_tiros_arco_v)
+                prom_amarillas_l_str = safe_fmt(prom_amarillas_l)
+                prom_amarillas_v_str = safe_fmt(prom_amarillas_v)
+                prom_corners_l_str = safe_fmt(prom_corners_l)
+                prom_corners_v_str = safe_fmt(prom_corners_v)
+                puntos_str = safe_fmt(puntos)
+                puntos_v_str = safe_fmt(puntos_v)
+                gf_forma_str = safe_fmt_int(gf_forma)
+                gc_forma_str = safe_fmt_int(gc_forma)
+                gf_v_forma_str = safe_fmt_int(gf_v_forma)
+                gc_v_forma_str = safe_fmt_int(gc_v_forma)
+
                 lambda_final_v_val = f'{lambda_visit_final:.2f}' if lambda_visit_final is not None else '?' 
 
                 # Contenedor principal usando st.html()
