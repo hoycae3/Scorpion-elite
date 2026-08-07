@@ -2258,31 +2258,62 @@ def render_login_form():
 
             # Leer datos del análisis actual
             r = st.session_state.get('analysis_result', {})
-            home = local_nombre or st.session_state.get('home', 'Equipo Local')
-            away = visitante_nombre or st.session_state.get('away', 'Equipo Visitante')
-
-            st.write(f"**Equipos:** {home} vs {away}")
-            st.write(f"**Pick 1X2:** {r.get('pick_1x2', 'N/A')} ({r.get('prob_1x2', 0):.1f}%)")
+            home = local_nombre if local_nombre else 'Equipo Local'
+            away = visitante_nombre if visitante_nombre else 'Equipo Visitante'
 
             if st.button("💾 GUARDAR PICK", type="primary", use_container_width=True):
                 try:
                     client = get_client()
+                    pred_tiros = r.get('tiros', {})
+                    pred_tarjetas = r.get('tarjetas', {})
+                    pred_arco = r.get('tiros_arco', {})
+                    pred_corners = r.get('corners', {})
+                    
                     pick_data = {
                         'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
                         'usuario': 'usuario_default',
                         'liga': stats_local.get('liga', 'Desconocida') if stats_local else 'N/A',
                         'equipo_local': home,
                         'equipo_visitante': away,
-                        'pick': r.get('pick_1x2', '1'),
+                        # 1X2
                         'prediccion_1x2': r.get('pick_1x2', '1'),
                         'prob_1x2': float(r.get('prob_1x2', 50)),
                         'p1': float(r.get('p1', 33)),
                         'px': float(r.get('px', 33)),
                         'p2': float(r.get('p2', 33)),
+                        # Over/Under
                         'prediccion_ou': r.get('pick_over_under', 'Over'),
                         'prob_ou': float(r.get('prob_over_under', 50)),
+                        'over_25': float(r.get('prob_over_under', 50)),
+                        'under_25': float(100 - r.get('prob_over_under', 50)),
+                        # BTTS
                         'prediccion_btts': r.get('pick_btts', 'Si'),
+                        'prob_btts': float(r.get('btts_yes', 50)),
                         'btts_yes': float(r.get('btts_yes', 50)),
+                        'btts_no': float(100 - r.get('btts_yes', 50)),
+                        # Corners
+                        'prediccion_corners': r.get('pick_corners', 'Over'),
+                        'corners_total_estimado': float(pred_corners.get('total_estimado', 10)),
+                        # Remates
+                        'prediccion_remates': r.get('pick_tiros', 'Over'),
+                        'remates_total_estimado': float(pred_tiros.get('total_estimado', 24)),
+                        'remates_local': float(pred_tiros.get('tiros_local_estimado', 12)),
+                        'remates_visitante': float(pred_tiros.get('tiros_visitante_estimado', 12)),
+                        'over_remates': float(r.get('prob_tiros', 50)),
+                        'under_remates': float(100 - r.get('prob_tiros', 50)),
+                        # Tarjetas
+                        'prediccion_tarjetas': r.get('pick_tarjetas', 'Over'),
+                        'tarjetas_total_estimado': float(pred_tarjetas.get('total_estimado', 6)),
+                        'tarjetas_over_prob': float(r.get('prob_tarjetas', 50)),
+                        'tarjetas_under_prob': float(100 - r.get('prob_tarjetas', 50)),
+                        # Tiros Arco
+                        'prediccion_arco': r.get('pick_tiros_arco', 'Over'),
+                        'arco_total_estimado': float(pred_arco.get('total_estimado', 8)),
+                        'arco_local': float(pred_arco.get('arco_local', 4)),
+                        'arco_visitante': float(pred_arco.get('arco_visitante', 4)),
+                        'arco_over_prob': float(r.get('prob_tiros_arco', 50)),
+                        'arco_under_prob': float(100 - r.get('prob_tiros_arco', 50)),
+                        # Confianza
                         'confianza': int(r.get('confianza', 50)),
                         'rango': r.get('rango', 'C'),
                     }
