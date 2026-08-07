@@ -1568,12 +1568,40 @@ def render_login_form():
         
         client = get_client()
         
-        # Si no hay partido seleccionado, mostrar instrucciones
-        if not st.session_state.selected_match_data and not ('selected_local' in st.session_state and 'selected_away' in st.session_state):
-            st.warning("⚠️ No hay partido seleccionado. Ve a la pestaña **Carga** y selecciona un partido para analizar.")
-            st.info("💡 Haz clic en '📊 Analizar' en cualquier partido de la lista.")
-            st.stop()
-        
+        # Formulario para seleccionar equipos directamente
+        st.markdown("### 📊 Seleccionar Equipos para Analizar")
+
+        # Obtener lista de equipos
+        equipos_lista = []
+        try:
+            resp = client.table('equipos_stats').select('equipo').limit(500).execute()
+            if resp.data:
+                for eq in resp.data:
+                    nombre = eq.get('equipo', '')
+                    if nombre and nombre not in equipos_lista:
+                        equipos_lista.append(nombre)
+        except:
+            pass
+
+        col1, col2 = st.columns(2)
+        with col1:
+            equipo_local = st.selectbox("🏠 Equipo Local", options=equipos_lista, key="select_local")
+        with col2:
+            equipo_visitante = st.selectbox("✈️ Equipo Visitante", options=equipos_lista, key="select_visitante")
+
+        analizar_btn = st.button("🔍 ANALIZAR", type="primary", use_container_width=True)
+
+        # Si no hay partido seleccionado ni se presionó analizar, usar session_state
+        if not analizar_btn:
+            if not st.session_state.selected_match_data and not ('selected_local' in st.session_state and 'selected_away' in st.session_state):
+                st.info("👆 Selecciona dos equipos y presiona ANALIZAR")
+                st.stop()
+
+        # Si se presionó analizar con equipos seleccionados
+        if analizar_btn and equipo_local and equipo_visitante:
+            st.session_state.selected_local = equipo_local
+            st.session_state.selected_away = equipo_visitante
+
         # Emoji por país
         # Si hay un partido seleccionado, hacer análisis automático
         if st.session_state.selected_match_data:
