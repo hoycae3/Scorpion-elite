@@ -2204,7 +2204,6 @@ def render_login_form():
             lambda_din_l = lambda_din_v = '0.00'
             lambda_historico_local = lambda_historico_visit = 0.0
             lambda_local_final = lambda_visit_final = 0.0
-            st.error(f"DEBUG: r={bool(r)}, stats_local={bool(stats_local)}, stats_visitante={bool(stats_visitante)}")
             home = st.session_state.get('home', '')
             away = st.session_state.get('away', '')
             confianza = r.get('confianza', 0)
@@ -2213,18 +2212,12 @@ def render_login_form():
             if r and stats_local and stats_visitante:
                 col_btn, col_info = st.columns([1, 3])
                 with col_btn:
-                    st.error("DEBUG: Botón visible, esperando click...")
                     if st.button("💾 GUARDAR PARTIDO", type="primary", use_container_width=True):
-                        st.error("DEBUG: ¡Botón presionado!")
                         try:
                             client = get_client()
-                            if client is None:
-                                st.error("ERROR: Cliente Supabase es None")
-                                st.stop()
-                            st.error(f"DEBUG: Cliente OK")
+                            usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
                             
                             # Obtener datos de predicciones del resultado
-                            usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
                             pred_tiros = r.get('tiros', {})
                             pred_tarjetas = r.get('tarjetas', {})
                             pred_arco = r.get('tiros_arco', {})
@@ -2271,19 +2264,13 @@ def render_login_form():
                                 'confianza': int(confianza),
                                 'rango': rango,
                             }
+                            
                             client.table('picks').insert(pick_data).execute()
-                            st.error("DEBUG: Antes del insert...")
-                            st.session_state.guardado_ok = True
-                            st.error("DEBUG: Después del insert, guardado_ok=True")
-
+                            st.success("✅ Partido guardado!")
+                            st.balloons()
+                            
                         except Exception as e:
-                            st.error(f"❌ Error al guardar: {str(e)}")
-
-                # Mensaje de exito
-                if st.session_state.get('guardado_ok', False):
-                    st.success("✅ Partido guardado! Ve a VIP > Bankroll > Agregar Apuesta")
-                    st.balloons()
-                    st.session_state.guardado_ok = False
+                            st.error(f"❌ Error: {str(e)}")
             
             # ========================
             # ========================
@@ -3273,26 +3260,11 @@ def render_login_form():
                 return f"{simbolo}{valor:,.2f}"
             
             # Obtener picks del usuario para agregar al bankroll
-            st.error(f"DEBUG: usuario_id = {usuario_id}")
             try:
-                # Primero contar TODOS los picks (sin filtro)
-                all_picks = client.table('picks').select('*', count='exact').execute()
-                total_all = len(all_picks.data) if all_picks.data else 0
-                st.error(f"DEBUG: Total picks en DB = {total_all}")
-                
-                # Intentar con filtro de usuario
-                try:
-                    response_picks = client.table('picks').select('*').eq('usuario', usuario_id).execute()
-                    picks_disponibles = response_picks.data if response_picks.data else []
-                    total_user = len(picks_disponibles)
-                    st.error(f"DEBUG: Picks con usuario '{usuario_id}' = {total_user}")
-                except Exception as e2:
-                    st.error(f"DEBUG: Error con filtro usuario: {e2}")
-                    picks_disponibles = all_picks.data
-                    total_user = len(picks_disponibles)
-                
+                response_picks = client.table('picks').select('*').eq('usuario', usuario_id).execute()
+                picks_disponibles = response_picks.data if response_picks.data else []
             except Exception as e:
-                st.error(f"DEBUG: Error general: {e}")
+                logger.error(f"Error obteniendo picks para bankroll: {e}")
                 picks_disponibles = []
             
             # Obtener apuestas guardadas del usuario
