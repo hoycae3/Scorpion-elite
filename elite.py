@@ -2213,6 +2213,7 @@ def render_login_form():
                 col_btn, col_info = st.columns([1, 3])
                 with col_btn:
                     if st.button("💾 GUARDAR PARTIDO", type="primary", use_container_width=True):
+                        st.error("⚠️ BOTON PRESIONADO - Iniciando guardado...")
                         try:
                             client = get_client()
                             usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
