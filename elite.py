@@ -2308,7 +2308,7 @@ def render_login_form():
                         'tarjetas_under_prob': float(100 - r.get('prob_tarjetas', 50)),
                         # Tiros Arco
                         'prediccion_arco': r.get('pick_tiros_arco', 'Over'),
-                        'arco_total_estimado': float(pred_arco.get('total_estimado', 8)),
+                        
                         # Confianza
                         'confianza': int(r.get('confianza', 50)),
                         'rango': r.get('rango', 'C'),
