@@ -632,7 +632,6 @@ def render_public_landing():
         st.markdown("- **Monte Carlo:** Simulaciones")
         st.markdown("- **Elo:** Rating de equipos")
 
-    
     st.markdown("<hr>", unsafe_allow_html=True)
     
     # --- TABLA DE PLANES ---
@@ -670,7 +669,6 @@ def render_public_landing():
 
     st.markdown("<hr>", unsafe_allow_html=True)
     
-
     # --- FOOTER ---
     st.markdown("""
     <div class="footer">
@@ -801,7 +799,6 @@ def render_login_form():
         
         st.markdown("### 📊 Partidos de los Próximos 7 Días")
         
-
         # ========== ESTADO DE SINCRONIZACION ==========
         try:
             client = get_client()
@@ -1055,7 +1052,6 @@ def render_login_form():
                         liga_id = liga['id']
                         liga_nombre = liga['name']
                         
-                        
                         # Descargar fixtures de esta liga
                         params = {
                             'league': liga_id,
@@ -1173,7 +1169,6 @@ def render_login_form():
                         except Exception as e:
                             # Si falla una liga, continuar con la siguiente
                             continue
-                    
                     
                     # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
                     # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
@@ -1343,7 +1338,6 @@ def render_login_form():
                                     except:
                                         pass
 
-                                
                                 # вҳ… CORREGIDO: Siempre intentar guardar/actualizar TODOS los FT
                                 # El upsert no duplica, solo actualiza si ya existe
                                 if ft_en_ventana:
@@ -1434,7 +1428,6 @@ def render_login_form():
         if st.session_state.get('limpieza_equipos_ok'):
             st.success(f"✅ Equipos limpiados correctamente")
             st.session_state.limpieza_equipos_ok = False
-
 
         # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
         # LIMPIEZA: Eliminar partidos de más de 1 aГұo SOLO si hay partidos nuevos
@@ -1727,8 +1720,6 @@ def render_login_form():
             else:
                 st.stop()  # No continuar si no hay stats
         
-        
-        
         # Si hay un partido seleccionado de la lista, usar esos equipos
         # Bloque comentado
         #             local_nombre = selected_match.get('equipo_local', '')
@@ -1825,7 +1816,6 @@ def render_login_form():
             st.error(f"⚠️ Equipos sin datos completos: {', '.join(set(equipos_faltantes))}")
             st.info("💡 Ejecuta Sincronizar para obtener estadísticas de estos equipos.")
         
-
         # Botón analizar - solo si ambos equipos existen
         analizar_disabled = not (equipo_local_ok and equipo_visitante_ok)
         
@@ -2057,7 +2047,6 @@ def render_login_form():
                 emp_l = int(stats_local.get('empates') or 0)
                 der_l = int(stats_local.get('derrotas') or 0)
                 
-                
                 # Calcular promedios VISITANTE
                 pj_v = stats_visitante.get('partidos_jugados', 1) or 1
                 gf_v = float(stats_visitante.get('goles_favor') or 0)
@@ -2264,10 +2253,6 @@ def render_login_form():
             if st.button("💾 GUARDAR PICK", type="primary", use_container_width=True):
                 try:
                     client = get_client()
-                    pred_tiros = r.get('tiros', {})
-                    pred_tarjetas = r.get('tarjetas', {})
-                    pred_arco = r.get('tiros_arco', {})
-                    pred_corners = r.get('corners', {})
                     
                     pick_data = {
                         'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
@@ -2275,41 +2260,21 @@ def render_login_form():
                         'liga': stats_local.get('liga', 'Desconocida') if stats_local else 'N/A',
                         'equipo_local': home,
                         'equipo_visitante': away,
-                        # 1X2
+
                         'prediccion_1x2': r.get('pick_1x2', '1'),
                         'prob_1x2': float(r.get('prob_1x2', 50)),
                         'p1': float(r.get('p1', 33)),
                         'px': float(r.get('px', 33)),
                         'p2': float(r.get('p2', 33)),
-                        # Over/Under
+
                         'prediccion_ou': r.get('pick_over_under', 'Over'),
                         'prob_ou': float(r.get('prob_over_under', 50)),
-                        'over_25': float(r.get('prob_over_under', 50)),
-                        'under_25': float(100 - r.get('prob_over_under', 50)),
-                        # BTTS
-                        'prediccion_btts': r.get('pick_btts', 'Si'),
-                        'prob_btts': float(r.get('btts_yes', 50)),
-                        'btts_yes': float(r.get('btts_yes', 50)),
-                        'btts_no': float(100 - r.get('btts_yes', 50)),
-                        # Corners
-                        'prediccion_corners': r.get('pick_corners', 'Over'),
-                        'corners_total_estimado': float(pred_corners.get('total_estimado', 10)),
-                        # Remates
-                        'prediccion_remates': r.get('pick_tiros', 'Over'),
-                        'remates_total_estimado': float(pred_tiros.get('total_estimado', 24)),
-                        'remates_local': float(pred_tiros.get('tiros_local_estimado', 12)),
-                        'remates_visitante': float(pred_tiros.get('tiros_visitante_estimado', 12)),
-                        'over_remates': float(r.get('prob_tiros', 50)),
-                        'under_remates': float(100 - r.get('prob_tiros', 50)),
-                        # Tarjetas
-                        'prediccion_tarjetas': r.get('pick_tarjetas', 'Over'),
-                        'tarjetas_total_estimado': float(pred_tarjetas.get('total_estimado', 6)),
-                        'tarjetas_over_prob': float(r.get('prob_tarjetas', 50)),
-                        'tarjetas_under_prob': float(100 - r.get('prob_tarjetas', 50)),
-                        # Tiros Arco
-                        'prediccion_arco': r.get('pick_tiros_arco', 'Over'),
                         
-                        # Confianza
+                        'prediccion_btts': r.get('pick_btts', 'Si'),
+                        
+                        'btts_yes': float(r.get('btts_yes', 50)),
+                        
+                        
                         'confianza': int(r.get('confianza', 50)),
                         'rango': r.get('rango', 'C'),
                     }
@@ -2363,9 +2328,7 @@ def render_login_form():
             
             if r:
                 # Análisis completo del modelo
-                pred_tiros = r.get('tiros', {})
-                pred_tarjetas = r.get('tarjetas', {})
-                pred_arco = r.get('tiros_arco', {})
+                
                 pick_tiros = r.get('pick_tiros') or 'Over 24'
                 prob_tiros = float(r.get('prob_tiros') or 50)
                 remates_modelo = float(pred_tiros.get('total_estimado') or remates_total or 0)
@@ -2489,10 +2452,7 @@ def render_login_form():
                 tar_icon = "?"
             # Fin de lógica de predicciones
                 # Con análisis - usar valores reales
-                pred_tiros = r.get('tiros', {})
-                pred_tarjetas = r.get('tarjetas', {})
-                pred_arco = r.get('tiros_arco', {})
-
+                
                 pick_tiros = r.get('pick_tiros') or 'Over 24'
                 prob_tiros = float(r.get('prob_tiros') or 50)
                 remates_modelo = float(pred_tiros.get('total_estimado') or remates_total or 0)
@@ -2522,7 +2482,6 @@ def render_login_form():
                 btts_icon = "Si" if pick_btts == "Si" else "No"
                 btts_class = "up" if pick_btts == "Si" else "down"
 
-                # Corners
                 corners = r.get('corners', {})
                 total_c = corners.get('total_estimado', 10)
                 pick_corners = r.get('pick_corners', '+')
@@ -2535,14 +2494,12 @@ def render_login_form():
                 arco_class = "up" if "Over" in pick_arco else "down"
                 arco_icon = "Mas" if "Over" in pick_arco else "Menos"
 
-                # Tarjetas
                 tar_class = "up" if "Over" in pick_tarjetas else "down"
                 tar_icon = "Mas" if "Over" in pick_tarjetas else "Menos"
 
             # Variables comunes
             ou_symbol = "+" if "Over" in pick_ou else "-"
             pick_corner_symbol = "+" if pick_corners == "+" else "-"
-            # Tarjetas
             tar_class = "up" if "Over" in pick_tarjetas else "down"
             tar_icon = "Mas" if "Over" in pick_tarjetas else "Menos"
             
@@ -3057,17 +3014,14 @@ def render_login_form():
                     acertados_btts = len([p for p in picks_btts if p.get('acertado_btts')])
                     pct_btts = (acertados_btts / len(picks_btts) * 100) if picks_btts else 0
                     
-                    # Corners
                     picks_corners = [p for p in picks_resueltos if p.get('acertado_corners') is not None]
                     acertados_corners = len([p for p in picks_corners if p.get('acertado_corners')])
                     pct_corners = (acertados_corners / len(picks_corners) * 100) if picks_corners else 0
                     
-                    # Tarjetas
                     picks_tarjetas = [p for p in picks_resueltos if p.get('acertado_tarjetas') is not None]
                     acertados_tarjetas = len([p for p in picks_tarjetas if p.get('acertado_tarjetas')])
                     pct_tarjetas = (acertados_tarjetas / len(picks_tarjetas) * 100) if picks_tarjetas else 0
                     
-                    # Remates
                     picks_remates = [p for p in picks_resueltos if p.get('acertado_remates') is not None]
                     acertados_remates = len([p for p in picks_remates if p.get('acertado_remates')])
                     pct_remates = (acertados_remates / len(picks_remates) * 100) if picks_remates else 0
@@ -3221,11 +3175,11 @@ def render_login_form():
                             else:
                                 resultado_1x2 = "X"
                             
-                            # Over/Under
+    
                             total_goles = gl + gv
                             resultado_ou = "Over 2.5" if total_goles > 2.5 else "Under 2.5"
                             
-                            # BTTS
+    
                             ambos_marcan = "Si" if gl > 0 and gv > 0 else "No"
                             
                             # Verificar aciertos
@@ -3258,7 +3212,6 @@ def render_login_form():
                             except Exception as cal_e:
                                 logger.warning(f"Calibración no actualizada: {cal_e}")
 
-                            
                             try:
                                 client.table('picks').update({
                                     'marcador': f"{gl}-{gv}",
@@ -3520,7 +3473,6 @@ def render_login_form():
                     else:
                         st.info("No tienes picks. Ve al Analizador y guarda un partido")
 
-                
                 with tab_origen2:
                     st.markdown("##### Datos de la Apuesta")
                     
