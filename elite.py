@@ -3391,7 +3391,7 @@ def render_login_form():
                                 seleccionados.append(i)
                         with cols[1]:
                             st.markdown(f"**{opt['display']}**")
-                            st.caption(f"📊 Prob: {opt['prob']:.0f}% | Conf: {opt['conf']:.0f}%")
+                            st.caption(f"📊 Prob: {safe_fmt(opt.get('prob'), '.0f')}% | Conf: {safe_fmt(opt.get('conf'), '.0f')}%")
                         with cols[2]:
                             st.markdown(f"@ **{opt['cuota']:.2f}**")
                         with cols[3]:
