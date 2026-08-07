@@ -2217,6 +2217,7 @@ def render_login_form():
                             client = get_client()
                             
                             # Obtener datos de predicciones del resultado
+                            usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
                             pred_tiros = r.get('tiros', {})
                             pred_tarjetas = r.get('tarjetas', {})
                             pred_arco = r.get('tiros_arco', {})
