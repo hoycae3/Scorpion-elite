@@ -2213,7 +2213,9 @@ def render_login_form():
             if r and stats_local and stats_visitante:
                 col_btn, col_info = st.columns([1, 3])
                 with col_btn:
+                    st.error("DEBUG: Botón visible, esperando click...")
                     if st.button("💾 GUARDAR PARTIDO", type="primary", use_container_width=True):
+                        st.error("DEBUG: ¡Botón presionado!")
                         try:
                             client = get_client()
                             
