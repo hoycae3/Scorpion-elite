@@ -3254,52 +3254,42 @@ def render_login_form():
 
         # ========== TAB 3: BANKROLL ==========
         with tab_bankroll:
-            st.markdown("### 🏆 Mi Bankroll Real")
-            
+            st.markdown("### 🏆 Mi Bankroll")
+
             usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
-            
-            # Definir monedas disponibles
+
             MONEDAS = {
-                "USD": {"simbolo": "$", "nombre": "Dólar Americano", "codigo": "US$"},
-                "EUR": {"simbolo": "вӮ¬", "nombre": "Euro", "codigo": "вӮ¬"},
-                "MXN": {"simbolo": "$", "nombre": "Peso Mexicano", "codigo": "MX$"},
-                "COP": {"simbolo": "$", "nombre": "Peso Colombiano", "codigo": "COP$"},
-                "PEN": {"simbolo": "S/", "nombre": "Sol Peruano", "codigo": "S/"},
-                "CLP": {"simbolo": "$", "nombre": "Peso Chileno", "codigo": "CLP$"},
-                "ARS": {"simbolo": "$", "nombre": "Peso Argentino", "codigo": "ARS$"},
-                "BRL": {"simbolo": "R$", "nombre": "Real BrasileГұo", "codigo": "R$"},
-                "GBP": {"simbolo": "ВЈ", "nombre": "Libra Esterlina", "codigo": "ВЈ"},
+                "USD": {"simbolo": "$", "nombre": "Dólar"},
+                "EUR": {"simbolo": "€", "nombre": "Euro"},
+                "MXN": {"simbolo": "$", "nombre": "Peso MX"},
+                "COP": {"simbolo": "$", "nombre": "Peso CO"},
+                "PEN": {"simbolo": "S/", "nombre": "Sol PE"},
+                "CLP": {"simbolo": "$", "nombre": "Peso CL"},
+                "ARS": {"simbolo": "$", "nombre": "Peso AR"},
+                "BRL": {"simbolo": "R$", "nombre": "Real"},
             }
-            
-            # Función para formatear moneda
+
             def format_money(valor, simbolo):
-                """Formatea valor con separadores de miles"""
                 return f"{simbolo}{valor:,.2f}"
-            
-            # Obtener picks del usuario para agregar al bankroll
+
+            # Obtener picks del usuario
             try:
                 response_picks = client.table('picks').select('*').eq('usuario', usuario_id).execute()
                 picks_disponibles = response_picks.data if response_picks.data else []
             except Exception as e:
-                logger.error(f"Error obteniendo picks para bankroll: {e}")
+                logger.error(f"Error obteniendo picks: {e}")
                 picks_disponibles = []
-            
-            # Obtener apuestas guardadas del usuario
+
+            # Obtener apuestas
             try:
                 response_apuestas = client.table('bankroll_apuestas').select('*').eq('usuario', usuario_id).order('fecha', desc=True).execute()
                 apuestas = response_apuestas.data if response_apuestas.data else []
             except Exception as e:
                 logger.error(f"Error obteniendo apuestas: {e}")
-                # Crear tabla si no existe
-                try:
-                    client.table('bankroll_apuestas').execute()
-                except Exception as e2:
-                    logger.error(f"Error creando tabla bankroll_apuestas: {e2}")
-                    apuestas = []
-                    pass
                 apuestas = []
-            
+
             # ==================== SUBTABS ====================
+
             sub_tab1, sub_tab2, sub_tab3 = st.tabs(["📥 Dashboard", "➕ Agregar Apuesta", "📋 Mis Apuestas"])
             
             # ========== SUBTAB 1: DASHBOARD ==========
