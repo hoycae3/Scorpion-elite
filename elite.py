@@ -2332,6 +2332,11 @@ def render_login_form():
             if r:
                 # Análisis completo del modelo
                 
+                pred_tiros = r.get('tiros', {})
+                pred_tarjetas = r.get('tarjetas', {})
+                pred_arco = r.get('tiros_arco', {})
+                pred_corners = r.get('corners', {})
+
                 pick_tiros = r.get('pick_tiros') or 'Over 24'
                 prob_tiros = float(r.get('prob_tiros') or 50)
                 remates_modelo = float(pred_tiros.get('total_estimado') or remates_total or 0)
@@ -2456,6 +2461,11 @@ def render_login_form():
             # Fin de lógica de predicciones
                 # Con análisis - usar valores reales
                 
+                pred_tiros = r.get('tiros', {})
+                pred_tarjetas = r.get('tarjetas', {})
+                pred_arco = r.get('tiros_arco', {})
+                pred_corners = r.get('corners', {})
+
                 pick_tiros = r.get('pick_tiros') or 'Over 24'
                 prob_tiros = float(r.get('prob_tiros') or 50)
                 remates_modelo = float(pred_tiros.get('total_estimado') or remates_total or 0)
