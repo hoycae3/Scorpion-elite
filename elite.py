@@ -1568,9 +1568,11 @@ def render_login_form():
         
         client = get_client()
         
-        # Si no hay partido seleccionado, terminar silenciosamente
+        # Si no hay partido seleccionado, mostrar instrucciones
         if not st.session_state.selected_match_data and not ('selected_local' in st.session_state and 'selected_away' in st.session_state):
-            st.stop()  # Terminar aquí
+            st.warning("⚠️ No hay partido seleccionado. Ve a la pestaña **Carga** y selecciona un partido para analizar.")
+            st.info("💡 Haz clic en '📊 Analizar' en cualquier partido de la lista.")
+            st.stop()
         
         # Emoji por país
         # Si hay un partido seleccionado, hacer análisis automático
