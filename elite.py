@@ -3276,7 +3276,7 @@ def render_login_form():
             
             # Obtener picks del usuario para agregar al bankroll
             try:
-                response_picks = client.table('picks').select('*').eq('usuario', usuario_id).execute()
+                response_picks = client.table('picks').select('*').or_('usuario.eq.' + usuario_id + ',usuario.eq.usuario_default').execute()
                 picks_disponibles = response_picks.data if response_picks.data else []
             except Exception as e:
                 logger.error(f"Error obteniendo picks para bankroll: {e}")
@@ -3319,7 +3319,7 @@ def render_login_form():
                 col_reset = st.columns(1)[0]
                 if st.button("🔄 Reiniciar Bankroll", use_container_width=True):
                     try:
-                        client.table('bankroll_apuestas').delete().eq('usuario', usuario_id).execute()
+                        client.table('bankroll_apuestas').delete().or_('usuario.eq.' + usuario_id + ',usuario.eq.usuario_default').execute()
                     except:
                         pass
                     st.success("Bankroll reiniciado")
