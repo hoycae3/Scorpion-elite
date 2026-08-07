@@ -1036,15 +1036,49 @@ DÍA 2 (MAÑANA SIGUIENTE):
 
 ---
 
-## 📅 Sesión 2026-08-05 - Corrección Errores de Formato y Datos "Sin Datos"
+## 📅 Sesión 2026-08-07 - Rediseño Bankroll VIP
+
+### 🎨 Nuevo Diseño Bankroll
+
+**Características implementadas:**
+
+| Característica | Descripción |
+|----------------|-------------|
+| **Bankroll Card** | Diseño tipo tarjeta grande verde con gradiente |
+| **Individual** | Seleccionar picks y apostar cada uno separado |
+| **Combinada** | Seleccionar 2+ picks, multiplica cuotas automáticamente |
+| **Cuota editable** | Usuario puede modificar la cuota antes de apostar |
+| **3 tabs** | Dashboard, Agregar, Historial |
+
+**Flujo de uso:**
+
+```
+1. Dashboard → Ver bankroll actual con métricas
+2. Agregar → Seleccionar picks con checkboxes → Editar cuota → Apostar
+3. Historial → Ver apuestas guardadas, actualizar resultados
+```
+
+**Código clave:**
+
+```python
+# Selector de picks con cuota editable
+for i, opt in enumerate(oppciones):
+    sel = st.checkbox("", key=f"sel_pick_{i}")
+    cantidad_input = st.number_input("Cuota", value=float(opt['cuota']), key=f"cuota_{i}")
+    cantidades_dict[i] = cantidad_input
+
+# Combinada: multiplicar cuotas
+cuota_total = 1.0
+for i in seleccionados:
+    cuota_total *= cantidades_dict.get(i, opciones[i]['cuota'])
+```
 
 ### 🔧 Errores Corregidos:
 
-| Error | Descripción | Solución |
-|-------|-------------|----------|
-| `ValueError: Invalid format specifier` | Expresiones ternarias dentro de f-strings con formato | Pre-calcular valores antes del f-string |
-| `ValueError: Código de formato desconocido 'f'` | Variables '?' usadas con `:.Xf` | Función `safe_fmt()` para convertir a string |
-| Lambda mostrando 0.00 | Variables lambda no calculadas | Calcular `lambda_historico = gf/pj` |
+| Error | Solución |
+|--------|----------|
+| `safe_fmt` UnboundLocalError | Usar inline: `(opt.get('prob') or 0):.0f` |
+| `NoneType.__format__` | Verificar valores antes de formatear |
 
 ### 📊 Sistema de "Sin Datos":
 
