@@ -2218,6 +2218,10 @@ def render_login_form():
                         st.error("DEBUG: ¡Botón presionado!")
                         try:
                             client = get_client()
+                            if client is None:
+                                st.error("ERROR: Cliente Supabase es None")
+                                st.stop()
+                            st.error(f"DEBUG: Cliente OK")
                             
                             # Obtener datos de predicciones del resultado
                             usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
