@@ -3261,10 +3261,20 @@ def render_login_form():
             
             # Obtener picks del usuario para agregar al bankroll
             try:
+                # Debug: mostrar info del usuario
+                st.caption(f"🔍 Debug: usuario_id = '{usuario_id}'")
+                
+                # Contar todos los picks
+                all_picks = client.table('picks').select('usuario', count='exact').execute()
+                st.caption(f"📊 Total picks en DB: {len(all_picks.data) if all_picks.data else 0}")
+                
+                # Picks del usuario
                 response_picks = client.table('picks').select('*').eq('usuario', usuario_id).execute()
                 picks_disponibles = response_picks.data if response_picks.data else []
+                st.caption(f"📊 Picks de este usuario: {len(picks_disponibles)}")
             except Exception as e:
                 logger.error(f"Error obteniendo picks para bankroll: {e}")
+                st.error(f"Error: {e}")
                 picks_disponibles = []
             
             # Obtener apuestas guardadas del usuario
