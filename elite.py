@@ -3260,34 +3260,27 @@ def render_login_form():
                 return f"{simbolo}{valor:,.2f}"
             
             # Obtener picks del usuario para agregar al bankroll
+            st.error(f"DEBUG: usuario_id = {usuario_id}")
             try:
                 # Primero contar TODOS los picks (sin filtro)
                 all_picks = client.table('picks').select('*', count='exact').execute()
                 total_all = len(all_picks.data) if all_picks.data else 0
+                st.error(f"DEBUG: Total picks en DB = {total_all}")
                 
                 # Intentar con filtro de usuario
                 try:
                     response_picks = client.table('picks').select('*').eq('usuario', usuario_id).execute()
                     picks_disponibles = response_picks.data if response_picks.data else []
                     total_user = len(picks_disponibles)
-                except:
-                    # Si falla, mostrar todos los picks sin filtro
+                    st.error(f"DEBUG: Picks con usuario '{usuario_id}' = {total_user}")
+                except Exception as e2:
+                    st.error(f"DEBUG: Error con filtro usuario: {e2}")
                     picks_disponibles = all_picks.data
-                    total_user = total_all
-                    st.warning(f"⚠️ Picks sin filtro (total: {total_all})")
-                
-                # Debug info
-                st.caption(f"🔍 Total picks: {total_all} | De usuario '{usuario_id}': {total_user}")
+                    total_user = len(picks_disponibles)
                 
             except Exception as e:
-                error_msg = str(e)
-                if 'usuario' in error_msg and '42703' in error_msg:
-                    st.error("⚠️ FALTA COLUMNA 'usuario'")
-                    st.info("Ejecuta: `ALTER TABLE picks ADD COLUMN IF NOT EXISTS usuario VARCHAR(255) DEFAULT 'default';`")
-                    picks_disponibles = []
-                else:
-                    logger.error(f"Error: {e}")
-                    picks_disponibles = []
+                st.error(f"DEBUG: Error general: {e}")
+                picks_disponibles = []
             
             # Obtener apuestas guardadas del usuario
             try:
