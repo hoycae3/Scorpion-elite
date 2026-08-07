@@ -2264,12 +2264,9 @@ def render_login_form():
             st.write(f"**Equipos:** {home} vs {away}")
             st.write(f"**Pick 1X2:** {r.get('pick_1x2', 'N/A')} ({r.get('prob_1x2', 0):.1f}%)")
 
-            if st.button("💾 GUARDAR AHORA", type="primary"):
-                st.info("Guardando...")
+            if st.button("💾 GUARDAR PICK", type="primary", use_container_width=True):
                 try:
                     client = get_client()
-                    st.write(f"Client OK: {client is not None}")
-                    
                     pick_data = {
                         'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
                         'usuario': 'usuario_default',
@@ -2289,12 +2286,10 @@ def render_login_form():
                         'confianza': int(r.get('confianza', 50)),
                         'rango': r.get('rango', 'C'),
                     }
-                    
-                    st.write("Datos preparados:", pick_data)
                     client.table('picks').insert(pick_data).execute()
-                    st.success("✅ ¡Guardado exitosamente!")
+                    st.success(f"✅ Pick guardado: {home} vs {away}")
                 except Exception as e:
-                    st.error(f"❌ Error: {str(e)}")
+                    st.error(f"❌ Error al guardar: {str(e)}")
 
             # DISEÑO FOOTBALL FIELD            # DISEÑO FOOTBALL FIELD            # DISEÑO FOOTBALL FIELD - PREDICCIONES
             # ========================
