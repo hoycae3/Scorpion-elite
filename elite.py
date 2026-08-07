@@ -1601,6 +1601,8 @@ def render_login_form():
         if analizar_btn and equipo_local and equipo_visitante:
             st.session_state.selected_local = equipo_local
             st.session_state.selected_away = equipo_visitante
+            st.session_state.home = equipo_local
+            st.session_state.away = equipo_visitante
 
         # Emoji por país
         # Si hay un partido seleccionado, hacer análisis automático
@@ -2239,70 +2241,72 @@ def render_login_form():
             confianza = r.get('confianza', 0)
             rango = r.get('rango', 'D')
             
-            st.error(f"DEBUG: ANTES de if r and stats_local... - r={bool(r)}, stats_local={bool(stats_local)}, stats_visitante={bool(stats_visitante)}")
-            # BOTÓN GUARDAR SIMPLIFICADO
-            if r and stats_local and stats_visitante:
-                st.markdown("---")
-                st.markdown("### 💾 Guardar Partido")
-                
-                usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
-                st.info(f"👤 Usuario: {usuario_id} | 🏠 {home} vs ✈️ {away}")
-                
-                if st.button("💾 GUARDAR PARTIDO", type="primary", use_container_width=True):
-                    st.error("⚠️ BOTON PRESIONADO")
-                    try:
-                        client = get_client()
-                        if client is None:
-                            st.error("❌ Error: No se pudo conectar a Supabase")
-                        else:
-                            pred_tiros = r.get('tiros', {})
-                            pred_tarjetas = r.get('tarjetas', {})
-                            pred_arco = r.get('tiros_arco', {})
-                            pred_corners = r.get('corners', {})
-
-                            pick_1x2 = r.get('pick_1x2', '')
-                            pick_data = {
-                                'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
-                                'usuario': usuario_id,
-                                'liga': stats_local.get('liga', 'Desconocida'),
-                                'equipo_local': home,
-                                'equipo_visitante': away,
-                                'pick': pick_1x2,
-                                'prediccion_1x2': pick_1x2,
-                                'prob_1x2': float(r.get('prob_1x2', 0)),
-                                'p1': float(r.get('p1', 0)),
-                                'px': float(r.get('px', 0)),
-                                'p2': float(r.get('p2', 0)),
-                                'prediccion_ou': r.get('pick_over_under', ''),
-                                'prob_ou': r.get('prob_over_under', 0),
-                                'prediccion_btts': r.get('pick_btts', ''),
-                                'btts_yes': r.get('btts_yes', 0),
-                                'prediccion_corners': r.get('pick_corners', ''),
-                                'corners_total_estimado': pred_corners.get('total_estimado', 0),
-                                'prediccion_remates': r.get('pick_tiros', ''),
-                                'remates_total_estimado': pred_tiros.get('total_estimado', 0),
-                                'remates_local': pred_tiros.get('tiros_local_estimado', 0),
-                                'remates_visitante': pred_tiros.get('tiros_visitante_estimado', 0),
-                                'over_remates': r.get('prob_tiros', 0),
-                                'prediccion_tarjetas': r.get('pick_tarjetas', ''),
-                                'tarjetas_total_estimado': pred_tarjetas.get('total_estimado', 0),
-                                'tarjetas_over_prob': r.get('prob_tarjetas', 0),
-                                'prediccion_arco': r.get('pick_tiros_arco', ''),
-                                'arco_total_estimado': pred_arco.get('total_estimado', 0),
-                                'arco_over_prob': r.get('prob_tiros_arco', 0),
-                                'confianza': int(confianza),
-                                'rango': rango,
-                            }
-
-                            client.table('picks').insert(pick_data).execute()
-                            st.success("✅ Partido guardado!")
-                            st.balloons()
-                    except Exception as e:
-                        st.error(f"❌ Error: {str(e)}")
-
             # ========================
+            # 💾 BOTÓN GUARDAR SIEMPRE VISIBLE
             # ========================
-            # DISEÑO FOOTBALL FIELD - PREDICCIONES
+            st.markdown("---")
+            st.markdown("### 💾 Guardar Pick")
+
+            r = st.session_state.get('analysis_result', {})
+            home = st.session_state.get('home', '') or local_nombre or 'Equipo Local'
+            away = st.session_state.get('away', '') or visitante_nombre or 'Equipo Visitante'
+
+            if not home or not away:
+                home = 'Equipo Local'
+                away = 'Equipo Visitante'
+
+            st.info(f"📋 Pick: {home} vs {away}")
+
+            if st.button("💾 GUARDAR PARTIDO", type="primary", use_container_width=True):
+                try:
+                    client = get_client()
+                    if client is None:
+                        st.error("❌ Error: No se pudo conectar a Supabase")
+                    else:
+                        usuario_id = 'usuario_default'
+                        if 'user_data' in st.session_state and st.session_state.user_data:
+                            usuario_id = st.session_state.user_data.get('nombre', 'usuario_default')
+
+                        pick_data = {
+                            'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
+                            'usuario': usuario_id,
+                            'liga': 'Liga Personal',
+                            'equipo_local': home,
+                            'equipo_visitante': away,
+                            'pick': r.get('pick_1x2', '1'),
+                            'prediccion_1x2': r.get('pick_1x2', '1'),
+                            'prob_1x2': float(r.get('prob_1x2', 50)),
+                            'p1': float(r.get('p1', 33)),
+                            'px': float(r.get('px', 33)),
+                            'p2': float(r.get('p2', 33)),
+                            'prediccion_ou': r.get('pick_over_under', 'Over'),
+                            'prob_ou': float(r.get('prob_over_under', 50)),
+                            'prediccion_btts': r.get('pick_btts', 'Si'),
+                            'btts_yes': float(r.get('btts_yes', 50)),
+                            'prediccion_corners': r.get('pick_corners', 'Over'),
+                            'corners_total_estimado': float(r.get('corners', {}).get('total_estimado', 10)),
+                            'prediccion_remates': r.get('pick_tiros', 'Over'),
+                            'remates_total_estimado': float(r.get('tiros', {}).get('total_estimado', 24)),
+                            'remates_local': float(r.get('tiros', {}).get('tiros_local_estimado', 12)),
+                            'remates_visitante': float(r.get('tiros', {}).get('tiros_visitante_estimado', 12)),
+                            'over_remates': float(r.get('prob_tiros', 50)),
+                            'prediccion_tarjetas': r.get('pick_tarjetas', 'Over'),
+                            'tarjetas_total_estimado': float(r.get('tarjetas', {}).get('total_estimado', 6)),
+                            'tarjetas_over_prob': float(r.get('prob_tarjetas', 50)),
+                            'prediccion_arco': r.get('pick_tiros_arco', 'Over'),
+                            'arco_total_estimado': float(r.get('tiros_arco', {}).get('total_estimado', 8)),
+                            'arco_over_prob': float(r.get('prob_tiros_arco', 50)),
+                            'confianza': int(r.get('confianza', 50)),
+                            'rango': r.get('rango', 'C'),
+                        }
+
+                        client.table('picks').insert(pick_data).execute()
+                        st.success("✅ Pick guardado exitosamente!")
+                        st.balloons()
+                except Exception as e:
+                    st.error(f"❌ Error al guardar: {str(e)}")
+
+            # DISEÑO FOOTBALL FIELD            # DISEÑO FOOTBALL FIELD - PREDICCIONES
             # ========================
             p1 = r.get('p1', 0)
             px = r.get('px', 0)
