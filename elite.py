@@ -2257,6 +2257,7 @@ def render_login_form():
                     pick_data = {
                         'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
                         'usuario': 'usuario_default',
+                        'pick': r.get('pick_1x2', '1'),
                         'liga': stats_local.get('liga', 'Desconocida') if stats_local else 'N/A',
                         'equipo_local': home,
                         'equipo_visitante': away,
