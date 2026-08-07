@@ -1611,10 +1611,9 @@ def render_login_form():
                     st.session_state.selected_away = equipo_visitante
                     st.session_state.home = equipo_local
                     st.session_state.away = equipo_visitante
-                    st.rerun()
                 else:
                     st.warning("Selecciona ambos equipos")
-            st.stop()
+                    return
 
         # SI hay equipos seleccionados, hacer el análisis
         # Si hay un partido seleccionado, hacer análisis automático
@@ -1665,10 +1664,7 @@ def render_login_form():
             if tid_visitante:
                 promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
             
-            # Limpiar session_state después de usar
-            for key in ['selected_local', 'selected_away', 'selected_team_id_local', 'selected_team_id_visitante']:
-                st.session_state.pop(key, None)
-            st.session_state.selected_match_data = None
+            # NO limpiar session_state aquí - se limpian después de guardar
             
             if stats_local and stats_visitante:
                 lambda_local = stats_local.get('lambda_local', 0)
