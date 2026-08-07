@@ -3185,8 +3185,8 @@ def render_login_form():
                 picks = []
                 st.error(f"Error: {str(e)[:50]}")
             
-            # Filtrar picks sin resultado
-            picks_sin_resultado = [p for p in picks if not p.get('marcador') or p.get('marcador') == '?']
+            # Filtrar picks sin resultado (busca campo resultado_1x2)
+            picks_sin_resultado = [p for p in picks if p.get('resultado_1x2') is None]
             
             if picks_sin_resultado:
                 st.markdown(f"#### 📋 {len(picks_sin_resultado)} picks pendientes de resultado")
@@ -3210,7 +3210,11 @@ def render_login_form():
                         with col5:
                             remates = st.number_input("Remates", min_value=0, max_value=50, value=0, key=f"rem_{pick_id}")
                         with col6:
-                            pass
+                            corners = st.number_input("Corners", min_value=0, max_value=30, value=0, key=f"corn_{pick_id}")
+                        
+                        col7, col8 = st.columns([1,1])
+                        with col7:
+                            tarjetas = st.number_input("Tarjetas", min_value=0, max_value=20, value=0, key=f"tarj_{pick_id}")
                         
                         if st.button("💾 Guardar Resultado", key=f"btn_res_{pick_id}"):
                             # Calcular resultado 1X2
