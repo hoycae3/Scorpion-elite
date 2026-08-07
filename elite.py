@@ -2209,6 +2209,7 @@ def render_login_form():
             confianza = r.get('confianza', 0)
             rango = r.get('rango', 'D')
             
+            st.error(f"DEBUG: ANTES de if r and stats_local... - r={bool(r)}, stats_local={bool(stats_local)}, stats_visitante={bool(stats_visitante)}")
             if r and stats_local and stats_visitante:
                 col_btn, col_info = st.columns([1, 3])
                 with col_btn:
