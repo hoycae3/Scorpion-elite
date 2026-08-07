@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Opciones Seleccionar Apuestas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Space Grotesk', sans-serif; background: #0a0a0a; color: #fff; padding: 40px; }
+        h1 { text-align: center; margin-bottom: 40px; color: #00d4aa; }
+        h2 { font-size: 1rem; color: #888; margin-bottom: 15px; padding: 10px; background: #1a1a1a; border-radius: 8px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; max-width: 1600px; margin: 0 auto; }
+        .card { background: #111; border-radius: 16px; overflow: hidden; border: 1px solid #333; }
+        .card-body { padding: 25px; }
+        
+        /* Main Bankroll Card */
+        .bankroll-main { background: linear-gradient(135deg, #1a3a2a 0%, #0f2518 100%); border-radius: 16px; padding: 35px; text-align: center; margin-bottom: 20px; border: 2px solid #22c55e; }
+        .bankroll-main .label { color: #888; font-size: 1rem; margin-bottom: 10px; }
+        .bankroll-main .value { font-size: 4rem; font-weight: 700; color: #22c55e; }
+        .bankroll-main .sub { color: #22c55e; font-size: 1.2rem; margin-top: 10px; }
+        
+        /* Metricas */
+        .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+        .metric { background: #1a1a1a; padding: 15px; border-radius: 10px; text-align: center; }
+        .metric .icon { font-size: 1.5rem; margin-bottom: 5px; }
+        .metric .val { font-weight: 700; font-size: 1.3rem; }
+        .metric .lbl { font-size: 0.7rem; color: #666; }
+        
+        /* Opciones de seleccion */
+        .opciones { display: grid; gap: 15px; }
+        
+        /* Opcion A: Cards grandes */
+        .card-apuesta { background: #1a1a1a; border: 2px solid #333; border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.3s; }
+        .card-apuesta:hover { border-color: #00d4aa; background: #222; }
+        .card-apuesta.seleccionada { border-color: #00d4aa; background: #1a2a2a; box-shadow: 0 0 15px rgba(0,212,170,0.3); }
+        .card-apuesta .header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .card-apuesta .match { font-weight: 600; font-size: 1.1rem; }
+        .card-apuesta .pick-badge { background: #00d4aa; color: #000; padding: 5px 15px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; }
+        .card-apuesta .details { display: flex; gap: 20px; color: #888; font-size: 0.85rem; }
+        .card-apuesta .cuota { color: #00d4aa; font-weight: 600; }
+        
+        /* Opcion B: Lista compacta */
+        .apuesta-row { display: flex; align-items: center; background: #1a1a1a; border: 2px solid #333; border-radius: 10px; padding: 15px 20px; cursor: pointer; transition: all 0.3s; margin-bottom: 10px; }
+        .apuesta-row:hover { border-color: #00d4aa; }
+        .apuesta-row.seleccionada { border-color: #00d4aa; background: #1a2a2a; }
+        .apuesta-row .check { width: 24px; height: 24px; border: 2px solid #444; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; }
+        .apuesta-row.seleccionada .check { background: #00d4aa; border-color: #00d4aa; color: #000; }
+        .apuesta-row .info { flex: 1; }
+        .apuesta-row .match { font-weight: 600; }
+        .apuesta-row .meta { font-size: 0.8rem; color: #666; }
+        .apuesta-row .cuota { font-size: 1.2rem; font-weight: 700; color: #00d4aa; margin-left: 20px; }
+        
+        /* Opcion C: Botones toggle */
+        .toggle-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .toggle-btn { background: #1a1a1a; border: 2px solid #333; border-radius: 10px; padding: 15px; cursor: pointer; transition: all 0.3s; text-align: left; }
+        .toggle-btn:hover { border-color: #00d4aa; }
+        .toggle-btn.seleccionado { background: #1a2a2a; border-color: #00d4aa; }
+        .toggle-btn .match { font-weight: 600; margin-bottom: 5px; }
+        .toggle-btn .odds { color: #00d4aa; font-weight: 700; }
+        .toggle-btn .seleccion { margin-top: 10px; font-size: 0.85rem; color: #888; }
+        
+        /* Opcion D: Cards horizontales */
+        .h-card { display: flex; background: #1a1a1a; border: 2px solid #333; border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.3s; margin-bottom: 12px; }
+        .h-card:hover { border-color: #00d4aa; }
+        .h-card.seleccionada { border-color: #00d4aa; background: #1a2a2a; }
+        .h-card .left { padding: 20px; flex: 1; }
+        .h-card .match { font-weight: 600; font-size: 1rem; margin-bottom: 5px; }
+        .h-card .pick { color: #00d4aa; font-size: 0.9rem; }
+        .h-card .right { background: #00d4aa; color: #000; padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; min-width: 80px; }
+        .h-card .right .odd { font-size: 1.5rem; font-weight: 700; }
+        .h-card .right .sel { font-size: 0.7rem; font-weight: 600; }
+        
+        /* Opcion E: Selector visual */
+        .visual-grid { display: flex; flex-direction: column; gap: 10px; }
+        .visual-item { display: flex; background: #1a1a1a; border: 2px solid #333; border-radius: 10px; padding: 15px 20px; cursor: pointer; transition: all 0.3s; }
+        .visual-item:hover { border-color: #00d4aa; }
+        .visual-item.seleccionada { border-color: #00d4aa; background: #1a2a2a; }
+        .visual-item .radio { width: 20px; height: 20px; border: 2px solid #444; border-radius: 50%; margin-right: 15px; }
+        .visual-item.seleccionada .radio { border-color: #00d4aa; background: #00d4aa; box-shadow: inset 0 0 0 3px #1a1a1a; }
+        .visual-item .text { flex: 1; }
+        .visual-item .odd-badge { background: #222; padding: 8px 15px; border-radius: 8px; font-weight: 700; color: #00d4aa; }
+        
+        /* Boton agregar */
+        .btn-agregar { width: 100%; padding: 20px; background: #00d4aa; color: #000; border: none; border-radius: 12px; font-size: 1.2rem; font-weight: 700; cursor: pointer; margin-top: 20px; }
+        .btn-agregar:hover { background: #00b894; }
+        
+        .btn-seleccionar { padding: 8px 20px; background: #00d4aa; color: #000; border: none; border-radius: 20px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Opciones para Seleccionar Apuestas</h1>
+    
+    <div class="grid">
+        <!-- Opcion A: Cards grandes -->
+        <div class="card">
+            <h2>A) Cards Grandes</h2>
+            <div class="card-body">
+                <div class="bankroll-main">
+                    <div class="label">BANKROLL ACTUAL</div>
+                    <div class="value">$1.247,50</div>
+                    <div class="sub">+ $247,50 (24.7%)</div>
+                </div>
+                <div class="metrics">
+                    <div class="metric"><div class="icon">T</div><div class="val">68%</div><div class="lbl">Aciertos</div></div>
+                    <div class="metric"><div class="icon">$</div><div class="val">2.24</div><div class="lbl">Avg Cuota</div></div>
+                    <div class="metric"><div class="icon">#</div><div class="val">25</div><div class="lbl">Apuestas</div></div>
+                    <div class="metric"><div class="icon">$</div><div class="val">+247</div><div class="lbl">Ganancia</div></div>
+                </div>
+                
+                <h2>Seleccionar Apuestas</h2>
+                <div class="opciones">
+                    <div class="card-apuesta">
+                        <div class="header">
+                            <div class="match">Barcelona vs Real Madrid</div>
+                            <div class="pick-badge">Over 2.5</div>
+                        </div>
+                        <div class="details">
+                            <span>1X2</span>
+                            <span>Confianza: 78%</span>
+                            <span class="cuota">@ 2.10</span>
+                        </div>
+                    </div>
+                    <div class="card-apuesta seleccionada">
+                        <div class="header">
+                            <div class="match">Bayern vs Dortmund</div>
+                            <div class="pick-badge">BTTS Si</div>
+                        </div>
+                        <div class="details">
+                            <span>BTTS</span>
+                            <span>Confianza: 72%</span>
+                            <span class="cuota">@ 1.85</span>
+                        </div>
+                    </div>
+                    <div class="card-apuesta">
+                        <div class="header">
+                            <div class="match">PSG vs Lyon</div>
+                            <div class="pick-badge">Local</div>
+                        </div>
+                        <div class="details">
+                            <span>1X2</span>
+                            <span>Confianza: 65%</span>
+                            <span class="cuota">@ 1.65</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-agregar">+ Agregar Seleccionadas (2)</button>
+            </div>
+        </div>
+
+        <!-- Opcion B: Lista compacta -->
+        <div class="card">
+            <h2>B) Lista Compacta</h2>
+            <div class="card-body">
+                <div class="bankroll-main">
+                    <div class="label">BANKROLL ACTUAL</div>
+                    <div class="value">$1.247,50</div>
+                    <div class="sub">+ $247,50 (24.7%)</div>
+                </div>
+                <div class="metrics">
+                    <div class="metric"><div class="icon">T</div><div class="val">68%</div><div class="lbl">Aciertos</div></div>
+                    <div class="metric"><div class="icon">$</div><div class="val">2.24</div><div class="lbl">Avg Cuota</div></div>
+                    <div class="metric"><div class="icon">#</div><div class="val">25</div><div class="lbl">Apuestas</div></div>
+                    <div class="metric"><div class="icon">$</div><div class="val">+247</div><div class="lbl">Ganancia</div></div>
+                </div>
+                
+                <h2>Seleccionar Apuestas</h2>
+                <div class="opciones">
+                    <div class="apuesta-row">
+                        <div class="check">v</div>
+                        <div class="info">
+                            <div class="match">Barcelona vs Real Madrid</div>
+                            <div class="meta">Over 2.5 | 1X2 | 78%</div>
+                        </div>
+                        <div class="cuota">2.10</div>
+                    </div>
+                    <div class="apuesta-row seleccionada">
+                        <div class="check">v</div>
+                        <div class="info">
+                            <div class="match">Bayern vs Dortmund</div>
+                            <div class="meta">BTTS Si | 72%</div>
+                        </div>
+                        <div class="cuota">1.85</div>
+                    </div>
+                    <div class="apuesta-row">
+                        <div class="check"></div>
+                        <div class="info">
+                            <div class="match">PSG vs Lyon</div>
+                            <div class="meta">Local | 65%</div>
+                        </div>
+                        <div class="cuota">1.65</div>
+                    </div>
+                </div>
+                <button class="btn-agregar">+ Agregar (1)</button>
+            </div>
+        </div>
+
+        <!-- Opcion C: Botones toggle -->
+        <div class="card">
+            <h2>C) Botones Toggle</h2>
+            <div class="card-body">
+                <div class="bankroll-main">
+                    <div class="label">BANKROLL ACTUAL</div>
+                    <div class="value">$1.247,50</div>
+                    <div class="sub">+ $247,50 (24.7%)</div>
+                </div>
+                <div class="metrics">
+                    <div class="metric"><div class="icon">T</div><div class="val">68%</div><div class="lbl">Aciertos</div></div>
+                    <div class="metric"><div class="icon">$</div><div class="val">2.24</div><div class="lbl">Avg Cuota</div></div>
+                    <div class="metric"><div class="icon">#</div><div class="val">25</div><div class="lbl">Apuestas</div></div>
+                    <div class="metric"><div class="icon">$</div><div class="val">+247</div><div class="lbl">Ganancia</div></div>
+                </div>
+                
+                <h2>Seleccionar Apuestas</h2>
+                <div class="toggle-grid">
+                    <div class="toggle-btn">
+                        <div class="match">Barcelona vs Real Madrid</div>
+                        <div class="odds">@ 2.10</div>
+                        <div class="seleccion">Over 2.5 | 78%</div>
+                    </div>
+                    <div class="toggle-btn seleccionado">
+                        <div class="match">Bayern vs Dortmund</div>
+                        <div class="odds">@ 1.85</div>
+                        <div class="seleccion">BTTS Si | 72%</div>
+                    </div>
+                    <div class="toggle-btn">
+                        <div class="match">PSG vs Lyon</div>
+                        <div class="odds">@ 1.65</div>
+                        <div class="seleccion">Local | 65%</div>
+                    </div>
+                    <div class="toggle-btn">
+                        <div class="match">Juventus vs AC Milan</div>
+                        <div class="odds">@ 2.50</div>
+                        <div class="seleccion">Over 1.5 | 85%</div>
+                    </div>
+                </div>
+                <button class="btn-agregar">+ Agregar Seleccionadas (1)</button>
+            </div>
+        </div>
+
+        <!-- Opcion D: Cards horizontales -->
+        <div class="card">
+            <h2>D) Cards Horizontales</h2>
+            <div class="card-body">
+                <div class="bankroll-main">
+                    <div class="label">BANKROLL ACTUAL</div>
+                    <div class="value">$1.247,50</div>
+                    <div class="sub">+ $247,50 (24.7%)</div>
+                </div>
+                <div class="metrics">
+                    <div class="metric"><div class="icon">T</div><div class="val">68%</div><div class="lbl">Aciertos</div></div>
+                    <div class="metric"><div class="icon">$</div><div class="val">2.24</div><div class="lbl">Avg Cuota</div></div>
+                    <div class="metric"><div class="icon">#</div><div class="val">25</div><div class="lbl">Apuestas</div></div>
+                    <div class="metric"><div class="icon">$</div><div class="val">+247</div><div class="lbl">Ganancia</div></div>
+                </div>
+                
+                <h2>Seleccionar Apuestas</h2>
+                <div class="visual-grid">
+                    <div class="h-card">
+                        <div class="left">
+                            <div class="match">Barcelona vs Real Madrid</div>
+                            <div class="pick">Over 2.5 @ 2.10</div>
+                        </div>
+                        <div class="right">
+                            <div class="odd">2.10</div>
+                            <div class="sel">v</div>
+                        </div>
+                    </div>
+                    <div class="h-card seleccionada">
+                        <div class="left">
+                            <div class="match">Bayern vs Dortmund</div>
+                            <div class="pick">BTTS Si @ 1.85</div>
+                        </div>
+                        <div class="right">
+                            <div class="odd">1.85</div>
+                            <div class="sel">v</div>
+                        </div>
+                    </div>
+                    <div class="h-card">
+                        <div class="left">
+                            <div class="match">PSG vs Lyon</div>
+                            <div class="pick">Local @ 1.65</div>
+                        </div>
+                        <div class="right">
+                            <div class="odd">1.65</div>
+                            <div class="sel">v</div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-agregar">+ Agregar a Bankroll (1)</button>
+            </div>
+        </div>
+
+        <!-- Opcion E: Selector radio -->
+        <div class="card">
+            <h2>E) Selector Radio</h2>
+            <div class="card-body">
+                <div class="bankroll-main">
+                    <div class="label">BANKROLL ACTUAL</div>
+                    <div class="value">$1.247,50</div>
+                    <div class="sub">+ $247,50 (24.7%)</div>
+                </div>
+                <div class="metrics">
+                    <div class="metric"><div class="icon">T</div><div class="val">68%</div><div class="lbl">Aciertos</div></div>
+                    <div class="metric"><div class="icon">$</div><div class="val">2.24</div><div class="lbl">Avg Cuota</div></div>
+                    <div class="metric"><div class="icon">#</div><div class="val">25</div><div class="lbl">Apuestas</div></div>
+                    <div class="metric"><div class="icon">$</div><div class="val">+247</div><div class="lbl">Ganancia</div></div>
+                </div>
+                
+                <h2>Seleccionar UNA Apuesta</h2>
+                <div class="visual-grid">
+                    <div class="visual-item">
+                        <div class="radio"></div>
+                        <div class="text">
+                            <div class="match">Barcelona vs Real Madrid</div>
+                            <div class="meta">Over 2.5 | 78%</div>
+                        </div>
+                        <div class="odd-badge">2.10</div>
+                    </div>
+                    <div class="visual-item seleccionada">
+                        <div class="radio"></div>
+                        <div class="text">
+                            <div class="match">Bayern vs Dortmund</div>
+                            <div class="meta">BTTS Si | 72%</div>
+                        </div>
+                        <div class="odd-badge">1.85</div>
+                    </div>
+                    <div class="visual-item">
+                        <div class="radio"></div>
+                        <div class="text">
+                            <div class="match">PSG vs Lyon</div>
+                            <div class="meta">Local | 65%</div>
+                        </div>
+                        <div class="odd-badge">1.65</div>
+                    </div>
+                </div>
+                <button class="btn-agregar">+ Agregar Esta Apuesta</button>
+            </div>
+        </div>
+
+        <!-- Opcion F: Cards con checkbox -->
+        <div class="card">
+            <h2>F) Cards con Checkbox</h2>
+            <div class="card-body">
+                <div class="bankroll-main">
+                    <div class="label">BANKROLL ACTUAL</div>
+                    <div class="value">$1.247,50</div>
+                    <div class="sub">+ $247,50 (24.7%)</div>
+                </div>
+                <div class="metrics">
+                    <div class="metric"><div class="icon">T</div><div class="val">68%</div><div class="lbl">Aciertos</div></div>
+                    <div class="metric"><div class="icon">$</div><div class="val">2.24</div><div class="lbl">Avg Cuota</div></div>
+                    <div class="metric"><div class="icon">#</div><div class="val">25</div><div class="lbl">Apuestas</div></div>
+                    <div class="metric"><div class="icon">$</div><div class="val">+247</div><div class="lbl">Ganancia</div></div>
+                </div>
+                
+                <h2>Seleccionar Apuestas</h2>
+                <div class="opciones">
+                    <div class="card-apuesta">
+                        <div class="header">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <input type="checkbox" checked>
+                                <div class="match">Barcelona vs Real Madrid</div>
+                            </div>
+                            <div class="pick-badge">Over 2.5</div>
+                        </div>
+                        <div class="details">
+                            <span>1X2</span>
+                            <span>Confianza: 78%</span>
+                            <span class="cuota">@ 2.10</span>
+                        </div>
+                    </div>
+                    <div class="card-apuesta">
+                        <div class="header">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <input type="checkbox" checked>
+                                <div class="match">Bayern vs Dortmund</div>
+                            </div>
+                            <div class="pick-badge">BTTS Si</div>
+                        </div>
+                        <div class="details">
+                            <span>BTTS</span>
+                            <span>Confianza: 72%</span>
+                            <span class="cuota">@ 1.85</span>
+                        </div>
+                    </div>
+                    <div class="card-apuesta">
+                        <div class="header">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <input type="checkbox">
+                                <div class="match">PSG vs Lyon</div>
+                            </div>
+                            <div class="pick-badge">Local</div>
+                        </div>
+                        <div class="details">
+                            <span>1X2</span>
+                            <span>Confianza: 65%</span>
+                            <span class="cuota">@ 1.65</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-agregar">[2] Seleccionadas</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

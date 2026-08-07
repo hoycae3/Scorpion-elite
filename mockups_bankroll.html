@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Bankroll con Seleccion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Space Grotesk', sans-serif; background: #0a0a0a; color: #fff; padding: 40px; }
+        h1 { text-align: center; margin-bottom: 40px; color: #00d4aa; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 30px; max-width: 1600px; margin: 0 auto; }
+        .card { background: #111; border-radius: 16px; overflow: hidden; border: 1px solid #333; }
+        .card-header { padding: 15px 20px; background: #1a1a1a; border-bottom: 1px solid #333; font-weight: 600; color: #888; font-size: 0.9rem; }
+        .card-body { padding: 25px; }
+        
+        /* Bankroll Hero */
+        .bankroll-hero { background: linear-gradient(135deg, #1a3a2a 0%, #0f2518 100%); border-radius: 16px; padding: 35px; text-align: center; margin-bottom: 20px; border: 2px solid #22c55e; }
+        .bankroll-hero .label { color: #888; font-size: 1rem; margin-bottom: 10px; }
+        .bankroll-hero .value { font-size: 3.5rem; font-weight: 700; color: #22c55e; }
+        .bankroll-hero .sub { color: #22c55e; font-size: 1.1rem; margin-top: 8px; }
+        
+        /* Metricas row */
+        .metrics-row { display: flex; gap: 10px; margin-bottom: 20px; }
+        .metric-box { flex: 1; background: #1a1a1a; padding: 12px; border-radius: 10px; text-align: center; }
+        .metric-box .val { font-weight: 700; font-size: 1.2rem; }
+        .metric-box .lbl { font-size: 0.7rem; color: #666; }
+        
+        /* Seccion apuestas */
+        .section-title { font-size: 0.85rem; color: #888; margin-bottom: 12px; padding-left: 5px; }
+        
+        /* Cards de apuestas */
+        .bet-card { background: #1a1a1a; border: 2px solid #333; border-radius: 12px; padding: 18px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; }
+        .bet-card:hover { border-color: #00d4aa; }
+        .bet-card.selected { border-color: #00d4aa; background: #1a2a2a; }
+        .bet-card .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .bet-card .match { font-weight: 600; font-size: 1rem; }
+        .bet-card .badge { background: #00d4aa; color: #000; padding: 4px 12px; border-radius: 15px; font-weight: 600; font-size: 0.8rem; }
+        .bet-card .bottom { display: flex; justify-content: space-between; color: #666; font-size: 0.8rem; }
+        .bet-card .bottom .cuota { color: #00d4aa; font-weight: 600; }
+        
+        /* Lista compacta */
+        .bet-row { display: flex; align-items: center; background: #1a1a1a; border: 2px solid #333; border-radius: 10px; padding: 15px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+        .bet-row:hover { border-color: #00d4aa; }
+        .bet-row.selected { border-color: #00d4aa; background: #1a2a2a; }
+        .bet-row .check { width: 22px; height: 22px; border: 2px solid #444; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
+        .bet-row.selected .check { background: #00d4aa; border-color: #00d4aa; color: #000; }
+        .bet-row .info { flex: 1; }
+        .bet-row .info .match { font-weight: 600; }
+        .bet-row .info .meta { font-size: 0.75rem; color: #666; }
+        .bet-row .odd { font-size: 1.3rem; font-weight: 700; color: #00d4aa; }
+        
+        /* Boton */
+        .btn-add { width: 100%; padding: 18px; background: #00d4aa; color: #000; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 700; cursor: pointer; margin-top: 15px; }
+        .btn-add:hover { background: #00b894; }
+        .btn-add .count { background: #000; color: #00d4aa; padding: 2px 8px; border-radius: 10px; margin-left: 8px; font-size: 0.9rem; }
+        
+        /* Cards horizontales */
+        .h-card { display: flex; background: #1a1a1a; border: 2px solid #333; border-radius: 12px; margin-bottom: 12px; cursor: pointer; overflow: hidden; transition: all 0.2s; }
+        .h-card:hover { border-color: #00d4aa; }
+        .h-card.selected { border-color: #00d4aa; background: #1a2a2a; }
+        .h-card .info { flex: 1; padding: 15px; }
+        .h-card .info .match { font-weight: 600; margin-bottom: 4px; }
+        .h-card .info .pick { font-size: 0.8rem; color: #00d4aa; }
+        .h-card .right { background: #00d4aa; color: #000; padding: 15px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .h-card .right .odd { font-size: 1.4rem; font-weight: 700; }
+        .h-card .right .sel { font-size: 0.7rem; margin-top: 4px; }
+        
+        /* Toggle buttons */
+        .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .toggle-btn { background: #1a1a1a; border: 2px solid #333; border-radius: 10px; padding: 15px; cursor: pointer; transition: all 0.2s; text-align: left; }
+        .toggle-btn:hover { border-color: #00d4aa; }
+        .toggle-btn.selected { background: #1a2a2a; border-color: #00d4aa; }
+        .toggle-btn .match { font-weight: 600; margin-bottom: 6px; }
+        .toggle-btn .row { display: flex; justify-content: space-between; }
+        .toggle-btn .odd { color: #00d4aa; font-weight: 700; }
+        .toggle-btn .pick { font-size: 0.75rem; color: #888; }
+    </style>
+</head>
+<body>
+    <h1>Bankroll + Seleccion de Apuestas</h1>
+    
+    <div class="grid">
+        <!-- Opcion 1: Cards con badge -->
+        <div class="card">
+            <div class="card-header">1. Cards con Badge</div>
+            <div class="card-body">
+                <div class="bankroll-hero">
+                    <div class="label">BANKROLL ACTUAL</div>
+                    <div class="value">$1.247,50</div>
+                    <div class="sub">+ $247,50 (24.7%)</div>
+                </div>
+                <div class="metrics-row">
+                    <div class="metric-box"><div class="val" style="color:#22c55e">+24.7%</div><div class="lbl">ROI</div></div>
+                    <div class="metric-box"><div class="val">68%</div><div class="lbl">Aciertos</div></div>
+                    <div class="metric-box"><div class="val">25</div><div class="lbl">Apuestas</div></div>
+                    <div class="metric-box"><div class="val" style="color:#22c55e">$247</div><div class="lbl">Ganancia</div></div>
+                </div>
+                
+                <div class="section-title">SELECCIONAR APUESTAS</div>
+                
+                <div class="bet-card selected">
+                    <div class="top">
+                        <div class="match">Barcelona vs Real Madrid</div>
+                        <div class="badge">Over 2.5</div>
+                    </div>
+                    <div class="bottom">
+                        <span>78% confianza</span>
+                        <span class="cuota">@ 2.10</span>
+                    </div>
+                </div>
+                
+                <div class="bet-card">
+                    <div class="top">
+                        <div class="match">Bayern vs Dortmund</div>
+                        <div class="badge">BTTS Si</div>
+                    </div>
+                    <div class="bottom">
+                        <span>72% confianza</span>
+                        <span class="cuota">@ 1.85</span>
+                    </div>
+                </div>
+                
+                <div class="bet-card">
+                    <div class="top">
+                        <div class="match">PSG vs Lyon</div>
+                        <div class="badge">Local</div>
+                    </div>
+                    <div class="bottom">
+                        <span>65% confianza</span>
+                        <span class="cuota">@ 1.65</span>
+                    </div>
+                </div>
+                
+                <button class="btn-add">+ Agregar<span class="count">1</span></button>
+            </div>
+        </div>
+
+        <!-- Opcion 2: Lista compacta -->
+        <div class="card">
+            <div class="card-header">2. Lista Compacta</div>
+            <div class="card-body">
+                <div class="bankroll-hero">
+                    <div class="label">BANKROLL ACTUAL</div>
+                    <div class="value">$1.247,50</div>
+                    <div class="sub">+ $247,50 (24.7%)</div>
+                </div>
+                <div class="metrics-row">
+                    <div class="metric-box"><div class="val" style="color:#22c55e">+24.7%</div><div class="lbl">ROI</div></div>
+                    <div class="metric-box"><div class="val">68%</div><div class="lbl">Aciertos</div></div>
+                    <div class="metric-box"><div class="val">25</div><div class="lbl">Apuestas</div></div>
+                    <div class="metric-box"><div class="val" style="color:#22c55e">$247</div><div class="lbl">Ganancia</div></div>
+                </div>
+                
+                <div class="section-title">SELECCIONAR APUESTAS</div>
+                
+                <div class="bet-row selected">
+                    <div class="check">v</div>
+                    <div class="info">
+                        <div class="match">Barcelona vs Real Madrid</div>
+                        <div class="meta">Over 2.5 • 78%</div>
+                    </div>
+                    <div class="odd">2.10</div>
+                </div>
+                
+                <div class="bet-row">
+                    <div class="check"></div>
+                    <div class="info">
+                        <div class="match">Bayern vs Dortmund</div>
+                        <div class="meta">BTTS Si • 72%</div>
+                    </div>
+                    <div class="odd">1.85</div>
+                </div>
+                
+                <div class="bet-row">
+                    <div class="check"></div>
+                    <div class="info">
+                        <div class="match">PSG vs Lyon</div>
+                        <div class="meta">Local • 65%</div>
+                    </div>
+                    <div class="odd">1.65</div>
+                </div>
+                
+                <button class="btn-add">+ Agregar<span class="count">1</span></button>
+            </div>
+        </div>
+
+        <!-- Opcion 3: Cards horizontales -->
+        <div class="card">
+            <div class="card-header">3. Cards Horizontales</div>
+            <div class="card-body">
+                <div class="bankroll-hero">
+                    <div class="label">BANKROLL ACTUAL</div>
+                    <div class="value">$1.247,50</div>
+                    <div class="sub">+ $247,50 (24.7%)</div>
+                </div>
+                <div class="metrics-row">
+                    <div class="metric-box"><div class="val" style="color:#22c55e">+24.7%</div><div class="lbl">ROI</div></div>
+                    <div class="metric-box"><div class="val">68%</div><div class="lbl">Aciertos</div></div>
+                    <div class="metric-box"><div class="val">25</div><div class="lbl">Apuestas</div></div>
+                    <div class="metric-box"><div class="val" style="color:#22c55e">$247</div><div class="lbl">Ganancia</div></div>
+                </div>
+                
+                <div class="section-title">SELECCIONAR APUESTAS</div>
+                
+                <div class="h-card selected">
+                    <div class="info">
+                        <div class="match">Barcelona vs Real Madrid</div>
+                        <div class="pick">Over 2.5 • 78%</div>
+                    </div>
+                    <div class="right">
+                        <div class="odd">2.10</div>
+                        <div class="sel">v</div>
+                    </div>
+                </div>
+                
+                <div class="h-card">
+                    <div class="info">
+                        <div class="match">Bayern vs Dortmund</div>
+                        <div class="pick">BTTS Si • 72%</div>
+                    </div>
+                    <div class="right">
+                        <div class="odd">1.85</div>
+                        <div class="sel"></div>
+                    </div>
+                </div>
+                
+                <div class="h-card">
+                    <div class="info">
+                        <div class="match">PSG vs Lyon</div>
+                        <div class="pick">Local • 65%</div>
+                    </div>
+                    <div class="right">
+                        <div class="odd">1.65</div>
+                        <div class="sel"></div>
+                    </div>
+                </div>
+                
+                <button class="btn-add">+ Agregar<span class="count">1</span></button>
+            </div>
+        </div>
+
+        <!-- Opcion 4: Toggle Grid -->
+        <div class="card">
+            <div class="card-header">4. Toggle Grid</div>
+            <div class="card-body">
+                <div class="bankroll-hero">
+                    <div class="label">BANKROLL ACTUAL</div>
+                    <div class="value">$1.247,50</div>
+                    <div class="sub">+ $247,50 (24.7%)</div>
+                </div>
+                <div class="metrics-row">
+                    <div class="metric-box"><div class="val" style="color:#22c55e">+24.7%</div><div class="lbl">ROI</div></div>
+                    <div class="metric-box"><div class="val">68%</div><div class="lbl">Aciertos</div></div>
+                    <div class="metric-box"><div class="val">25</div><div class="lbl">Apuestas</div></div>
+                    <div class="metric-box"><div class="val" style="color:#22c55e">$247</div><div class="lbl">Ganancia</div></div>
+                </div>
+                
+                <div class="section-title">SELECCIONAR APUESTAS</div>
+                
+                <div class="toggle-grid">
+                    <div class="toggle-btn selected">
+                        <div class="match">Barcelona</div>
+                        <div class="row">
+                            <div class="pick">Over 2.5</div>
+                            <div class="odd">2.10</div>
+                        </div>
+                    </div>
+                    <div class="toggle-btn">
+                        <div class="match">Bayern</div>
+                        <div class="row">
+                            <div class="pick">BTTS</div>
+                            <div class="odd">1.85</div>
+                        </div>
+                    </div>
+                    <div class="toggle-btn">
+                        <div class="match">PSG</div>
+                        <div class="row">
+                            <div class="pick">Local</div>
+                            <div class="odd">1.65</div>
+                        </div>
+                    </div>
+                    <div class="toggle-btn">
+                        <div class="match">Juventus</div>
+                        <div class="row">
+                            <div class="pick">Over 1.5</div>
+                            <div class="odd">1.45</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn-add">+ Agregar<span class="count">1</span></button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
