@@ -1560,51 +1560,46 @@ def render_login_form():
         
     # Página: Analizador
     elif st.session_state.page == "Analizador":
-        pass  # Sin título
-        
-        # Inicializar selected_match en session_state
-        if 'selected_match_data' not in st.session_state:
-            st.session_state.selected_match_data = None
-        
+        st.markdown("## 🎯 Analizador de Partidos")
+
         client = get_client()
-        
-        # Formulario para seleccionar equipos directamente
-        st.markdown("### 📊 Seleccionar Equipos para Analizar")
 
-        # Obtener lista de equipos
-        equipos_lista = []
-        try:
-            resp = client.table('equipos_stats').select('equipo').limit(500).execute()
-            if resp.data:
-                for eq in resp.data:
-                    nombre = eq.get('equipo', '')
-                    if nombre and nombre not in equipos_lista:
-                        equipos_lista.append(nombre)
-        except:
-            pass
+        # Verificar si viene de Partidos con equipos seleccionados
+        tiene_match = bool(st.session_state.get('selected_match_data'))
+        tiene_equipos = bool(st.session_state.get('selected_local') and st.session_state.get('selected_away'))
 
-        col1, col2 = st.columns(2)
-        with col1:
-            equipo_local = st.selectbox("🏠 Equipo Local", options=equipos_lista, key="select_local")
-        with col2:
-            equipo_visitante = st.selectbox("✈️ Equipo Visitante", options=equipos_lista, key="select_visitante")
+        # SI NO hay equipos seleccionados, mostrar selector
+        if not tiene_match and not tiene_equipos:
+            equipos_lista = []
+            try:
+                resp = client.table('equipos_stats').select('equipo').limit(500).execute()
+                if resp.data:
+                    for eq in resp.data:
+                        nombre = eq.get('equipo', '')
+                        if nombre and nombre not in equipos_lista:
+                            equipos_lista.append(nombre)
+            except:
+                pass
 
-        analizar_btn = st.button("🔍 ANALIZAR", type="primary", use_container_width=True)
+            st.markdown("### 📊 Seleccionar Equipos")
+            col1, col2 = st.columns(2)
+            with col1:
+                equipo_local = st.selectbox("🏠 Equipo Local", options=equipos_lista, key="local1")
+            with col2:
+                equipo_visitante = st.selectbox("✈️ Equipo Visitante", options=equipos_lista, key="visit1")
+            
+            if st.button("🔍 ANALIZAR", type="primary", use_container_width=True):
+                if equipo_local and equipo_visitante:
+                    st.session_state.selected_local = equipo_local
+                    st.session_state.selected_away = equipo_visitante
+                    st.session_state.home = equipo_local
+                    st.session_state.away = equipo_visitante
+                    st.rerun()
+                else:
+                    st.warning("Selecciona ambos equipos")
+            st.stop()
 
-        # Si no hay partido seleccionado ni se presionó analizar, usar session_state
-        if not analizar_btn:
-            if not st.session_state.selected_match_data and not ('selected_local' in st.session_state and 'selected_away' in st.session_state):
-                st.info("👆 Selecciona dos equipos y presiona ANALIZAR")
-                st.stop()
-
-        # Si se presionó analizar con equipos seleccionados
-        if analizar_btn and equipo_local and equipo_visitante:
-            st.session_state.selected_local = equipo_local
-            st.session_state.selected_away = equipo_visitante
-            st.session_state.home = equipo_local
-            st.session_state.away = equipo_visitante
-
-        # Emoji por país
+        # SI hay equipos seleccionados, hacer el análisis
         # Si hay un partido seleccionado, hacer análisis automático
         if st.session_state.selected_match_data:
             p = st.session_state.selected_match_data
@@ -2258,8 +2253,10 @@ def render_login_form():
             st.info(f"📋 Pick: {home} vs {away}")
 
             if st.button("💾 GUARDAR PARTIDO", type="primary", use_container_width=True):
+                st.error("🔴 BOTON PRESIONADO - Iniciando guardado...")
                 try:
                     client = get_client()
+                    st.error(f"DEBUG client: {client}")
                     if client is None:
                         st.error("❌ Error: No se pudo conectar a Supabase")
                     else:
