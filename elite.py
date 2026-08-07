@@ -2309,10 +2309,6 @@ def render_login_form():
                         # Tiros Arco
                         'prediccion_arco': r.get('pick_tiros_arco', 'Over'),
                         'arco_total_estimado': float(pred_arco.get('total_estimado', 8)),
-                        'arco_local': float(pred_arco.get('arco_local', 4)),
-                        'arco_visitante': float(pred_arco.get('arco_visitante', 4)),
-                        'arco_over_prob': float(r.get('prob_tiros_arco', 50)),
-                        'arco_under_prob': float(100 - r.get('prob_tiros_arco', 50)),
                         # Confianza
                         'confianza': int(r.get('confianza', 50)),
                         'rango': r.get('rango', 'C'),
