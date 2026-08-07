@@ -144,6 +144,7 @@ CREATE POLICY "partidos_stats_all" ON partidos_stats FOR ALL USING (true) WITH C
 -- ═══════════════════════════════════════════════════════════════════════════════
 CREATE TABLE IF NOT EXISTS picks (
     id BIGSERIAL PRIMARY KEY,
+    usuario VARCHAR(255) DEFAULT 'default',
     fixture_id BIGINT,
     fecha DATE NOT NULL,
     liga VARCHAR(255),

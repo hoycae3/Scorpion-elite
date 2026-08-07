@@ -3261,21 +3261,23 @@ def render_login_form():
             
             # Obtener picks del usuario para agregar al bankroll
             try:
-                # Debug: mostrar info del usuario
-                st.caption(f"🔍 Debug: usuario_id = '{usuario_id}'")
-                
-                # Contar todos los picks
-                all_picks = client.table('picks').select('usuario', count='exact').execute()
-                st.caption(f"📊 Total picks en DB: {len(all_picks.data) if all_picks.data else 0}")
-                
-                # Picks del usuario
                 response_picks = client.table('picks').select('*').eq('usuario', usuario_id).execute()
                 picks_disponibles = response_picks.data if response_picks.data else []
-                st.caption(f"📊 Picks de este usuario: {len(picks_disponibles)}")
             except Exception as e:
-                logger.error(f"Error obteniendo picks para bankroll: {e}")
-                st.error(f"Error: {e}")
-                picks_disponibles = []
+                error_msg = str(e)
+                if 'usuario' in error_msg and ('does not exist' in error_msg or '42703' in error_msg):
+                    st.error("⚠️ FALTA COLUMNA 'usuario' EN TABLA 'picks'")
+                    st.info("""
+                    **Solución:** Ejecuta este SQL en Supabase SQL Editor:
+                    ```sql
+                    ALTER TABLE picks ADD COLUMN IF NOT EXISTS usuario VARCHAR(255) DEFAULT 'default';
+                    ```
+                    [Abrir Supabase](https://supabase.com/dashboard/project/jjtifureeygvygxtpuku/sql)
+                    """)
+                    picks_disponibles = []
+                else:
+                    logger.error(f"Error obteniendo picks: {e}")
+                    picks_disponibles = []
             
             # Obtener apuestas guardadas del usuario
             try:
