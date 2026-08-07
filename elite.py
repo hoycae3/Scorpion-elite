@@ -3261,22 +3261,32 @@ def render_login_form():
             
             # Obtener picks del usuario para agregar al bankroll
             try:
-                response_picks = client.table('picks').select('*').eq('usuario', usuario_id).execute()
-                picks_disponibles = response_picks.data if response_picks.data else []
+                # Primero contar TODOS los picks (sin filtro)
+                all_picks = client.table('picks').select('*', count='exact').execute()
+                total_all = len(all_picks.data) if all_picks.data else 0
+                
+                # Intentar con filtro de usuario
+                try:
+                    response_picks = client.table('picks').select('*').eq('usuario', usuario_id).execute()
+                    picks_disponibles = response_picks.data if response_picks.data else []
+                    total_user = len(picks_disponibles)
+                except:
+                    # Si falla, mostrar todos los picks sin filtro
+                    picks_disponibles = all_picks.data
+                    total_user = total_all
+                    st.warning(f"⚠️ Picks sin filtro (total: {total_all})")
+                
+                # Debug info
+                st.caption(f"🔍 Total picks: {total_all} | De usuario '{usuario_id}': {total_user}")
+                
             except Exception as e:
                 error_msg = str(e)
-                if 'usuario' in error_msg and ('does not exist' in error_msg or '42703' in error_msg):
-                    st.error("⚠️ FALTA COLUMNA 'usuario' EN TABLA 'picks'")
-                    st.info("""
-                    **Solución:** Ejecuta este SQL en Supabase SQL Editor:
-                    ```sql
-                    ALTER TABLE picks ADD COLUMN IF NOT EXISTS usuario VARCHAR(255) DEFAULT 'default';
-                    ```
-                    [Abrir Supabase](https://supabase.com/dashboard/project/jjtifureeygvygxtpuku/sql)
-                    """)
+                if 'usuario' in error_msg and '42703' in error_msg:
+                    st.error("⚠️ FALTA COLUMNA 'usuario'")
+                    st.info("Ejecuta: `ALTER TABLE picks ADD COLUMN IF NOT EXISTS usuario VARCHAR(255) DEFAULT 'default';`")
                     picks_disponibles = []
                 else:
-                    logger.error(f"Error obteniendo picks: {e}")
+                    logger.error(f"Error: {e}")
                     picks_disponibles = []
             
             # Obtener apuestas guardadas del usuario
