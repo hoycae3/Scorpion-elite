@@ -2266,7 +2266,9 @@ def render_login_form():
                                 'rango': rango,
                             }
                             client.table('picks').insert(pick_data).execute()
+                            st.error("DEBUG: Antes del insert...")
                             st.session_state.guardado_ok = True
+                            st.error("DEBUG: Después del insert, guardado_ok=True")
 
                         except Exception as e:
                             st.error(f"❌ Error al guardar: {str(e)}")
