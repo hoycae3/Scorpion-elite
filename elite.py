@@ -2271,10 +2271,13 @@ def render_login_form():
                         'prob_ou': float(r.get('prob_over_under', 50)),
                         
                         'prediccion_btts': r.get('pick_btts', 'Si'),
-                        
                         'btts_yes': float(r.get('btts_yes', 50)),
-                        
-                        
+                        'prediccion_corners': r.get('pick_corners', 'Over'),
+                        'corners_total_estimado': float(r.get('corners', {}).get('total_estimado', 10)),
+                        'prediccion_remates': r.get('pick_tiros', 'Over'),
+                        'remates_total_estimado': float(r.get('tiros', {}).get('total_estimado', 24)),
+                        'prediccion_tarjetas': r.get('pick_tarjetas', 'Over'),
+                        'tarjetas_total_estimado': float(r.get('tarjetas', {}).get('total_estimado', 5)),
                         'confianza': int(r.get('confianza', 50)),
                         'rango': r.get('rango', 'C'),
                     }
