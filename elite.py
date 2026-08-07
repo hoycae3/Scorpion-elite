@@ -2264,13 +2264,17 @@ def render_login_form():
                                 'confianza': int(confianza),
                                 'rango': rango,
                             }
-                            
                             client.table('picks').insert(pick_data).execute()
-                            st.success("✅ Partido guardado!")
-                            st.balloons()
-                            
+                            st.session_state.guardado_ok = True
+
                         except Exception as e:
-                            st.error(f"❌ Error: {str(e)}")
+                            st.error(f"❌ Error al guardar: {str(e)}")
+
+                # Mensaje de exito
+                if st.session_state.get('guardado_ok', False):
+                    st.success("✅ Partido guardado! Ve a VIP > Bankroll > Agregar Apuesta")
+                    st.balloons()
+                    st.session_state.guardado_ok = False
             
             # ========================
             # ========================
