@@ -3290,247 +3290,209 @@ def render_login_form():
 
             # ==================== SUBTABS ====================
 
-            sub_tab1, sub_tab2, sub_tab3 = st.tabs(["📥 Dashboard", "➕ Agregar Apuesta", "📋 Mis Apuestas"])
-            
+            sub_tab1, sub_tab2, sub_tab3 = st.tabs(["📥 Dashboard", "➕ Agregar", "📋 Historial"])
+
             # ========== SUBTAB 1: DASHBOARD ==========
             with sub_tab1:
-                st.markdown("#### 📲 Resumen de Rendimiento")
-                
-                # Selector de moneda y banco inicial
-                col_money1, col_money2 = st.columns([1, 2])
+                # Selector de moneda
+                col_money1, col_money2 = st.columns([1, 3])
                 with col_money1:
-                    moneda_select = st.selectbox("ұ Moneda", options=list(MONEDAS.keys()), 
+                    moneda_select = st.selectbox("💰 Moneda", options=list(MONEDAS.keys()),
                                                format_func=lambda x: f"{MONEDAS[x]['simbolo']} {MONEDAS[x]['nombre']}",
-                                               index=0)
+                                               index=0, key="moneda_v2")
                     simbolo = MONEDAS[moneda_select]["simbolo"]
-                
                 with col_money2:
-                    bankroll_inicial = st.number_input(f"ө Bankroll Inicial", value=1000.0, min_value=100.0, step=100.0, key="bankroll_inicial")
-                
-                # Reset bankroll
-                col_reset = st.columns(1)[0]
-                if st.button("🔄 Reiniciar Bankroll", use_container_width=True):
-                    try:
-                        client.table('bankroll_apuestas').delete().eq('usuario', usuario_id).execute()
-                    except:
-                        pass
-                    st.success("Bankroll reiniciado")
-                    pass
-                
-                st.markdown("---")
-                
+                    bankroll_inicial = st.number_input("📊 Bankroll Inicial", value=1000.0, min_value=100.0, step=100.0, key="bankroll_inicial_v2")
+
                 if apuestas:
-                    # Calcular métricas reales
                     total_apostado = sum(a.get('cantidad', 0) for a in apuestas)
                     ganancias = sum(a.get('ganancia', 0) for a in apuestas)
                     bankroll_actual = bankroll_inicial + ganancias
                     roi = ((bankroll_actual - bankroll_inicial) / bankroll_inicial * 100) if bankroll_inicial > 0 else 0
-                    
                     apuestas_ganadas = len([a for a in apuestas if a.get('ganancia', 0) > 0])
                     total_apuestas = len(apuestas)
-                    tasa_acierto_real = (apuestas_ganadas / total_apuestas * 100) if total_apuestas > 0 else 0
-                    
-                    # Mostrar métricas con formato de miles
+                    tasa_acierto = (apuestas_ganadas / total_apuestas * 100) if total_apuestas > 0 else 0
+
+                    # Bankroll grande
+                    st.markdown(f"""
+                    <div style="background: linear-gradient(135deg, #1a3a2a 0%, #0f2518 100%); 
+                                border-radius: 16px; padding: 30px; text-align: center; 
+                                border: 2px solid #22c55e; margin: 20px 0;">
+                        <div style="color: #888; font-size: 0.9rem;">BANKROLL ACTUAL</div>
+                        <div style="font-size: 3rem; font-weight: 700; color: #22c55e;">{format_money(bankroll_actual, simbolo)}</div>
+                        <div style="color: #22c55e; font-size: 1.1rem;">{'+' if ganancias >= 0 else ''}{format_money(ganancias, simbolo)} ({'+' if roi >= 0 else ''}{roi:.1f}%)</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
                     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
                     with col_m1:
-                        delta_gan = f"{'+' if ganancias >= 0 else ''}{format_money(ganancias, simbolo)}"
-                        st.metric("ө Bankroll Actual", format_money(bankroll_actual, simbolo), delta=delta_gan)
+                        st.metric("📈 ROI", f"{'+' if roi >= 0 else ''}{roi:.1f}%")
                     with col_m2:
-                        st.metric("📥 ROI", f"{roi:.1f}%", delta=f"{'+' if roi >= 0 else ''}{roi:.1f}%")
+                        st.metric("🎯 Aciertos", f"{tasa_acierto:.0f}%", delta=f"{apuestas_ganadas}/{total_apuestas}")
                     with col_m3:
-                        st.metric("🎯 Tasa Acierto", f"{tasa_acierto_real:.1f}%", delta=f"{apuestas_ganadas}/{total_apuestas}")
+                        st.metric("💰 Apostado", format_money(total_apostado, simbolo))
                     with col_m4:
-                        st.metric("🏆 Ganado/Perdido", format_money(ganancias, simbolo))
-                    
-                    # Estado del bankroll
+                        st.metric("🏆 Ganancia", format_money(ganancias, simbolo))
+
                     if bankroll_actual >= bankroll_inicial * 1.1:
-                        st.success(f"✅ Bankroll saludable: {((bankroll_actual/bankroll_inicial)-1)*100:.1f}% de ganancia")
-                    elif bankroll_actual >= bankroll_inicial * 0.9:
-                        st.warning(f"⚠️ Bankroll estable: {((bankroll_actual/bankroll_inicial)-1)*100:.1f}%")
+                        st.success(f"✅ Excelente: +{((bankroll_actual/bankroll_inicial)-1)*100:.1f}%")
+                    elif bankroll_actual >= bankroll_inicial:
+                        st.info(f"📊 Estable")
                     else:
-                        st.error(f"🔽 Bankroll en riesgo: {((bankroll_actual/bankroll_inicial)-1)*100:.1f}%")
-                    
-                    # Gráfico de evolución
-                    st.markdown("#### 📲 Evolución del Bankroll")
-                    import random
-                    if total_apuestas > 1:
-                        # Crear datos de evolución
+                        st.warning(f"⚠️ En pérdida")
+
+                    if len(apuestas) > 1:
                         evolucion = []
                         b = bankroll_inicial
                         for a in sorted(apuestas, key=lambda x: x.get('fecha', '')):
                             b += a.get('ganancia', 0)
-                            evolucion.append({'fecha': a.get('fecha', 'N/A'), 'bankroll': b})
-                        
-                        # Mostrar tabla de evolución
-                        df_evo = pd.DataFrame(evolucion)
-                        st.line_chart(df_evo.set_index('fecha'))
-                    else:
-                        st.info("Agrega más apuestas para ver la evolución")
-                    
-                    # Pronóstico
-                    if total_apuestas >= 10:
-                        st.markdown("#### ® Pronóstico")
-                        media_ganancia = ganancias / total_apuestas
-                        proy_mensual = media_ganancia * 30
-                        proy_anual = media_ganancia * 365
-                        
-                        col_p1, col_p2 = st.columns(2)
-                        with col_p1:
-                            st.metric("📅 Proyección Mensual", format_money(proy_mensual, simbolo))
-                        with col_p2:
-                            st.metric("📅 Proyección Anual", format_money(proy_anual, simbolo))
+                            evolucion.append({'Fecha': str(a.get('fecha', ''))[:10], 'Bankroll': b})
+                        st.markdown("#### 📈 Evolución")
+                        st.line_chart(pd.DataFrame(evolucion).set_index('Fecha'))
                 else:
-                    st.info("⚽ No tienes apuestas aГәn. Ve a 'Agregar Apuesta' para empezar.")
-            
-            # ========== SUBTAB 2: AGREGAR APUESTA ==========
+                    st.info("⚽ No tienes apuestas aún. Ve a 'Agregar' para empezar.")
+
+            # ========== SUBTAB 2: AGREGAR ==========
             with sub_tab2:
-                st.markdown("#### ➕ Agregar Nueva Apuesta")
-                
-                tab_origen1, tab_origen2 = st.tabs(["📋 Desde Picks", "вңҸпёҸ Manual"])
-                
-                with tab_origen1:
-                    if picks_disponibles:
-                        st.markdown("##### Selecciona un Pick")
+                picks_sin = [p for p in picks_disponibles if p.get('acertado_1x2') is None]
+
+                if not picks_sin:
+                    st.info("📋 No tienes picks. Ve al Analizador y guarda partidos.")
+                else:
+                    modo = st.radio("🎲 Tipo", ["📋 Individual", "🔥 Combinada"], horizontal=True, index=0, key="modo_apuesta")
+                    es_combinada = modo == "🔥 Combinada"
+                    st.markdown("---")
+
+                    # Recopilar opciones
+                    opciones = []
+                    for p in picks_sin:
+                        local = p.get('equipo_local', '?')
+                        visitante = p.get('equipo_visitante', '?')
+                        match_key = f"{local} vs {visitante}"
                         
-                        # Filtrar picks sin resultado
-                        picks_sin_resultado = [p for p in picks_disponibles if p.get('acertado_1x2') is None]
+                        if p.get('prediccion_1x2'):
+                            opciones.append({'pick': p, 'display': f"{match_key} - 1X2: {p.get('prediccion_1x2')}", 'tipo': '1X2', 'cuota': float(p.get('cuota_1x2') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_1x2', 50)})
+                        if p.get('prediccion_ou'):
+                            opciones.append({'pick': p, 'display': f"{match_key} - O/U: {p.get('prediccion_ou')}", 'tipo': 'O/U', 'cuota': float(p.get('cuota_ou') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_ou', 50)})
+                        if p.get('prediccion_btts'):
+                            opciones.append({'pick': p, 'display': f"{match_key} - BTTS", 'tipo': 'BTTS', 'cuota': float(p.get('cuota_btts') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_btts', 50)})
+                        if p.get('prediccion_corners'):
+                            opciones.append({'pick': p, 'display': f"{match_key} - Corners", 'tipo': 'Corners', 'cuota': float(p.get('cuota_corners') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_corners', 50)})
+                        if p.get('prediccion_tarjetas'):
+                            opciones.append({'pick': p, 'display': f"{match_key} - Tarjetas", 'tipo': 'Tarjetas', 'cuota': float(p.get('cuota_tarjetas') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_tarjetas', 50)})
 
-                        if picks_sin_resultado:
-                            # Mostrar partidos con sus mercados disponibles
-                            opciones_pick = []
-                            for p in picks_sin_resultado:
-                                local = p.get('equipo_local', '?')
-                                visitante = p.get('equipo_visitante', '?')
-                                mercados = []
-                                if p.get('prediccion_1x2'): mercados.append("1X2")
-                                if p.get('prediccion_ou'): mercados.append("O/U")
-                                if p.get('prediccion_btts'): mercados.append("BTTS")
-                                if p.get('prediccion_corners'): mercados.append("Corners")
-                                if p.get('prediccion_tarjetas'): mercados.append("Tarjetas")
-                                if p.get('prediccion_remates'): mercados.append("Remates")
-                                opts = ", ".join(mercados) if mercados else "1X2"
-                                opciones_pick.append(f"{local} vs {visitante} [{opts}]")
+                    st.markdown("#### 📋 Selecciona Picks")
+                    seleccionados = []
+                    for i, opt in enumerate(opciones):
+                        cols = st.columns([1, 4, 1, 1])
+                        with cols[0]:
+                            sel = st.checkbox("", value=False, key=f"sel_pick_{i}")
+                            if sel:
+                                seleccionados.append(i)
+                        with cols[1]:
+                            st.markdown(f"**{opt['display']}**")
+                            st.caption(f"📊 Prob: {opt['prob']:.0f}% | Conf: {opt['conf']:.0f}%")
+                        with cols[2]:
+                            st.markdown(f"@ **{opt['cuota']:.2f}**")
+                        with cols[3]:
+                            st.markdown(f"_{opt['tipo']}_")
 
-                            pick_idx = st.selectbox("Partido", options=range(len(opciones_pick)), format_func=lambda x: opciones_pick[x])
-                            pick = picks_sin_resultado[pick_idx]
+                    st.markdown("---")
 
-                            # Seleccionar tipo de mercado
-                            merca_opts = []
-                            if pick.get('prediccion_1x2'): merca_opts.append("1X2")
-                            if pick.get('prediccion_ou'): merca_opts.append("Over/Under")
-                            if pick.get('prediccion_btts'): merca_opts.append("BTTS")
-                            if pick.get('prediccion_corners'): merca_opts.append("Corners")
-                            if pick.get('prediccion_tarjetas'): merca_opts.append("Tarjetas")
-                            if pick.get('prediccion_remates'): merca_opts.append("Remates")
-                            merca_sel = st.selectbox("Mercado", options=merca_opts)
+                    if seleccionados:
+                        st.markdown("#### 💰 Configurar")
 
-                            # Obtener prediccion
-                            preds = {
-                                "1X2": pick.get('prediccion_1x2', 'N/A'),
-                                "Over/Under": pick.get('prediccion_ou', 'N/A'),
-                                "BTTS": pick.get('prediccion_btts', 'N/A'),
-                                "Corners": pick.get('prediccion_corners', 'N/A'),
-                                "Tarjetas": pick.get('prediccion_tarjetas', 'N/A'),
-                                "Remates": pick.get('prediccion_remates', 'N/A'),
-                            }
-                            prediccion = preds.get(merca_sel, 'N/A')
-
-                            # Info del pick
-                            c1, c2, c3 = st.columns(3)
-                            with c1:
-                                st.write(f"**Fecha:** {pick.get('fecha', 'N/A')}")
-                                st.write(f"**Liga:** {pick.get('liga', 'N/A')}")
-                            with c2:
-                                st.write(f"**{pick.get('equipo_local', '?')} vs {pick.get('equipo_visitante', '?')}")
-                                st.write(f"**Pick:** {prediccion}")
-                            with c3:
-                                st.write(f"**Confianza:** {pick.get('confianza', '?')}%")
-                                prob = pick.get('prob_1x2', 0) if merca_sel == "1X2" else pick.get('prob_ou', 0)
-                                st.write(f"**Prob:** {prob:.1f}%")
-
-                            # Inputs apuesta
-                            a1, a2, a3 = st.columns(3)
-                            with a1:
-                                cuota = st.number_input("Cuota", value=2.0, min_value=1.01, max_value=100.0, step=0.05)
-                            with a2:
-                                cantidad = st.number_input(f"Apuesta ({simbolo})", value=50.0, min_value=1.0, step=10.0)
-                            with a3:
-                                st.write(f"**Ganancia:** {format_money(cantidad * (cuota - 1), simbolo)}")
-
-                            if st.button("APOSTAR", type="primary", use_container_width=True):
-                                try:
-                                    client.table('bankroll_apuestas').insert({
-                                        'usuario': usuario_id,
-                                        'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
-                                        'equipo': f"{pick.get('equipo_local', '')} vs {pick.get('equipo_visitante', '')}",
-                                        'cuota': float(cuota),
-                                        'cantidad': float(cantidad),
-                                        'mercado': merca_sel,
-                                        'pick_id': pick.get('id'),
-                                        'ganancia': 0,
-                                        'resultado': None
-                                    }).execute()
-                                    st.success(f"Apuesta registrada: {prediccion} @ {cuota}")
-                                    st.rerun()
-                                except Exception as e:
-                                    st.error(f"Error: {e}")
+                        if es_combinada and len(seleccionados) < 2:
+                            st.warning("⚠️ Para combinada selecciona al menos 2 picks")
                         else:
-                            st.info("Todos tus picks ya tienen apuesta")
-                    else:
-                        st.info("No tienes picks. Ve al Analizador y guarda un partido")
+                            if es_combinada:
+                                cuota_total = 1.0
+                                for i in seleccionados:
+                                    cuota_total *= opciones[i]['cuota']
+                                
+                                st.markdown(f"""
+                                <div style="background: linear-gradient(135deg, #2a1a3a 0%, #1a0f25 100%); 
+                                            border-radius: 12px; padding: 20px; border: 2px solid #8b5cf6; margin: 15px 0;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-weight: 700; font-size: 1.1rem;">🔥 COMBINADA {len(seleccionados)} LEGS</span>
+                                        <span style="background: #8b5cf6; padding: 5px 15px; border-radius: 10px; font-weight: 700;">@ {cuota_total:.2f}</span>
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                
+                                for i in seleccionados:
+                                    opt = opciones[i]
+                                    st.markdown(f"- **{opt['pick'].get('equipo_local', '?')} vs {opt['pick'].get('equipo_visitante', '?')}** → {opt['tipo']}: {opt.get('prediccion', opt.get('display', '').split(' - ')[-1])} @ {opt['cuota']:.2f}")
+                                
+                                cantidad = st.number_input(f"💵 Cantidad ({simbolo})", value=25.0, min_value=1.0, step=5.0, key="cant_combinada")
+                                ganancia = cantidad * (cuota_total - 1)
+                                retorno = cantidad * cuota_total
+                                
+                                col_g1, col_g2, col_g3 = st.columns(3)
+                                with col_g1:
+                                    st.metric("📈 Ganancia", f"+{format_money(ganancia, simbolo)}")
+                                with col_g2:
+                                    st.metric("💰 Retorno", format_money(retorno, simbolo))
+                                with col_g3:
+                                    st.metric("📊 Cuota", f"@{cuota_total:.2f}")
 
-                with tab_origen2:
-                    st.markdown("##### Datos de la Apuesta")
-                    
-                    col_d1, col_d2, col_d3 = st.columns(3)
-                    with col_d1:
-                        equipo = st.text_input("🏆 Equipo/Partido", placeholder="Ej: Barcelona vs Real Madrid")
-                    with col_d2:
-                        cuota = st.number_input("🏆 Cuota", value=2.0, min_value=1.01, max_value=100.0, step=0.1)
-                    with col_d3:
-                        cantidad = st.number_input(f"ө Cantidad ({simbolo})", value=20.0, min_value=1.0, step=5.0)
-                    
-                    col_d4, col_d5 = st.columns(2)
-                    with col_d4:
-                        mercado = st.selectbox("📥 Mercado", ["1X2", "Over/Under", "BTTS", "Corners", "Tarjetas", "Otro"])
-                    with col_d5:
-                        fecha = st.date_input("📅 Fecha", value=datetime.now(timezone(timedelta(hours=-5))).date())
-                    
-                    # Resultado (para apuestas ya resueltas)
-                    with st.expander("✅ Marcar Resultado (opcional)"):
-                        resultado = st.radio("Resultado:", ["Pendiente", "Ganada", "Perdida"], horizontal=True)
-                        if resultado != "Pendiente":
-                            ganancia = cantidad * (cuota - 1) if resultado == "Ganada" else -cantidad
-                            st.write(f"**Ganancia/Pérdida:** {format_money(ganancia, simbolo)}")
-                    
-                    if st.button("➕ Agregar Apuesta", type="primary", use_container_width=True):
-                        resultado_val = None
-                        ganancia_val = 0
-                        if resultado == "Ganada":
-                            resultado_val = True
-                            ganancia_val = cantidad * (cuota - 1)
-                        elif resultado == "Perdida":
-                            resultado_val = False
-                            ganancia_val = -cantidad
-                        
-                        # Guardar en Supabase
-                        try:
-                            client.table('bankroll_apuestas').insert({
-                                'usuario': usuario_id,
-                                'fecha': str(fecha),
-                                'equipo': equipo,
-                                'cuota': cuota,
-                                'cantidad': cantidad,
-                                'mercado': mercado,
-                                'ganancia': ganancia_val,
-                                'resultado': resultado_val
-                            }).execute()
-                            st.success("✅ Apuesta agregada")
-                            pass
-                        except Exception as e:
-                            st.error(f"Error: {e}")
-            
-            # ========== SUBTAB 3: MIS APUESTAS ==========
+                                if st.button("🔥 CREAR COMBINADA", type="primary", use_container_width=True):
+                                    fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
+                                    equipos = " + ".join([f"{opciones[i]['pick'].get('equipo_local', '')} vs {opciones[i]['pick'].get('equipo_visitante', '')}" for i in seleccionados])
+                                    try:
+                                        client.table('bankroll_apuestas').insert({
+                                            'usuario': usuario_id,
+                                            'fecha': fecha_hoy,
+                                            'equipo': f"[COMB] {equipos}",
+                                            'cuota': float(cuota_total),
+                                            'cantidad': float(cantidad),
+                                            'mercado': f"Combinada_{len(seleccionados)}",
+                                            'ganancia': 0,
+                                            'resultado': None
+                                        }).execute()
+                                        st.success(f"✅ Combinada creada: {len(seleccionados)} legs @ {cuota_total:.2f}")
+                                        st.rerun()
+                                    except Exception as e:
+                                        st.error(f"Error: {e}")
+                            else:
+                                cantidades = {}
+                                for i in seleccionados:
+                                    opt = opciones[i]
+                                    cols = st.columns([3, 1, 1])
+                                    with cols[0]:
+                                        st.markdown(f"**{opt['pick'].get('equipo_local', '?')} vs {opt['pick'].get('equipo_visitante', '?')}** - {opt['tipo']}")
+                                    with cols[1]:
+                                        cantidades[i] = st.number_input(f"@{opt['cuota']:.2f}", value=25.0, min_value=1.0, step=5.0, key=f"cant_{i}")
+                                    with cols[2]:
+                                        gan = cantidades[i] * (opt['cuota'] - 1)
+                                        st.success(f"+{format_money(gan, simbolo)}")
+
+                                total_ap = sum(cantidades.values())
+                                st.markdown(f"**Total: {format_money(total_ap, simbolo)}**")
+
+                                if st.button("➕ APOSTAR", type="primary", use_container_width=True):
+                                    fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
+                                    try:
+                                        for i in seleccionados:
+                                            opt = opciones[i]
+                                            client.table('bankroll_apuestas').insert({
+                                                'usuario': usuario_id,
+                                                'fecha': fecha_hoy,
+                                                'equipo': f"{opt['pick'].get('equipo_local', '')} vs {opt['pick'].get('equipo_visitante', '')}",
+                                                'cuota': float(opt['cuota']),
+                                                'cantidad': float(cantidades[i]),
+                                                'mercado': opt['tipo'],
+                                                'pick_id': opt['pick'].get('id'),
+                                                'ganancia': 0,
+                                                'resultado': None
+                                            }).execute()
+                                        st.success(f"✅ {len(seleccionados)} apuesta(s) creada(s)")
+                                        st.rerun()
+                                    except Exception as e:
+                                        st.error(f"Error: {e}")
+                    else:
+                        st.info("👆 Selecciona los picks")
+
             with sub_tab3:
                 st.markdown("#### 📋 Historial de Apuestas")
                 
