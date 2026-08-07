@@ -2204,6 +2204,7 @@ def render_login_form():
             lambda_din_l = lambda_din_v = '0.00'
             lambda_historico_local = lambda_historico_visit = 0.0
             lambda_local_final = lambda_visit_final = 0.0
+            st.error(f"DEBUG: r={bool(r)}, stats_local={bool(stats_local)}, stats_visitante={bool(stats_visitante)}")
             home = st.session_state.get('home', '')
             away = st.session_state.get('away', '')
             confianza = r.get('confianza', 0)
