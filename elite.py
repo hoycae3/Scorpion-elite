@@ -3381,10 +3381,11 @@ def render_login_form():
                         if p.get('prediccion_tarjetas'):
                             opciones.append({'pick': p, 'display': f"{match_key} - Tarjetas", 'tipo': 'Tarjetas', 'cuota': float(p.get('cuota_tarjetas') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_tarjetas', 50)})
 
-                    st.markdown("#### 📋 Selecciona Picks")
+                    st.markdown("#### 📋 Selecciona Picks (ingresa cuota)")
                     seleccionados = []
+                    cantidades_dict = {}
                     for i, opt in enumerate(opciones):
-                        cols = st.columns([1, 4, 1, 1])
+                        cols = st.columns([1, 3, 1, 1])
                         with cols[0]:
                             sel = st.checkbox("", value=False, key=f"sel_pick_{i}")
                             if sel:
@@ -3393,7 +3394,8 @@ def render_login_form():
                             st.markdown(f"**{opt['display']}**")
                             st.caption(f"📊 Prob: {(opt.get('prob') or 0):.0f}% | Conf: {(opt.get('conf') or 0):.0f}%")
                         with cols[2]:
-                            st.markdown(f"@ **{opt['cuota']:.2f}**")
+                            cantidad_input = st.number_input("Cuota", value=float(opt['cuota']), min_value=1.01, max_value=100.0, step=0.05, key=f"cuota_{i}")
+                            cantidades_dict[i] = cantidad_input
                         with cols[3]:
                             st.markdown(f"_{opt['tipo']}_")
 
@@ -3408,7 +3410,7 @@ def render_login_form():
                             if es_combinada:
                                 cuota_total = 1.0
                                 for i in seleccionados:
-                                    cuota_total *= opciones[i]['cuota']
+                                    cuota_total *= cantidades_dict.get(i, opciones[i]['cuota'])
                                 
                                 st.markdown(f"""
                                 <div style="background: linear-gradient(135deg, #2a1a3a 0%, #1a0f25 100%); 
@@ -3464,7 +3466,7 @@ def render_login_form():
                                     with cols[1]:
                                         cantidades[i] = st.number_input(f"@{opt['cuota']:.2f}", value=25.0, min_value=1.0, step=5.0, key=f"cant_{i}")
                                     with cols[2]:
-                                        gan = cantidades[i] * (opt['cuota'] - 1)
+                                        gan = cantidades[i] * (cantidades_dict.get(i, opt['cuota']) - 1)
                                         st.success(f"+{format_money(gan, simbolo)}")
 
                                 total_ap = sum(cantidades.values())
@@ -3479,7 +3481,7 @@ def render_login_form():
                                                 'usuario': usuario_id,
                                                 'fecha': fecha_hoy,
                                                 'equipo': f"{opt['pick'].get('equipo_local', '')} vs {opt['pick'].get('equipo_visitante', '')}",
-                                                'cuota': float(opt['cuota']),
+                                                'cuota': float(cantidades_dict.get(i, opt['cuota'])),
                                                 'cantidad': float(cantidades[i]),
                                                 'mercado': opt['tipo'],
                                                 'pick_id': opt['pick'].get('id'),
