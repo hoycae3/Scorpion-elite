@@ -2253,6 +2253,8 @@ def render_login_form():
             if st.button("💾 GUARDAR PICK", type="primary", use_container_width=True):
                 try:
                     client = get_client()
+                    usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
+
                     
                     pick_data = {
                         'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
