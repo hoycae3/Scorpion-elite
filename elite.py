@@ -684,6 +684,23 @@ def render_public_landing():
 # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
 
 def render_login_form():
+    # ===== INICIALIZAR SESSION_STATE =====
+    if 'selected_match_data' not in st.session_state:
+        st.session_state.selected_match_data = None
+    if 'selected_local' not in st.session_state:
+        st.session_state.selected_local = None
+    if 'selected_away' not in st.session_state:
+        st.session_state.selected_away = None
+    if 'home' not in st.session_state:
+        st.session_state.home = ''
+    if 'away' not in st.session_state:
+        st.session_state.away = ''
+    if 'logged' not in st.session_state:
+        st.session_state.logged = False
+    if 'user_data' not in st.session_state:
+        st.session_state.user_data = None
+    # ===== FIN INICIALIZACION =====
+
     """Renderiza el formulario de login con solo contraseГұa"""
     
     # Toggle para mostrar/ocultar login
