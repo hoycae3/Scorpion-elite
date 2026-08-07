@@ -784,6 +784,43 @@ def render_login_form():
         
         st.markdown("### 📊 Partidos de los Próximos 7 Días")
         
+
+        # ========== ESTADO DE SINCRONIZACION ==========
+        try:
+            client = get_client()
+            if client:
+                # Partidos
+                resp_part = client.table('partidos').select('fixture_id', count='exact').execute()
+                num_partidos = len(resp_part.data) if resp_part.data else 0
+
+                # Equipos unicos
+                resp_eq = client.table('equipos_stats').select('team_id', count='exact').execute()
+                num_equipos = len(resp_eq.data) if resp_eq.data else 0
+
+                # Fecha ultimo partido
+                resp_fechas = client.table('partidos').select('fecha').order('fecha', desc=True).limit(1).execute()
+                ult_fecha = resp_fechas.data[0]['fecha'] if resp_fechas.data else 'Nunca'
+
+                # Equipos con stats
+                resp_stats = client.table('equipos_stats').select('team_id', count='exact').execute()
+                num_stats = len(resp_stats.data) if resp_stats.data else 0
+
+                # Mostrar estado
+                col_s1, col_s2, col_s3, col_s4 = st.columns(4)
+                with col_s1:
+                    st.metric("Partidos", num_partidos)
+                with col_s2:
+                    st.metric("Equipos", num_equipos)
+                with col_s3:
+                    st.metric("Con Stats", num_stats)
+                with col_s4:
+                    st.metric("Ultima sync", str(ult_fecha)[:10] if ult_fecha != 'Nunca' else 'Nunca')
+
+                if num_partidos == 0:
+                    st.info("Sincroniza para descargar partidos")
+        except Exception as e:
+            pass
+
         # API-Football config
         API_KEY = os.getenv("API_FOOTBALL_KEY", "")
         if not API_KEY:
