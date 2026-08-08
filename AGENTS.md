@@ -1,5 +1,454 @@
 # Scorpion Elite - Estado del Proyecto (Agosto 2026)
 
+---
+
+## 📅 Sesión 2026-08-07 - Cambios Finales
+
+### ✅ Landing Page: 4 Partidos Aleatorios
+- Landing page muestra solo **4 partidos aleatorios** para atraer usuarios
+- Sin login necesario para ver el preview del análisis
+- Mensaje: "Análisis gratuito sin registro"
+
+### ✅ Página Carga: Lista Completa
+- Dentro de la app (después de login) muestra **TODOS los partidos**
+- Organizados por: País → Liga → Fecha/Hora
+- Badges: 🟢 Con stats | 🟡 Sin stats | 🔴 Desconocido
+
+### ✅ Botón Limpiar Bankroll
+- Ubicación: **VIP → Bankroll → Historial**
+- Botón "🗑️ Limpiar Todo" para eliminar todas las apuestas
+- Muestra conteo antes y después de limpiar
+
+### ✅ Auto-actualización de Picks
+- Mejorada búsqueda por fixture_id O nombres de equipos
+- Al sincronizar partidos terminados (FT), se actualizan picks automáticamente
+- Muestra mensaje: "🎯 Se actualizaron X picks con los resultados"
+
+### ✅ Barra de Progreso en Sincronización
+- Barra visual durante el proceso de sincronización
+- Mensajes de estado en cada paso
+
+---
+
+## 📅 Sesión 2026-08-04 - Corrección Goals Extraction
+
+### 🎯 Problema Identificado:
+La API de Football devuelve los `goals` en la **raíz del fixture** (`f`), NO dentro de `teams`.
+
+### 🔧 Corrección Aplicada:
+
+#### elite.py (línea 967):
+```python
+# ❌ INCORRECTO (antes):
+goals = teams.get('goals', {})
+
+# ✅ CORRECTO (ahora):
+goals = f.get('goals', {}) or {}
+```
+
+#### funciones_stats.py (línea 111):
+```python
+# ❌ INCORRECTO (antes):
+goals = teams.get('goals', {})
+
+# ✅ CORRECTO (ahora):
+goals = f.get('goals', {}) or {}
+```
+
+### 📋 Estructura Correcta de la API:
+```python
+# El fixture 'f' tiene esta estructura:
+{
+    'fixture': {...},
+    'teams': {'home': {...}, 'away': {...}},  # Nombres, IDs, winner
+    'goals': {'home': 2, 'away': 1},  # ← Goles AQUÍ
+    'score': {...}
+}
+```
+
+### 🔄 Lógica de Local vs Visitante:
+```python
+# Determinar si el equipo es local o visitante
+if home_team.get('id') == team_id:
+    es_local = True
+    gf = goals.get('home')  # Goles a favor si es local
+    gv = goals.get('away')  # Goles en contra si es local
+else:
+    es_local = False
+    gf = goals.get('away')  # Goles a favor si es visitante
+    gv = goals.get('home')  # Goles en contra si es visitante
+```
+
+---
+
+## 📅 Sesión 2026-08-04 - Resumen Final de Configuración
+
+### 🔧 Configuración Actual del Botón "🔄 Sincronizar":
+
+| Configuración | Valor |
+|---------------|-------|
+| **Ventana de fechas** | HOY-2 a HOY+6 |
+| **Ligas habilitadas** | 55 ligas mundiales |
+| **Equipos únicos** | TODOS los equipos de fixtures (nuevos y existentes) |
+| **Goals extraction** | `f.get('goals', {})` ✅ |
+| **Upsert** | Sin DELETE, solo inserta/actualiza |
+
+### 📋 Botones de Sincronización:
+
+| Botón | Función |
+|-------|---------|
+| **🔄 Sincronizar** | Descarga partidos HOY-2 a HOY+6, actualiza stats de equipos |
+| **📊 Stats Ayer** | Actualiza stats SOLO de partidos de ayer |
+
+### 📊 Flujo de Uso Diario:
+
+```
+DÍA 1 (MAÑANA):
+├── Click "🔄 Sincronizar"
+│   └── Descarga partidos de HOY-2 a HOY+6
+│   └── Guarda stats de equipos nuevos
+│   └── Guarda fixtures FT recientes
+│
+DÍA 2 (MAÑANA SIGUIENTE):
+├── Click "🔄 Sincronizar"
+│   └── Descarga partidos de ayer (ahora FT)
+│   └── Click "📊 Stats Ayer"
+│       └── Actualiza stats de partidos de ayer
+```
+
+---
+
+## 📅 Sesión 2026-08-04 - Lambda Dinámico con Ponderación Exponencial
+
+### Problema Anterior:
+- Se borraban partidos más antiguos de `equipo_partidos_stats` (limitaba a 5)
+- Lambda se calculaba con solo los últimos 5 partidos
+- No había acumulación histórica
+
+### Solución Implementada:
+
+#### 1. `funciones_stats.py`:
+```python
+def guardar_stats_equipo():
+    # ★ NO BORRA PARTIDOS - Acumula TODOS los partidos históricos
+    # Usa upsert para no duplicar
+    
+def calcular_promedios_equipo(client, team_id, max_partidos=None):
+    # ★ USA TODOS LOS PARTIDOS DISPONIBLES
+    # ★ Aplica decaimiento exponencial: decay=0.92
+    # Retorna: lambda_ponderado, partidos_total, promedios dinámicos
+```
+
+#### 2. `elite.py`:
+```python
+# Combina lambda dinámico con base
+lambda_final = lambda_ponderado * 0.7 + lambda_base * 0.3
+
+# Muestra en UI
+"📊 X partidos históricos"
+```
+
+### Flujo de Lambda Dinámico:
+
+| Día | Partidos Acumulados | Lambda Calculada |
+|-----|---------------------|-----------------|
+| 1 | 5 | Se calcula con 5 partidos |
+| 2 | 6 (+1 nuevo) | Se recalcula con 6 |
+| 3 | 7 (+1 nuevo) | Se recalcula con 7 |
+| ... | ... | ... |
+
+### Ponderación Exponencial:
+```
+Partidos recientes pesan más:
+- decay = 0.92
+- Partido más reciente: peso = 1.0
+- Partido 5to: peso = 0.92^5 ≈ 0.66
+- Partido 10mo: peso = 0.92^10 ≈ 0.43
+```
+
+---
+
+## 📅 Sesión 2026-08-04 - Modelos Matemáticos Reales para Predicciones Adicionales
+
+### 🎯 Problema Anterior:
+Las predicciones de Tiros, Tarjetas y Tiros Arco usaban **fórmulas heurísticas simples**:
+```python
+# ANTES (heurística simple)
+remates_over_prob = min(90, max(10, 50 + (remates_total - 24) * 2))
+tarjetas_over_prob = min(90, max(10, 50 + (tarjetas_total - 6) * 5))
+arco_over_prob = min(90, max(10, 50 + (arco_total - 8) * 3))
+```
+
+### ✅ Solución Implementada:
+
+#### 1. `analysis_models.py` - Nuevas funciones:
+
+| Función | Descripción | Línea típica |
+|---------|-------------|-------------|
+| `predecir_tiros()` | Over/Under 24 | 24 |
+| `predecir_tarjetas()` | Over/Under 6 | 6 |
+| `predecir_tiros_arco()` | Over/Under 8 | 8 |
+| `normal_cdf()` | Función de distribución normal (aproximación Abramowitz & Stegun) | - |
+
+#### 2. Cómo funcionan los modelos:
+
+```python
+# Usan distribución normal con:
+# - Media: suma de promedios de ambos equipos
+# - Varianza: aproximación Poisson (varianza ≈ media)
+
+def predecir_tiros(tiros_local, tiros_visitante, ...):
+    total_estimado = tiros_local + tiros_visitante
+    # Calcular P(Over 24) usando distribución normal
+    z = (24.5 - media) / desviacion
+    over_24 = (1 - normal_cdf(z)) * 100
+```
+
+### 🔄 Flujo de Datos:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  1️⃣ equipo_partidos_stats (Supabase)                                  │
+│      └─→ Guarda cada partido histórico del equipo                      │
+│                                                                         │
+│  2️⃣ calcular_promedios_equipo()                                       │
+│      └─→ Lee de equipo_partidos_stats                                  │
+│      └─→ Aplica PONDERACIÓN EXPONENCIAL (decay=0.92)                  │
+│      └─→ Retorna: promedio_tiros, promedio_amarillas, promedio_arco   │
+│                                                                         │
+│  3️⃣ elite.py → botón "ANALIZAR"                                       │
+│      └─→ Usa promedios_dinamicos_local/visitante                      │
+│      └─→ Llama a calcular() con estos datos                           │
+│                                                                         │
+│  4️⃣ analysis_models.py → calcular()                                    │
+│      └─→ predecir_tiros() → usa promedio_tiros → Over/Under 24        │
+│      └─→ predecir_tarjetas() → usa promedio_amarillas → Over/Under 6  │
+│      └─→ predecir_tiros_arco() → usa promedio_arco → Over/Under 8      │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 💾 Botón Guardar Actualizado:
+
+Ahora guarda TODAS las predicciones en la tabla `picks`:
+- ✅ 1X2: pick, prob, p1, px, p2
+- ✅ Over/Under: pick, prob, over_25, under_25
+- ✅ BTTS: pick, prob, btts_yes, btts_no
+- ✅ Corners: pick, total_estimado
+- ✅ Tiros: pick, total, local, visitante, over_prob
+- ✅ Tarjetas: pick, total, over_prob, under_prob
+- ✅ Tiros Arco: pick, total, local, visitante, over_prob, under_prob
+- ✅ Confianza y Rango
+
+---
+
+## 📅 Sesión 2026-08-07 - Rediseño Bankroll VIP
+
+### 🎨 Nuevo Diseño Bankroll
+
+**Características implementadas:**
+
+| Característica | Descripción |
+|----------------|-------------|
+| **Bankroll Card** | Diseño tipo tarjeta grande verde con gradiente |
+| **Individual** | Seleccionar picks y apostar cada uno separado |
+| **Combinada** | Seleccionar 2+ picks, multiplica cuotas automáticamente |
+| **Cuota editable** | Usuario puede modificar la cuota antes de apostar |
+| **3 tabs** | Dashboard, Agregar, Historial |
+
+**Flujo de uso:**
+
+```
+1. Dashboard → Ver bankroll actual con métricas
+2. Agregar → Seleccionar picks con checkboxes → Editar cuota → Apostar
+3. Historial → Ver apuestas guardadas, actualizar resultados
+```
+
+**Código clave:**
+
+```python
+# Selector de picks con cuota editable
+for i, opt in enumerate(opciones):
+    sel = st.checkbox("", key=f"sel_pick_{i}")
+    cantidad_input = st.number_input("Cuota", value=float(opt['cuota']), key=f"cuota_{i}")
+    cantidades_dict[i] = cantidad_input
+
+# Combinada: multiplicar cuotas
+cuota_total = 1.0
+for i in seleccionados:
+    cuota_total *= cantidades_dict.get(i, opciones[i]['cuota'])
+```
+
+### 🔧 Errores Corregidos:
+
+| Error | Solución |
+|--------|----------|
+| `safe_fmt` UnboundLocalError | Usar inline: `(opt.get('prob') or 0):.0f` |
+| `NoneType.__format__` | Verificar valores antes de formatear |
+
+### 📊 Sistema de "Sin Datos":
+
+Cuando NO hay datos reales (equipos sin sincronizar), ahora muestra `?` en todos los campos.
+
+| Campo | Sin datos |
+|-------|-----------|
+| PJ | `?` |
+| VED | `?-?-?` |
+| Goles | `?` |
+| Promedios | `?` |
+| Lambda | `?` |
+| Forma | `?` |
+| OU 2.5 | `?` |
+| BTTS | `?` |
+| Corners | `?` |
+| Tiros | `?` |
+| TArco | `?` |
+| Tarjetas | `?` |
+| Marcador | `?` |
+
+### 🔧 Código Clave:
+
+```python
+def safe_fmt(val, fmt='.1f'):
+    """Convierte valor a string, manteniendo '?' si no hay datos"""
+    if val == '?' or val is None:
+        return '?'
+    try:
+        return f'{float(val):{fmt}}'
+    except:
+        return str(val)
+
+def safe_fmt_int(val):
+    """Convierte valor a string entero"""
+    if val == '?' or val is None:
+        return '?'
+    try:
+        return f'{int(float(val))}'
+    except:
+        return str(val)
+```
+
+### 📝 Lógica de Lambda:
+
+```python
+# Calcular lambda_historico (basado en goles/pj)
+lambda_historico_local = gf_l / pj_l if pj_l > 0 else 1.3
+
+# Lambda FINAL = 60% dinamico + 40% historico
+if lambda_dinamico_local_calc is not None:
+    lambda_local_final = lambda_dinamico_local_calc * 0.6 + lambda_historico_local * 0.4
+else:
+    lambda_local_final = lambda_historico_local
+```
+
+---
+
+## 📋 REVISIÓN DE CÓDIGO (2026-08-07)
+
+### ✅ Lo que FUNCIONA:
+
+| Componente | Estado | Notas |
+|------------|--------|-------|
+| Login con contraseña | ✅ | `render_login_form()` |
+| Landing page (4 partidos aleatorios) | ✅ | Solo 4 partidos para preview |
+| Página Carga (todos los partidos) | ✅ | Por país/liga |
+| Sincronización de partidos | ✅ | 55 ligas, ventana HOY-2 a HOY+6 |
+| Auto-actualización de picks | ✅ | Por fixture_id o nombres |
+| Barra de progreso | ✅ | Durante sincronización |
+| Análisis con 4 modelos | ✅ | Poisson, Dixon-Coles, Monte Carlo, Elo |
+| Predicciones adicionales | ✅ | O/U, BTTS, Corners, Tiros, Tarjetas, Arco |
+| Bankroll (Dashboard/Agregar/Historial) | ✅ | Con botón limpiar |
+| Guardar picks en Supabase | ✅ | Todas las predicciones |
+| Limpiar Bankroll | ✅ | En VIP → Historial |
+
+### ⚠️ PROBLEMAS ENCONTRADOS:
+
+#### 1. **Código de Consenso (SIMULADO)**
+- **Ubicación:** Al final de la página VIP
+- **Problema:** Usa el mismo valor para todos los modelos:
+```python
+probabilidades = [
+    ultimo.get('p1', 0) or 00,    # ← Mismo valor
+    ultimo.get('p1', 0) or 00,    # ← Mismo valor (dice "Simulado")
+    ultimo.get('p1', 0) or 00,    # ← Mismo valor
+    ultimo.get('p1', 0) or 00,    # ← Mismo valor
+]
+```
+- **Solución:** Guardar scores de cada modelo individual para mostrar consenso real
+
+#### 2. **except: vacíos** (Ocultan errores)
+- 20+ lugares con `except: pass` o `except: continue`
+- **Ubicaciones:** líneas 124, 219, 228, 942, 1246, 1423, 1555, 1644, 1688, 1741
+- **Recomendación:** Agregar logging para debugging
+
+#### 3. **Variables no inicializadas en except**
+- Algunos `except` no inicializan variables que se usan después
+- Puede causar errores si ciertos queries fallan
+
+### ❌ CÓDIGO DUPLICADO:
+
+| Sección | Duplicado | Notas |
+|---------|-----------|-------|
+| Búsqueda de stats por equipo | ❌ NO | Usa `client.table('equipos_stats').select()` en 2 lugares, pero lógica diferente |
+| Función `get_pais_emoji()` | ❌ NO | Definida dentro de cada bloque (línea 1598) |
+| `safe_fmt()` / `safe_fmt_int()` | ❌ NO | Definidas en analizador, no duplicadas |
+
+### 📁 ESTRUCTURA DE PÁGINAS ACTUAL:
+
+```
+PÁGINA PRINCIPAL:
+├── 🌐 Landing (sin login)
+│   └── 4 partidos aleatorios + preview análisis
+│
+MENU (después de login):
+├── 👑 VIP (por defecto)
+│   ├── Dashboard
+│   ├── Agregar
+│   ├── Historial (🗑️ Limpiar)
+│   └── Config
+├── 📊 Partidos
+│   ├── 🔄 Sincronizar
+│   ├── 📊 Stats Ayer
+│   └── 🧹 Limpiar Equipos
+├── 📥 Analizador
+└── 🔑 Claves
+```
+
+### 🔧 LO QUE FALTA O ESTÁ INCOMPLETO:
+
+| Funcionalidad | Estado | Notas |
+|---------------|--------|-------|
+| Consenso de modelos | ⚠️ Simulado | Solo muestra 1 valor repetido 4 veces |
+| Páginas "Estadísticas" y "Dashboard" | ❌ Eliminadas | No existen en el menú actual |
+| Exportar picks | ⚠️ Parcial | Existe botón pero no verificado |
+| Ranking mensual | ⚠️ Parcial | Existe en código pero no accesible |
+| Notificaciones/Alertas | ⚠️ Parcial | Tab existe pero funcionalidad limitada |
+| Value Bets detector | ⚠️ Parcial | Tab existe pero básico |
+
+### 📊 MÉTRICAS:
+
+- **Líneas de código:** 4,201
+- **Funciones principales:** 15+ (db_*, render_*, get_*, css, etc.)
+- **Imports:** 12 módulos
+- **Páginas reales:** 4 (VIP, Partidos, Analizador, Claves)
+
+### 🚀 RECOMENDACIONES:
+
+1. **Alta prioridad:**
+   - Implementar consenso real de modelos (guardar p1 de cada modelo)
+   - Agregar manejo de errores con logging en vez de `except: pass`
+
+2. **Media prioridad:**
+   - Reintegrar páginas "Estadísticas" y "Dashboard" al menú
+   - Verificar funcionalidad de exportación de picks
+   - Implementar sistema de alertas completo
+
+3. **Baja prioridad:**
+   - Limpiar `except:` vacíos
+   - Agregar tests unitarios
+   - Documentar funciones principales
+
+---
+
 ## 📌 Información General
 
 | Item | Valor |
