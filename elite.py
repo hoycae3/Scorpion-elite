@@ -3679,6 +3679,24 @@ def render_login_form():
             except:
                 bankroll_actual_db = 1000.0
             
+            # Selector de moneda
+            st.markdown("#### 💰 Moneda")
+            col_moneda1, col_moneda2 = st.columns([1, 1])
+            with col_moneda1:
+                moneda_select = st.selectbox(
+                    "🏷️ Selecciona tu moneda", 
+                    options=list(MONEDAS.keys()),
+                    format_func=lambda x: f"{MONEDAS[x]['simbolo']} {MONEDAS[x]['nombre']}",
+                    index=0, 
+                    key="moneda_config"
+                )
+                simbolo = MONEDAS[moneda_select]["simbolo"]
+            with col_moneda2:
+                st.markdown("&nbsp;")
+                st.caption(f"Moneda actual: **{MONEDAS[moneda_select]['simbolo']}**")
+            
+            st.markdown("---")
+            
             # Configurar bankroll inicial
             st.markdown("#### 📊 Bankroll Inicial")
             st.info("💡 Esta es la cantidad con la que empezaste. Se guarda entre sesiones.")
