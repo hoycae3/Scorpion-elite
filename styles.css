@@ -889,33 +889,44 @@ div[data-testid="stMarkdownContainer"] {
 div[data-testid="stCheckbox"] label > div:first-child {
     width: 28px !important;
     height: 28px !important;
-    background: white !important;
-    border: 3px solid #000 !important;
+    background: #ffffff !important;
+    border: 3px solid #333 !important;
     border-radius: 6px !important;
+    box-shadow: 0 0 0 3px #ffffff, 0 4px 8px rgba(0,0,0,0.5) !important;
 }
 
 div[data-testid="stCheckbox"] input:checked + label > div:first-child {
     background: #22c55e !important;
-    border-color: #22c55e !important;
+    border-color: #166534 !important;
 }
 
 div[data-testid="stCheckbox"] label {
-    color: white !important;
-    font-size: 15px !important;
+    color: #ffffff !important;
+    font-size: 16px !important;
     font-weight: bold !important;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8) !important;
 }
 
 /* Selectbox */
-.stSelectbox > div > div {
-    background: white !important;
+div[data-testid="stSelectbox"] {
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5) !important;
 }
 
-.stSelectbox input {
-    color: black !important;
+div[data-testid="stSelectbox"] input {
+    color: #000 !important;
+    font-weight: bold !important;
 }
 
 /* Number input */
-.stNumberInput input {
-    background: white !important;
-    color: black !important;
+div[data-testid="stNumberInput"] {
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5) !important;
+}
+
+div[data-testid="stNumberInput"] input {
+    color: #000 !important;
+    font-weight: bold !important;
 }
