@@ -571,45 +571,9 @@
 .se-p-3 { padding: var(--spacing-lg); }
 
 /* ============================================
-   🔘 BOTONES - ESTILO TARJETA COMPACTA
+   🔘 BOTONES DE PARTIDOS (solo estos)
    ============================================ */
-/* TODOS los botones Streamlit */
-div[data-testid="stHorizontalBlock"] button,
-.stButton button,
-button {
-    text-align: left !important;
-    justify-content: flex-start !important;
-}
-
-/* El texto DENTRO del botón */
-.stButton button p,
-.stButton button span,
-.stButton button > * {
-    text-align: left !important;
-    justify-content: flex-start !important;
-}
-
-/* Texto del botón específico */
-button[data-testid="stBaseButton-secondary"] *,
-button[data-testid="stBaseButton-primary"] * {
-    text-align: left !important;
-}
-
-/* Botones de partidos - formato tarjeta compacta */
-div[data-testid="stHorizontalBlock"] button,
-.stButton button {
-    max-width: 550px !important;
-    width: 100% !important;
-    text-align: left !important;
-    padding: 6px 14px !important;
-    font-size: 13px !important;
-    border-radius: 8px !important;
-    border: 1px solid #444 !important;
-    background: #1e2a3a !important;
-    color: #fff !important;
-}
-
-/* Botones dentro de expanders */
+/* Botones DENTRO de expanders (partidos) */
 [data-testid="stExpander"] button {
     max-width: 550px !important;
     width: 100% !important;
@@ -623,17 +587,17 @@ div[data-testid="stHorizontalBlock"] button,
     color: #fff !important;
 }
 
-/* Hover de botones */
-.stButton button:hover {
-    border-color: #00d4ff !important;
-    background: #2a3a4a !important;
+/* Texto dentro de botones de partidos */
+[data-testid="stExpander"] button p,
+[data-testid="stExpander"] button span {
+    text-align: left !important;
+    justify-content: flex-start !important;
 }
 
-/* Texto dentro de botones */
-.stButton button p {
-    text-align: left !important;
-    margin: 0 !important;
-    font-size: 13px !important;
+/* Hover de botones de partidos */
+[data-testid="stExpander"] button:hover {
+    border-color: #00d4ff !important;
+    background: #2a3a4a !important;
 }
 
 /* ============================================
