@@ -3684,7 +3684,7 @@ def render_login_form():
             
             with col1:
                 moneda_select = st.selectbox(
-                    "💰 Moneda", 
+                    "💰", 
                     options=list(MONEDAS.keys()),
                     format_func=lambda x: f"{MONEDAS[x]['simbolo']}",
                     index=0, 
@@ -3711,39 +3711,35 @@ def render_login_form():
             
             with col4:
                 st.markdown("&nbsp;")
-                col_btn1, col_btn2 = st.columns(2)
-                with col_btn1:
-                    if st.button("💾", help="Guardar bankroll", use_container_width=True):
-                        try:
-                            client.table('user_stats').upsert({
-                                'usuario_id': usuario_id,
-                                'bankroll_inicial': float(nuevo_bankroll),
-                            }, on_conflict='usuario_id').execute()
-                            st.success(f"✅")
-                            st.rerun()
-                        except:
-                            st.error("❌")
-                with col_btn2:
-                    if monto_retiro > 0:
-                        if st.button("🏧", help="Confirmar retiro", use_container_width=True):
+                if st.button("💾 Guardar", type="primary", use_container_width=True):
+                    try:
+                        # Siempre guardar bankroll inicial
+                        client.table('user_stats').upsert({
+                            'usuario_id': usuario_id,
+                            'bankroll_inicial': float(nuevo_bankroll),
+                        }, on_conflict='usuario_id').execute()
+                        
+                        # Si hay retiro, registrarlo
+                        if monto_retiro > 0:
                             fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
-                            try:
-                                client.table('bankroll_retiros').insert({
-                                    'usuario': usuario_id,
-                                    'fecha': fecha_hoy,
-                                    'cantidad': float(monto_retiro),
-                                    'nota': 'Retiro'
-                                }).execute()
-                                resp_upd = client.table('user_stats').select('total_retirado').eq('usuario_id', usuario_id).execute()
-                                if resp_upd.data:
-                                    total_actual = resp_upd.data[0].get('total_retirado', 0) or 0
-                                    client.table('user_stats').update({
-                                        'total_retirado': float(total_actual) + float(monto_retiro)
-                                    }).eq('usuario_id', usuario_id).execute()
-                                st.success(f"✅ {format_money(monto_retiro, simbolo)}")
-                                st.rerun()
-                            except:
-                                st.error("❌")
+                            client.table('bankroll_retiros').insert({
+                                'usuario': usuario_id,
+                                'fecha': fecha_hoy,
+                                'cantidad': float(monto_retiro),
+                                'nota': 'Retiro'
+                            }).execute()
+                            resp_upd = client.table('user_stats').select('total_retirado').eq('usuario_id', usuario_id).execute()
+                            if resp_upd.data:
+                                total_actual = resp_upd.data[0].get('total_retirado', 0) or 0
+                                client.table('user_stats').update({
+                                    'total_retirado': float(total_actual) + float(monto_retiro)
+                                }).eq('usuario_id', usuario_id).execute()
+                            st.success(f"✅ Guardado + Retiro: {format_money(monto_retiro, simbolo)}")
+                        else:
+                            st.success(f"✅ Bankroll guardado")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Error: {e}")
             
             st.markdown("---")
             
