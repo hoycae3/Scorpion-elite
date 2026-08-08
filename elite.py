@@ -1627,11 +1627,11 @@ def render_login_form():
 
                         # Badge de estado
                         if tiene_stats is True:
-                            badge = "🔴"
+                            badge = "🟢"  # Con stats (listo)
                         elif tiene_stats is False:
-                            badge = "🔽"
+                            badge = "🟡"  # Sin stats (faltan)
                         else:
-                            badge = "⚪"
+                            badge = "🔴"  # Desconocido
                         
                         # Botón estilo tarjeta compacta
                         label = f"📅 {fecha_fmt} {hora_col} | {badge} {equipo_local} vs {equipo_visitante}"
