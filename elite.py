@@ -3358,24 +3358,26 @@ def render_login_form():
                 font-size: 14px !important;
             }
             
-            /* Inputs de número (cuota) */
+            /* Inputs de número (cuota) - compactos */
             [data-testid="stNumberInput"] {
-                background: #1a1a2e !important;
+                background: #0f172a !important;
                 border: 2px solid #22c55e !important;
                 border-radius: 6px !important;
-                padding: 2px !important;
+                padding: 4px 8px !important;
+                max-width: 100px !important;
             }
             
             [data-testid="stNumberInput"] input {
-                color: white !important;
-                font-size: 14px !important;
+                color: #ffffff !important;
+                font-size: 13px !important;
                 font-weight: bold !important;
                 background: transparent !important;
+                text-align: center !important;
             }
             
             [data-testid="stNumberInput"] label {
                 color: #94a3b8 !important;
-                font-size: 12px !important;
+                font-size: 11px !important;
             }
             </style>
             """, unsafe_allow_html=True)
