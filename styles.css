@@ -26,10 +26,10 @@
     --color-hora: #ffd700;
     
     /* Colores de fondo */
-    --bg-dark: #0f172a;
-    --bg-card: #1e293b;
-    --bg-header: #121824;
-    --bg-hover: #334155;
+    --bg-dark: #0f0f0f;
+    --bg-card: #1a1a1a;
+    --bg-header: #141414;
+    --bg-hover: #2a2a2a;
     
     /* Colores de texto */
     --text-primary: #f8fafc;
