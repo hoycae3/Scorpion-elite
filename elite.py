@@ -3360,24 +3360,32 @@ def render_login_form():
             
             /* Inputs de número (cuota) - compactos */
             [data-testid="stNumberInput"] {
-                background: #0f172a !important;
+                background: #1a1a1a !important;
                 border: 2px solid #22c55e !important;
                 border-radius: 6px !important;
-                padding: 4px 8px !important;
-                max-width: 100px !important;
+                padding: 2px 6px !important;
+                max-width: 90px !important;
             }
             
             [data-testid="stNumberInput"] input {
                 color: #ffffff !important;
-                font-size: 13px !important;
+                font-size: 14px !important;
                 font-weight: bold !important;
-                background: transparent !important;
+                background: #1a1a1a !important;
                 text-align: center !important;
             }
             
             [data-testid="stNumberInput"] label {
                 color: #94a3b8 !important;
                 font-size: 11px !important;
+            }
+            
+            /* Los botones +/- del number input */
+            [data-testid="stNumberInput"] button {
+                background: #22c55e !important;
+                color: #000 !important;
+                border: none !important;
+                min-width: 25px !important;
             }
             </style>
             """, unsafe_allow_html=True)
