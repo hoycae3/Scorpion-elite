@@ -2271,7 +2271,27 @@ def render_login_form():
                 gf_v_forma_str = safe_fmt_int(gf_v_forma)
                 gc_v_forma_str = safe_fmt_int(gc_v_forma)
 
-                lambda_final_v_val = f'{lambda_visit_final:.2f}' if lambda_visit_final is not None else '?' 
+                lambda_final_v_val = f'{lambda_visit_final:.2f}' if lambda_visit_final is not None else '?'
+                
+                # Inicializar calibración ANTES del html_content
+                calib_l = st.session_state.get('calibracion_local', {})
+                calib_v = st.session_state.get('calibracion_visitante', {})
+                factor_l = calib_l.get('factor', 1.0)
+                factor_v = calib_v.get('factor', 1.0)
+                ajuste_l = calib_l.get('ajuste', 'sin_cambio')
+                ajuste_v = calib_v.get('ajuste', 'sin_cambio')
+                
+                if factor_l != 1.0:
+                    badge_l = "🔧" if ajuste_l == 'sube' else "📉"
+                    calib_l_str = f"{badge_l} {factor_l:.2f}x"
+                else:
+                    calib_l_str = "⚪ 1.00x"
+                
+                if factor_v != 1.0:
+                    badge_v = "🔧" if ajuste_v == 'sube' else "📉"
+                    calib_v_str = f"{badge_v} {factor_v:.2f}x"
+                else:
+                    calib_v_str = "⚪ 1.00x" 
 
                 # Contenedor principal usando st.html()
                 html_content = f"""
@@ -2333,27 +2353,6 @@ def render_login_form():
             lambda_local_final = lambda_visit_final = 0.0
             home = st.session_state.get('home', '')
             away = st.session_state.get('away', '')
-            
-            # Obtener factores de calibración
-            calib_local = st.session_state.get('calibracion_local', {})
-            calib_visit = st.session_state.get('calibracion_visitante', {})
-            factor_local = calib_local.get('factor', 1.0)
-            factor_visit = calib_visit.get('factor', 1.0)
-            ajuste_local = calib_local.get('ajuste', 'sin_cambio')
-            ajuste_visit = calib_visit.get('ajuste', 'sin_cambio')
-            
-            # Badge de calibración
-            if factor_local != 1.0:
-                badge_local = "🔧" if ajuste_local == 'sube' else "📉"
-                calib_l_str = f"{badge_local} {factor_local:.2f}x"
-            else:
-                calib_l_str = "⚪ 1.00x"
-                
-            if factor_visit != 1.0:
-                badge_visit = "🔧" if ajuste_visit == 'sube' else "📉"
-                calib_v_str = f"{badge_visit} {factor_visit:.2f}x"
-            else:
-                calib_v_str = "⚪ 1.00x"
             confianza = r.get('confianza', 0)
             rango = r.get('rango', 'D')
             
