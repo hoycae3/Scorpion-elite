@@ -888,8 +888,8 @@ div[data-testid="stMarkdownContainer"] {
    ============================================ */
 /* Contenedor del checkbox */
 [data-testid="stCheckbox"] {
-    background: rgba(0, 0, 0, 0.3) !important;
-    border: 1px solid var(--border-color) !important;
+    background: white !important;
+    border: 2px solid #333 !important;
     border-radius: 8px !important;
     padding: 8px 12px !important;
     margin: 4px 0 !important;
@@ -911,25 +911,25 @@ section[data-testid="stMainBlockContainer"] input[type="checkbox"] {
 
 /* Label del checkbox */
 section[data-testid="stMainBlockContainer"] label {
-    color: var(--text-primary) !important;
+    color: #1a1a1a !important;
     font-size: 14px !important;
 }
 
 /* Hover del checkbox */
 [data-testid="stCheckbox"]:hover {
     border-color: var(--color-primary) !important;
-    background: rgba(0, 212, 170, 0.1) !important;
+    background: #f0f9f6 !important;
 }
 
 /* Checkbox en expanders */
 [data-testid="stExpander"] [data-testid="stCheckbox"] {
-    background: rgba(0, 0, 0, 0.2) !important;
+    background: white !important;
 }
 
 /* Selectbox styling for better visibility */
 [data-testid="stSelectbox"] {
-    background: rgba(0, 0, 0, 0.3) !important;
-    border: 1px solid var(--border-color) !important;
+    background: white !important;
+    border: 2px solid #333 !important;
     border-radius: 8px !important;
 }
 
@@ -939,8 +939,8 @@ section[data-testid="stMainBlockContainer"] label {
 
 /* Number input styling */
 [data-testid="stNumberInput"] {
-    background: rgba(0, 0, 0, 0.3) !important;
-    border: 1px solid var(--border-color) !important;
+    background: white !important;
+    border: 2px solid #333 !important;
     border-radius: 8px !important;
 }
 
