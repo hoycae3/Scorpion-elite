@@ -3395,15 +3395,13 @@ def render_login_form():
                 except:
                     retiros = []
 
-                # Selector de moneda
-                col_money1, col_money2 = st.columns([1, 3])
-                with col_money1:
-                    moneda_select = st.selectbox("💰 Moneda", options=list(MONEDAS.keys()),
-                                               format_func=lambda x: f"{MONEDAS[x]['simbolo']} {MONEDAS[x]['nombre']}",
-                                               index=0, key="moneda_v2")
-                    simbolo = MONEDAS[moneda_select]["simbolo"]
-                with col_money2:
-                    st.markdown(f"📊 **Bankroll Inicial:** {format_money(bankroll_guardado, simbolo)} | **Total Retirado:** {format_money(total_retirado_guardado, simbolo)}")
+                # Info de bankroll (moneda por defecto)
+                simbolo = "$"
+                st.markdown(f"""
+                📊 **Bankroll Inicial:** {format_money(bankroll_guardado, simbolo)} 
+                | 💸 **Total Retirado:** {format_money(total_retirado_guardado, simbolo)}
+                """)
+                st.markdown("_💡 Para cambiar moneda o hacer retiros, ve a **⚙️ Config**_")
 
                 if apuestas:
                     total_apostado = sum(a.get('cantidad', 0) for a in apuestas)
