@@ -1538,6 +1538,21 @@ def render_login_form():
         if st.session_state.get('limpieza_equipos_ok'):
             st.success(f"✅ Equipos limpiados correctamente")
             st.session_state.limpieza_equipos_ok = False
+        
+        # Botón para limpiar bankroll_apuestas
+        if st.button("🗑️ Limpiar Bankroll", type="secondary", use_container_width=True):
+            client = get_client()
+            try:
+                resp_b = client.table('bankroll_apuestas').select('id', count='exact').execute()
+                num_b = resp_b.count if hasattr(resp_b, 'count') else len(resp_b.data) if resp_b.data else 0
+                
+                if num_b > 0:
+                    client.table('bankroll_apuestas').delete().neq('id', 0).execute()
+                    st.success(f"✅ Bankroll limpiado: {num_b} apuestas eliminadas")
+                else:
+                    st.info("ℹ️ No hay apuestas para limpiar")
+            except Exception as e:
+                st.error(f"❌ Error: {e}")
 
         # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
         # LIMPIEZA: Eliminar partidos de más de 1 aГұo SOLO si hay partidos nuevos
