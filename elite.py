@@ -84,6 +84,29 @@ from calibration import (
     resetear_calibracion
 )
 
+
+@st.cache_data(ttl=30)  # Cachear conteos por 30 segundos
+def get_conteos_cached():
+    """Obtiene conteos básicos (cached para velocidad)"""
+    client = get_client()
+    try:
+        part_count = len(client.table('partidos').select('fixture_id').execute().data or [])
+        eq_count = len(client.table('equipos_stats').select('team_id').execute().data or [])
+        picks_count = len(client.table('picks').select('id').execute().data or [])
+        return part_count, eq_count, picks_count
+    except:
+        return 0, 0, 0
+
+
+@st.cache_data(ttl=60)  # Cachear partidos por 60 segundos
+def get_partidos_cache():
+    """Obtiene partidos (cached para velocidad)"""
+    client = get_client()
+    try:
+        return client.table('partidos').select('*').execute().data or []
+    except:
+        return []
+
 st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
 
 # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
@@ -351,8 +374,10 @@ def render_public_landing():
     try:
         client = get_client()
         if client:
-            # Obtener todos los picks
-            response = client.table('picks').select('*').execute()
+            # Obtener picks (solo campos necesarios para KPIs)
+            response = client.table('picks').select(
+                'acertado_1x2,prediccion_1x2,confianza,rango'
+            ).execute()
             total_picks = len(response.data) if response.data else 0
             
             # Contar aciertos reales (donde resultado_real != null)
@@ -399,17 +424,34 @@ def render_public_landing():
     if "preview_partido" not in st.session_state:
         st.session_state.preview_partido = None
 
-    # Obtener partidos reales de Supabase
-    try:
-        client = get_client()
-        if client:
-            response = client.table('partidos').select('*').execute()
-            partidos = response.data if response.data else []
-        else:
-            partidos = []
-    except Exception as e:
-        logger.error(f"Error obteniendo partidos: {e}")
-        partidos = []
+    # Obtener partidos (con cache en session_state para velocidad)
+    # Solo recargar si no existe o si pasó más de 30 segundos
+    cache_key = 'partidos_cache'
+    cache_time_key = 'partidos_cache_time'
+    import time
+    should_refresh = (
+        cache_key not in st.session_state or
+        cache_time_key not in st.session_state or
+        (time.time() - st.session_state.get(cache_time_key, 0)) > 30
+    )
+    
+    if should_refresh:
+        try:
+            client = get_client()
+            if client:
+                # Solo traer campos necesarios (menos datos)
+                response = client.table('partidos').select(
+                    'fixture_id,fecha,hora,equipo_local,equipo_visitante,liga,estado'
+                ).execute()
+                st.session_state[cache_key] = response.data or []
+            else:
+                st.session_state[cache_key] = []
+        except Exception as e:
+            logger.error(f"Error obteniendo partidos: {e}")
+            st.session_state[cache_key] = []
+        st.session_state[cache_time_key] = time.time()
+    
+    partidos = st.session_state.get(cache_key, [])
 
     if st.session_state.preview_partido:
         # MOSTRAR ANГҒLISIS DEL PARTIDO SELECCIONADO
@@ -849,11 +891,9 @@ def render_login_form():
             if st.button("🗑️ Limpiar", type="secondary", use_container_width=True):
                 client = get_client()
                 try:
-                    # Contar antes de borrar
-                    resp_p = client.table('partidos').select('fixture_id', count='exact').execute()
-                    resp_c = client.table('cuotas').select('fixture_id', count='exact').execute()
-                    num_p = len(resp_p.data) if resp_p.data else 0
-                    num_c = len(resp_c.data) if resp_c.data else 0
+                    # Contar antes de borrar (optimizado)
+                    num_p = len(client.table('partidos').select('fixture_id').execute().data or [])
+                    num_c = len(client.table('cuotas').select('fixture_id').execute().data or [])
                     
                     # Borrar todos (usar filtro dummy que siempre es verdadero)
                     if num_p > 0:
