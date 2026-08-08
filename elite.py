@@ -3444,7 +3444,7 @@ def render_login_form():
             }
             
             div[data-testid="stNumberInput"] label {
-                color: #000000 !important;
+                color: #ffffff !important;
                 font-size: 10px !important;
                 font-weight: bold !important;
             }
