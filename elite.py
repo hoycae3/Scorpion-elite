@@ -3454,6 +3454,14 @@ def render_login_form():
                 font-size: 14px !important;
                 font-weight: bold !important;
             }
+
+            /* Selectbox */
+            div[data-testid="stSelectbox"] label {
+                color: #ffffff !important;
+            }
+            div[data-testid="stSelectbox"] span {
+                color: #ffffff !important;
+            }
             </style>
             """, unsafe_allow_html=True)
             
