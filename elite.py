@@ -3358,34 +3358,29 @@ def render_login_form():
                 font-size: 14px !important;
             }
             
-            /* Inputs de número (cuota) - compactos */
-            [data-testid="stNumberInput"] {
-                background: #1a1a1a !important;
-                border: 2px solid #22c55e !important;
-                border-radius: 6px !important;
-                padding: 2px 6px !important;
-                max-width: 90px !important;
-            }
+            /* Inputs de número (cuota) */
+            .st-ns .st-sp { background: #1a1a1a !important; }
             
-            [data-testid="stNumberInput"] input {
+            /* El elemento input dentro de NumberInput */
+            div[data-testid="stNumberInput"] input[type="number"],
+            div[data-testid="stNumberInput"] input[type="text"] {
                 color: #ffffff !important;
-                font-size: 14px !important;
+                font-size: 16px !important;
                 font-weight: bold !important;
-                background: #1a1a1a !important;
-                text-align: center !important;
+                background-color: #1a1a1a !important;
+                -webkit-text-fill-color: #ffffff !important;
             }
             
-            [data-testid="stNumberInput"] label {
-                color: #94a3b8 !important;
-                font-size: 11px !important;
+            /* Todo el contenedor del number input */
+            section[data-testid="stMainBlockContainer"] input {
+                color: #ffffff !important;
+                background-color: #1a1a1a !important;
             }
             
-            /* Los botones +/- del number input */
-            [data-testid="stNumberInput"] button {
-                background: #22c55e !important;
-                color: #000 !important;
-                border: none !important;
-                min-width: 25px !important;
+            /* Selectbox input */
+            .st-dd input {
+                color: #ffffff !important;
+                background-color: #1a1a1a !important;
             }
             </style>
             """, unsafe_allow_html=True)
