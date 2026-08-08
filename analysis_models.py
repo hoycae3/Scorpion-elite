@@ -783,11 +783,12 @@ def calcular(
         "confianza": conf,
         "rango": rango,
         
-        # Detalle de modelos
+        # Detalle de modelos (para consenso)
         "modelos": {
             "poisson": {"p1": p1_po, "px": px_po, "p2": p2_po},
             "dixon_coles": {"p1": p1_dc, "px": px_dc, "p2": p2_dc},
             "monte_carlo": {"p1": p1_mc, "px": px_mc, "p2": p2_mc},
+            "forma": {"p1": p1_forma, "px": px_forma, "p2": p2_forma},
         },
         
         # Top marcadores predichos

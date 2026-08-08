@@ -4161,39 +4161,50 @@ def render_login_form():
         # Mostrar Consensus Meter
         st.markdown("---")
         st.markdown("### 🎲 Consensus de Modelos")
-        st.markdown("_ВҝCuántos modelos están de acuerdo en el Гәltimo pick?_")
-        
-        # Obtener Гәltimo pick
-        if picks:
-            ultimo = picks[0] if picks else None
-            if ultimo:
-                # Simular scores de consenso (en producción vendría de los modelos reales)
-                modelos = ['Poisson', 'Dixon-Coles', 'Monte Carlo', 'Elo']
-                probabilidades = [
-                    ultimo.get('p1', 0) or 00,
-                    ultimo.get('p1', 0) or 00,  # Simulado
-                    ultimo.get('p1', 0) or 00,  # Simulado
-                    ultimo.get('p1', 0) or 00,  # Simulado
-                ]
-                
-                # Calcular consenso
-                promedio = sum(probabilidades) / len(probabilidades)
-                discrepancia = max(probabilidades) - min(probabilidades)
-                
-                col_cons1, col_cons2, col_cons3 = st.columns(3)
-                with col_cons1:
-                    st.metric("📥 Promedio Local", f"{promedio:.1f}%")
-                with col_cons2:
-                    st.metric("📲 Máx", f"{max(probabilidades):.1f}%")
-                with col_cons3:
-                    st.metric("🔽 Mín", f"{min(probabilidades):.1f}%")
-                
-                if discrepancia < 10:
-                    st.success("📘 **ALTO CONSENSO** - Los 4 modelos están de acuerdo")
-                elif discrepancia < 20:
-                    st.info("📥 **CONSENSO MODERADO** - Buena seГұal")
-                else:
-                    st.warning("⚠️ **BAJO CONSENSO** - Los modelos discrepan, mayor riesgo")
+        st.markdown("_ВҝCuГЎntos modelos estГЎn de acuerdo en el Гєltimo pick?_" )
+
+        # Obtener resultado del anГЎlisis actual
+        r = st.session_state.get('analysis_result', {})
+        modelos_data = r.get('modelos', {})
+
+        if modelos_data:
+            # Extraer p1 de cada modelo
+            poisson_p1 = modelos_data.get('poisson', {}).get('p1', 0)
+            dixon_p1 = modelos_data.get('dixon_coles', {}).get('p1', 0)
+            montecarlo_p1 = modelos_data.get('monte_carlo', {}).get('p1', 0)
+            forma_p1 = modelos_data.get('forma', {}).get('p1', 0)
+
+            # Nombres y valores
+            modelos_info = [
+                ("Poisson", poisson_p1),
+                ("Dixon-Coles", dixon_p1),
+                ("Monte Carlo", montecarlo_p1),
+                ("Forma", forma_p1),
+            ]
+
+            # Mostrar tabla con cada modelo
+            col_modelos = st.columns(4)
+            p1_values = []
+            for i, (nombre, p1) in enumerate(modelos_info):
+                with col_modelos[i]:
+                    st.metric(f"ðŸ“Š {nombre}", f"{p1:.1f}%")
+                p1_values.append(p1)
+
+            # Calcular discrepancia
+            promedio = sum(p1_values) / len(p1_values)
+            discrepancia = max(p1_values) - min(p1_values)
+
+            # Mostrar resumen
+            st.markdown(f"**Promedio:** {promedio:.1f}% | **Rango:** {discrepancia:.1f}%")
+
+            if discrepancia < 8:
+                st.success("ðŸ“Њ **ALTO CONSENSO** - Los modelos estГЎn muy alineados")
+            elif discrepancia < 15:
+                st.info("ðŸ“¥ **CONSENSO MODERADO** - Buena seГ±al")
+            else:
+                st.warning("ðŸ™ѓ **BAJO CONSENSO** - Los modelos discrepan, mayor riesgo")
+        else:
+            st.info("No hay datos de modelos disponibles (analiza un partido primero)")
 
 # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
 # EJECUTAR EL SISTEMA DE LOGIN
