@@ -587,6 +587,14 @@
     color: #fff !important;
 }
 
+/* TODOS los botones con texto a la izquierda */
+button[data-testid="stBaseButton-secondary"],
+button[data-testid="stBaseButton-primary"],
+div[data-testid="stHorizontalBlock"] button {
+    text-align: left !important;
+    justify-content: flex-start !important;
+}
+
 /* Botones dentro de expanders */
 [data-testid="stExpander"] button {
     max-width: 550px !important;
