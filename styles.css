@@ -854,22 +854,6 @@ div[data-testid="stMarkdownContainer"] {
 }
 
 /* ============================================
-   🔘 ESTILOS DE BOTONES CON VARIABLES CSS
-   ============================================ */
-.stButton button,
-[data-testid="stExpander"] button {
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border-color) !important;
-    color: var(--text-primary) !important;
-    border-radius: var(--radius-md) !important;
-}
-
-.stButton button:hover {
-    border-color: var(--color-primary) !important;
-    background: var(--bg-hover) !important;
-}
-
-/* ============================================
    ☑️ CHECKBOXES - VERDE BRILLANTE
    ============================================ */
 /* Checkbox sin marcar - verde brillante */
