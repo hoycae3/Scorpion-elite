@@ -3335,34 +3335,47 @@ def render_login_form():
 
         # ========== TAB 3: BANKROLL ==========
         with tab_bankroll:
-            # CSS específico para checkboxes verdes
+            # CSS específico para bankroll
             st.markdown("""
             <style>
-            /* Checkbox verde - todo el contenedor */
+            /* Checkbox verde */
             [data-testid="stCheckbox"] {
                 background: #0d2818 !important;
-                border: 3px solid #22c55e !important;
-                border-radius: 8px !important;
-                padding: 10px !important;
+                border: 2px solid #22c55e !important;
+                border-radius: 6px !important;
+                padding: 6px 8px !important;
             }
             
-            /* El checkbox en sí */
-            [data-testid="stCheckbox"] span {
-                color: #22c55e !important;
-            }
-            
-            /* Input del checkbox */
             [data-testid="stCheckbox"] input[type="checkbox"] {
-                width: 28px !important;
-                height: 28px !important;
+                width: 22px !important;
+                height: 22px !important;
                 accent-color: #22c55e !important;
                 cursor: pointer;
             }
             
-            /* Label del checkbox */
             [data-testid="stCheckbox"] label {
                 color: white !important;
                 font-size: 14px !important;
+            }
+            
+            /* Inputs de número (cuota) */
+            [data-testid="stNumberInput"] {
+                background: #1a1a2e !important;
+                border: 2px solid #22c55e !important;
+                border-radius: 6px !important;
+                padding: 2px !important;
+            }
+            
+            [data-testid="stNumberInput"] input {
+                color: white !important;
+                font-size: 14px !important;
+                font-weight: bold !important;
+                background: transparent !important;
+            }
+            
+            [data-testid="stNumberInput"] label {
+                color: #94a3b8 !important;
+                font-size: 12px !important;
             }
             </style>
             """, unsafe_allow_html=True)
