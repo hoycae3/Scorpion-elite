@@ -1176,27 +1176,39 @@ def render_login_form():
                                         # 🎯 AUTO-ACTUALIZAR PICKS: Si el partido ya terminó (FT), calcular resultados automáticamente
                                         if estado == 'FT' and score_local is not None and score_visitante is not None:
                                             try:
-                                                # Buscar picks pendientes para este partido
-                                                picks_existentes = client.table('picks').select('*').eq('fixture_id', fix_id).is_('resultado_1x2', None).execute()
+                                                total_goles = score_local + score_visitante
                                                 
-                                                if picks_existentes.data:
-                                                    total_goles = score_local + score_visitante
+                                                # Calcular resultado 1X2 real
+                                                if score_local > score_visitante:
+                                                    resultado_real = "1"
+                                                elif score_local < score_visitante:
+                                                    resultado_real = "2"
+                                                else:
+                                                    resultado_real = "X"
+                                                
+                                                # Calcular Over/Under real
+                                                resultado_ou_real = "Over 2.5" if total_goles > 2.5 else "Under 2.5"
+                                                
+                                                # Calcular BTTS real
+                                                btts_real = "Si" if (score_local > 0 and score_visitante > 0) else "No"
+                                                
+                                                # Buscar picks pendientes para este partido (por fixture_id O por nombres de equipos)
+                                                picks_existentes = client.table('picks').select('*').is_('resultado_1x2', None).execute()
+                                                
+                                                picks_encontrados = []
+                                                for pick in picks_existentes.data:
+                                                    pick_fixture = pick.get('fixture_id', 0)
+                                                    pick_local = pick.get('equipo_local', '').lower().strip()
+                                                    pick_visit = pick.get('equipo_visitante', '').lower().strip()
                                                     
-                                                    # Calcular resultado 1X2 real
-                                                    if score_local > score_visitante:
-                                                        resultado_real = "1"
-                                                    elif score_local < score_visitante:
-                                                        resultado_real = "2"
-                                                    else:
-                                                        resultado_real = "X"
-                                                    
-                                                    # Calcular Over/Under real
-                                                    resultado_ou_real = "Over 2.5" if total_goles > 2.5 else "Under 2.5"
-                                                    
-                                                    # Calcular BTTS real
-                                                    btts_real = "Si" if (score_local > 0 and score_visitante > 0) else "No"
-                                                    
-                                                    for pick in picks_existentes.data:
+                                                    # Coincide por fixture_id O por nombres de equipos
+                                                    if (pick_fixture == fix_id or 
+                                                        (equipo_local.lower().strip() == pick_local and 
+                                                         equipo_visitante.lower().strip() == pick_visit)):
+                                                        picks_encontrados.append(pick)
+                                                
+                                                if picks_encontrados:
+                                                    for pick in picks_encontrados:
                                                         pick_id = pick.get('id')
                                                         # Verificar aciertos
                                                         acertado_1x2 = pick.get('prediccion_1x2') == resultado_real
@@ -1212,6 +1224,7 @@ def render_login_form():
                                                             'acertado_1x2': acertado_1x2,
                                                             'acertado_ou': acertado_ou,
                                                             'acertado_btts': acertado_btts,
+                                                            'fixture_id': fix_id,  # Actualizar fixture_id si estaba vacío
                                                         }).eq('id', pick_id).execute()
                                                         picks_actualizados_auto += 1
                                                         
@@ -1475,6 +1488,10 @@ def render_login_form():
                     # Completar barra de progreso
                     progress_bar.progress(100)
                     status_text.success("✅ **SINCRONIZACIÓN COMPLETADA**")
+                    
+                    # Mensaje especial si se actualizaron picks
+                    if picks_actualizados_auto > 0:
+                        st.success(f"🎯 Se actualizaron {picks_actualizados_auto} picks con los resultados de partidos terminados!")
                     
                     # RESUMEN FINAL
                     st.markdown(f"""
