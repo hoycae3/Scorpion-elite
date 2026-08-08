@@ -886,27 +886,36 @@ div[data-testid="stMarkdownContainer"] {
 /* ============================================
    ☑️ CHECKBOXES - ALTO CONTRASTE
    ============================================ */
-/* Checkbox - blanco puro con borde negro */
-section[data-testid="stMainBlockContainer"] input[type="checkbox"] {
-    width: 24px !important;
-    height: 24px !important;
-    background: #ffffff !important;
-    border: 3px solid #000000 !important;
-    border-radius: 4px !important;
-    cursor: pointer;
-    accent-color: #22c55e !important;
+div[data-testid="stCheckbox"] label > div:first-child {
+    width: 28px !important;
+    height: 28px !important;
+    background: white !important;
+    border: 3px solid #000 !important;
+    border-radius: 6px !important;
 }
 
-/* Selectbox - fondo blanco */
-[data-testid="stSelectbox"] input {
-    background: #ffffff !important;
-    color: #000000 !important;
+div[data-testid="stCheckbox"] input:checked + label > div:first-child {
+    background: #22c55e !important;
+    border-color: #22c55e !important;
+}
+
+div[data-testid="stCheckbox"] label {
+    color: white !important;
+    font-size: 15px !important;
     font-weight: bold !important;
 }
 
-/* Number input - fondo blanco */
-[data-testid="stNumberInput"] input {
-    background: #ffffff !important;
-    color: #000000 !important;
-    font-weight: bold !important;
+/* Selectbox */
+.stSelectbox > div > div {
+    background: white !important;
+}
+
+.stSelectbox input {
+    color: black !important;
+}
+
+/* Number input */
+.stNumberInput input {
+    background: white !important;
+    color: black !important;
 }
