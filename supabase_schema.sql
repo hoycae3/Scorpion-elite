@@ -516,6 +516,25 @@ ALTER TABLE bankroll_apuestas ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "bankroll_apuestas_all" ON bankroll_apuestas FOR ALL USING (true) WITH CHECK (true);
 
 -- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLA BANKROLL RETIROS
+-- Historial de retiros de bankroll
+-- ═══════════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS bankroll_retiros (
+    id BIGSERIAL PRIMARY KEY,
+    usuario VARCHAR(100) NOT NULL,
+    fecha DATE NOT NULL,
+    cantidad DECIMAL(12,2) NOT NULL,
+    nota VARCHAR(255),
+    actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_bankroll_retiros_usuario ON bankroll_retiros(usuario);
+CREATE INDEX IF NOT EXISTS idx_bankroll_retiros_fecha ON bankroll_retiros(fecha);
+
+ALTER TABLE bankroll_retiros ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "bankroll_retiros_all" ON bankroll_retiros FOR ALL USING (true) WITH CHECK (true);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
 -- TABLA USER_STATS
 -- Estadísticas acumuladas por usuario
 -- ═══════════════════════════════════════════════════════════════════════════════
@@ -551,6 +570,7 @@ CREATE TABLE IF NOT EXISTS user_stats (
     -- Bankroll
     bankroll_actual DECIMAL(12,2) DEFAULT 1000.00,
     bankroll_inicial DECIMAL(12,2) DEFAULT 1000.00,
+    total_retirado DECIMAL(12,2) DEFAULT 0.00,
     -- Confianza
     confianza_promedio DECIMAL(5,2) DEFAULT 0,
     precision_alta_confianza DECIMAL(5,2) DEFAULT 0,  -- % acierto en picks >90%

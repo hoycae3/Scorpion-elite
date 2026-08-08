@@ -3371,10 +3371,30 @@ def render_login_form():
 
             # ==================== SUBTABS ====================
 
-            sub_tab1, sub_tab2, sub_tab3 = st.tabs(["📥 Dashboard", "➕ Agregar", "📋 Historial"])
+            sub_tab1, sub_tab2, sub_tab3, sub_tab4 = st.tabs(["📥 Dashboard", "➕ Agregar", "📋 Historial", "⚙️ Config"])
 
             # ========== SUBTAB 1: DASHBOARD ==========
             with sub_tab1:
+                # Cargar bankroll guardado de user_stats
+                try:
+                    resp_stats = client.table('user_stats').select('bankroll_inicial,total_retirado').eq('usuario_id', usuario_id).execute()
+                    if resp_stats.data:
+                        bankroll_guardado = resp_stats.data[0].get('bankroll_inicial', 1000.0)
+                        total_retirado_guardado = resp_stats.data[0].get('total_retirado', 0.0) or 0.0
+                    else:
+                        bankroll_guardado = 1000.0
+                        total_retirado_guardado = 0.0
+                except:
+                    bankroll_guardado = 1000.0
+                    total_retirado_guardado = 0.0
+                
+                # Cargar historial de retiros
+                try:
+                    resp_retiros = client.table('bankroll_retiros').select('*').eq('usuario', usuario_id).order('fecha', desc=True).execute()
+                    retiros = resp_retiros.data if resp_retiros.data else []
+                except:
+                    retiros = []
+
                 # Selector de moneda
                 col_money1, col_money2 = st.columns([1, 3])
                 with col_money1:
@@ -3383,25 +3403,27 @@ def render_login_form():
                                                index=0, key="moneda_v2")
                     simbolo = MONEDAS[moneda_select]["simbolo"]
                 with col_money2:
-                    bankroll_inicial = st.number_input("📊 Bankroll Inicial", value=1000.0, min_value=100.0, step=100.0, key="bankroll_inicial_v2")
+                    st.markdown(f"📊 **Bankroll Inicial:** {format_money(bankroll_guardado, simbolo)} | **Total Retirado:** {format_money(total_retirado_guardado, simbolo)}")
 
                 if apuestas:
                     total_apostado = sum(a.get('cantidad', 0) for a in apuestas)
                     ganancias = sum(a.get('ganancia', 0) for a in apuestas)
-                    bankroll_actual = bankroll_inicial + ganancias
-                    roi = ((bankroll_actual - bankroll_inicial) / bankroll_inicial * 100) if bankroll_inicial > 0 else 0
+                    # Bankroll real = Inicial + Ganancias - Retirado
+                    bankroll_actual = bankroll_guardado + ganancias - total_retirado_guardado
+                    roi = ((bankroll_actual - bankroll_guardado) / bankroll_guardado * 100) if bankroll_guardado > 0 else 0
                     apuestas_ganadas = len([a for a in apuestas if a.get('ganancia', 0) > 0])
                     total_apuestas = len(apuestas)
                     tasa_acierto = (apuestas_ganadas / total_apuestas * 100) if total_apuestas > 0 else 0
 
                     # Bankroll grande
+                    color_ganancia = "#22c55e" if ganancias >= 0 else "#ef4444"
                     st.markdown(f"""
                     <div style="background: linear-gradient(135deg, #1a3a2a 0%, #0f2518 100%); 
                                 border-radius: 16px; padding: 30px; text-align: center; 
-                                border: 2px solid #22c55e; margin: 20px 0;">
+                                border: 2px solid {color_ganancia}; margin: 20px 0;">
                         <div style="color: #888; font-size: 0.9rem;">BANKROLL ACTUAL</div>
-                        <div style="font-size: 3rem; font-weight: 700; color: #22c55e;">{format_money(bankroll_actual, simbolo)}</div>
-                        <div style="color: #22c55e; font-size: 1.1rem;">{'+' if ganancias >= 0 else ''}{format_money(ganancias, simbolo)} ({'+' if roi >= 0 else ''}{roi:.1f}%)</div>
+                        <div style="font-size: 3rem; font-weight: 700; color: {color_ganancia};">{format_money(bankroll_actual, simbolo)}</div>
+                        <div style="color: {color_ganancia}; font-size: 1.1rem;">{'+' if ganancias >= 0 else ''}{format_money(ganancias, simbolo)} ({'+' if roi >= 0 else ''}{roi:.1f}%)</div>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -3415,16 +3437,16 @@ def render_login_form():
                     with col_m4:
                         st.metric("🏆 Ganancia", format_money(ganancias, simbolo))
 
-                    if bankroll_actual >= bankroll_inicial * 1.1:
-                        st.success(f"✅ Excelente: +{((bankroll_actual/bankroll_inicial)-1)*100:.1f}%")
-                    elif bankroll_actual >= bankroll_inicial:
+                    if bankroll_actual >= bankroll_guardado * 1.1:
+                        st.success(f"✅ Excelente: +{((bankroll_actual/bankroll_guardado)-1)*100:.1f}%")
+                    elif bankroll_actual >= bankroll_guardado:
                         st.info(f"📊 Estable")
                     else:
                         st.warning(f"⚠️ En pérdida")
 
                     if len(apuestas) > 1:
                         evolucion = []
-                        b = bankroll_inicial
+                        b = bankroll_guardado
                         for a in sorted(apuestas, key=lambda x: x.get('fecha', '')):
                             b += a.get('ganancia', 0)
                             evolucion.append({'Fecha': str(a.get('fecha', ''))[:10], 'Bankroll': b})
@@ -3643,6 +3665,138 @@ def render_login_form():
                         st.markdown("---")
                 else:
                     st.info("No tienes apuestas registradas")
+        
+        # ========== SUBTAB 4: CONFIGURACIÓN ==========
+        with sub_tab4:
+            st.markdown("### ⚙️ Configuración del Bankroll")
+            
+            # Cargar datos actuales
+            try:
+                resp_stats = client.table('user_stats').select('*').eq('usuario_id', usuario_id).execute()
+                if resp_stats.data:
+                    stats_data = resp_stats.data[0]
+                    bankroll_actual_db = stats_data.get('bankroll_inicial', 1000.0)
+                else:
+                    bankroll_actual_db = 1000.0
+            except:
+                bankroll_actual_db = 1000.0
+            
+            # Configurar bankroll inicial
+            st.markdown("#### 📊 Bankroll Inicial")
+            st.info("💡 Esta es la cantidad con la que empezaste. Se guarda entre sesiones.")
+            
+            col_config1, col_config2 = st.columns([1, 1])
+            with col_config1:
+                nuevo_bankroll = st.number_input(
+                    "💰 Cantidad inicial de bankroll", 
+                    value=float(bankroll_actual_db), 
+                    min_value=100.0, 
+                    step=100.0,
+                    key="nuevo_bankroll_input"
+                )
+            
+            with col_config2:
+                st.markdown("&nbsp;")  # Espaciador
+                if st.button("💾 Guardar Bankroll", type="primary", use_container_width=True):
+                    try:
+                        # Upsert en user_stats
+                        client.table('user_stats').upsert({
+                            'usuario_id': usuario_id,
+                            'bankroll_inicial': float(nuevo_bankroll),
+                        }, on_conflict='usuario_id').execute()
+                        st.success(f"✅ Bankroll guardado: {format_money(nuevo_bankroll, simbolo)}")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error: {e}")
+            
+            st.markdown("---")
+            
+            # Sección de retiros
+            st.markdown("#### 💸 Hacer un Retiro")
+            st.info("💡 Cuando retires dinero, el bankroll actual se ajustará automáticamente.")
+            
+            col_ret1, col_ret2, col_ret3 = st.columns([1, 1, 1])
+            with col_ret1:
+                monto_retiro = st.number_input(
+                    "💵 Cantidad a retirar", 
+                    min_value=0.0, 
+                    step=10.0,
+                    key="monto_retiro_input"
+                )
+            
+            with col_ret2:
+                nota_retiro = st.text_input("📝 Nota (opcional)", key="nota_retiro_input", placeholder="Ej: Retiro ganancias")
+            
+            with col_ret3:
+                st.markdown("&nbsp;")
+                if monto_retiro > 0:
+                    if st.button("🏧 Confirmar Retiro", type="primary", use_container_width=True):
+                        fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
+                        try:
+                            # Registrar retiro
+                            client.table('bankroll_retiros').insert({
+                                'usuario': usuario_id,
+                                'fecha': fecha_hoy,
+                                'cantidad': float(monto_retiro),
+                                'nota': nota_retiro if nota_retiro else 'Retiro de bankroll'
+                            }).execute()
+                            
+                            # Actualizar total_retirado en user_stats
+                            try:
+                                resp_upd = client.table('user_stats').select('total_retirado').eq('usuario_id', usuario_id).execute()
+                                if resp_upd.data:
+                                    total_actual = resp_upd.data[0].get('total_retirado', 0) or 0
+                                    client.table('user_stats').update({
+                                        'total_retirado': float(total_actual) + float(monto_retiro)
+                                    }).eq('usuario_id', usuario_id).execute()
+                            except:
+                                pass
+                            
+                            st.success(f"✅ Retiro registrado: {format_money(monto_retiro, simbolo)}")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error: {e}")
+            
+            # Historial de retiros
+            st.markdown("---")
+            st.markdown("#### 📜 Historial de Retiros")
+            
+            try:
+                resp_hist = client.table('bankroll_retiros').select('*').eq('usuario', usuario_id).order('fecha', desc=True).execute()
+                retiros_list = resp_hist.data if resp_hist.data else []
+            except:
+                retiros_list = []
+            
+            if retiros_list:
+                total_retiros = sum(r.get('cantidad', 0) for r in retiros_list)
+                st.metric("💰 Total Retirado", format_money(total_retiros, simbolo))
+                
+                for r in retiros_list:
+                    col_r1, col_r2 = st.columns([4, 1])
+                    with col_r1:
+                        st.markdown(f"📅 **{r.get('fecha', 'N/A')}** - {format_money(r.get('cantidad', 0), simbolo)}")
+                        if r.get('nota'):
+                            st.caption(f"📝 {r.get('nota')}")
+                    with col_r2:
+                        if st.button("🗑️", key=f"del_retiro_{r.get('id')}"):
+                            try:
+                                # Eliminar retiro y actualizar total
+                                cantidad_retiro = r.get('cantidad', 0)
+                                client.table('bankroll_retiros').delete().eq('id', r.get('id')).execute()
+                                # Actualizar total_retirado
+                                resp_upd = client.table('user_stats').select('total_retirado').eq('usuario_id', usuario_id).execute()
+                                if resp_upd.data:
+                                    total_actual = resp_upd.data[0].get('total_retirado', 0) or 0
+                                    client.table('user_stats').update({
+                                        'total_retirado': float(total_actual) - float(cantidad_retiro)
+                                    }).eq('usuario_id', usuario_id).execute()
+                                st.success("Retiro eliminado")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error: {e}")
+                    st.markdown("---")
+            else:
+                st.info("No hay retiros registrados aún.")
         
         # ========== TAB 4: VALUE BETS ==========
         with tab_value:
