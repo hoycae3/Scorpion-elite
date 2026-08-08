@@ -883,7 +883,10 @@ def render_login_form():
         
         with col_btn2:
             if st.button("🔄 🔄 Sincronizar", type="primary", use_container_width=True):
-                st.info("🔄 Iniciando sincronización...")
+                # Barra de progreso
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                status_text.info("🔄 Iniciando sincronización...")
                 try:
                     # Migrar columna team_id si no existe
                     migrate_team_id_column()
@@ -1164,6 +1167,9 @@ def render_login_form():
                                         try:
                                             client.table("partidos").upsert(partido_data, on_conflict="fixture_id").execute()
                                             partidos_guardados += 1
+                                            # Actualizar progreso (10-30%)
+                                            progress_bar.progress(int(10 + (partidos_guardados / max(1, len(equipos_unicos)) * 20)))
+                                            status_text.info(f"📥 Guardando partidos... ({partidos_guardados} guardados)")
                                         except Exception as e:
                                             st.warning(f"⚠️ Error al guardar partido {fix_id}: {e}")
                                         
@@ -1345,6 +1351,9 @@ def render_login_form():
                                                     on_conflict='equipo,temporada'
                                                 ).execute()
                                                 equipos_stats_descargados += 1
+                                                # Actualizar progreso (30-70%)
+                                                progress_bar.progress(int(30 + (equipos_stats_descargados / max(1, len(equipos_unicos)) * 40)))
+                                                status_text.info(f"📊 Descargando stats equipos... ({equipos_stats_descargados}/{len(equipos_unicos)})")
                                             except Exception as e:
                                                 errores_equipos += 1
                                     
@@ -1457,11 +1466,17 @@ def render_login_form():
                                         except Exception as e:
                                             pass
                     
+                    # Actualizar progreso antes del resumen (70-90%)
+                    progress_bar.progress(90)
+                    status_text.info("📋 Generando resumen...")
+                    
                     st.session_state.sincronizacion_ok = True
                     
-                    # RESUMEN FINAL
-                    st.success("✅ **SINCRONIZACIÓN COMPLETADA**")
+                    # Completar barra de progreso
+                    progress_bar.progress(100)
+                    status_text.success("✅ **SINCRONIZACIÓN COMPLETADA**")
                     
+                    # RESUMEN FINAL
                     st.markdown(f"""
                     📥 **RESUMEN FINAL:**
                     
@@ -1478,9 +1493,10 @@ def render_login_form():
                     | 🎯 **Picks actualizados** | {picks_actualizados_auto} |
                     | ⚠️ **Errores** | {errores_equipos} |
                     """)
-                        
+                    
                 except Exception as e:
-                    st.error(f"❌ Error en sincronización: {e}")
+                    progress_bar.progress(100)
+                    status_text.error(f"❌ Error en sincronización: {e}")
 
         with col_btn3:
             if st.button("🧹 Limpiar Equipos", type="secondary", use_container_width=True):
