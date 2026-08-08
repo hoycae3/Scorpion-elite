@@ -884,15 +884,15 @@ div[data-testid="stMarkdownContainer"] {
 }
 
 /* ============================================
-   ☑️ CHECKBOXES - ALTO CONTRASTE
+   ☑️ CHECKBOXES - VERDE
    ============================================ */
 div[data-testid="stCheckbox"] label > div:first-child {
     width: 28px !important;
     height: 28px !important;
     background: #ffffff !important;
-    border: 3px solid #333 !important;
+    border: 3px solid #22c55e !important;
     border-radius: 6px !important;
-    box-shadow: 0 0 0 3px #ffffff, 0 4px 8px rgba(0,0,0,0.5) !important;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3), 0 4px 8px rgba(0,0,0,0.3) !important;
 }
 
 div[data-testid="stCheckbox"] input:checked + label > div:first-child {
@@ -904,14 +904,13 @@ div[data-testid="stCheckbox"] label {
     color: #ffffff !important;
     font-size: 16px !important;
     font-weight: bold !important;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.8) !important;
 }
 
 /* Selectbox */
 div[data-testid="stSelectbox"] {
     background: #ffffff !important;
+    border: 2px solid #22c55e !important;
     border-radius: 8px !important;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.5) !important;
 }
 
 div[data-testid="stSelectbox"] input {
@@ -922,8 +921,8 @@ div[data-testid="stSelectbox"] input {
 /* Number input */
 div[data-testid="stNumberInput"] {
     background: #ffffff !important;
+    border: 2px solid #22c55e !important;
     border-radius: 8px !important;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.5) !important;
 }
 
 div[data-testid="stNumberInput"] input {
