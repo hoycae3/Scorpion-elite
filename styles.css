@@ -581,6 +581,20 @@ button {
     justify-content: flex-start !important;
 }
 
+/* El texto DENTRO del botón */
+.stButton button p,
+.stButton button span,
+.stButton button > * {
+    text-align: left !important;
+    justify-content: flex-start !important;
+}
+
+/* Texto del botón específico */
+button[data-testid="stBaseButton-secondary"] *,
+button[data-testid="stBaseButton-primary"] * {
+    text-align: left !important;
+}
+
 /* Botones de partidos - formato tarjeta compacta */
 div[data-testid="stHorizontalBlock"] button,
 .stButton button {
