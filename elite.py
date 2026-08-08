@@ -1166,6 +1166,81 @@ def render_login_form():
                                             partidos_guardados += 1
                                         except Exception as e:
                                             st.warning(f"⚠️ Error al guardar partido {fix_id}: {e}")
+                                        
+                                        # 🎯 AUTO-ACTUALIZAR PICKS: Si el partido ya terminó (FT), calcular resultados automáticamente
+                                        if estado == 'FT' and score_local is not None and score_visitante is not None:
+                                            try:
+                                                # Buscar picks pendientes para este partido
+                                                picks_existentes = client.table('picks').select('*').eq('fixture_id', fix_id).is_('resultado_1x2', None).execute()
+                                                
+                                                if picks_existentes.data:
+                                                    total_goles = score_local + score_visitante
+                                                    
+                                                    # Calcular resultado 1X2 real
+                                                    if score_local > score_visitante:
+                                                        resultado_real = "1"
+                                                    elif score_local < score_visitante:
+                                                        resultado_real = "2"
+                                                    else:
+                                                        resultado_real = "X"
+                                                    
+                                                    # Calcular Over/Under real
+                                                    resultado_ou_real = "Over 2.5" if total_goles > 2.5 else "Under 2.5"
+                                                    
+                                                    # Calcular BTTS real
+                                                    btts_real = "Si" if (score_local > 0 and score_visitante > 0) else "No"
+                                                    
+                                                    for pick in picks_existentes.data:
+                                                        pick_id = pick.get('id')
+                                                        # Verificar aciertos
+                                                        acertado_1x2 = pick.get('prediccion_1x2') == resultado_real
+                                                        acertado_ou = pick.get('prediccion_ou') == resultado_ou_real
+                                                        acertado_btts = pick.get('prediccion_btts') == btts_real
+                                                        
+                                                        # Actualizar pick con resultados calculados
+                                                        client.table('picks').update({
+                                                            'marcador': f"{score_local}-{score_visitante}",
+                                                            'resultado_1x2': resultado_real,
+                                                            'resultado_ou': resultado_ou_real,
+                                                            'resultado_btts': btts_real,
+                                                            'acertado_1x2': acertado_1x2,
+                                                            'acertado_ou': acertado_ou,
+                                                            'acertado_btts': acertado_btts,
+                                                        }).eq('id', pick_id).execute()
+                                                        picks_actualizados_auto += 1
+                                                        
+                                                        # 🎰 AUTO-ACTUALIZAR BANKROLL: Marcar apuesta como Ganada/Perdida
+                                                        try:
+                                                            apuestas = client.table('bankroll_apuestas').select('*').eq('fixture_id', fix_id).execute()
+                                                            if apuestas.data:
+                                                                pick_para_apuesta = pick.get('prediccion_1x2') or pick.get('prediccion_ou') or pick.get('prediccion_btts') or 'Over'
+                                                                
+                                                                for apuesta in apuestas.data:
+                                                                    apuesta_id = apuesta.get('id')
+                                                                    cantidad = apuesta.get('cantidad', 0)
+                                                                    cuota = apuesta.get('cuota', 2.0)
+                                                                    
+                                                                    # Determinar si ganó según el mercado apostado
+                                                                    gano = False
+                                                                    mercado = apuesta.get('mercado', '')
+                                                                    if mercado == '1X2':
+                                                                        gano = pick.get('prediccion_1x2') == resultado_real
+                                                                    elif 'Over' in pick.get('prediccion_ou', '') or 'Under' in pick.get('prediccion_ou', ''):
+                                                                        gano = pick.get('prediccion_ou') == resultado_ou_real
+                                                                    elif 'Si' in pick.get('prediccion_btts', '') or 'No' in pick.get('prediccion_btts', ''):
+                                                                        gano = pick.get('prediccion_btts') == btts_real
+                                                                    
+                                                                    resultado_apuesta = True if gano else False
+                                                                    ganancia = cantidad * (cuota - 1) if gano else -cantidad
+                                                                    
+                                                                    client.table('bankroll_apuestas').update({
+                                                                        'resultado': resultado_apuesta,
+                                                                        'ganancia': ganancia
+                                                                    }).eq('id', apuesta_id).execute()
+                                                        except:
+                                                            pass  # Si no hay bankroll, continuar
+                                            except Exception as e:
+                                                pass  # Silencioso, no mostrar error por cada pick
                         except Exception as e:
                             # Si falla una liga, continuar con la siguiente
                             continue
@@ -1183,6 +1258,7 @@ def render_login_form():
                     stats_ft_nuevos = 0
                     errores_equipos = 0
                     partidos_iniciales_cargados = 0
+                    picks_actualizados_auto = 0  # Contador de picks auto-actualizados
                     
                     if equipos_unicos:
                         
@@ -1399,6 +1475,7 @@ def render_login_form():
                     | 📥 **Stats equipos descargadas** | {equipos_stats_descargados} |
                     | 📲 **Stats partidos nuevos** | {partidos_iniciales_cargados} |
                     | 📊 **Stats FT incrementales** | {stats_ft_nuevos} |
+                    | 🎯 **Picks actualizados** | {picks_actualizados_auto} |
                     | ⚠️ **Errores** | {errores_equipos} |
                     """)
                         
@@ -1563,6 +1640,7 @@ def render_login_form():
                             st.session_state.selected_away = equipo_visitante
                             st.session_state.selected_team_id_local = partido.get('team_id_local')
                             st.session_state.selected_team_id_visitante = partido.get('team_id_visitante')
+                            st.session_state.selected_fixture_id = partido.get('fixture_id')  # Para auto-actualizar picks
                             st.session_state.page = "Analizador"
                             st.rerun()
                 
@@ -2255,10 +2333,13 @@ def render_login_form():
                     client = get_client()
                     usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
 
+                    # Obtener fixture_id si está disponible
+                    fixture_id = st.session_state.get('selected_fixture_id', 0)
                     
                     pick_data = {
                         'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
                         'usuario': usuario_id,
+                        'fixture_id': fixture_id,  # Para vincular con partidos y auto-actualizar resultados
                         'pick': r.get('pick_1x2', '1'),
                         'liga': stats_local.get('liga', 'Desconocida') if stats_local else 'N/A',
                         'equipo_local': home,
@@ -3480,6 +3561,7 @@ def render_login_form():
                                             client.table('bankroll_apuestas').insert({
                                                 'usuario': usuario_id,
                                                 'fecha': fecha_hoy,
+                                                'fixture_id': opt['pick'].get('fixture_id', 0),  # Para auto-actualizar
                                                 'equipo': f"{opt['pick'].get('equipo_local', '')} vs {opt['pick'].get('equipo_visitante', '')}",
                                                 'cuota': float(cantidades_dict.get(i, opt['cuota'])),
                                                 'cantidad': float(cantidades[i]),

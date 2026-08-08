@@ -490,6 +490,32 @@ ALTER TABLE bankroll_history ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "bankroll_all" ON bankroll_history FOR ALL USING (true) WITH CHECK (true);
 
 -- ═══════════════════════════════════════════════════════════════════════════════
+-- TABLA BANKROLL_APUESTAS
+-- Apuestas registradas en el bankroll
+-- ═══════════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS bankroll_apuestas (
+    id BIGSERIAL PRIMARY KEY,
+    usuario VARCHAR(100) NOT NULL,
+    fixture_id BIGINT,
+    fecha DATE NOT NULL,
+    equipo VARCHAR(255),
+    cuota DECIMAL(6,2),
+    cantidad DECIMAL(12,2),
+    mercado VARCHAR(50),
+    pick_id BIGINT,
+    ganancia DECIMAL(12,2) DEFAULT 0,
+    resultado BOOLEAN,
+    actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_bankroll_apuestas_usuario ON bankroll_apuestas(usuario);
+CREATE INDEX IF NOT EXISTS idx_bankroll_apuestas_fixture ON bankroll_apuestas(fixture_id);
+CREATE INDEX IF NOT EXISTS idx_bankroll_apuestas_resultado ON bankroll_apuestas(resultado);
+
+ALTER TABLE bankroll_apuestas ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "bankroll_apuestas_all" ON bankroll_apuestas FOR ALL USING (true) WITH CHECK (true);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
 -- TABLA USER_STATS
 -- Estadísticas acumuladas por usuario
 -- ═══════════════════════════════════════════════════════════════════════════════
