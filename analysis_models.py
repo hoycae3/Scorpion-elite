@@ -21,6 +21,40 @@ import random
 from typing import Dict, List, Optional
 
 
+def verificar_coherencia(pick_1x2: str, p1: float, px: float, p2: float, 
+                         over_25: float, lambda_local: float, lambda_visitante: float) -> Dict:
+    """
+    Verifica y ajusta la coherencia entre predicción 1X2 y Over/Under.
+    
+    Ejemplo de problema: Si Daejeon gana (p2>p1,px) con 1.5lambda vs 0.8lambda,
+    el marcador esperado es ~2-1, no 1-1. Over 2.5 debería ser ALTO.
+    """
+    lambda_total = lambda_local + lambda_visitante
+    
+    # Marcador predicho más probable
+    marcador_predicho = f"{round(lambda_local, 1)}-{round(lambda_visitante, 1)}"
+    
+    # Calcular probabilidad Over 2.5 basada en el marcador
+    # Si lambda_total >= 2.5, Over debería ser > 50%
+    # Si lambda_total <= 2.0, Over debería ser < 50%
+    lambda_over_prob = min(95, max(5, (lambda_total / 3.0) * 100))
+    
+    # Calcular BTTS basado en lambdas
+    # P(BTTS) ≈ P(local>=1) * P(visitante>=1)
+    p_local_marca = 1 - math.exp(-lambda_local)
+    p_visit_marca = 1 - math.exp(-lambda_visitante)
+    btts_prob = p_local_marca * p_visit_marca * 100
+    
+    return {
+        'marcador_predicho': marcador_predicho,
+        'lambda_total': lambda_total,
+        'lambda_over_prob': round(lambda_over_prob, 1),
+        'btts_prob': round(btts_prob, 1),
+        'p_local_marca': round(p_local_marca * 100, 1),
+        'p_visit_marca': round(p_visit_marca * 100, 1),
+    }
+
+
 def pp(lmbda: float, k: int) -> float:
     """Función de masa de probabilidad de Poisson P(X=k)"""
     if lmbda <= 0 or k < 0:
@@ -720,6 +754,18 @@ def calcular(
     # Marcador predicho (basado en lambdas de Poisson)
     marcador_predicho = f"{xl:.1f}-{xv:.1f}"
     
+    # Verificar coherencia entre predicciones
+    coherencia = verificar_coherencia(pick_1x2, p1_ajustado, px_ajustado, p2_ajustado, 
+                                      ou["over_25"], xl, xv)
+    
+    # Ajustar Over/Under basándose en la coherencia con lambda
+    # Si lambda_total sugiere Over pero el modelo dice Under, usar promedio ponderado
+    lambda_over = coherencia['lambda_over_prob']
+    ou_over_final = (ou["over_25"] + lambda_over) / 2
+    
+    # BTTS coherente
+    btts_final = (p_btts_yes + coherencia['btts_prob']) / 2
+    
     return {
         # Datos de entrada
         "lambda_local": xl,
@@ -727,6 +773,7 @@ def calcular(
         "goles_local": round(xl, 1),
         "goles_visitante": round(xv, 1),
         "marcador_predicho": marcador_predicho,
+        "coherencia": coherencia,
         
         # 1X2
         "p1": p1_ajustado,
@@ -739,18 +786,18 @@ def calcular(
         "over_under": {
             "over_15": ou["over_15"],
             "under_15": ou["under_15"],
-            "over_25": ou["over_25"],
-            "under_25": ou["under_25"],
+            "over_25": round(ou_over_final, 1),  # Ajustado por coherencia
+            "under_25": round(100 - ou_over_final, 1),
             "over_35": ou["over_35"],
             "under_35": ou["under_35"],
         },
         "pick_over_under": pick_ou,
         "prob_over_under": prob_ou,
         
-        # Ambos Marcan
-        "btts_yes": p_btts_yes,
-        "btts_no": p_btts_no,
-        "pick_btts": "Sí" if p_btts_yes > 50 else "No",
+        # Ambos Marcan (ajustado por coherencia)
+        "btts_yes": round(btts_final, 1),
+        "btts_no": round(100 - btts_final, 1),
+        "pick_btts": "Sí" if btts_final > 50 else "No",
         
         # Córners
         "corners": prediccion_corners,
