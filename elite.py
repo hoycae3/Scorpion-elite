@@ -3359,28 +3359,20 @@ def render_login_form():
             }
             
             /* Inputs de número (cuota) */
-            .st-ns .st-sp { background: #1a1a1a !important; }
+            div[data-testid="stNumberInput"] {
+                max-width: 80px !important;
+            }
             
-            /* El elemento input dentro de NumberInput */
-            div[data-testid="stNumberInput"] input[type="number"],
-            div[data-testid="stNumberInput"] input[type="text"] {
-                color: #ffffff !important;
-                font-size: 16px !important;
+            div[data-testid="stNumberInput"] label {
+                color: #000000 !important;
+                font-size: 10px !important;
                 font-weight: bold !important;
-                background-color: #1a1a1a !important;
-                -webkit-text-fill-color: #ffffff !important;
             }
             
-            /* Todo el contenedor del number input */
-            section[data-testid="stMainBlockContainer"] input {
+            div[data-testid="stNumberInput"] input {
                 color: #ffffff !important;
-                background-color: #1a1a1a !important;
-            }
-            
-            /* Selectbox input */
-            .st-dd input {
-                color: #ffffff !important;
-                background-color: #1a1a1a !important;
+                font-size: 14px !important;
+                font-weight: bold !important;
             }
             </style>
             """, unsafe_allow_html=True)
