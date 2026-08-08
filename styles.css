@@ -587,11 +587,15 @@
     color: #fff !important;
 }
 
-/* Texto dentro de botones de partidos */
+/* Texto y TODOS los elementos dentro de botones de partidos */
+[data-testid="stExpander"] button *,
 [data-testid="stExpander"] button p,
-[data-testid="stExpander"] button span {
+[data-testid="stExpander"] button span,
+[data-testid="stExpander"] button div {
     text-align: left !important;
     justify-content: flex-start !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 /* Hover de botones de partidos */
