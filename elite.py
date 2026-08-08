@@ -1634,7 +1634,7 @@ def render_login_form():
                             badge = "⚪"
                         
                         # Botón estilo tarjeta compacta
-                        label = f"📅 {fecha_fmt} {hora_col} | {badge} {equipo_local} vs {equipo_visitante} ➜"
+                        label = f"📅 {fecha_fmt} {hora_col} | {badge} {equipo_local} vs {equipo_visitante}"
                         if st.button(label, key=f"btn_{pais}_{liga}_{i}", use_container_width=True):
                             st.session_state.selected_local = equipo_local
                             st.session_state.selected_away = equipo_visitante
