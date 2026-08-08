@@ -573,26 +573,26 @@
 /* ============================================
    🔘 BOTONES - ESTILO TARJETA COMPACTA
    ============================================ */
+/* TODOS los botones Streamlit */
+div[data-testid="stHorizontalBlock"] button,
+.stButton button,
+button {
+    text-align: left !important;
+    justify-content: flex-start !important;
+}
+
 /* Botones de partidos - formato tarjeta compacta */
+div[data-testid="stHorizontalBlock"] button,
 .stButton button {
     max-width: 550px !important;
     width: 100% !important;
     text-align: left !important;
-    justify-content: flex-start !important;
     padding: 6px 14px !important;
     font-size: 13px !important;
     border-radius: 8px !important;
     border: 1px solid #444 !important;
     background: #1e2a3a !important;
     color: #fff !important;
-}
-
-/* TODOS los botones con texto a la izquierda */
-button[data-testid="stBaseButton-secondary"],
-button[data-testid="stBaseButton-primary"],
-div[data-testid="stHorizontalBlock"] button {
-    text-align: left !important;
-    justify-content: flex-start !important;
 }
 
 /* Botones dentro de expanders */
