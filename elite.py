@@ -1599,6 +1599,55 @@ def render_login_form():
                 'fecha_formato': datetime.strptime(fecha, '%Y-%m-%d').strftime('%d/%m/%Y') if fecha else ''
             })
         
+        # ============================================
+        # 🎯 MOSTRAR 4 PARTIDOS ALEATORIOS DESTACADOS
+        # ============================================
+        import random
+        if len(partidos_procesados) >= 4:
+            partidos_destacados = random.sample(partidos_procesados, 4)
+            
+            st.markdown("### 🎯 ⚽ Partidos Destacados")
+            st.caption("4 partidos aleatorios para analizar")
+            
+            cols = st.columns(2)
+            for i, partido in enumerate(partidos_destacados):
+                equipo_local = partido.get('equipo_local', '')
+                equipo_visitante = partido.get('equipo_visitante', '')
+                hora_col = partido.get('hora_colombia', '')
+                fecha_fmt = partido.get('fecha_formato', '')[:5]
+                liga = partido.get('liga', '')
+                
+                with cols[i % 2]:
+                    # Verificar stats
+                    try:
+                        resp_local = client.table('equipos_stats').select('equipo').ilike('equipo', f'%{equipo_local}%').execute()
+                        resp_visit = client.table('equipos_stats').select('equipo').ilike('equipo', f'%{equipo_visitante}%').execute()
+                        tiene_local = len(resp_local.data) > 0 if resp_local.data else False
+                        tiene_visit = len(resp_visit.data) > 0 if resp_visit.data else False
+                        tiene_stats = tiene_local and tiene_visit
+                    except:
+                        tiene_stats = None
+                    
+                    badge = "🟢" if tiene_stats is True else ("🟡" if tiene_stats is False else "🔴")
+                    
+                    label = f"⚽ {equipo_local} vs {equipo_visitante}"
+                    if st.button(label, key=f"destacado_{i}", use_container_width=True):
+                        st.session_state.selected_local = equipo_local
+                        st.session_state.selected_away = equipo_visitante
+                        st.session_state.selected_team_id_local = partido.get('team_id_local')
+                        st.session_state.selected_team_id_visitante = partido.get('team_id_visitante')
+                        st.session_state.selected_fixture_id = partido.get('fixture_id')
+                        st.session_state.page = "Analizador"
+                        st.rerun()
+                    
+                    st.caption(f"{hora_col} | {liga} {badge}")
+            
+            st.markdown("---")
+            st.markdown("### 📋 Todos los Partidos")
+            st.caption("Partido por país y liga")
+        elif len(partidos_procesados) > 0:
+            st.markdown("### 🎯 ⚽ Partidos del Día")
+        
         # Agrupar por PAГҚS
         paises_partidos = {}
         for p in partidos_procesados:
