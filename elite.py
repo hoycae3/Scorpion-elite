@@ -2291,6 +2291,7 @@ def render_login_form():
                     {fila_dato(lambda_din_l, 'λ Dinámico', lambda_din_v, '#fff', bg_par=True)}
                     {fila_dato(lambda_hist_l_val, 'λ Histórico', lambda_hist_v_val, '#00d4ff')}
                     <div style='background:#111111;padding:10px 5px;border-radius:4px;margin:2px 0;display:flex;'><div style='width:33%;text-align:center;color:#fff;font-weight:bold;font-size:15px;'>🔥 {lambda_final_l_val}</div><div style='width:34%;text-align:center;color:#00d4ff;font-weight:bold;font-size:13px;'>λ FINAL</div><div style='width:33%;text-align:center;color:#fff;font-weight:bold;font-size:15px;'>🔥 {lambda_final_v_val}</div></div>
+                    {fila_dato(calib_l_str, '🔧 CALIBRACIÓN', calib_v_str, bg_par=True)}
                     <div style='background:#0a0a0a;padding:10px;border-radius:8px;margin-top:15px;margin-bottom:5px;text-align:center;'><span style='color:#00d4ff;font-weight:bold;'>📈 PROMEDIOS POR PARTIDO</span></div>
                     {fila_dato(f'{prom_tiros_l_str}', 'Tiros Total', f'{prom_tiros_v_str}', bg_par=True)}
                     {fila_dato(f'{prom_tiros_arco_l_str}', 'Tiros Arco', f'{prom_tiros_arco_v_str}')}
@@ -2332,6 +2333,27 @@ def render_login_form():
             lambda_local_final = lambda_visit_final = 0.0
             home = st.session_state.get('home', '')
             away = st.session_state.get('away', '')
+            
+            # Obtener factores de calibración
+            calib_local = st.session_state.get('calibracion_local', {})
+            calib_visit = st.session_state.get('calibracion_visitante', {})
+            factor_local = calib_local.get('factor', 1.0)
+            factor_visit = calib_visit.get('factor', 1.0)
+            ajuste_local = calib_local.get('ajuste', 'sin_cambio')
+            ajuste_visit = calib_visit.get('ajuste', 'sin_cambio')
+            
+            # Badge de calibración
+            if factor_local != 1.0:
+                badge_local = "🔧" if ajuste_local == 'sube' else "📉"
+                calib_l_str = f"{badge_local} {factor_local:.2f}x"
+            else:
+                calib_l_str = "⚪ 1.00x"
+                
+            if factor_visit != 1.0:
+                badge_visit = "🔧" if ajuste_visit == 'sube' else "📉"
+                calib_v_str = f"{badge_visit} {factor_visit:.2f}x"
+            else:
+                calib_v_str = "⚪ 1.00x"
             confianza = r.get('confianza', 0)
             rango = r.get('rango', 'D')
             
