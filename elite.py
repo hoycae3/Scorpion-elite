@@ -1538,21 +1538,6 @@ def render_login_form():
         if st.session_state.get('limpieza_equipos_ok'):
             st.success(f"✅ Equipos limpiados correctamente")
             st.session_state.limpieza_equipos_ok = False
-        
-        # Botón para limpiar bankroll_apuestas
-        if st.button("🗑️ Limpiar Bankroll", type="secondary", use_container_width=True):
-            client = get_client()
-            try:
-                resp_b = client.table('bankroll_apuestas').select('id', count='exact').execute()
-                num_b = resp_b.count if hasattr(resp_b, 'count') else len(resp_b.data) if resp_b.data else 0
-                
-                if num_b > 0:
-                    client.table('bankroll_apuestas').delete().neq('id', 0).execute()
-                    st.success(f"✅ Bankroll limpiado: {num_b} apuestas eliminadas")
-                else:
-                    st.info("ℹ️ No hay apuestas para limpiar")
-            except Exception as e:
-                st.error(f"❌ Error: {e}")
 
         # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
         # LIMPIEZA: Eliminar partidos de más de 1 aГұo SOLO si hay partidos nuevos
@@ -3689,6 +3674,25 @@ def render_login_form():
             with sub_tab3:
                 st.markdown("#### 📋 Historial de Apuestas")
                 
+                # Botón para limpiar bankroll
+                col_clean, col_count = st.columns([1, 3])
+                with col_clean:
+                    if st.button("🗑️ Limpiar Todo", help="Eliminar todas las apuestas guardadas"):
+                        try:
+                            resp_b = client.table('bankroll_apuestas').select('id', count='exact').eq('usuario', usuario_id).execute()
+                            num_b = resp_b.count if hasattr(resp_b, 'count') else len(resp_b.data) if resp_b.data else 0
+                            
+                            if num_b > 0:
+                                client.table('bankroll_apuestas').delete().eq('usuario', usuario_id).execute()
+                                st.success(f"✅ Eliminadas: {num_b} apuestas")
+                                st.rerun()
+                            else:
+                                st.info("No hay apuestas para limpiar")
+                        except Exception as e:
+                            st.error(f"Error: {e}")
+                with col_count:
+                    st.write(f"**Total: {len(apuestas)} apuestas**")
+                
                 if apuestas:
                     # Filtros
                     col_f1, col_f2 = st.columns(2)
@@ -3707,7 +3711,7 @@ def render_login_form():
                         apuestas_filtradas = [a for a in apuestas_filtradas if a.get('mercado', '') in filtro_mercado]
                     
                     # Mostrar tabla
-                    st.write(f"**Total: {len(apuestas_filtradas)} apuestas**")
+                    st.write(f"**Mostrando: {len(apuestas_filtradas)} apuestas**")
                     
                     for i, a in enumerate(apuestas_filtradas):
                         col_a1, col_a2 = st.columns([4, 1])
