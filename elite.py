@@ -561,9 +561,9 @@ def render_public_landing():
         except Exception as e:
             st.error(f"Error: {str(e)}")
     else:
-        # MOSTRAR PARTIDOS ORGANIZADOS POR PAГҚS/FECHA/HORA
+        # MOSTRAR SOLO 4 PARTIDOS ALEATORIOS EN LANDING
         if partidos:
-            # Convertir hora a colombiana y organizar
+            # Convertir hora a colombiana
             partidos_procesados = []
             for p in partidos:
                 fecha = p.get('fecha', '')
@@ -576,47 +576,34 @@ def render_public_landing():
                     'fecha_hora': f"{fecha} {hora_colombia}"
                 })
             
-            # Ordenar por país, fecha, hora
-            partidos_procesados.sort(key=lambda x: (
-                x.get('pais', ''),  # Primero por país
-                x.get('fecha', ''),   # Luego por fecha
-                x.get('hora_colombia', '')  # Finalmente por hora colombiana
-            ))
+            # Mostrar solo 4 partidos aleatorios
+            import random
+            if len(partidos_procesados) >= 4:
+                partidos_aleatorios = random.sample(partidos_procesados, 4)
+            else:
+                partidos_aleatorios = partidos_procesados
             
-            st.markdown("###### 📅 Partidos del Día")
-            st.caption("Organizados por país, fecha y hora (Colombia)")
+            st.markdown("###### 🎯 ⚽ Partidos Destacados")
+            st.caption("Análisis gratuito sin registro")
             
-            # Agrupar por país
-            paises_agrupados = {}
-            for p in partidos_procesados:
-                pais = p.get('pais', 'Sin país')
-                if pais not in paises_agrupados:
-                    paises_agrupados[pais] = []
-                paises_agrupados[pais].append(p)
-            
-            # Mostrar por país
-            for pais, lista_partidos in paises_agrupados.items():
-                with st.expander(f"🏴 {pais} ({len(lista_partidos)} partidos)", expanded=True):
-                    cols = st.columns(2)
-                    for i, partido in enumerate(lista_partidos):
-                        local = partido.get('equipo_local', 'Local')
-                        visitante = partido.get('equipo_visitante', 'Visitante')
-                        liga = partido.get('liga', '')
-                        hora_col = partido.get('hora_colombia', '')
-                        fecha = partido.get('fecha', '')
-                        fixture_id = partido.get('fixture_id', 0)
-                        
-                        with cols[i % 2]:
-                            st.session_state['partido_seleccionado'] = partido
-                            
-                            if st.button(f"⚽ {local} vs {visitante}", key=f"partido_{fixture_id}", use_container_width=True):
-                                st.session_state['partido_seleccionado'] = partido
-                                st.session_state['show_analizador'] = True
-                                st.query_params["page"] = "analizador"
-                            
-                            st.caption(f"⚽ {hora_col} | 📅 {datetime.strptime(fecha, '%Y-%m-%d').strftime('%d/%m/%Y')} | {liga}")
+            cols = st.columns(2)
+            for i, partido in enumerate(partidos_aleatorios):
+                local = partido.get('equipo_local', 'Local')
+                visitante = partido.get('equipo_visitante', 'Visitante')
+                liga = partido.get('liga', '')
+                hora_col = partido.get('hora_colombia', '')
+                fecha = partido.get('fecha', '')
+                fixture_id = partido.get('fixture_id', 0)
+                
+                with cols[i % 2]:
+                    if st.button(f"⚽ {local} vs {visitante}", key=f"landing_{fixture_id}_{i}", use_container_width=True):
+                        st.session_state['partido_seleccionado'] = partido
+                        st.session_state['show_analizador'] = True
+                        st.query_params["page"] = "analizador"
+                    
+                    st.caption(f"⚽ {hora_col} | {liga}")
         else:
-            st.info("⚽ No hay partidos cargados. Ve a la pestaГұa **Carga** para subir datos.")
+            st.info("⚽ No hay partidos disponibles.")
 
     # --- CÓMO FUNCIONA ---
     st.markdown("### 📤 ВҝCómo Funciona?")
