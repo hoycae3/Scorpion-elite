@@ -3336,7 +3336,6 @@ def render_login_form():
         # ========== TAB 3: BANKROLL ==========
         with tab_bankroll:
             st.markdown("### 🏆 Mi Bankroll")
-
             usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
 
             MONEDAS = {
