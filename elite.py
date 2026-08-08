@@ -3335,6 +3335,38 @@ def render_login_form():
 
         # ========== TAB 3: BANKROLL ==========
         with tab_bankroll:
+            # CSS específico para checkboxes verdes
+            st.markdown("""
+            <style>
+            /* Checkbox verde - todo el contenedor */
+            [data-testid="stCheckbox"] {
+                background: #0d2818 !important;
+                border: 3px solid #22c55e !important;
+                border-radius: 8px !important;
+                padding: 10px !important;
+            }
+            
+            /* El checkbox en sí */
+            [data-testid="stCheckbox"] span {
+                color: #22c55e !important;
+            }
+            
+            /* Input del checkbox */
+            [data-testid="stCheckbox"] input[type="checkbox"] {
+                width: 28px !important;
+                height: 28px !important;
+                accent-color: #22c55e !important;
+                cursor: pointer;
+            }
+            
+            /* Label del checkbox */
+            [data-testid="stCheckbox"] label {
+                color: white !important;
+                font-size: 14px !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            
             st.markdown("### 🏆 Mi Bankroll")
             usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
 
