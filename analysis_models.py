@@ -784,7 +784,7 @@ def calcular(
     
     # Verificar coherencia entre predicciones
     coherencia = verificar_coherencia(pick_1x2, p1_ajustado, px_ajustado, p2_ajustado, 
-                                      ou["over_25"], xl, xv, tarjetas_l, tarjetas_v)
+                                      ou["over_25"], xl, xv, tarjetas_local, tarjetas_visitante)
     
     # Ajustar Over/Under basándose en la coherencia con lambda
     # Si lambda_total sugiere Over pero el modelo dice Under, usar promedio ponderado
