@@ -2267,7 +2267,7 @@ def render_login_form():
                 # FUNCIÓN AUXILIAR PARA CONVERTIR VALORES A STRING SIN ERRORES DE FORMATO
                 def safe_fmt(val, fmt='.1f'):
                     """Convierte valor a string, manteniendo '?' si no hay datos"""
-                    if val == '?' or val is None:
+                    if val == '?' or val is None or val == 0:
                         return '?'
                     try:
                         return f'{float(val):{fmt}}'
@@ -2355,7 +2355,7 @@ def render_login_form():
                     <div style='background:#0a0a0a;padding:10px;border-radius:8px;margin-top:15px;margin-bottom:5px;text-align:center;'><span style='color:#00d4ff;font-weight:bold;'>📈 PROMEDIOS POR PARTIDO</span></div>
                     {fila_dato(f'{prom_tiros_l_str}', 'Tiros Total', f'{prom_tiros_v_str}', bg_par=True)}
                     {fila_dato(f'{prom_tiros_arco_l_str}', 'Tiros Arco', f'{prom_tiros_arco_v_str}')}
-                    {fila_dato(f'{prom_amarillas_l_str}', 'Amarillas', f'{prom_amarillas_v_str}', bg_par=True)}
+                    {fila_dato(f'{prom_amarillas_l_str} ⚑', '🟨 Amarillas', f'{prom_amarillas_v_str} ⚑', bg_par=True)}
                     {fila_dato(f'{prom_corners_l_str}', 'Esquinas', f'{prom_corners_v_str}')}
                     <div style='background:#0a0a0a;padding:10px;border-radius:8px;margin-top:15px;margin-bottom:5px;text-align:center;'><span style='color:#00d4ff;font-weight:bold;'>📅 FORMA RECIENTE (Últimos 5)</span></div>
                     {fila_dato(f'{puntos_str}%', 'Puntos %', f'{puntos_v_str}%', bg_par=True)}

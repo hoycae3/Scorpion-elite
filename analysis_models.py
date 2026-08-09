@@ -22,28 +22,54 @@ from typing import Dict, List, Optional
 
 
 def verificar_coherencia(pick_1x2: str, p1: float, px: float, p2: float, 
-                         over_25: float, lambda_local: float, lambda_visitante: float) -> Dict:
+                         over_25: float, lambda_local: float, lambda_visitante: float,
+                         tarjetas_local: float = 3.0, tarjetas_visitante: float = 3.0) -> Dict:
     """
     Verifica y ajusta la coherencia entre predicción 1X2 y Over/Under.
-    
-    Ejemplo de problema: Si Daejeon gana (p2>p1,px) con 1.5lambda vs 0.8lambda,
-    el marcador esperado es ~2-1, no 1-1. Over 2.5 debería ser ALTO.
     """
     lambda_total = lambda_local + lambda_visitante
     
-    # Marcador predicho más probable
-    marcador_predicho = f"{round(lambda_local, 1)}-{round(lambda_visitante, 1)}"
+    # Marcador predicho más probable (redondeado a enteros para mayor claridad)
+    marcador_predicho = f"{round(lambda_local)}-{round(lambda_visitante)}"
     
-    # Calcular probabilidad Over 2.5 basada en el marcador
-    # Si lambda_total >= 2.5, Over debería ser > 50%
-    # Si lambda_total <= 2.0, Over debería ser < 50%
-    lambda_over_prob = min(95, max(5, (lambda_total / 3.0) * 100))
+    # Calcular probabilidad Over 2.5 basada en lambda_total
+    # P(Over 2.5) ≈ P(goles_total >= 3)
+    # Para lambda_total, P(X>=3) = 1 - P(0) - P(1) - P(2)
+    from math import exp
+    p0 = exp(-lambda_total)
+    p1 = lambda_total * exp(-lambda_total)
+    p2 = (lambda_total**2 / 2) * exp(-lambda_total)
+    lambda_over_prob = min(95, max(5, (1 - p0 - p1 - p2) * 100))
     
-    # Calcular BTTS basado en lambdas
-    # P(BTTS) ≈ P(local>=1) * P(visitante>=1)
+    # Calcular BTTS basado en MARKER predicho (no solo lambdas)
+    # Si ambos equipos tienen lambda >= 0.7, es probable que ambos marquen
+    # BTTS debe ser ALTO cuando el marcador sugiere ambos marcan
+    
+    # Probabilidad de que cada equipo marque al menos 1
     p_local_marca = 1 - math.exp(-lambda_local)
     p_visit_marca = 1 - math.exp(-lambda_visitante)
-    btts_prob = p_local_marca * p_visit_marca * 100
+    
+    # BTTS base
+    btts_base = p_local_marca * p_visit_marca * 100
+    
+    # AJUSTE: Si el marcador predicho es X-X (ambos marcan), BTTS debe ser alto
+    # Si lambda_local >= 0.7 Y lambda_visitante >= 0.7 → ambos probablemente marcan
+    if lambda_local >= 0.7 and lambda_visitante >= 0.7:
+        # Ambos equipos tienen buen ataque → BTTS alto
+        btts_ajustado = max(btts_base, 65)  # Mínimo 65%
+    elif lambda_local >= 0.5 and lambda_visitante >= 0.5:
+        btts_ajustado = max(btts_base, 50)
+    else:
+        btts_ajustado = btts_base
+    
+    # Promedio ponderado
+    btts_prob = (btts_base * 0.4 + btts_ajustado * 0.6)
+    
+    # Calcular predicción de tarjetas coherente
+    tarjetas_total = tarjetas_local + tarjetas_visitante
+    # P(Over 6) = P(tarjetas >= 7)
+    p_tar_6 = exp(-tarjetas_total) * (1 + tarjetas_total + tarjetas_total**2/2 + tarjetas_total**3/6 + tarjetas_total**4/24 + tarjetas_total**5/120 + tarjetas_total**6/720)
+    tarjetas_over_prob = min(95, max(5, (1 - p_tar_6) * 100))
     
     return {
         'marcador_predicho': marcador_predicho,
@@ -52,6 +78,8 @@ def verificar_coherencia(pick_1x2: str, p1: float, px: float, p2: float,
         'btts_prob': round(btts_prob, 1),
         'p_local_marca': round(p_local_marca * 100, 1),
         'p_visit_marca': round(p_visit_marca * 100, 1),
+        'tarjetas_total': round(tarjetas_total, 1),
+        'tarjetas_over_prob': round(tarjetas_over_prob, 1),
     }
 
 
@@ -756,7 +784,7 @@ def calcular(
     
     # Verificar coherencia entre predicciones
     coherencia = verificar_coherencia(pick_1x2, p1_ajustado, px_ajustado, p2_ajustado, 
-                                      ou["over_25"], xl, xv)
+                                      ou["over_25"], xl, xv, tarjetas_l, tarjetas_v)
     
     # Ajustar Over/Under basándose en la coherencia con lambda
     # Si lambda_total sugiere Over pero el modelo dice Under, usar promedio ponderado
