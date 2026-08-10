@@ -1500,9 +1500,39 @@ def render_login_form():
                                                     on_conflict='team_id,fixture_id'
                                                 ).execute()
                                                 stats_ft_nuevos += 1
+
+                                                # ACTUALIZAR equipos_stats con totales acumulados
+                                                resp_all = client.table('equipo_partidos_stats').select(
+                                                    'resultado,goles_favor,goles_contra'
+                                                ).eq('team_id', team_id).execute()
+
+                                                if resp_all.data:
+                                                    partidos_list = resp_all.data
+                                                    pj = len(partidos_list)
+                                                    victorias = sum(1 for p in partidos_list if p.get('resultado') == 'W')
+                                                    empates = sum(1 for p in partidos_list if p.get('resultado') == 'D')
+                                                    derrotas = sum(1 for p in partidos_list if p.get('resultado') == 'L')
+                                                    gf = sum(p.get('goles_favor', 0) or 0 for p in partidos_list)
+                                                    gc = sum(p.get('goles_contra', 0) or 0 for p in partidos_list)
+
+                                                    equipos_stats_data = {
+                                                        'equipo': team_name,
+                                                        'temporada': season_eq,
+                                                        'partidos_jugados': pj,
+                                                        'victorias': victorias,
+                                                        'empates': empates,
+                                                        'derrotas': derrotas,
+                                                        'goles_favor': gf,
+                                                        'goles_contra': gc,
+                                                        'lambda_local': round(gf / max(pj, 1), 2),
+                                                    }
+                                                    client.table('equipos_stats').upsert(
+                                                        equipos_stats_data,
+                                                        on_conflict='equipo,temporada'
+                                                    ).execute()
                                             except Exception as e:
                                                 pass
-                                            
+
                                         except Exception as e:
                                             pass
                     
