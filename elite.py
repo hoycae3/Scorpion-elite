@@ -1824,12 +1824,10 @@ def render_login_form():
             if tid_visitante:
                 promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
             
-            # NO limpiar session_state aquí - se limpian después de guardar
             
-            if stats_local and stats_visitante:
-                lambda_local = stats_local.get('lambda_local', 0)
                 lambda_visitante = stats_visitante.get('lambda_visitante', 0)
                 
+                st.write(f"DEBUG STATS: Visitante={visitante_nombre}, lambda_visitante_original={lambda_visitante}, factor={lambda_visitante_adj.get("factor", 1.0)}")
                 # Usar promedios_dinamicos si existen
                 if promedios_dinamicos_local:
                     corners_l = promedios_dinamicos_local.get('promedio_corners', 5.5)
