@@ -226,7 +226,7 @@ def verify_password(password: str, hashed: str) -> bool:
         return False
 
 def get_hoy():
-    return str(datetime.now(timezone(timedelta(hours=-5))).date())
+    return str(datetime.now(timezone.utc).date())
 
 def utc_to_colombia(utc_datetime_str):
     """Convierte datetime UTC a hora colombiana (UTC-5)"""
@@ -236,7 +236,7 @@ def utc_to_colombia(utc_datetime_str):
         # Parsear el datetime UTC
         utc_dt = datetime.fromisoformat(utc_datetime_str.replace('Z', '+00:00'))
         # Convertir a Colombia (UTC-5)
-        colombia_tz = timezone(timedelta(hours=-5))
+        colombia_tz = timezone.utc
         colombia_dt = utc_dt.astimezone(colombia_tz)
         return colombia_dt.strftime('%H:%M')
     except:
@@ -929,7 +929,7 @@ def render_login_form():
                     API_URL = "https://v3.football.api-sports.io"
                     API_KEY = os.getenv("API_FOOTBALL_KEY", "")
                     headers = {'x-apisports-key': API_KEY}
-                    hoy = datetime.now(timezone(timedelta(hours=-5))).date()
+                    hoy = datetime.now(timezone.utc).date()
                     hoy_str = hoy.strftime('%Y-%m-%d')
                     
                     # Calcular temporada dinámicamente: Ago-Dic ↩️' season actual, Ene-Jul ↩️' season anterior
@@ -1604,7 +1604,7 @@ def render_login_form():
             st.session_state.partidos_nuevos_guardados = 0
             try:
                 client = get_client()
-                fecha_limite = (datetime.now(timezone(timedelta(hours=-5))) - timedelta(days=365)).strftime('%Y-%m-%d')
+                fecha_limite = (datetime.now(timezone.utc) - timedelta(days=365)).strftime('%Y-%m-%d')
                 resp_del = client.table('partidos').delete().lt('fecha', fecha_limite).execute()
                 eliminados = len(resp_del.data) if resp_del.data else 0
                 if eliminados > 0:
@@ -1613,7 +1613,7 @@ def render_login_form():
                 pass
 
         with col_info:
-            st.markdown(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 🔻 Requests: {st.session_state.api_requests_today}/999")
+            st.markdown(f"📅 {datetime.now(timezone.utc).date().strftime('%d/%m/%Y')} | 🔻 Requests: {st.session_state.api_requests_today}/999")
         
         # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
         # MOSTRAR PARTIDOS (AGRUPADOS POR PAГҚS, HORA COLOMBIANA)
@@ -1635,7 +1635,7 @@ def render_login_form():
         # Filtro por calendario
         col_f1, col_f2 = st.columns([1, 3])
         with col_f1:
-            hoy = datetime.now(timezone(timedelta(hours=-5))).date()
+            hoy = datetime.now(timezone.utc).date()
             fecha_seleccionada = st.date_input("📅 Fecha", value=hoy, format="DD/MM/YYYY")
         
         # Filtrar por fecha seleccionada
@@ -2447,7 +2447,7 @@ def render_login_form():
                     fixture_id = st.session_state.get('selected_fixture_id', 0)
                     
                     pick_data = {
-                        'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
+                        'fecha': str(datetime.now(timezone.utc).date()),
                         'usuario': usuario_id,
                         'fixture_id': fixture_id,  # Para vincular con partidos y auto-actualizar resultados
                         'pick': r.get('pick_1x2', '1'),
@@ -3699,7 +3699,7 @@ def render_login_form():
                                     st.metric("📊 Cuota", f"@{cuota_total:.2f}")
 
                                 if st.button("🔥 CREAR COMBINADA", type="primary", use_container_width=True):
-                                    fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
+                                    fecha_hoy = str(datetime.now(timezone.utc).date())
                                     equipos = " + ".join([f"{opciones[i]['pick'].get('equipo_local', '')} vs {opciones[i]['pick'].get('equipo_visitante', '')}" for i in seleccionados])
                                     try:
                                         client.table('bankroll_apuestas').insert({
@@ -3733,7 +3733,7 @@ def render_login_form():
                                 st.markdown(f"**Total: {format_money(total_ap, simbolo)}**")
 
                                 if st.button("➕ APOSTAR", type="primary", use_container_width=True):
-                                    fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
+                                    fecha_hoy = str(datetime.now(timezone.utc).date())
                                     try:
                                         for i in seleccionados:
                                             opt = opciones[i]
@@ -3899,7 +3899,7 @@ def render_login_form():
                         
                         # Si hay retiro, registrarlo
                         if monto_retiro > 0:
-                            fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
+                            fecha_hoy = str(datetime.now(timezone.utc).date())
                             client.table('bankroll_retiros').insert({
                                 'usuario': usuario_id,
                                 'fecha': fecha_hoy,
