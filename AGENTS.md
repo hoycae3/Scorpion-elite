@@ -1639,3 +1639,33 @@ UPDATE equipos_stats SET lambda_visitante = lambda_local WHERE lambda_visitante 
 
 ### Tablas Supabase
 - partidos, equipos_stats, equipo_partidos_stats, picks, bankroll_apuestas
+
+
+---
+
+## Sesion 2026-08-07 - Lambda Local/Visitante Correctos
+
+### Problema
+La BD tiene lambda_local y lambda_visitante separados, pero lambda_visitante estaba corrupto.
+
+### Solucion Implementada
+
+#### 1. Nueva Funcion: recalcular_lambdas_desde_historial()
+- Lee de equipo_partidos_stats
+- Separa por es_local=true (local) y es_local=false (visitante)
+- Calcula: lambda_local = gf_local / pj_local
+- Calcula: lambda_visitante = gf_visit / pj_visit
+- Actualiza equipos_stats
+
+#### 2. Nuevo Boton: 🔄 Recalcular Lambdas
+- Ubicacion: Pagina Carga, junto a otros botones
+
+#### 3. Script SQL: recalcular_lambdas.sql
+- Para ejecutar directamente en Supabase
+
+### Como Usar
+1. Ve a Pagina Carga
+2. Click en 🔄 Recalcular Lambdas
+
+### Commit
+- 61c5734: feat: Recalcular lambdas local/visitante desde historial
