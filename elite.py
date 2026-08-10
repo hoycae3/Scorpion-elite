@@ -2599,6 +2599,7 @@ def render_login_form():
                 
                 # BTTS
                 btts_yes = (1 - pp(lambda_l, 0)) * (1 - pp(lambda_v, 0)) * 100
+                st.write(f"DEBUG BTTS bloque else: lambda_l={lambda_l}, lambda_v={lambda_v}, btts_yes={btts_yes}, pick_btts={pick_btts}")
                 pick_btts = "Si" if btts_yes > 50 else "No"
                 btts_icon = pick_btts
                 btts_class = "up" if pick_btts == "Si" else "down"
