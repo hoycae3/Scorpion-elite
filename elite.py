@@ -156,6 +156,78 @@ def get_client():
     """Función de compatibilidad - retorna cliente de Supabase"""
     return get_supabase_client()
 
+
+def recalcular_lambdas_desde_historial(client):
+    """
+    Recalcula lambda_local y lambda_visitante desde equipo_partidos_stats.
+    
+    Esta función lee todos los partidos del historial y calcula:
+    - lambda_local = goles_favor_LOCAL / partidos_LOCAL
+    - lambda_visitante = goles_favor_VISITANTE / partidos_VISITANTE
+    
+    Esto corrige valores corruptos que se guardaron incorrectamente.
+    """
+    try:
+        # Obtener todos los equipos únicos
+        equipos = client.table('equipos_stats').select('team_id, equipo').execute()
+        
+        if not equipos.data:
+            return 0, "No hay equipos para actualizar"
+        
+        actualizados = 0
+        errores = 0
+        
+        for equipo in equipos.data:
+            team_id = equipo.get('team_id')
+            if not team_id:
+                continue
+            
+            try:
+                # Obtener partidos de este equipo desde el historial
+                partidos = client.table('equipo_partidos_stats').select(
+                    'goles_favor, es_local'
+                ).eq('team_id', team_id).execute()
+                
+                if not partidos.data:
+                    continue
+                
+                # Separar por local/visitante
+                partidos_local = [p for p in partidos.data if p.get('es_local') == True]
+                partidos_visit = [p for p in partidos.data if p.get('es_local') == False]
+                
+                # Calcular lambda_local
+                if partidos_local:
+                    gf_local = sum(p.get('goles_favor', 0) or 0 for p in partidos_local)
+                    pj_local = len(partidos_local)
+                    lambda_local = round(gf_local / pj_local, 2)
+                else:
+                    lambda_local = 1.3
+                
+                # Calcular lambda_visitante
+                if partidos_visit:
+                    gf_visit = sum(p.get('goles_favor', 0) or 0 for p in partidos_visit)
+                    pj_visit = len(partidos_visit)
+                    lambda_visit = round(gf_visit / pj_visit, 2)
+                else:
+                    lambda_visit = 1.1
+                
+                # Actualizar en equipos_stats
+                client.table('equipos_stats').update({
+                    'lambda_local': lambda_local,
+                    'lambda_visitante': lambda_visit
+                }).eq('team_id', team_id).execute()
+                
+                actualizados += 1
+                
+            except Exception as e:
+                errores += 1
+        
+        return actualizados, f"Actualizados: {actualizados}, Errores: {errores}"
+        
+    except Exception as e:
+        return 0, f"Error general: {str(e)}"
+
+
 def migrate_team_id_column():
     """Migra la columna team_id a la tabla equipos_stats si no existe"""
     import psycopg2
@@ -1565,6 +1637,19 @@ def render_login_form():
         if st.session_state.get('limpieza_equipos_ok'):
             st.success(f"✅ Equipos limpiados correctamente")
             st.session_state.limpieza_equipos_ok = False
+
+        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+        # RECALCULAR LAMBDAS: Corrige lambda_local y lambda_visitante desde historial
+        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+        with col_btn4:
+            if st.button("🔄 Recalcular Lambdas", type="secondary", use_container_width=True):
+                client = get_client()
+                if client:
+                    with st.spinner("Recalculando lambdas desde historial..."):
+                        actualizados, mensaje = recalcular_lambdas_desde_historial(client)
+                        st.info(f"ℹ️ {mensaje}")
+                        if actualizados > 0:
+                            st.success(f"✅ {actualizados} equipos actualizados correctamente")
 
         # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
         # LIMPIEZA: Eliminar partidos de más de 1 aГұo SOLO si hay partidos nuevos
