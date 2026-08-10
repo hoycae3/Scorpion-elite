@@ -1859,6 +1859,7 @@ def render_login_form():
                 lambda_local_cal = lambda_local_adj['lambda_ajustada']
                 lambda_visitante_cal = lambda_visitante_adj['lambda_ajustada']
                 
+                st.write(f"DEBUG: λ pasado a calcular() = Local: {lambda_local_cal}, Visit: {lambda_visitante_cal}")
                 with st.spinner("Analizando..."):
                     result = calcular(
                         lambda_local=lambda_local_cal,
