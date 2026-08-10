@@ -226,7 +226,7 @@ def verify_password(password: str, hashed: str) -> bool:
         return False
 
 def get_hoy():
-    return str(datetime.now(timezone.utc).date())
+    return str(datetime.now(timezone(timedelta(hours=-5))).date())
 
 def utc_to_colombia(utc_datetime_str):
     """Convierte datetime UTC a hora colombiana (UTC-5)"""
@@ -236,7 +236,7 @@ def utc_to_colombia(utc_datetime_str):
         # Parsear el datetime UTC
         utc_dt = datetime.fromisoformat(utc_datetime_str.replace('Z', '+00:00'))
         # Convertir a Colombia (UTC-5)
-        colombia_tz = timezone.utc
+        colombia_tz = timezone(timedelta(hours=-5))
         colombia_dt = utc_dt.astimezone(colombia_tz)
         return colombia_dt.strftime('%H:%M')
     except:
@@ -929,7 +929,7 @@ def render_login_form():
                     API_URL = "https://v3.football.api-sports.io"
                     API_KEY = os.getenv("API_FOOTBALL_KEY", "")
                     headers = {'x-apisports-key': API_KEY}
-                    hoy = datetime.now(timezone.utc).date()
+                    hoy = datetime.now(timezone(timedelta(hours=-5))).date()
                     hoy_str = hoy.strftime('%Y-%m-%d')
                     
                     # Calcular temporada dinámicamente: Ago-Dic ↩️' season actual, Ene-Jul ↩️' season anterior
@@ -1312,7 +1312,7 @@ def render_login_form():
                         equipos_existentes_ids = set()
                         try:
                             # Obtener todos los team_ids que ya tienen stats
-                            resp_existing = client.table('equipos_stats').select('team_id').execute()
+                            resp_existing = client.table('equipo_partidos_stats').select('team_id').execute()
                             if resp_existing.data:
                                 equipos_existentes_ids = {p['team_id'] for p in resp_existing.data}
                         except Exception as e:
@@ -1500,39 +1500,9 @@ def render_login_form():
                                                     on_conflict='team_id,fixture_id'
                                                 ).execute()
                                                 stats_ft_nuevos += 1
-
-                                                # ACTUALIZAR equipos_stats con totales acumulados
-                                                resp_all = client.table('equipo_partidos_stats').select(
-                                                    'resultado,goles_favor,goles_contra'
-                                                ).eq('team_id', team_id).execute()
-
-                                                if resp_all.data:
-                                                    partidos_list = resp_all.data
-                                                    pj = len(partidos_list)
-                                                    victorias = sum(1 for p in partidos_list if p.get('resultado') == 'W')
-                                                    empates = sum(1 for p in partidos_list if p.get('resultado') == 'D')
-                                                    derrotas = sum(1 for p in partidos_list if p.get('resultado') == 'L')
-                                                    gf = sum(p.get('goles_favor', 0) or 0 for p in partidos_list)
-                                                    gc = sum(p.get('goles_contra', 0) or 0 for p in partidos_list)
-
-                                                    equipos_stats_data = {
-                                                        'equipo': team_name,
-                                                        'temporada': season_eq,
-                                                        'partidos_jugados': pj,
-                                                        'victorias': victorias,
-                                                        'empates': empates,
-                                                        'derrotas': derrotas,
-                                                        'goles_favor': gf,
-                                                        'goles_contra': gc,
-                                                        'lambda_local': round(gf / max(pj, 1), 2),
-                                                    }
-                                                    client.table('equipos_stats').upsert(
-                                                        equipos_stats_data,
-                                                        on_conflict='equipo,temporada'
-                                                    ).execute()
                                             except Exception as e:
                                                 pass
-
+                                            
                                         except Exception as e:
                                             pass
                     
@@ -1604,7 +1574,7 @@ def render_login_form():
             st.session_state.partidos_nuevos_guardados = 0
             try:
                 client = get_client()
-                fecha_limite = (datetime.now(timezone.utc) - timedelta(days=365)).strftime('%Y-%m-%d')
+                fecha_limite = (datetime.now(timezone(timedelta(hours=-5))) - timedelta(days=365)).strftime('%Y-%m-%d')
                 resp_del = client.table('partidos').delete().lt('fecha', fecha_limite).execute()
                 eliminados = len(resp_del.data) if resp_del.data else 0
                 if eliminados > 0:
@@ -1613,7 +1583,7 @@ def render_login_form():
                 pass
 
         with col_info:
-            st.markdown(f"📅 {datetime.now(timezone.utc).date().strftime('%d/%m/%Y')} | 🔻 Requests: {st.session_state.api_requests_today}/999")
+            st.markdown(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 🔻 Requests: {st.session_state.api_requests_today}/999")
         
         # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
         # MOSTRAR PARTIDOS (AGRUPADOS POR PAГҚS, HORA COLOMBIANA)
@@ -1635,7 +1605,7 @@ def render_login_form():
         # Filtro por calendario
         col_f1, col_f2 = st.columns([1, 3])
         with col_f1:
-            hoy = datetime.now(timezone.utc).date()
+            hoy = datetime.now(timezone(timedelta(hours=-5))).date()
             fecha_seleccionada = st.date_input("📅 Fecha", value=hoy, format="DD/MM/YYYY")
         
         # Filtrar por fecha seleccionada
@@ -1824,11 +1794,12 @@ def render_login_form():
             if tid_visitante:
                 promedios_dinamicos_visitante = calcular_promedios_equipo(client, tid_visitante)
             
+            # NO limpiar session_state aquí - se limpian después de guardar
             
+            if stats_local and stats_visitante:
+                lambda_local = stats_local.get('lambda_local', 0)
                 lambda_visitante = stats_visitante.get('lambda_visitante', 0)
                 
-                factor_v = lambda_visitante_adj.get("factor", 1.0)
-                st.write(f"DEBUG STATS: Visitante={visitante_nombre}, lambda_original={lambda_visitante}, factor={factor_v}")
                 # Usar promedios_dinamicos si existen
                 if promedios_dinamicos_local:
                     corners_l = promedios_dinamicos_local.get('promedio_corners', 5.5)
@@ -1857,8 +1828,12 @@ def render_login_form():
                 lambda_visitante_adj = get_lambda_ajustada(visitante_nombre, lambda_visitante, como_local=False)
                 lambda_local_cal = lambda_local_adj['lambda_ajustada']
                 lambda_visitante_cal = lambda_visitante_adj['lambda_ajustada']
+
+                # DEBUG: Mostrar valores de lambda
+                factor_l = lambda_local_adj.get('factor', 1.0)
+                factor_v = lambda_visitante_adj.get('factor', 1.0)
+                st.write(f"DEBUG: orig=({lambda_local:.2f}, {lambda_visitante:.2f}), factores=({factor_l:.2f}, {factor_v:.2f}), cal=({lambda_local_cal:.2f}, {lambda_visitante_cal:.2f})")
                 
-                st.write(f"DEBUG: λ pasado a calcular() = Local: {lambda_local_cal}, Visit: {lambda_visitante_cal}")
                 with st.spinner("Analizando..."):
                     result = calcular(
                         lambda_local=lambda_local_cal,
@@ -2026,7 +2001,6 @@ def render_login_form():
                         lambda_local_cal = lambda_local_final
                         lambda_visitante_cal = lambda_visit_final
                         
-                        st.write(f"DEBUG 2: λ FINAL usado = Local: {lambda_local_cal}, Visit: {lambda_visitante_cal}")
                         # вҳ… USAR PROMEDIOS DINГҒMICOS si están disponibles
                         if promedios_dinamicos_local:
                             corners_l = promedios_dinamicos_local.get('promedio_corners', 5.5)
@@ -2448,7 +2422,7 @@ def render_login_form():
                     fixture_id = st.session_state.get('selected_fixture_id', 0)
                     
                     pick_data = {
-                        'fecha': str(datetime.now(timezone.utc).date()),
+                        'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
                         'usuario': usuario_id,
                         'fixture_id': fixture_id,  # Para vincular con partidos y auto-actualizar resultados
                         'pick': r.get('pick_1x2', '1'),
@@ -2598,7 +2572,6 @@ def render_login_form():
                 
                 # BTTS
                 btts_yes = (1 - pp(lambda_l, 0)) * (1 - pp(lambda_v, 0)) * 100
-                st.write(f"DEBUG BTTS bloque else: lambda_l={lambda_l}, lambda_v={lambda_v}, btts_yes={btts_yes}, pick_btts={pick_btts}")
                 pick_btts = "Si" if btts_yes > 50 else "No"
                 btts_icon = pick_btts
                 btts_class = "up" if pick_btts == "Si" else "down"
@@ -3701,7 +3674,7 @@ def render_login_form():
                                     st.metric("📊 Cuota", f"@{cuota_total:.2f}")
 
                                 if st.button("🔥 CREAR COMBINADA", type="primary", use_container_width=True):
-                                    fecha_hoy = str(datetime.now(timezone.utc).date())
+                                    fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
                                     equipos = " + ".join([f"{opciones[i]['pick'].get('equipo_local', '')} vs {opciones[i]['pick'].get('equipo_visitante', '')}" for i in seleccionados])
                                     try:
                                         client.table('bankroll_apuestas').insert({
@@ -3735,7 +3708,7 @@ def render_login_form():
                                 st.markdown(f"**Total: {format_money(total_ap, simbolo)}**")
 
                                 if st.button("➕ APOSTAR", type="primary", use_container_width=True):
-                                    fecha_hoy = str(datetime.now(timezone.utc).date())
+                                    fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
                                     try:
                                         for i in seleccionados:
                                             opt = opciones[i]
@@ -3901,7 +3874,7 @@ def render_login_form():
                         
                         # Si hay retiro, registrarlo
                         if monto_retiro > 0:
-                            fecha_hoy = str(datetime.now(timezone.utc).date())
+                            fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
                             client.table('bankroll_retiros').insert({
                                 'usuario': usuario_id,
                                 'fecha': fecha_hoy,
