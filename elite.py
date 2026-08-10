@@ -1827,7 +1827,7 @@ def render_login_form():
             
                 lambda_visitante = stats_visitante.get('lambda_visitante', 0)
                 
-                st.write(f"DEBUG STATS: Visitante={visitante_nombre}, lambda_visitante_original={lambda_visitante}, factor={lambda_visitante_adj.get("factor", 1.0)}")
+                st.write(f'DEBUG STATS: Visitante={visitante_nombre}, lambda_visitante_original={lambda_visitante}, factor={lambda_visitante_adj.get('factor', 1.0)}')
                 # Usar promedios_dinamicos si existen
                 if promedios_dinamicos_local:
                     corners_l = promedios_dinamicos_local.get('promedio_corners', 5.5)
