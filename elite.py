@@ -2627,58 +2627,6 @@ def render_login_form():
                 arco_icon = "?"
                 tar_class = ""
                 tar_icon = "?"
-            # Fin de lógica de predicciones
-                # Con análisis - usar valores reales
-                
-                pred_tiros = r.get('tiros', {})
-                pred_tarjetas = r.get('tarjetas', {})
-                pred_arco = r.get('tiros_arco', {})
-                pred_corners = r.get('corners', {})
-
-                pick_tiros = r.get('pick_tiros') or 'Over 24'
-                prob_tiros = float(r.get('prob_tiros') or 50)
-                remates_modelo = float(pred_tiros.get('total_estimado') or remates_total or 0)
-
-                pick_tarjetas = r.get('pick_tarjetas') or 'Over 6'
-                prob_tarjetas = float(r.get('prob_tarjetas') or 50)
-                tarjetas_modelo = float(pred_tarjetas.get('total_estimado') or tarjetas_total or 0)
-
-                pick_arco = r.get('pick_tiros_arco') or 'Over 8'
-                prob_arco = float(r.get('prob_tiros_arco') or 50)
-                arco_modelo = float(pred_arco.get('total_estimado') or arco_total or 0)
-
-                modelos = r.get('modelos') or {}
-                mc = modelos.get('monte_carlo') or {}
-                top_scores = r.get('top_scores') or {}
-                score_mas_probable = list(top_scores.keys())[0] if top_scores else "?"
-
-                # Over/Under 2.5
-                pick_ou = r.get('pick_over_under', 'Over 2.5')
-                prob_ou = r.get('prob_over_under', 50)
-                ou_class = "up" if "Over" in pick_ou else "down"
-                ou_text = "Mas" if "Over" in pick_ou else "Menos"
-
-                # BTTS
-                pick_btts = r.get('pick_btts', 'No')
-                btts_yes = r.get('btts_yes', 50)
-                btts_icon = "Si" if pick_btts == "Si" else "No"
-                btts_class = "up" if pick_btts == "Si" else "down"
-
-                corners = r.get('corners', {})
-                total_c = corners.get('total_estimado', 10)
-                pick_corners = r.get('pick_corners', '+')
-
-                # Tiros
-                ti_class = "up" if "Over" in pick_tiros else "down"
-                ti_icon = "Mas" if "Over" in pick_tiros else "Menos"
-
-                # Arco
-                arco_class = "up" if "Over" in pick_arco else "down"
-                arco_icon = "Mas" if "Over" in pick_arco else "Menos"
-
-                tar_class = "up" if "Over" in pick_tarjetas else "down"
-                tar_icon = "Mas" if "Over" in pick_tarjetas else "Menos"
-
             # Variables comunes
             ou_symbol = "+" if "Over" in pick_ou else "-"
             pick_corner_symbol = "+" if pick_corners == "+" else "-"
