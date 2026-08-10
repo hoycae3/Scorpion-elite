@@ -1798,7 +1798,7 @@ def render_login_form():
             
             if stats_local and stats_visitante:
                 lambda_local = stats_local.get('lambda_local', 0)
-                lambda_visitante = stats_visitante.get('lambda_visitante', 0)
+                lambda_visitante = stats_visitante.get('lambda_local', 0)
                 
                 # Usar promedios_dinamicos si existen
                 if promedios_dinamicos_local:
