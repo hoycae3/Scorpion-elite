@@ -1312,7 +1312,7 @@ def render_login_form():
                         equipos_existentes_ids = set()
                         try:
                             # Obtener todos los team_ids que ya tienen stats
-                            resp_existing = client.table('equipo_partidos_stats').select('team_id').execute()
+                            resp_existing = client.table('equipos_stats').select('team_id').execute()
                             if resp_existing.data:
                                 equipos_existentes_ids = {p['team_id'] for p in resp_existing.data}
                         except Exception as e:
