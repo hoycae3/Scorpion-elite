@@ -1595,3 +1595,47 @@ else:
 }
 ```
 
+
+
+---
+
+## Sesion 2026-08-07 - Debugging y Correccion de BTTS
+
+### Problema Identificado
+El usuario veia "BTTS: No 8%" con lambdas altos (1.51 y 1.43).
+
+### Diagnostico
+DEBUG revelo: orig=(1.44, 0.11) - lambda visitante era 0.11!
+
+### Bugs Corregidos
+
+1. **lambda_visitante incorrecto**: Ahora usa lambda_local de la BD
+2. **Codigo duplicado**: Eliminadas 52 lineas fuera de if/elif/else
+3. **DEBUG mal ubicado**: Corregida su posicion
+
+### Formula BTTS (Correcta)
+- Poisson: (1 - pp(lambda_l, 0)) * (1 - pp(lambda_v, 0)) * 100
+- Coherencia: promedio con btts_prob
+- Pick: "Si" si > 50%, "No" si no
+
+### Correccion BD
+UPDATE equipos_stats SET lambda_visitante = lambda_local WHERE lambda_visitante < 0.5;
+
+### Commits
+- b230e60: fix lambda_visitante -> lambda_local
+- 16691fb: eliminar codigo duplicado
+
+---
+
+## Estado Actual 2026-08-07
+
+### Funcionalidades
+- Login, Landing, Sincronizacion, Stats, Modelos, Predicciones, Bankroll, VIP
+
+### Archivos
+- elite.py (~3400 lineas)
+- analysis_models.py (~900 lineas)
+- robot_extractor.py (~1500 lineas)
+
+### Tablas Supabase
+- partidos, equipos_stats, equipo_partidos_stats, picks, bankroll_apuestas
