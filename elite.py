@@ -2027,6 +2027,7 @@ def render_login_form():
                         lambda_local_cal = lambda_local_final
                         lambda_visitante_cal = lambda_visit_final
                         
+                        st.write(f"DEBUG 2: λ FINAL usado = Local: {lambda_local_cal}, Visit: {lambda_visitante_cal}")
                         # вҳ… USAR PROMEDIOS DINГҒMICOS si están disponibles
                         if promedios_dinamicos_local:
                             corners_l = promedios_dinamicos_local.get('promedio_corners', 5.5)
