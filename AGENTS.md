@@ -249,3 +249,27 @@ curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploy
 curl -s -o /dev/null -w "%{http_code}" https://scorpion-elite.onrender.com/
 ```
 
+---
+
+## Sesion 2026-08-11 - Fix Error removeChild
+
+### Problema
+Error en produccion: `NotFoundError: Failed to execute 'removeChild' on 'Node'`
+
+### Causa
+Bug de React DOM en Streamlit 1.36.0 - la reconciliacion del DOM fallaba
+cuando habia `st.rerun()` + `unsafe_allow_html=True`.
+
+### Solucion
+1. Actualizar Streamlit 1.36.0 -> 1.45.0 (requirements.txt)
+2. Cache-buster del CSS actualizado (v20260805 -> v20260811)
+3. Verificado: HTML balanceado, sin keys duplicadas
+
+### Commit
+- `040e065`: fix: actualizar Streamlit 1.36->1.45 para corregir error removeChild
+
+### Nota para usuario
+Si el error persiste despues del deploy, hacer hard refresh:
+- **Ctrl+Shift+R** (Windows/Linux) o **Cmd+Shift+R** (Mac)
+- O limpiar cache del navegador
+
