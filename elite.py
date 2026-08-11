@@ -3916,17 +3916,43 @@ def render_vip_page():
         /* Filas de selección de picks - COMPACTAS */
         div[data-testid="stHorizontalBlock"] {
             gap: 4px !important;
+            align-items: center !important;
         }
         [data-testid="stCheckbox"] {
-            padding: 2px 4px !important;
+            padding: 0 !important;
             margin: 0 !important;
+            min-height: 24px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
-        [data-testid="stCheckbox"] input[type="checkbox"] {
-            width: 18px !important;
-            height: 18px !important;
+        [data-testid="stCheckbox"] > div {
+            min-height: 24px !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }
         [data-testid="stCheckbox"] label {
             font-size: 0px !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            line-height: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        [data-testid="stCheckbox"] label span {
+            display: none !important;
+        }
+        [data-testid="stCheckbox"] label p {
+            margin: 0 !important;
+            padding: 0 !important;
+            font-size: 0px !important;
+            line-height: 0 !important;
+        }
+        [data-testid="stCheckbox"] input[type="checkbox"] {
+            width: 20px !important;
+            height: 20px !important;
+            margin: 0 !important;
+            cursor: pointer;
         }
         div[data-testid="stNumberInput"] {
             min-height: 32px !important;
