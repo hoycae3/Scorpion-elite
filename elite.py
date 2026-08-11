@@ -298,6 +298,85 @@ def verify_password(password: str, hashed: str) -> bool:
 def get_hoy():
     return str(datetime.now(timezone(timedelta(hours=-5))).date())
 
+# ══════════════════════════════════════════════════════════
+# 🔧 FUNCIONES HELPER (módulo-level, no se redefinen en cada rerun)
+# ══════════════════════════════════════════════════════════
+
+def get_pais_emoji(pais):
+    emojis = {
+        'Argentina': '🇦🇷', 'Brasil': '🇧🇷', 'Colombia': '🇨🇴', 'Chile': '🇨🇱',
+        'México': '🇲🇽', 'USA': '🇺🇸', 'Uruguay': '🇺🇾', 'Perú': '🇵🇪',
+        'Paraguay': '🇵🇾', 'Ecuador': '🇪🇨', 'España': '🇪🇸', 'Inglaterra': '🏴󠁧󠁢󠁥󠁮',
+        'Alemania': '🇩🇪', 'Italia': '🇮🇹', 'Francia': '🇫🇷', 'Portugal': '🇵🇹',
+        'Holanda': '🇳🇱', 'Turquía': '🇹🇷', 'Escocia': '🏴󠁧󠁢󠁳󠁣', 'Bélgica': '🇧🇪', 'Mundial': '🏴'
+    }
+    return emojis.get(pais, '🏴')
+
+def obtener_promedios_dinamicos(client, equipo_nombre, team_id=None):
+    if team_id:
+        resp_check = client.table('equipo_partidos_stats').select('team_id').eq('team_id', team_id).limit(1).execute()
+        if resp_check.data:
+            return calcular_promedios_equipo(client, team_id)
+    resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{equipo_nombre}%').limit(5).execute()
+    if resp_eps.data:
+        return calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
+    palabras = equipo_nombre.split()
+    for palabra in palabras:
+        if len(palabra) > 3:
+            resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{palabra}%').limit(1).execute()
+            if resp_eps.data:
+                return calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
+    return None
+
+def crear_badges(lista):
+    if not lista:
+        return "Sin datos"
+    badges = ""
+    for c in lista:
+        if c in ['G', 'W']:
+            badges += f"🟢{c} "
+        elif c == 'D':
+            badges += f"🟡{c} "
+        else:
+            badges += f"🔴{c} "
+    return badges.strip()
+
+def fila_dato(valor_l, indicador, valor_v, color_val='white', bg_par=False):
+    bg = '#162031' if bg_par else '#0a0a0a'
+    return f"""<div style='background:{bg};padding:8px 5px;border-radius:4px;margin:2px 0;display:flex;'><div style='width:33%;text-align:center;color:{color_val};font-size:13px;'>{valor_l}</div><div style='width:34%;text-align:center;color:#fff;font-size:12px;'>{indicador}</div><div style='width:33%;text-align:center;color:{color_val};font-size:13px;'>{valor_v}</div></div>"""
+
+def safe_fmt(val, fmt='.1f'):
+    """Convierte valor a string, manteniendo '?' si no hay datos."""
+    if val == '?' or val is None or val == 0:
+        return '?'
+    try:
+        return f'{float(val):{fmt}}'
+    except Exception:
+        return str(val)
+
+def safe_fmt_int(val):
+    """Convierte valor a string entero, manteniendo '?' si no hay datos."""
+    if val == '?' or val is None:
+        return '?'
+    try:
+        return f'{int(float(val))}'
+    except Exception:
+        return str(val)
+
+def pp(lmbda, k):
+    """Función de masa de probabilidad de Poisson."""
+    return (lmbda ** k) * math.exp(-lmbda) / math.factorial(k) if lmbda > 0 and k >= 0 else 0
+
+def calcular_value(prob_modelo, cuota):
+    if cuota <= 0:
+        return 0, 0
+    prob_implicita = (1 / cuota) * 100
+    value = prob_modelo - prob_implicita
+    return value, prob_implicita
+
+def format_money(valor, simbolo):
+    return f"{simbolo}{valor:,.2f}"
+
 def utc_to_colombia(utc_datetime_str):
     """Convierte datetime UTC a hora colombiana (UTC-5)"""
     try:
@@ -1724,16 +1803,6 @@ def render_partidos_page():
         paises_partidos[pais].append(p)
 
     # Emoji por país
-    def get_pais_emoji(pais):
-        emojis = {
-            'Argentina': '🇦🇷', 'Brasil': '🇧🇷', 'Colombia': '🇨🇴', 'Chile': '🇨🇱',
-            'México': '🇲🇽', 'USA': '🇺🇸', 'Uruguay': '🇺🇾', 'Perú': '🇵🇪',
-            'Paraguay': '🇵🇾', 'Ecuador': '🇪🇨', 'España': '🇪🇸', 'Inglaterra': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-            'Alemania': '🇩🇪', 'Italia': '🇮🇹', 'Francia': '🇫🇷', 'Portugal': '🇵🇹',
-            'Holanda': '🇳🇱', 'Turquía': '🇹🇷', 'Escocia': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'Bélgica': '🇧🇪', 'Mundial': '🏴'
-        }
-        return emojis.get(pais, '🏴')
-
     # Mostrar cada país como expander
     for pais in sorted(paises_partidos.keys()):
         emoji = get_pais_emoji(pais)
@@ -1998,25 +2067,6 @@ def render_analizador_page():
     lambda_visit_final = None
 
     # FUNCIÓN AUXILIAR: Buscar promedios dinámicos (por team_id directamente)
-    def obtener_promedios_dinamicos(client, equipo_nombre, team_id=None):
-        # SIEMPRE usar team_id si está disponible (más confiable)
-        if team_id:
-            resp_check = client.table('equipo_partidos_stats').select('team_id').eq('team_id', team_id).limit(1).execute()
-            if resp_check.data:
-                return calcular_promedios_equipo(client, team_id)
-        # Fallback: buscar por nombre
-        resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{equipo_nombre}%').limit(5).execute()
-        if resp_eps.data:
-            return calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
-        # Si no encuentra, buscar por cada palabra
-        palabras = equipo_nombre.split()
-        for palabra in palabras:
-            if len(palabra) > 3:
-                resp_eps = client.table('equipo_partidos_stats').select('team_id').ilike('equipo', f'%{palabra}%').limit(1).execute()
-                if resp_eps.data:
-                    return calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
-        return None
-
     # USAR team_id DIRECTO del partido para buscar en equipo_partidos_stats
     tid_local = st.session_state.get('selected_team_id_local')
     tid_visitante = st.session_state.get('selected_team_id_visitante')
@@ -2328,51 +2378,16 @@ def render_analizador_page():
             gc_v_forma = forma_v_data.get('goles_contra_5', 0)
 
             # Crear badges de forma
-            def crear_badges(lista):
-                if not lista:
-                    return "Sin datos"
-                badges = ""
-                for c in lista:
-                    if c in ['G','W']:
-                        badges += f"🟢{c} "
-                    elif c == 'D':
-                        badges += f"🟡{c} "
-                    else:
-                        badges += f"🔴{c} "
-                return badges.strip()
-
             badges_local = crear_badges(letras)
             badges_visitante = crear_badges(letras_v)
 
             # Función auxiliar para crear fila de datos
-            def fila_dato(valor_l, indicador, valor_v, color_val='white', bg_par=False):
-                bg = '#162031' if bg_par else '#0a0a0a'
-                return f"""<div style='background:{bg};padding:8px 5px;border-radius:4px;margin:2px 0;display:flex;'><div style='width:33%;text-align:center;color:{color_val};font-size:13px;'>{valor_l}</div><div style='width:34%;text-align:center;color:#fff;font-size:12px;'>{indicador}</div><div style='width:33%;text-align:center;color:{color_val};font-size:13px;'>{valor_v}</div></div>"""
-
             # Calcular valores seguros para lambda antes del f-string
             lambda_hist_l_val = f'{lambda_historico_local:.2f}' if lambda_historico_local is not None else '?'
             lambda_hist_v_val = f'{lambda_historico_visit:.2f}' if lambda_historico_visit is not None else '?'
             lambda_final_l_val = f'{lambda_local_final:.2f}' if lambda_local_final is not None else '?'
 
             # FUNCIÓN AUXILIAR PARA CONVERTIR VALORES A STRING SIN ERRORES DE FORMATO
-            def safe_fmt(val, fmt='.1f'):
-                """Convierte valor a string, manteniendo '?' si no hay datos"""
-                if val == '?' or val is None or val == 0:
-                    return '?'
-                try:
-                    return f'{float(val):{fmt}}'
-                except Exception as e:
-                    return str(val)
-
-            def safe_fmt_int(val):
-                """Convierte valor a string entero"""
-                if val == '?' or val is None:
-                    return '?'
-                try:
-                    return f'{int(float(val))}'
-                except Exception as e:
-                    return str(val)
-
             # CONVERTIR TODAS LAS VARIABLES A STRINGS PARA EL F-STRING
             pj_l_str = safe_fmt_int(pj_l_display)
             pj_v_str = safe_fmt_int(pj_v_display)
@@ -2635,9 +2650,6 @@ def render_analizador_page():
             lambda_v = gf_v / pj_v if pj_v > 0 else 1.1
 
             # Calcular score más probable con Poisson simple
-            def pp(lmbda, k):
-                return (lmbda ** k) * math.exp(-lmbda) / math.factorial(k) if lmbda > 0 and k >= 0 else 0
-
             scores = {}
             for gl in range(5):
                 for gv in range(5):
@@ -2842,13 +2854,6 @@ def render_analizador_page():
                     cuotas_ou = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Over/Under']
 
                     # Función para calcular VALUE
-                    def calcular_value(prob_modelo, cuota):
-                        if cuota <= 0:
-                            return 0, 0
-                        prob_implicita = (1 / cuota) * 100
-                        value = prob_modelo - prob_implicita
-                        return value, prob_implicita
-
                     # Mostrar 1X2 con VALUE
                     if cuotas_1x2:
                         st.markdown("**🎯 1X2**")
@@ -3806,9 +3811,6 @@ def render_vip_page():
             "ARS": {"simbolo": "$", "nombre": "Peso AR"},
             "BRL": {"simbolo": "R$", "nombre": "Real"},
         }
-
-        def format_money(valor, simbolo):
-            return f"{simbolo}{valor:,.2f}"
 
         # Obtener picks del usuario
         try:
