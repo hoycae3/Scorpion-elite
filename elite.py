@@ -5,6 +5,9 @@ import time
 import requests
 import logging
 import html
+import math
+import random
+import io
 import bcrypt
 from datetime import date, timedelta, datetime, timezone
 from pathlib import Path
@@ -686,7 +689,6 @@ def render_public_landing():
                 })
             
             # Mostrar solo 4 partidos aleatorios
-            import random
             if len(partidos_procesados) >= 4:
                 partidos_aleatorios = random.sample(partidos_procesados, 4)
             else:
@@ -2630,7 +2632,6 @@ def render_login_form():
                 lambda_v = gf_v / pj_v if pj_v > 0 else 1.1
                 
                 # Calcular score más probable con Poisson simple
-                import math
                 def pp(lmbda, k):
                     return (lmbda ** k) * math.exp(-lmbda) / math.factorial(k) if lmbda > 0 and k >= 0 else 0
                 
@@ -4184,8 +4185,6 @@ def render_login_form():
                 st.markdown(f"📥 **{len(picks_filtrados)} picks** en el período seleccionado")
                 
                 if st.button("📘 Descargar Reporte", type="primary"):
-                    import io
-                    
                     if tipo_reporte == "Picks Completos":
                         df_export = pd.DataFrame(picks_filtrados)
                     elif tipo_reporte == "Solo Resueltos":
