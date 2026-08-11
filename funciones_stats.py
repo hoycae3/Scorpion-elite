@@ -63,6 +63,65 @@ def obtener_stats_partido(fixture_id, team_id, team_name, headers, API_URL):
         return None
 
 
+def obtener_stats_totales_partido(fixture_id, headers, API_URL):
+    """
+    Obtiene las estadisticas totales de un partido (suma de ambos equipos).
+    Retorna dict con: corners_total, tarjetas_total, remates_total, tiros_arco_total
+    o None si no hay datos.
+    """
+    try:
+        resp = requests.get(
+            f"{API_URL}/fixtures/statistics",
+            headers=headers,
+            params={'fixture': fixture_id},
+            timeout=10
+        )
+
+        if resp.status_code != 200:
+            return None
+
+        data = resp.json().get('response', [])
+
+        if not data or len(data) < 2:
+            return None
+
+        def get_val(stat_list, stat_type):
+            for s in stat_list:
+                if s.get('type') == stat_type:
+                    val = s.get('value')
+                    if val is None:
+                        return 0
+                    if isinstance(val, str):
+                        val = val.replace('%', '')
+                    try:
+                        return int(float(val))
+                    except (ValueError, TypeError):
+                        return 0
+            return 0
+
+        corners = 0
+        tarjetas = 0
+        remates = 0
+        tiros_arco = 0
+
+        for team_stats in data:
+            stats = team_stats.get('statistics', [])
+            corners += get_val(stats, 'Corner Kicks')
+            tarjetas += get_val(stats, 'Yellow Cards')
+            remates += get_val(stats, 'Total Shots')
+            tiros_arco += get_val(stats, 'Shots on Goal')
+
+        return {
+            'corners_total': corners,
+            'tarjetas_total': tarjetas,
+            'remates_total': remates,
+            'tiros_arco_total': tiros_arco,
+        }
+
+    except Exception as e:
+        return None
+
+
 def obtener_ultimos_partidos_equipo(team_id, team_name, league_id, season, headers, API_URL, max_partidos=50):
     """
     Obtiene los últimos N partidos jugados de un equipo con sus estadísticas.

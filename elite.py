@@ -78,7 +78,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 from analysis_models import calcular, pp
-from funciones_stats import obtener_ultimos_partidos_equipo, guardar_stats_equipo, calcular_promedios_equipo, obtener_stats_partido
+from funciones_stats import obtener_ultimos_partidos_equipo, guardar_stats_equipo, calcular_promedios_equipo, obtener_stats_partido, obtener_stats_totales_partido
 from calibration import (
     get_lambda_ajustada,
     registrar_resultado,
@@ -982,7 +982,7 @@ def calcular_resultados_partido(score_local, score_visitante):
     return resultado_real, resultado_ou_real, btts_real
 
 
-def apuesta_ganada(apuesta, pick, resultado_real, resultado_ou_real, btts_real):
+def apuesta_ganada(apuesta, pick, resultado_real, resultado_ou_real, btts_real, stats_reales=None):
     """Determina si una apuesta del bankroll fue ganada según el mercado apostado."""
     mercado = apuesta.get('mercado', '')
     if mercado == '1X2':
@@ -993,10 +993,35 @@ def apuesta_ganada(apuesta, pick, resultado_real, resultado_ou_real, btts_real):
     prediccion_btts = pick.get('prediccion_btts', '')
     if 'Si' in prediccion_btts or 'No' in prediccion_btts:
         return prediccion_btts == btts_real
+    if stats_reales:
+        if mercado == 'Corners':
+            pred = pick.get('prediccion_corners', '')
+            real = stats_reales.get('corners_total', 0)
+            return _evaluar_over_under(pred, real, 9.5)
+        if mercado == 'Tarjetas':
+            pred = pick.get('prediccion_tarjetas', '')
+            real = stats_reales.get('tarjetas_total', 0)
+            return _evaluar_over_under(pred, real, 6)
+        if mercado == 'Remates':
+            pred = pick.get('prediccion_remates', '')
+            real = stats_reales.get('remates_total', 0)
+            return _evaluar_over_under(pred, real, 24)
     return False
 
 
-def actualizar_bankroll_apuestas(client, fix_id, pick, resultado_real, resultado_ou_real, btts_real):
+def _evaluar_over_under(prediccion, real, linea_default):
+    """Evalua si un pick Over/Under acerto comparando con el valor real."""
+    if not prediccion or real is None:
+        return False
+    pred_lower = str(prediccion).lower()
+    if 'over' in pred_lower:
+        return real > linea_default
+    if 'under' in pred_lower:
+        return real < linea_default
+    return False
+
+
+def actualizar_bankroll_apuestas(client, fix_id, pick, resultado_real, resultado_ou_real, btts_real, stats_reales=None):
     """Marca apuestas del bankroll como ganadas/perdidas para un fixture."""
     apuestas = client.table('bankroll_apuestas').select('*').eq('fixture_id', fix_id).execute()
     if not apuestas.data:
@@ -1005,7 +1030,7 @@ def actualizar_bankroll_apuestas(client, fix_id, pick, resultado_real, resultado
         apuesta_id = apuesta.get('id')
         cantidad = apuesta.get('cantidad', 0)
         cuota = apuesta.get('cuota', 2.0)
-        gano = apuesta_ganada(apuesta, pick, resultado_real, resultado_ou_real, btts_real)
+        gano = apuesta_ganada(apuesta, pick, resultado_real, resultado_ou_real, btts_real, stats_reales)
         ganancia = cantidad * (cuota - 1) if gano else -cantidad
         client.table('bankroll_apuestas').update({
             'resultado': gano,
@@ -1310,6 +1335,9 @@ def sincronizar_partidos():
                                 try:
                                     resultado_real, resultado_ou_real, btts_real = calcular_resultados_partido(score_local, score_visitante)
 
+                                    # 📊 Obtener stats totales del partido (córners, tarjetas, remates)
+                                    stats_reales = obtener_stats_totales_partido(fix_id, headers, API_URL)
+
                                     # Buscar picks pendientes para este partido (por fixture_id O por nombres de equipos)
                                     picks_existentes = client.table('picks').select('*').is_('resultado_1x2', None).execute()
 
@@ -1327,7 +1355,8 @@ def sincronizar_partidos():
                                             acertado_ou = pick.get('prediccion_ou') == resultado_ou_real
                                             acertado_btts = pick.get('prediccion_btts') == btts_real
 
-                                            client.table('picks').update({
+                                            # Evaluar aciertos de córners, tarjetas, remates
+                                            update_data = {
                                                 'marcador': f"{score_local}-{score_visitante}",
                                                 'resultado_1x2': resultado_real,
                                                 'resultado_ou': resultado_ou_real,
@@ -1336,12 +1365,37 @@ def sincronizar_partidos():
                                                 'acertado_ou': acertado_ou,
                                                 'acertado_btts': acertado_btts,
                                                 'fixture_id': fix_id,
-                                            }).eq('id', pick_id).execute()
+                                            }
+
+                                            if stats_reales:
+                                                acertado_corners = _evaluar_over_under(
+                                                    pick.get('prediccion_corners', ''),
+                                                    stats_reales.get('corners_total'),
+                                                    9.5
+                                                )
+                                                acertado_tarjetas = _evaluar_over_under(
+                                                    pick.get('prediccion_tarjetas', ''),
+                                                    stats_reales.get('tarjetas_total'),
+                                                    6
+                                                )
+                                                acertado_remates = _evaluar_over_under(
+                                                    pick.get('prediccion_remates', ''),
+                                                    stats_reales.get('remates_total'),
+                                                    24
+                                                )
+                                                update_data['resultado_corners'] = str(stats_reales.get('corners_total'))
+                                                update_data['resultado_tarjetas'] = str(stats_reales.get('tarjetas_total'))
+                                                update_data['resultado_remates'] = str(stats_reales.get('remates_total'))
+                                                update_data['acertado_corners'] = acertado_corners
+                                                update_data['acertado_tarjetas'] = acertado_tarjetas
+                                                update_data['acertado_remates'] = acertado_remates
+
+                                            client.table('picks').update(update_data).eq('id', pick_id).execute()
                                             picks_actualizados_auto += 1
 
                                             # 🎰 AUTO-ACTUALIZAR BANKROLL
                                             try:
-                                                actualizar_bankroll_apuestas(client, fix_id, pick, resultado_real, resultado_ou_real, btts_real)
+                                                actualizar_bankroll_apuestas(client, fix_id, pick, resultado_real, resultado_ou_real, btts_real, stats_reales)
                                             except Exception as e:
                                                 logger.warning(f"Error actualizando bankroll fixture {fix_id}: {e}")
                                 except Exception as e:
