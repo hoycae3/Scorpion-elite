@@ -895,6 +895,51 @@ def render_login_form():
         render_vip_page()
 
 
+def calcular_resultados_partido(score_local, score_visitante):
+    """Calcula los resultados reales (1X2, O/U, BTTS) de un partido finalizado."""
+    total_goles = score_local + score_visitante
+    if score_local > score_visitante:
+        resultado_real = "1"
+    elif score_local < score_visitante:
+        resultado_real = "2"
+    else:
+        resultado_real = "X"
+    resultado_ou_real = "Over 2.5" if total_goles > 2.5 else "Under 2.5"
+    btts_real = "Si" if (score_local > 0 and score_visitante > 0) else "No"
+    return resultado_real, resultado_ou_real, btts_real
+
+
+def apuesta_ganada(apuesta, pick, resultado_real, resultado_ou_real, btts_real):
+    """Determina si una apuesta del bankroll fue ganada según el mercado apostado."""
+    mercado = apuesta.get('mercado', '')
+    if mercado == '1X2':
+        return pick.get('prediccion_1x2') == resultado_real
+    prediccion_ou = pick.get('prediccion_ou', '')
+    if 'Over' in prediccion_ou or 'Under' in prediccion_ou:
+        return prediccion_ou == resultado_ou_real
+    prediccion_btts = pick.get('prediccion_btts', '')
+    if 'Si' in prediccion_btts or 'No' in prediccion_btts:
+        return prediccion_btts == btts_real
+    return False
+
+
+def actualizar_bankroll_apuestas(client, fix_id, pick, resultado_real, resultado_ou_real, btts_real):
+    """Marca apuestas del bankroll como ganadas/perdidas para un fixture."""
+    apuestas = client.table('bankroll_apuestas').select('*').eq('fixture_id', fix_id).execute()
+    if not apuestas.data:
+        return
+    for apuesta in apuestas.data:
+        apuesta_id = apuesta.get('id')
+        cantidad = apuesta.get('cantidad', 0)
+        cuota = apuesta.get('cuota', 2.0)
+        gano = apuesta_ganada(apuesta, pick, resultado_real, resultado_ou_real, btts_real)
+        ganancia = cantidad * (cuota - 1) if gano else -cantidad
+        client.table('bankroll_apuestas').update({
+            'resultado': gano,
+            'ganancia': ganancia
+        }).eq('id', apuesta_id).execute()
+
+
 def render_partidos_page():
     st.markdown("### 📊 Partidos de los Próximos 7 Días")
 
@@ -1264,46 +1309,25 @@ def render_partidos_page():
                                     # 🎯 AUTO-ACTUALIZAR PICKS: Si el partido ya terminó (FT), calcular resultados automáticamente
                                     if estado == 'FT' and score_local is not None and score_visitante is not None:
                                         try:
-                                            total_goles = score_local + score_visitante
-
-                                            # Calcular resultado 1X2 real
-                                            if score_local > score_visitante:
-                                                resultado_real = "1"
-                                            elif score_local < score_visitante:
-                                                resultado_real = "2"
-                                            else:
-                                                resultado_real = "X"
-
-                                            # Calcular Over/Under real
-                                            resultado_ou_real = "Over 2.5" if total_goles > 2.5 else "Under 2.5"
-
-                                            # Calcular BTTS real
-                                            btts_real = "Si" if (score_local > 0 and score_visitante > 0) else "No"
+                                            resultado_real, resultado_ou_real, btts_real = calcular_resultados_partido(score_local, score_visitante)
 
                                             # Buscar picks pendientes para este partido (por fixture_id O por nombres de equipos)
                                             picks_existentes = client.table('picks').select('*').is_('resultado_1x2', None).execute()
 
-                                            picks_encontrados = []
                                             for pick in picks_existentes.data:
                                                 pick_fixture = pick.get('fixture_id', 0)
                                                 pick_local = pick.get('equipo_local', '').lower().strip()
                                                 pick_visit = pick.get('equipo_visitante', '').lower().strip()
 
                                                 # Coincide por fixture_id O por nombres de equipos
-                                                if (pick_fixture == fix_id or 
-                                                    (equipo_local.lower().strip() == pick_local and 
+                                                if (pick_fixture == fix_id or
+                                                    (equipo_local.lower().strip() == pick_local and
                                                      equipo_visitante.lower().strip() == pick_visit)):
-                                                    picks_encontrados.append(pick)
-
-                                            if picks_encontrados:
-                                                for pick in picks_encontrados:
                                                     pick_id = pick.get('id')
-                                                    # Verificar aciertos
                                                     acertado_1x2 = pick.get('prediccion_1x2') == resultado_real
                                                     acertado_ou = pick.get('prediccion_ou') == resultado_ou_real
                                                     acertado_btts = pick.get('prediccion_btts') == btts_real
 
-                                                    # Actualizar pick con resultados calculados
                                                     client.table('picks').update({
                                                         'marcador': f"{score_local}-{score_visitante}",
                                                         'resultado_1x2': resultado_real,
@@ -1312,42 +1336,17 @@ def render_partidos_page():
                                                         'acertado_1x2': acertado_1x2,
                                                         'acertado_ou': acertado_ou,
                                                         'acertado_btts': acertado_btts,
-                                                        'fixture_id': fix_id,  # Actualizar fixture_id si estaba vacío
+                                                        'fixture_id': fix_id,
                                                     }).eq('id', pick_id).execute()
                                                     picks_actualizados_auto += 1
 
-                                                    # 🎰 AUTO-ACTUALIZAR BANKROLL: Marcar apuesta como Ganada/Perdida
+                                                    # 🎰 AUTO-ACTUALIZAR BANKROLL
                                                     try:
-                                                        apuestas = client.table('bankroll_apuestas').select('*').eq('fixture_id', fix_id).execute()
-                                                        if apuestas.data:
-                                                            pick_para_apuesta = pick.get('prediccion_1x2') or pick.get('prediccion_ou') or pick.get('prediccion_btts') or 'Over'
-
-                                                            for apuesta in apuestas.data:
-                                                                apuesta_id = apuesta.get('id')
-                                                                cantidad = apuesta.get('cantidad', 0)
-                                                                cuota = apuesta.get('cuota', 2.0)
-
-                                                                # Determinar si ganó según el mercado apostado
-                                                                gano = False
-                                                                mercado = apuesta.get('mercado', '')
-                                                                if mercado == '1X2':
-                                                                    gano = pick.get('prediccion_1x2') == resultado_real
-                                                                elif 'Over' in pick.get('prediccion_ou', '') or 'Under' in pick.get('prediccion_ou', ''):
-                                                                    gano = pick.get('prediccion_ou') == resultado_ou_real
-                                                                elif 'Si' in pick.get('prediccion_btts', '') or 'No' in pick.get('prediccion_btts', ''):
-                                                                    gano = pick.get('prediccion_btts') == btts_real
-
-                                                                resultado_apuesta = True if gano else False
-                                                                ganancia = cantidad * (cuota - 1) if gano else -cantidad
-
-                                                                client.table('bankroll_apuestas').update({
-                                                                    'resultado': resultado_apuesta,
-                                                                    'ganancia': ganancia
-                                                                }).eq('id', apuesta_id).execute()
-                                                    except Exception:
-                                                        pass  # Si no hay bankroll, continuar
+                                                        actualizar_bankroll_apuestas(client, fix_id, pick, resultado_real, resultado_ou_real, btts_real)
+                                                    except Exception as e:
+                                                        logger.warning(f"Error actualizando bankroll fixture {fix_id}: {e}")
                                         except Exception as e:
-                                            pass  # Silencioso, no mostrar error por cada pick
+                                            logger.warning(f"Error auto-actualizando picks fixture {fix_id}: {e}")
                     except Exception as e:
                         # Si falla una liga, continuar con la siguiente
                         continue
