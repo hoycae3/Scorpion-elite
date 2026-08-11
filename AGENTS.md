@@ -1669,3 +1669,43 @@ La BD tiene lambda_local y lambda_visitante separados, pero lambda_visitante est
 
 ### Commit
 - 61c5734: feat: Recalcular lambdas local/visitante desde historial
+
+
+---
+
+## RESUMEN SESION 2026-08-07 - TODOS LOS CAMBIOS
+
+### Bugs Corregidos
+
+| Commit | Descripcion |
+|--------|------------|
+| b230e60 | fix: lambda_visitante usa lambda_local |
+| 16691fb | fix: Eliminar 52 lineas codigo duplicado |
+| 61c5734 | feat: Nueva funcion recalcular_lambdas_desde_historial() |
+
+### Nueva Funcionalidad
+
+| Componente | Descripcion |
+|------------|------------|
+| Funcion | recalcular_lambdas_desde_historial() - linea 160 |
+| Boton | 🔄 Recalcular Lambdas en Pagina Carga |
+| Script SQL | recalcular_lambdas.sql |
+
+### Como Usar
+
+1. Deploy a produccion (automático)
+2. Ve a Pagina Carga
+3. Click en 🔄 Recalcular Lambdas
+4. Los lambdas se corregiran automaticamente
+
+### Base de Datos
+
+Tablas utilizadas:
+- equipos_stats: lambda_local, lambda_visitante
+- equipo_partidos_stats: goles_favor, es_local
+
+Flujo de calculo:
+lambda_local = SUM(goles_favor) WHERE es_local=true / COUNT(es_local=true)
+lambda_visitante = SUM(goles_favor) WHERE es_local=false / COUNT(es_local=false)
+
+### Estado: ✅ PRODUCCION
