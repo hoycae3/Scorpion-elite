@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 import os
 
-# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
-# 📋 SISTEMA DE DISEГ'O - COLORES Y ESTILOS
-# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+# ══════════════════════════════════════════════════════════
+# 📋 SISTEMA DE DISEÑO - COLORES Y ESTILOS
+# ══════════════════════════════════════════════════════════
 # Colores principales (coinciden con styles.css)
 COLORS = {
     'victoria': '#22c55e',     # Verde éxito
@@ -109,9 +109,9 @@ def get_partidos_cache():
 
 st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
 
-# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+# ══════════════════════════════════════════════════════════
 # CONFIGURACION - Variables de entorno
-# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+# ══════════════════════════════════════════════════════════
 # Las variables se cargan desde .env (desarrollo) o Render Dashboard (producción)
 
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
@@ -121,18 +121,18 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 # Valores por defecto SOLO para desarrollo local (NO usar en producción)
 # En producción, estas variables DEBEN estar configuradas en el Dashboard de Render
 if not ADMIN_PASSWORD:
-    raise ValueError("❌ ADMIN_PASSWORD no está configurada. ConfigГәrala en variables de entorno.")
+    raise ValueError("❌ ADMIN_PASSWORD no está configurada. Configúrala en variables de entorno.")
 if not SUPABASE_URL:
-    raise ValueError("❌ SUPABASE_URL no está configurada. ConfigГәrala en variables de entorno.")
+    raise ValueError("❌ SUPABASE_URL no está configurada. Configúrala en variables de entorno.")
 if not SUPABASE_KEY:
-    raise ValueError("❌ SUPABASE_KEY no está configurada. ConfigГәrala en variables de entorno.")
+    raise ValueError("❌ SUPABASE_KEY no está configurada. Configúrala en variables de entorno.")
 
 # Base de datos persistente en el directorio de la aplicación
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+# ══════════════════════════════════════════════════════════
 # CLIENTE SUPABASE UNIFICADO con @st.cache_resource
-# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+# ══════════════════════════════════════════════════════════
 @st.cache_resource
 def get_supabase_client():
     """Crea y cachea el cliente de Supabase - se reutiliza en toda la app"""
@@ -282,9 +282,9 @@ def migrate_team_id_column():
     except Exception as e:
         logger.warning(f"Migration error: {e}")
 
-# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+# ══════════════════════════════════════════════════════════
 # SISTEMA DE USUARIOS (Supabase) - Solo hash bcrypt
-# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+# ══════════════════════════════════════════════════════════
 
 def hash_password(password: str) -> str:
     """Genera hash bcrypt con salt automático"""
@@ -416,7 +416,7 @@ if "page" not in st.session_state:
 if "show_login" not in st.session_state:
     st.session_state.show_login = False
 def render_public_landing():
-    """Renderiza la landing page pГәblica para usuarios no autenticados"""
+    """Renderiza la landing page pública para usuarios no autenticados"""
     
     # --- HERO SECTION ---
     st.markdown("""
@@ -465,7 +465,7 @@ def render_public_landing():
             pct_aciertos = round(aciertos/total_picks*100, 1) if total_picks > 0 else 0
             yield_pct = round(total_yield/aciertos, 1) if aciertos > 0 else 0
             
-            # Obtener nГәmero de equipos con stats
+            # Obtener número de equipos con stats
             equipos_response = client.table('equipos_stats').select('*').execute()
             total_equipos = len(equipos_response.data) if equipos_response.data else 0
         else:
@@ -526,7 +526,7 @@ def render_public_landing():
     partidos = st.session_state.get(cache_key, [])
 
     if st.session_state.preview_partido:
-        # MOSTRAR ANГҒLISIS DEL PARTIDO SELECCIONADO
+        # MOSTRAR ANÁLISIS DEL PARTIDO SELECCIONADO
         partido = st.session_state.preview_partido
         local = partido.get('equipo_local', 'Local')
         visitante = partido.get('equipo_visitante', 'Visitante')
@@ -538,7 +538,7 @@ def render_public_landing():
             st.caption(f"🏆 {liga}")
         
         # Botón para volver
-        if st.button("↩️җ Volver", key="volver_partidos"):
+        if st.button("↩️ Volver", key="volver_partidos"):
             st.session_state.preview_partido = None
             pass
         
@@ -551,14 +551,14 @@ def render_public_landing():
             team_id_visitante = partido.get('team_id_visitante')
             
             if client:
-                # 1пёҸвғЈ Buscar por nombre
+                # 1️⃣ Buscar por nombre
                 local_resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{local}%').execute()
                 visit_resp = client.table('equipos_stats').select('*').ilike('equipo', f'%{visitante}%').execute()
 
                 stats_local = local_resp.data[0] if local_resp.data else None
                 stats_visit = visit_resp.data[0] if visit_resp.data else None
 
-                # 2пёҸвғЈ Fallback: buscar por team_id si no se encontró por nombre
+                # 2️⃣ Fallback: buscar por team_id si no se encontró por nombre
                 if not stats_local and team_id_local:
                     resp_by_id = client.table('equipos_stats').select('*').eq('team_id', team_id_local).execute()
                     if resp_by_id.data:
@@ -619,7 +619,7 @@ def render_public_landing():
                         lambda_l = promedios_dinamicos_local.get('lambda_ponderado', stats_local.get('lambda_local', 0)) if promedios_dinamicos_local else stats_local.get('lambda_local', 0)
                         st.markdown(f"**Ataque:** <span style='color:black;font-weight:bold'>{lambda_l:.2f}</span> goles/partido", unsafe_allow_html=True)
                     with col2:
-                        st.markdown(f"**вңҲпёҸ {visitante}**")
+                        st.markdown(f"**✈️ {visitante}**")
                         forma_v = stats_visit.get('forma', 'N/A')
                         if forma_v and forma_v != 'N/A':
                             forma_html = ''.join([{'W': '<span class="se-result-w">W</span>', 'L': '<span class="se-result-l">L</span>', 'D': '<span class="se-result-d">D</span>'}.get(c, c) for c in str(forma_v)])
@@ -720,7 +720,7 @@ def render_public_landing():
             st.info("⚽ No hay partidos disponibles.")
 
     # --- CÓMO FUNCIONA ---
-    st.markdown("### 📤 ВҝCómo Funciona?")
+    st.markdown("### 📤 ¿Cómo Funciona?")
     st.markdown("*El analizador usa 4 modelos matemáticos para predecir resultados*")
 
     modelos_col1, modelos_col2 = st.columns(2)
@@ -756,14 +756,14 @@ def render_public_landing():
             <td>Pase 1 Semana</td>
         </tr>
         <tr class="popular">
-            <td class="se-duration">30 Días <span class="se-badge se-badge-hot">MГҒS POPULAR 📘</span></td>
+            <td class="se-duration">30 Días <span class="se-badge se-badge-hot">MÁS POPULAR 📘</span></td>
             <td class="se-price">$24.99</td>
             <td>Plan 1 Mes</td>
         </tr>
         <tr>
             <td class="se-duration">365 Días <span class="se-badge se-badge-success">AHORRA 36%</span></td>
             <td class="se-price">$189.99</td>
-            <td>Plan 1 AГұo</td>
+            <td>Plan 1 Año</td>
         </tr>
     </table>
     """, unsafe_allow_html=True)
@@ -778,9 +778,9 @@ def render_public_landing():
     </div>
     """, unsafe_allow_html=True)
 
-# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
-# SISTEMA DE LOGIN - Solo contraseГұa
-# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+# ══════════════════════════════════════════════════════════
+# SISTEMA DE LOGIN - Solo contraseña
+# ══════════════════════════════════════════════════════════
 
 def render_login_form():
     # ===== INICIALIZAR SESSION_STATE =====
@@ -800,7 +800,7 @@ def render_login_form():
         st.session_state.user_data = None
     # ===== FIN INICIALIZACION =====
 
-    """Renderiza el formulario de login con solo contraseГұa"""
+    """Renderiza el formulario de login con solo contraseña"""
     
     # Toggle para mostrar/ocultar login
     # Si no está logueado
@@ -815,13 +815,13 @@ def render_login_form():
         st.markdown("---")
         st.markdown("### 🔑 Iniciar Sesión")
 
-        password = st.text_input("ContraseГұa", type="password", placeholder="Ingresa tu contraseГұa", key="login_password")
+        password = st.text_input("Contraseña", type="password", placeholder="Ingresa tu contraseña", key="login_password")
 
         col_login, col_cancel = st.columns([1, 1])
         with col_login:
             if st.button("✅ Entrar", use_container_width=True, type="primary"):
                 if not password.strip():
-                    st.error("⚠️ Ingresa la contraseГұa")
+                    st.error("⚠️ Ingresa la contraseña")
                 else:
                     user = db_login(password)
                     if user:
@@ -831,10 +831,10 @@ def render_login_form():
                         st.session_state.show_login = False
                         st.rerun()  # Recargar después de login
                     else:
-                        st.error("❌ ContraseГұa incorrecta")
+                        st.error("❌ Contraseña incorrecta")
 
         with col_cancel:
-            if st.button("↩️җ Volver", use_container_width=True):
+            if st.button("↩️ Volver", use_container_width=True):
                 st.session_state.show_login = False
                 pass
 
@@ -847,10 +847,10 @@ def render_login_form():
         dias = st.session_state.user_data.get('dias', 0) if st.session_state.user_data else 0
         is_admin = st.session_state.user_data.get('es_admin', 0) == 1 if st.session_state.user_data else False
         
-        plan_icon = {"admin": "⚡пёҸ", "elite": "👑", "vip": "👑", "mes": "👑", "free": "⭐"}.get(user_plan, "🦂")
+        plan_icon = {"admin": "⚡️", "elite": "👑", "vip": "👑", "mes": "👑", "free": "⭐"}.get(user_plan, "🦂")
         st.markdown(f"{plan_icon} **{user_plan.upper()}**")
         if not is_admin:
-            st.caption(f"вҸұпёҸ {dias} días restantes")
+            st.caption(f"⏱️ {dias} días restantes")
         
         st.markdown("---")
         if st.button("👑 Logout", use_container_width=True):
@@ -859,10 +859,10 @@ def render_login_form():
             st.session_state.is_admin = False
             pass
     
-    # MenГә horizontal arriba - ж №жҚ®з"ЁжҲ·зұ»еһӢжҳҫзӨә
+    # Menú horizontal arriba - según tipo de usuario
     st.markdown('<h1 class="title">🦂 Scorpion Elite</h1>', unsafe_allow_html=True)
     
-    # Construir menГә dinámicamente segГәn tipo de usuario
+    # Construir menú dinámicamente según tipo de usuario
     # VIP va de primeras y es la página por defecto
     if is_admin:
         # Admin: ve todo
@@ -939,24 +939,24 @@ def render_login_form():
         # API-Football config
         API_KEY = os.getenv("API_FOOTBALL_KEY", "")
         if not API_KEY:
-            st.error("❌ API_FOOTBALL_KEY no configurada. ConfigГәrala en Render.")
+            st.error("❌ API_FOOTBALL_KEY no configurada. Configúrala en Render.")
             st.stop()
         API_URL = "https://v3.football.api-sports.io"
         
-                # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+                # ═══════════════════════════════════════════════════════════════
         # LISTA DE LIGAS - TODAS CON IDS CORRECTOS
-        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+        # ═══════════════════════════════════════════════════════════════
         
-        # вҳ… DEBUG: Probar solo Argentina
+        # ★ DEBUG: Probar solo Argentina
         LIGAS = [{"id": 128, "name": "Liga Profesional Argentina", "pais": "Argentina"}]
         
         # Contador de requests
         if 'api_requests_today' not in st.session_state:
             st.session_state.api_requests_today = 0
         
-        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+        # ═══════════════════════════════════════════════════════════════
         # BOTONES BUSCAR Y LIMPIAR
-        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+        # ═══════════════════════════════════════════════════════════════
         col_btn1, col_btn2, col_btn3, col_btn4, col_info = st.columns([1, 1, 1, 1, 2])
         
         with col_btn1:
@@ -990,9 +990,9 @@ def render_login_form():
                     # Migrar columna team_id si no existe
                     migrate_team_id_column()
                     
-                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+                    # ═══════════════════════════════════════════════════════════════
                     # CONFIGURACIÓN INICIAL
-                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+                    # ═══════════════════════════════════════════════════════════════
                     client = get_client()
                     if not client:
                         st.error("❌ No se pudo conectar a Supabase")
@@ -1010,9 +1010,9 @@ def render_login_form():
                     season_stats = season
                     st.markdown(f"⚽ **Temporada partidos:** {season} | **Temporada stats:** {season_stats}")
 
-                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
-                    # PASO 1: DESCARGAR PARTIDOS (SIN ESTADГҚSTICAS DE EQUIPOS)
-                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+                    # ═══════════════════════════════════════════════════════════════
+                    # PASO 1: DESCARGAR PARTIDOS (SIN ESTADÍSTICAS DE EQUIPOS)
+                    # ═══════════════════════════════════════════════════════════════
                     # Obtener partidos existentes para evitar duplicados
                     partidos_existentes = set()
                     fecha_max_db = None
@@ -1027,22 +1027,22 @@ def render_login_form():
                     except Exception as e:
                         pass
                     
-                    # вҡҪ LГ“GICA INTELIGENTE:
-                    # 1. Base vacГ­a: Descargar HOY a HOY+6
-                    # 2. Base con datos: Descargar HOY-1 (resultados) + siguiente dГ­a de Гєltima fecha FUTURA
+                    # ⚽ LÓGICA INTELIGENTE:
+                    # 1. Base vacía: Descargar HOY a HOY+6
+                    # 2. Base con datos: Descargar HOY-1 (resultados) + siguiente día de última fecha FUTURA
                     
                     ayer_date = hoy - timedelta(days=1)
                     ayer = ayer_date.strftime('%Y-%m-%d')
                     
                     try:
-                        # Obtener todas las fechas Гєnicas en la base
+                        # Obtener todas las fechas únicas en la base
                         resp_fechas = client.table('partidos').select('fecha').execute()
                         
                         if not resp_fechas.data:
-                            # Base vacГ­a в†’ descargar ventana completa
+                            # Base vacía → descargar ventana completa
                             fecha_inicio = hoy_str
                             fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
-                            modo_sync = "вҳ• Completa (base vacГ­a)"
+                            modo_sync = "☕ Completa (base vacía)"
                         else:
                             # Analizar fechas existentes
                             fechas_futuras = []
@@ -1058,24 +1058,24 @@ def render_login_form():
                             fecha_inicio = ayer
                             
                             if fechas_futuras:
-                                # Ya hay fechas futuras в†’ buscar la Гєltima y descargar el siguiente
+                                # Ya hay fechas futuras → buscar la última y descargar el siguiente
                                 ultima_futura = max(fechas_futuras)
                                 siguiente_dia = (ultima_futura + timedelta(days=1)).strftime('%Y-%m-%d')
                                 fecha_fin = siguiente_dia
-                                modo_sync = f"вҳ” Incremental (Гєltima futura: {ultima_futura.strftime('%d/%m')})"
+                                modo_sync = f"☔ Incremental (última futura: {ultima_futura.strftime('%d/%m')})"
                             else:
-                                # No hay fechas futuras в†’ descargar HOY+1
+                                # No hay fechas futuras → descargar HOY+1
                                 fecha_fin = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
-                                modo_sync = "вҳ” Actualizar"
+                                modo_sync = "☔ Actualizar"
                                 
                     except Exception as e:
                         # Si hay error, descargar ventana completa por seguridad
                         fecha_inicio = hoy_str
                         fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
-                        modo_sync = "вҳ• Completa (fallback)"
-                        st.warning(f"вҡҪ Error: {e}")
+                        modo_sync = "☕ Completa (fallback)"
+                        st.warning(f"⚽ Error: {e}")
                     
-                    st.markdown(f"{modo_sync} вҡҪ Rango: **{fecha_inicio}** al **{fecha_fin}**")
+                    st.markdown(f"{modo_sync} ⚽ Rango: **{fecha_inicio}** al **{fecha_fin}**")
                     
                     # ✅ MODO PRODUCCIÓN - Todas las ligas
                     LIGAS = [
@@ -1140,10 +1140,10 @@ def render_login_form():
                     ligas_procesadas = 0
                     partidos_guardados = 0
                     
-                    # Colección de equipos Гәnicos: {team_id: {team_id, team_name, league_id, league_name, season}}
+                    # Colección de equipos únicos: {team_id: {team_id, team_name, league_id, league_name, season}}
                     equipos_unicos = {}
                     
-                    # вҳ… NUEVO: Diccionario para rastrear partidos FT completados por equipo
+                    # ★ NUEVO: Diccionario para rastrear partidos FT completados por equipo
                     # {team_id: [(fixture_id, fecha, es_local, resultado, gf, gc), ...]}
                     equipos_ft_fixtures = {}
                     
@@ -1192,7 +1192,7 @@ def render_login_form():
                                     score_local = score.get('fulltime', {}).get('home') if score.get('fulltime') else goals.get('home') or 0
                                     score_visitante = score.get('fulltime', {}).get('away') if score.get('fulltime') else goals.get('away') or 0
                                     
-                                    # вҳ… CORREGIDO: SIEMPRE agregar equipos a equipos_unicos para actualizar stats
+                                    # ★ CORREGIDO: SIEMPRE agregar equipos a equipos_unicos para actualizar stats
                                     # Independientemente de si el partido es nuevo o existente
                                     if team_id_local:
                                         equipos_unicos[team_id_local] = {
@@ -1212,7 +1212,7 @@ def render_login_form():
                                             'season': season_stats
                                         }
                                     
-                                    # вҳ… NUEVO: Rastrear partidos FT (terminados) para sincronización incremental
+                                    # ★ NUEVO: Rastrear partidos FT (terminados) para sincronización incremental
                                     if estado == 'FT' and fix_id:
                                         fecha_partido = fix.get('date', '')[:10]
                                         resultado_local = 'W' if (score_local > score_visitante) else ('D' if score_local == score_visitante else 'L')
@@ -1363,12 +1363,12 @@ def render_login_form():
                             # Si falla una liga, continuar con la siguiente
                             continue
                     
-                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
-                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+                    # ═══════════════════════════════════════════════════════════════
+                    # ═══════════════════════════════════════════════════════════════
                     # PASO 2: SINCRONIZACIÓN INCREMENTAL DE STATS DE EQUIPOS
                     # - Equipos NUEVOS (0 records): Fetch 5 partidos iniciales
                     # - Equipos EXISTENTES: Solo fetch partidos FT nuevos no guardados
-                    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+                    # ═══════════════════════════════════════════════════════════════
                     
                     equipos_stats_descargados = 0
                     equipos_nuevos = 0
@@ -1377,7 +1377,7 @@ def render_login_form():
                     errores_equipos = 0
                     partidos_iniciales_cargados = 0
                     picks_actualizados_auto = 0  # Contador de picks auto-actualizados
-                    api_calls_ahorradas = 0  # вҳ… API calls evitadas por filtrado de FT ya guardados
+                    api_calls_ahorradas = 0  # ★ API calls evitadas por filtrado de FT ya guardados
                     
                     if equipos_unicos:
                         
@@ -1400,7 +1400,7 @@ def render_login_form():
                             
                             is_new_team = team_id not in equipos_existentes_ids
 
-                            # вҳ… CASO A: EQUIPO NUEVO (0 records en DB)
+                            # ★ CASO A: EQUIPO NUEVO (0 records en DB)
                             if is_new_team:
                                 equipos_nuevos += 1
                                 try:
@@ -1461,7 +1461,7 @@ def render_login_form():
                                             except Exception as e:
                                                 errores_equipos += 1
                                     
-                                    # вҳ… Fetch 5 partidos iniciales para equipo nuevo
+                                    # ★ Fetch 5 partidos iniciales para equipo nuevo
                                     partidos_iniciales = obtener_ultimos_partidos_equipo(
                                         team_id=team_id,
                                         team_name=team_name,
@@ -1480,12 +1480,12 @@ def render_login_form():
                                 except Exception as e:
                                     errores_equipos += 1
                             
-                            # вҳ… CASO B: EQUIPO EXISTENTE (ya tiene records en DB)
+                            # ★ CASO B: EQUIPO EXISTENTE (ya tiene records en DB)
                             else:
                                 equipos_existentes += 1
                                 ft_en_ventana = equipos_ft_fixtures.get(team_id, [])
 
-                                # вҳ… OPTIMIZACIÓN: Filtrar FT ya guardados ANTES de buscar más
+                                # ★ OPTIMIZACIÓN: Filtrar FT ya guardados ANTES de buscar más
                                 # Solo para equipos existentes (ya tienen registros)
                                 fixtures_guardados = set()
                                 try:
@@ -1504,7 +1504,7 @@ def render_login_form():
                                     ]
                                     api_calls_ahorradas += (antes - len(ft_en_ventana))
 
-                                # вҳ… Solo buscar más FT si faltan por guardar
+                                # ★ Solo buscar más FT si faltan por guardar
                                 # Antes buscaba siempre; ahora solo si no hay FT pendientes en ventana
                                 if not ft_en_ventana:
                                     try:
@@ -1527,7 +1527,7 @@ def render_login_form():
                                                 for fix in data_last["response"]:
                                                     f2 = fix.get("fixture", {})
                                                     fix_id = f2.get("id")
-                                                    # вҳ… OPTIMIZACIÓN: saltar FT ya guardados
+                                                    # ★ OPTIMIZACIÓN: saltar FT ya guardados
                                                     if fix_id in fixtures_guardados:
                                                         api_calls_ahorradas += 1
                                                         continue
@@ -1551,7 +1551,7 @@ def render_login_form():
                                     except Exception as e:
                                         st.warning(f"⚠️ Error buscando FT de {team_name}: {e}")
 
-                                # вҳ… Si tras todo lo anterior no hay FT pendientes, saltar (0 API calls)
+                                # ★ Si tras todo lo anterior no hay FT pendientes, saltar (0 API calls)
                                 if ft_en_ventana:
                                     for fix_info in ft_en_ventana:
                                         try:
@@ -1645,7 +1645,7 @@ def render_login_form():
                         client.table('equipo_partidos_stats').delete().neq('equipo', '').execute()
                         st.session_state.limpieza_equipos_ok = True
                     else:
-                        st.info("ℹ️пёҸ No hay datos para limpiar")
+                        st.info("ℹ️️ No hay datos para limpiar")
                 except Exception as e:
                     st.error(f"❌ Error: {e}")
 
@@ -1654,9 +1654,9 @@ def render_login_form():
             st.success(f"✅ Equipos limpiados correctamente")
             st.session_state.limpieza_equipos_ok = False
 
-        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+        # ═══════════════════════════════════════════════════════════════
         # RECALCULAR LAMBDAS: Corrige lambda_local y lambda_visitante desde historial
-        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+        # ═══════════════════════════════════════════════════════════════
         with col_btn4:
             if st.button("🔄 Recalcular Lambdas", type="secondary", use_container_width=True):
                 client = get_client()
@@ -1667,9 +1667,9 @@ def render_login_form():
                         if actualizados > 0:
                             st.success(f"✅ {actualizados} equipos actualizados correctamente")
 
-        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
-        # LIMPIEZA: Eliminar partidos de más de 1 aГұo SOLO si hay partidos nuevos
-        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+        # ═══════════════════════════════════════════════════════════════
+        # LIMPIEZA: Eliminar partidos de más de 1 año SOLO si hay partidos nuevos
+        # ═══════════════════════════════════════════════════════════════
         if st.session_state.get('sincronizacion_ok') and st.session_state.get('partidos_nuevos_guardados', 0) > 0:
             st.session_state.sincronizacion_ok = False
             st.session_state.partidos_nuevos_guardados = 0
@@ -1679,16 +1679,16 @@ def render_login_form():
                 resp_del = client.table('partidos').delete().lt('fecha', fecha_limite).execute()
                 eliminados = len(resp_del.data) if resp_del.data else 0
                 if eliminados > 0:
-                    st.info(f"🗑️ {eliminados} partidos de más de 1 aГұo eliminados")
+                    st.info(f"🗑️ {eliminados} partidos de más de 1 año eliminados")
             except Exception as e:
                 pass
 
         with col_info:
             st.markdown(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 🔻 Requests: {st.session_state.api_requests_today}/999")
         
-        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
-        # MOSTRAR PARTIDOS (AGRUPADOS POR PAГҚS, HORA COLOMBIANA)
-        # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+        # ═══════════════════════════════════════════════════════════════
+        # MOSTRAR PARTIDOS (AGRUPADOS POR PAÍS, HORA COLOMBIANA)
+        # ═══════════════════════════════════════════════════════════════
         try:
             client = get_client()
             response = client.table('partidos').select('*').execute()
@@ -1991,7 +1991,7 @@ def render_login_form():
             with col1:
                 home_team = st.selectbox("📊 Local", [""] + equipos_disponibles, key="home_select")
             with col2:
-                away_team = st.selectbox("вңҲпёҸ Visitante", [""] + equipos_disponibles, key="away_select")
+                away_team = st.selectbox("✈️ Visitante", [""] + equipos_disponibles, key="away_select")
         
         # Validar que ambos equipos tengan DATOS REALES en Supabase
         lambda_local = None
@@ -2102,7 +2102,7 @@ def render_login_form():
                         lambda_local_cal = lambda_local_final
                         lambda_visitante_cal = lambda_visit_final
                         
-                        # вҳ… USAR PROMEDIOS DINГҒMICOS si están disponibles
+                        # ★ USAR PROMEDIOS DINÁMICOS si están disponibles
                         if promedios_dinamicos_local:
                             corners_l = promedios_dinamicos_local.get('promedio_corners', 5.5)
                             tiros_l = promedios_dinamicos_local.get('promedio_tiros', 13.0)
@@ -2131,7 +2131,7 @@ def render_login_form():
                             amarillas_v = 2.5
                             partidos_total_v = 0
                         
-                        # вҳ… OBTENER ГҡLTIMOS 5 PARTIDOS de equipo_partidos_stats
+                        # ★ OBTENER ÚLTIMOS 5 PARTIDOS de equipo_partidos_stats
                         ultimos_5_local = []
                         ultimos_5_visitante = []
                         
@@ -2223,7 +2223,7 @@ def render_login_form():
             st.markdown("---")
             
             # ========================
-            # ESTADГҚSTICAS AVANZADAS DEL ROBOT
+            # ESTADÍSTICAS AVANZADAS DEL ROBOT
             # ========================
             stats_local = st.session_state.get('stats_local', {})
             stats_visitante = st.session_state.get('stats_visitante', {})
@@ -2259,7 +2259,7 @@ def render_login_form():
                 
                 st.caption("⚡ Lambda: 60% dinámico (últimos partidos) + 40% histórico")
                 
-                # вҳ… USAR PROMEDIOS DINГҒMICOS si están disponibles (ponderación exponencial)
+                # ★ USAR PROMEDIOS DINÁMICOS si están disponibles (ponderación exponencial)
                 if promedios_dinamicos_local:
                     prom_corners_l = promedios_dinamicos_local.get('promedio_corners', 5.5)
                     prom_amarillas_l = promedios_dinamicos_local.get('promedio_amarillas', 3.0)
@@ -2321,7 +2321,7 @@ def render_login_form():
                     lambda_visit_final = lambda_historico_visit
                     lambda_dinamico_visit = None
                 
-                # вҳ… INFO DINГҒMICA: Obtener datos de partidos acumulados
+                # ★ INFO DINÁMICA: Obtener datos de partidos acumulados
                 partidos_acum_l = r.get('partidos_acumulados_local', 0)
                 partidos_acum_v = r.get('partidos_acumulados_visitante', 0)
                 pj_l_display = partidos_acum_l if partidos_acum_l > 0 else pj_l
@@ -2888,7 +2888,7 @@ def render_login_form():
                                         else:
                                             value, prob_imp = calcular_value(33, valor)
                                         
-                                        # Color segГәn VALUE
+                                        # Color según VALUE
                                         if value > 5:
                                             value_color = "🔴"
                                             value_text = f"+{value:.1f}%"
@@ -2899,7 +2899,7 @@ def render_login_form():
                                             value_color = "🔽"
                                             value_text = f"{value:.1f}%"
                                         
-                                        label = f"{'📊 Local' if 'Home' in opcion or '1' in opcion else ('⚖️ Empate' if 'Draw' in opcion or 'X' in opcion else 'вңҲпёҸ Visita')}"
+                                        label = f"{'📊 Local' if 'Home' in opcion or '1' in opcion else ('⚖️ Empate' if 'Draw' in opcion or 'X' in opcion else '✈️ Visita')}"
                                         st.metric(f"{label}", f"@ {valor:.2f}", f"{value_color} {value_text} VALUE")
                         
                         # Mostrar BTTS con VALUE
@@ -3009,50 +3009,50 @@ def render_login_form():
     
     # Página: Estadísticas
     elif st.session_state.page == "Claves":
-        st.markdown("### 👑 Gestión de ContraseГұas")
+        st.markdown("### 👑 Gestión de Contraseñas")
         
         # Tabs
-        tab_crear, tab_gestionar = st.tabs(["➕ Crear ContraseГұa", "📋 Ver ContraseГұas"])
+        tab_crear, tab_gestionar = st.tabs(["➕ Crear Contraseña", "📋 Ver Contraseñas"])
         
         # ========== TAB: CREAR ==========
         with tab_crear:
-            st.markdown("#### ➕ Crear Nueva ContraseГұa de Acceso")
+            st.markdown("#### ➕ Crear Nueva Contraseña de Acceso")
             
             with st.form("form_crear_clave", clear_on_submit=True):
                 col_nom, col_plan = st.columns(2)
                 with col_nom:
-                    nombre = st.text_input("қ Nombre / Cliente", placeholder="Ej: Juan, Carlos VIP").strip()
+                    nombre = st.text_input("Nombre / Cliente", placeholder="Ej: Juan, Carlos VIP").strip()
                 with col_plan:
                     plan = st.selectbox("🦂 Plan", ["semana", "mes", "elite", "vip"])
                 
-                nueva_clave = st.text_input("🔑 Nueva ContraseГұa", placeholder="Escribe la contraseГұa Гәnica").strip()
+                nueva_clave = st.text_input("🔑 Nueva Contraseña", placeholder="Escribe la contraseña única").strip()
                 
                 dias_opciones = {"semana": 7, "mes": 30, "elite": 90, "vip": 90}
                 dias = dias_opciones.get(plan, 30)
                 
                 col_info, col_btn = st.columns([2, 1])
                 with col_info:
-                    plan_icon = {"semana": "📦", "mes": "👑", "elite": "📘", "vip": "вӯҗ"}
+                    plan_icon = {"semana": "📦", "mes": "👑", "elite": "📘", "vip": "⭐"}
                     st.info(f"{plan_icon.get(plan, '🦂')} Plan: {plan.upper()} - {dias} días")
                 
-                submitted = st.form_submit_button("✅ Crear ContraseГұa", use_container_width=True, type="primary")
+                submitted = st.form_submit_button("✅ Crear Contraseña", use_container_width=True, type="primary")
                 
                 if submitted:
                     if not nombre.strip():
                         st.error("⚠️ Ingresa un nombre")
                     elif not nueva_clave.strip():
-                        st.error("⚠️ Ingresa una contraseГұa")
+                        st.error("⚠️ Ingresa una contraseña")
                     elif len(nueva_clave) < 4:
-                        st.error("⚠️ La contraseГұa debe tener al menos 4 caracteres")
+                        st.error("⚠️ La contraseña debe tener al menos 4 caracteres")
                     else:
                         # Todos los planes son VIP (semana, mes, elite, vip)
                         plan_asignar = "elite"
                         success = db_crear_usuario(nueva_clave.strip(), nombre.strip(), plan_asignar, dias)
                         if success:
-                            st.success(f"✅ ContraseГұa '{nueva_clave}' creada para {nombre} - Plan {plan.upper()}")
+                            st.success(f"✅ Contraseña '{nueva_clave}' creada para {nombre} - Plan {plan.upper()}")
                             st.balloons()
                         else:
-                            st.error("❌ Esta contraseГұa ya existe. Usa otra.")
+                            st.error("❌ Esta contraseña ya existe. Usa otra.")
             
             st.markdown("---")
             st.markdown("##### 📋 Planes")
@@ -3064,7 +3064,7 @@ def render_login_form():
         
         # ========== TAB: GESTIONAR ==========
         with tab_gestionar:
-            st.markdown("#### 📋 ContraseГұas Creadas")
+            st.markdown("#### 📋 Contraseñas Creadas")
             
             # Botón recargar
             if st.button("🔄 Recargar Lista"):
@@ -3072,7 +3072,7 @@ def render_login_form():
             usuarios = db_todos()
             
             if not usuarios:
-                st.info("⚽ No hay contraseГұas creadas. Crea una en la pestaГұa de arriba.")
+                st.info("⚽ No hay contraseñas creadas. Crea una en la pestaña de arriba.")
             else:
                 col_total, col_vip, col_admin = st.columns(3)
                 with col_total:
@@ -3096,7 +3096,7 @@ def render_login_form():
                     nombre = u.get('nombre', 'Sin nombre')
                     
                     if es_admin:
-                        icono = "⚡пёҸ"
+                        icono = "⚡️"
                         color = "blue"
                     elif es_vip:
                         icono = "👑"
@@ -3118,11 +3118,11 @@ def render_login_form():
                             if not es_admin:
                                 col_a, col_b, col_c = st.columns(3)
                                 with col_a:
-                                    nueva_pass = st.text_input("Nueva contraseГұa", placeholder="Nueva...", key=f"pass_{clave_id}", type="password")
+                                    nueva_pass = st.text_input("Nueva contraseña", placeholder="Nueva...", key=f"pass_{clave_id}", type="password")
                                     if st.button("🔑 Cambiar", key=f"btn_pass_{clave_id}"):
                                         if nueva_pass and len(nueva_pass) >= 4:
                                             if db_cambiar_password(clave_id, nueva_pass):
-                                                st.success("✅ ContraseГұa cambiada")
+                                                st.success("✅ Contraseña cambiada")
                                                 pass
                                             else:
                                                 st.error("❌ Error")
@@ -3148,12 +3148,12 @@ def render_login_form():
                                         else:
                                             st.error("❌ No se pudo eliminar")
                             else:
-                                st.info("⚡пёҸ Cuenta del administrador")
+                                st.info("⚡️ Cuenta del administrador")
                         st.markdown("---")
 
-    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
-    # PГҒGINA VIP DASHBOARD - Solo para usuarios Elite/Premium
-    # в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+    # ══════════════════════════════════════════════════════════
+    # PÁGINA VIP DASHBOARD - Solo para usuarios Elite/Premium
+    # ══════════════════════════════════════════════════════════
     elif st.session_state.page == "VIP":
         
         # Verificar si el usuario es VIP/Elite
@@ -3194,7 +3194,7 @@ def render_login_form():
             # Mostrar plan actual
             st.markdown("---")
             st.info(f"💰 Tu plan actual: **{user_plan.upper()}**")
-            st.markdown("ВҝQuieres hacer upgrade? Contacta al administrador.")
+            st.markdown("¿Quieres hacer upgrade? Contacta al administrador.")
             
             st.stop()
         
@@ -3345,17 +3345,17 @@ def render_login_form():
                         acertados_95 = len([p for p in confianza_95plus if p.get('acertado_1x2')])
                         pct_95 = (acertados_95 / len(confianza_95plus) * 100)
                         if pct_95 >= 80:
-                            st.info(f"📘 Los picks de ALTA CONFIANZA (95%+) tienen {pct_95:.1f}% de aciertos. ВЎSigue así!")
+                            st.info(f"📘 Los picks de ALTA CONFIANZA (95%+) tienen {pct_95:.1f}% de aciertos. ¡Sigue así!")
                         elif pct_95 < 60:
                             st.warning(f"⚠️ Los picks de alta confianza solo acertaron {pct_95:.1f}%. Revisar calibración.")
                 else:
-                    st.info("⚽ No hay picks resueltos aГәn. Completa algunos análisis y registra los resultados.")
+                    st.info("⚽ No hay picks resueltos aún. Completa algunos análisis y registra los resultados.")
             else:
-                st.info("⚽ No hay picks guardados aГәn. Ve al Analizador para crear picks.")
+                st.info("⚽ No hay picks guardados aún. Ve al Analizador para crear picks.")
         
         # ========== TAB 2: INGRESAR RESULTADOS ==========
         with tab_resultados:
-            st.markdown("### қ Ingresar Resultados")
+            st.markdown("### 📥 Ingresar Resultados")
             st.info("🔻 Completa el marcador de los partidos para calibrar las predicciones")
             
             # Obtener picks sin resultado
@@ -3421,7 +3421,7 @@ def render_login_form():
                             acertado_tarjetas = p.get('prediccion_tarjetas') is not None
                             acertado_remates = p.get('prediccion_remates') is not None
 
-                            # RECALIBRACIÓN AUTOMГҒTICA
+                            # RECALIBRACIÓN AUTOMÁTICA
                             try:
                                 registrar_resultado(
                                     equipo_local=local,
@@ -3464,7 +3464,7 @@ def render_login_form():
                             except Exception as e:
                                 st.error(f"Error: {str(e)[:50]}")
             else:
-                st.success("📊 ВЎTodos los picks tienen resultado!")
+                st.success("📊 ¡Todos los picks tienen resultado!")
                 st.info("Los resultados ayudan a calibrar las próximas predicciones.")
 
         # ========== TAB 3: BANKROLL ==========
@@ -3825,7 +3825,7 @@ def render_login_form():
                     for i, a in enumerate(apuestas_filtradas):
                         col_a1, col_a2 = st.columns([4, 1])
                         with col_a1:
-                            estado_icon = "✅" if a.get('resultado') == True else ("❌" if a.get('resultado') == False else "вҸі")
+                            estado_icon = "✅" if a.get('resultado') == True else ("❌" if a.get('resultado') == False else "⏳")
                             ganancia = a.get('ganancia', 0)
                             ganancia_fmt = format_money(ganancia, simbolo)
                             cantidad_fmt = format_money(a.get('cantidad', 0), simbolo)
@@ -4136,7 +4136,7 @@ def render_login_form():
                     ])
                     st.dataframe(df_ranking, use_container_width=True)
                 else:
-                    st.info("⚽ No hay ranking aГәn. ВЎSé el primero!")
+                    st.info("⚽ No hay ranking aún. ¡Sé el primero!")
                     
                     # Sugerir crear ranking basado en picks
                     if picks:
@@ -4160,7 +4160,7 @@ def render_login_form():
                 "🏆 ROI 10%": True,  # Calcular
                 "🎯 Racha 5": True,  # Calcular
                 "📘 Racha 10": True,  # Calcular
-                "вӯҗ Valoración 5вҳ…": False,
+                "⭐ Valoración 5★": False,
             }
             
             cols_badge = st.columns(4)
@@ -4284,9 +4284,9 @@ def render_login_form():
         # Mostrar Consensus Meter
         st.markdown("---")
         st.markdown("### 🎲 Consensus de Modelos")
-        st.markdown("_ВҝCuГЎntos modelos estГЎn de acuerdo en el Гєltimo pick?_" )
+        st.markdown("_¿Cuántos modelos están de acuerdo en el último pick?_" )
 
-        # Obtener resultado del anГЎlisis actual
+        # Obtener resultado del análisis actual
         r = st.session_state.get('analysis_result', {})
         modelos_data = r.get('modelos', {})
 
@@ -4321,15 +4321,15 @@ def render_login_form():
             st.markdown(f"**Promedio:** {promedio:.1f}% | **Rango:** {discrepancia:.1f}%")
 
             if discrepancia < 8:
-                st.success("ðŸ“Њ **ALTO CONSENSO** - Los modelos estГЎn muy alineados")
+                st.success("📌 **ALTO CONSENSO** - Los modelos están muy alineados")
             elif discrepancia < 15:
-                st.info("ðŸ“¥ **CONSENSO MODERADO** - Buena seГ±al")
+                st.info("ðŸ“¥ **CONSENSO MODERADO** - Buena señal")
             else:
-                st.warning("ðŸ™ѓ **BAJO CONSENSO** - Los modelos discrepan, mayor riesgo")
+                st.warning("ðŸ™ **BAJO CONSENSO** - Los modelos discrepan, mayor riesgo")
         else:
             st.info("No hay datos de modelos disponibles (analiza un partido primero)")
 
-# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+# ═══════════════════════════════════════════════════════════════════════════════
 # EJECUTAR EL SISTEMA DE LOGIN
-# в•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җв•җ
+# ═══════════════════════════════════════════════════════════════════════════════
 render_login_form()
