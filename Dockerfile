@@ -23,13 +23,5 @@ EXPOSE 8501
 ENV STREAMLIT_SERVER_FILE_WATCHER_TYPE=none
 ENV STREAMLIT_SERVER_HEADLESS=true
 
-# Crear .env desde variables de entorno (Render las provee)
-# Si no están configuradas, usar valores por defecto (para desarrollo local)
-RUN if [ -n "$ADMIN_PASSWORD" ]; then \
-    echo "ADMIN_PASSWORD=$ADMIN_PASSWORD" > /app/.env; \
-    echo "SUPABASE_URL=$SUPABASE_URL" >> /app/.env; \
-    echo "SUPABASE_KEY=$SUPABASE_KEY" >> /app/.env; \
-    fi
-
 # Comando - elite.py
 CMD ["streamlit", "run", "elite.py", "--server.port=8501", "--server.address=0.0.0.0"]

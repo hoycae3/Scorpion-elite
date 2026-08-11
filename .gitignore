@@ -19,6 +19,21 @@ test_sync.py
 # Backups (código muerto, mantener fuera del repo)
 backups/
 
+# Módulo scorpion/ no conectado (usa SQLite, no Supabase)
+scorpion/
+
+# Mockups HTML (no referenciados en código)
+mockups_*.html
+
+# Módulos no importados (código muerto)
+data_loader.py
+partidos_manager.py
+model_optimizer.py
+
+# Scripts temporales de fix (ya usados)
+fix_mojibake.py
+fix_bare_excepts.py
+
 # Archivos temporales
 *.log
 /tmp/

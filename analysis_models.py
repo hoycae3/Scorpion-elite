@@ -870,38 +870,3 @@ def calcular(
         "top_scores": mc["top_scores"],
     }
 
-
-def analyze(
-    home: str,
-    away: str,
-    lambda_h: float,
-    lambda_v: float,
-    # Nuevos parámetros opcionales
-    corners_home: float = 10.0,
-    corners_away: float = 10.0,
-    tarjetas_home: float = 3.5,
-    tarjetas_away: float = 3.5,
-    tiros_home: float = 12.0,
-    tiros_away: float = 12.0,
-    tiros_arco_home: float = 4.0,
-    tiros_arco_away: float = 4.0,
-    ultimos_5_home: List[Dict] = None,
-    ultimos_5_away: List[Dict] = None,
-) -> Dict:
-    """
-    Función para analizar un partido con todos los datos disponibles.
-    """
-    return calcular(
-        lambda_h,
-        lambda_v,
-        corners_home,
-        corners_away,
-        tarjetas_home,
-        tarjetas_away,
-        tiros_home,
-        tiros_away,
-        tiros_arco_home,
-        tiros_arco_away,
-        ultimos_5_home,
-        ultimos_5_away,
-    )

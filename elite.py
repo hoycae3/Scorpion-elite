@@ -1,6 +1,15 @@
 import streamlit as st
 import pandas as pd
 import os
+import time
+import requests
+import logging
+import html
+import bcrypt
+from datetime import date, timedelta, datetime, timezone
+from pathlib import Path
+from dotenv import load_dotenv
+from supabase import create_client
 
 # ══════════════════════════════════════════════════════════
 # 📋 SISTEMA DE DISEÑO - COLORES Y ESTILOS
@@ -20,11 +29,6 @@ COLORS = {
     'text': '#f8fafc',          # Texto principal
     'text_secondary': '#94a3b8', # Texto secundario
 }
-
-# Función helper para formatear colores en HTML
-def css(color_key, extra=''):
-    """Retorna estilo CSS inline con el color de COLORS"""
-    return f"color:{COLORS.get(color_key, '#fff')};{extra}"
 
 # CSS global cargado desde archivo (version forzada para cache busting)
 try:
@@ -59,22 +63,14 @@ LIGAS_MAP = {
     'Primera B': 216,
 }
 
-import logging
-import html
-import bcrypt
-from datetime import date, timedelta, datetime, timezone, time
-from pathlib import Path
-from dotenv import load_dotenv
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Cargar variables de entorno desde .env si existe
 # En producción (Render) las variables vienen del Dashboard
 load_dotenv()
 
-# Configurar logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-from supabase import create_client
 from analysis_models import calcular
 from funciones_stats import obtener_ultimos_partidos_equipo, guardar_stats_equipo, calcular_promedios_equipo, obtener_stats_partido
 from calibration import (
@@ -500,7 +496,6 @@ def render_public_landing():
     # Solo recargar si no existe o si pasó más de 30 segundos
     cache_key = 'partidos_cache'
     cache_time_key = 'partidos_cache_time'
-    import time
     should_refresh = (
         cache_key not in st.session_state or
         cache_time_key not in st.session_state or
@@ -895,9 +890,6 @@ def render_login_form():
 
     # Página: Partidos (NUEVA)
     if st.session_state.page == "Partidos":
-        import requests
-        import time
-        
         st.markdown("### 📊 Partidos de los Próximos 7 Días")
         
         # ========== ESTADO DE SINCRONIZACION ==========
@@ -941,15 +933,7 @@ def render_login_form():
         if not API_KEY:
             st.error("❌ API_FOOTBALL_KEY no configurada. Configúrala en Render.")
             st.stop()
-        API_URL = "https://v3.football.api-sports.io"
-        
-                # ═══════════════════════════════════════════════════════════════
-        # LISTA DE LIGAS - TODAS CON IDS CORRECTOS
-        # ═══════════════════════════════════════════════════════════════
-        
-        # NOTA: La lista de ligas se define más abajo, dentro del botón Sincronizar (55 ligas)
-        LIGAS = [{"id": 128, "name": "Liga Profesional Argentina", "pais": "Argentina"}]  # placeholder, se sobrescribe
-        
+
         # Contador de requests
         if 'api_requests_today' not in st.session_state:
             st.session_state.api_requests_today = 0
@@ -1844,7 +1828,7 @@ def render_login_form():
                     st.session_state.away = equipo_visitante
                 else:
                     st.warning("Selecciona ambos equipos")
-                    return
+                    st.stop()
 
         # SI hay equipos seleccionados, hacer el análisis
         # Si hay un partido seleccionado, hacer análisis automático
@@ -1930,11 +1914,6 @@ def render_login_form():
                 lambda_local_cal = lambda_local_adj['lambda_ajustada']
                 lambda_visitante_cal = lambda_visitante_adj['lambda_ajustada']
 
-                # DEBUG: Mostrar valores de lambda
-                factor_l = lambda_local_adj.get('factor', 1.0)
-                factor_v = lambda_visitante_adj.get('factor', 1.0)
-                st.write(f"DEBUG: orig=({lambda_local:.2f}, {lambda_visitante:.2f}), factores=({factor_l:.2f}, {factor_v:.2f}), cal=({lambda_local_cal:.2f}, {lambda_visitante_cal:.2f})")
-                
                 with st.spinner("Analizando..."):
                     result = calcular(
                         lambda_local=lambda_local_cal,
