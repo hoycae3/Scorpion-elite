@@ -10,6 +10,7 @@ Características:
 - Fallback a API proxy
 """
 
+import os
 import time
 import random
 import logging
@@ -47,7 +48,7 @@ FD_HEADERS = {
 # API-FOOTBALL.COM
 # ═══════════════════════════════════════════════════════════════════════════════
 
-API_FOOTBALL_KEY = "e3926f829cd848f4b2b54d722ca29701"
+API_FOOTBALL_KEY = os.getenv("API_FOOTBALL_KEY", "")
 API_FOOTBALL_URL = "https://v3.football.api-sports.io"
 
 def search_team_api_football(team_name: str) -> Optional[Dict]:

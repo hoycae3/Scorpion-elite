@@ -7,6 +7,7 @@ Funciona para: 1X2, Over/Under, BTTS, Corners
 Usa Supabase como backend para persistencia.
 """
 
+import os
 import logging
 import unicodedata
 from typing import Dict, List, Optional
@@ -14,14 +15,25 @@ from datetime import datetime
 
 try:
     from supabase import create_client
-    SUPABASE_URL = "https://jjtifureeygvygxtpuku.supabase.co"
-    SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqdGlmdXJleWV5Z3Z5Z3RwdWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyMjg2NjYsImV4cCI6MjA2NjgwNDY2Nn0.W_Xr6q7NNd9P3BkQqA1q5YXr2t6Q9L0z0xL8mZP3k7Y"
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        # Cargar .env si existe (desarrollo local)
+        try:
+            from dotenv import load_dotenv
+            load_dotenv()
+            SUPABASE_URL = os.getenv("SUPABASE_URL")
+            SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+        except ImportError:
+            pass
     
     _client = None
     
     def _get_client():
         global _client
         if _client is None:
+            if not SUPABASE_URL or not SUPABASE_KEY:
+                raise ValueError("SUPABASE_URL/SUPABASE_KEY no configuradas en variables de entorno")
             _client = create_client(SUPABASE_URL, SUPABASE_KEY)
         return _client
 except ImportError:

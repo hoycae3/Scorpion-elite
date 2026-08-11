@@ -1,9 +1,19 @@
+import os
 import subprocess
 import json
 
 LEAGUES = [239, 240, 241, 128, 129, 24, 72, 281, 265, 242, 252, 299, 268, 244, 13, 11, 39, 40, 140, 141, 135, 78, 61, 88, 94, 144, 203, 2, 3, 848, 262, 253, 16, 307, 98, 292]
 
-API_KEY = "e3926f829cd848f4b2b54d722ca29701"
+API_KEY = os.getenv("API_FOOTBALL_KEY", "")
+if not API_KEY:
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+        API_KEY = os.getenv("API_FOOTBALL_KEY", "")
+    except ImportError:
+        pass
+if not API_KEY:
+    raise ValueError("API_FOOTBALL_KEY no configurada. Definela en .env o variable de entorno.")
 
 for liga_id in LEAGUES:
     cmd = f'curl -s "https://v3.football.api-sports.io/fixtures?league={liga_id}&season=2026&from=2026-08-01&to=2026-08-07" -H "x-apisports-key: {API_KEY}"'

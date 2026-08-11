@@ -1,8 +1,19 @@
+import os
 import requests
 from datetime import datetime, timedelta, timezone
 
 API_URL = "https://v3.football.api-sports.io"
-API_KEY = "e3926f829cd848f4b2b54d722ca29701"
+API_KEY = os.getenv("API_FOOTBALL_KEY", "")
+if not API_KEY:
+    # Cargar .env si existe (desarrollo local)
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+        API_KEY = os.getenv("API_FOOTBALL_KEY", "")
+    except ImportError:
+        pass
+if not API_KEY:
+    raise ValueError("API_FOOTBALL_KEY no configurada. Definela en .env o variable de entorno.")
 headers = {'x-apisports-key': API_KEY}
 
 TARGET_LEAGUES = [

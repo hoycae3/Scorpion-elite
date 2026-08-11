@@ -1,6 +1,25 @@
+# Secrets y variables sensibles
 .env
+.env.*
 __pycache__
 *.pyc
+
+# Config local de Streamlit
 .streamlit
+
+# Entornos virtuales
 venv
-.env
+.venv
+
+# Scripts de prueba con credenciales (usar variables de entorno)
+prueba_real.py
+test_ligas.py
+test_sync.py
+
+# Backups (código muerto, mantener fuera del repo)
+backups/
+
+# Archivos temporales
+*.log
+/tmp/
+.agent_tmp/

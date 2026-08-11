@@ -1,13 +1,25 @@
 """Script para probar sincronización - ejecutar localmente"""
+import os
 import requests
 from supabase import create_client
 
-# CONFIGURACIÓN - pon tu SUPABASE_ANON_KEY aquí
-SUPABASE_URL = "https://jjtifureeygvygxtpuku.supabase.co"
-SUPABASE_KEY = "TU_ANON_KEY_AQUI"  # Cambiar por tu anon key de Supabase
+# Cargar .env si existe (desarrollo local)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+# CONFIGURACIÓN - lee de variables de entorno
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise ValueError("SUPABASE_URL/SUPABASE_KEY no configuradas. Definelas en .env o variables de entorno.")
 
 API_URL = "https://v3.football.api-sports.io"
-API_KEY = "e3926f829cd848f4b2b54d722ca29701"
+API_KEY = os.getenv("API_FOOTBALL_KEY", "")
+if not API_KEY:
+    raise ValueError("API_FOOTBALL_KEY no configurada. Definela en .env o variable de entorno.")
 headers = {'x-apisports-key': API_KEY}
 
 def test_sync():
