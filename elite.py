@@ -1006,6 +1006,10 @@ def apuesta_ganada(apuesta, pick, resultado_real, resultado_ou_real, btts_real, 
             pred = pick.get('prediccion_remates', '')
             real = stats_reales.get('remates_total', 0)
             return _evaluar_over_under(pred, real, 24)
+        if mercado == 'Tiros Arco':
+            pred = pick.get('prediccion_arco', '')
+            real = stats_reales.get('tiros_arco_total', 0)
+            return _evaluar_over_under(pred, real, 8)
     return False
 
 
@@ -1383,12 +1387,19 @@ def sincronizar_partidos():
                                                     stats_reales.get('remates_total'),
                                                     24
                                                 )
+                                                acertado_arco = _evaluar_over_under(
+                                                    pick.get('prediccion_arco', ''),
+                                                    stats_reales.get('tiros_arco_total'),
+                                                    8
+                                                )
                                                 update_data['resultado_corners'] = str(stats_reales.get('corners_total'))
                                                 update_data['resultado_tarjetas'] = str(stats_reales.get('tarjetas_total'))
                                                 update_data['resultado_remates'] = str(stats_reales.get('remates_total'))
+                                                update_data['resultado_arco'] = str(stats_reales.get('tiros_arco_total'))
                                                 update_data['acertado_corners'] = acertado_corners
                                                 update_data['acertado_tarjetas'] = acertado_tarjetas
                                                 update_data['acertado_remates'] = acertado_remates
+                                                update_data['acertado_arco'] = acertado_arco
 
                                             client.table('picks').update(update_data).eq('id', pick_id).execute()
                                             picks_actualizados_auto += 1
@@ -2112,6 +2123,8 @@ def _construir_pick_data(r, home, away, stats_local):
         'remates_total_estimado': float(r.get('tiros', {}).get('total_estimado', 24)),
         'prediccion_tarjetas': r.get('pick_tarjetas', 'Over'),
         'tarjetas_total_estimado': float(r.get('tarjetas', {}).get('total_estimado', 5)),
+        'prediccion_arco': r.get('pick_tiros_arco', 'Over'),
+        'arco_total_estimado': float(r.get('tiros_arco', {}).get('total_estimado', 8)),
         'confianza': int(r.get('confianza', 50)),
         'rango': r.get('rango', 'C'),
     }
@@ -3596,6 +3609,10 @@ def render_vip_page():
                 acertados_remates = len([p for p in picks_remates if p.get('acertado_remates')])
                 pct_remates = (acertados_remates / len(picks_remates) * 100) if picks_remates else 0
 
+                picks_arco = [p for p in picks_resueltos if p.get('acertado_arco') is not None]
+                acertados_arco = len([p for p in picks_arco if p.get('acertado_arco')])
+                pct_arco = (acertados_arco / len(picks_arco) * 100) if picks_arco else 0
+
                 # Mostrar métricas en cards
                 col1, col2, col3 = st.columns(3)
                 with col1:
@@ -3608,22 +3625,32 @@ def render_vip_page():
                     if pct_ou > 55: st.success("✅ Rentable")
                     elif pct_ou < 45: st.error("❌ Perjudicial")
                     else: st.info("📥 Neutral")
+                with col3:
+                    st.metric("⚽ BTTS", f"{acertados_btts}/{len(picks_btts)}", f"{pct_btts:.1f}% acierto")
+                    if pct_btts > 55: st.success("✅ Rentable")
+                    elif pct_btts < 45: st.error("❌ Perjudicial")
+                    else: st.info("📥 Neutral")
 
-                col4, col5, col6 = st.columns(3)
+                col4, col5, col6, col7 = st.columns(4)
                 with col4:
                     st.metric("🔑 Corners", f"{acertados_corners}/{len(picks_corners)}", f"{pct_corners:.1f}% acierto")
                     if pct_corners > 55: st.success("✅ Rentable")
                     elif pct_corners < 45: st.error("❌ Perjudicial")
                     else: st.info("📥 Neutral")
                 with col5:
-                    st.metric(" Tarjetas", f"{acertados_tarjetas}/{len(picks_tarjetas)}", f"{pct_tarjetas:.1f}% acierto")
+                    st.metric("🟨 Tarjetas", f"{acertados_tarjetas}/{len(picks_tarjetas)}", f"{pct_tarjetas:.1f}% acierto")
                     if pct_tarjetas > 55: st.success("✅ Rentable")
                     elif pct_tarjetas < 45: st.error("❌ Perjudicial")
                     else: st.info("📥 Neutral")
                 with col6:
-                    st.metric("🎯 Remates", f"{acertados_remates}/{len(picks_remates)}", f"{pct_remates:.1f}% acierto")
+                    st.metric("🔫 Remates", f"{acertados_remates}/{len(picks_remates)}", f"{pct_remates:.1f}% acierto")
                     if pct_remates > 55: st.success("✅ Rentable")
                     elif pct_remates < 45: st.error("❌ Perjudicial")
+                    else: st.info("📥 Neutral")
+                with col7:
+                    st.metric("🎯 T. Arco", f"{acertados_arco}/{len(picks_arco)}", f"{pct_arco:.1f}% acierto")
+                    if pct_arco > 55: st.success("✅ Rentable")
+                    elif pct_arco < 45: st.error("❌ Perjudicial")
                     else: st.info("📥 Neutral")
 
                 st.markdown("---")
@@ -3999,6 +4026,10 @@ def render_vip_page():
                         opciones.append({'pick': p, 'display': f"{match_key} - Corners", 'tipo': 'Corners', 'cuota': float(p.get('cuota_corners') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_corners', 50)})
                     if p.get('prediccion_tarjetas'):
                         opciones.append({'pick': p, 'display': f"{match_key} - Tarjetas", 'tipo': 'Tarjetas', 'cuota': float(p.get('cuota_tarjetas') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_tarjetas', 50)})
+                    if p.get('prediccion_remates'):
+                        opciones.append({'pick': p, 'display': f"{match_key} - Remates: {p.get('prediccion_remates')}", 'tipo': 'Remates', 'cuota': float(p.get('cuota_remates') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_remates', 50)})
+                    if p.get('prediccion_arco'):
+                        opciones.append({'pick': p, 'display': f"{match_key} - Tiros Arco: {p.get('prediccion_arco')}", 'tipo': 'Tiros Arco', 'cuota': float(p.get('cuota_arco') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_arco', 50)})
 
                 st.markdown("#### 📋 Selecciona Picks (ingresa cuota)")
                 seleccionados = []
