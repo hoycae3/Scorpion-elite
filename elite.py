@@ -41,7 +41,7 @@ try:
     with open('styles.css', 'r') as f:
         css_content = f.read()
         # Forzar cache bust con version
-        st.markdown(f'<style>/* v20260805 */ {css_content}</style>', unsafe_allow_html=True)
+        st.markdown(f'<style>/* v20260811 */ {css_content}</style>', unsafe_allow_html=True)
 except Exception as e:
     logger.warning(f"Error en linea 43: {e}")
 
