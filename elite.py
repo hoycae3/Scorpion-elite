@@ -14,6 +14,9 @@ from datetime import timedelta, datetime, timezone
 from dotenv import load_dotenv
 from supabase import create_client
 
+# set_page_config debe ser el primer comando de Streamlit
+st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
+
 # ══════════════════════════════════════════════════════════
 # 📋 SISTEMA DE DISEÑO - COLORES Y ESTILOS
 # ══════════════════════════════════════════════════════════
@@ -103,8 +106,6 @@ def get_partidos_cache():
         return client.table('partidos').select('*').execute().data or []
     except Exception as e:
         return []
-
-st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
 
 # ══════════════════════════════════════════════════════════
 # CONFIGURACION - Variables de entorno
