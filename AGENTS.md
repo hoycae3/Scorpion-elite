@@ -95,19 +95,18 @@ El menu real tiene 4 paginas (no 6 como decia la documentacion anterior):
 | Configuracion | Valor |
 |---------------|-------|
 | **Ventana de fechas** | HOY-2 a HOY+6 |
-| **Ligas** | DEBUG: solo Argentina (id 128). Linea 951 de elite.py |
+| **Ligas** | 55 ligas mundiales (activas, linea 1081) |
 | **Goals extraction** | `f.get('goals', {})` (corregido) |
 | **Upsert** | Sin DELETE, solo inserta/actualiza |
 
-### IMPORTANTE: LIGAS en modo DEBUG
+### Nota sobre la variable LIGAS
 
-En `elite.py` linea 951:
+Hay dos asignaciones de `LIGAS` en elite.py:
+- Linea 951: `LIGAS = [solo Argentina]` - placeholder, se ejecuta al cargar la pagina pero
+  es codigo muerto porque se sobrescribe.
+- Linea 1081: `LIGAS = [55 ligas]` - DENTRO del boton Sincronizar, es la que realmente se usa.
 
-    # DEBUG: Probar solo Argentina
-    LIGAS = [{"id": 128, "name": "Liga Profesional Argentina", "pais": "Argentina"}]
-
-La lista completa de 55 ligas esta en linea 1081 pero NO se ejecuta.
-Para produccion, comentar la linea 951 y descomentar la lista de linea 1081.
+Al sincronizar, la linea 1081 pisa la 951 y se procesan las 55 ligas.
 
 ### Optimizacion de Sincronizacion (2026-08-11)
 
@@ -235,7 +234,7 @@ pero siguen en el historial de git. El usuario debe rotar:
 
 | Problema | Detalle |
 |----------|---------|
-| **LIGAS en DEBUG** | Solo Argentina activa (linea 951). Descomentar linea 1081 para 55 ligas |
+| **LIGAS tiene asignacion duplicada** | Linea 951 placeholder muerto + linea 1081 activa (55 ligas). Limpiar la 951 |
 | **API keys en historial git** | Limpiadas del codigo actual, pero siguen en git history. Rotar keys |
 | **scorpion/ no conectado** | 1,958 lineas de codigo muerto. Decidir: terminar o eliminar |
 

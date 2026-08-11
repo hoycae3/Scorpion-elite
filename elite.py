@@ -947,8 +947,8 @@ def render_login_form():
         # LISTA DE LIGAS - TODAS CON IDS CORRECTOS
         # ═══════════════════════════════════════════════════════════════
         
-        # ★ DEBUG: Probar solo Argentina
-        LIGAS = [{"id": 128, "name": "Liga Profesional Argentina", "pais": "Argentina"}]
+        # NOTA: La lista de ligas se define más abajo, dentro del botón Sincronizar (55 ligas)
+        LIGAS = [{"id": 128, "name": "Liga Profesional Argentina", "pais": "Argentina"}]  # placeholder, se sobrescribe
         
         # Contador de requests
         if 'api_requests_today' not in st.session_state:
