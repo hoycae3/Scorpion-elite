@@ -3814,118 +3814,51 @@ def render_vip_page():
         else:
             st.info("⚽ No hay picks guardados aún. Ve al Analizador para crear picks.")
 
-    # ========== TAB 2: INGRESAR RESULTADOS ==========
+    # ========== TAB 2: RESULTADOS (AUTO) ==========
     with tab_resultados:
-        st.markdown("### 📥 Ingresar Resultados")
-        st.info("🔻 Completa el marcador de los partidos para calibrar las predicciones")
+        st.markdown("### 📊 Resultados Automáticos")
+        st.info("🤖 Los resultados se actualizan automáticamente cuando sincronizas partidos desde la página 📊 Partidos. No necesitas ingresar nada manualmente.")
 
-        # Obtener picks sin resultado
+        # Obtener picks con resultado
         try:
             response = client.table('picks').select('*').order('fecha', desc=True).execute()
-            picks = response.data if response.data else []
-        except Exception as e:
-            picks = []
-            st.error(f"Error: {str(e)[:50]}")
+            picks_res = response.data if response.data else []
+        except Exception:
+            picks_res = []
 
-        # Filtrar picks sin resultado (busca campo resultado_1x2)
-        picks_sin_resultado = [p for p in picks if p.get('resultado_1x2') is None]
+        picks_con_resultado = [p for p in picks_res if p.get('resultado_1x2') is not None]
+        picks_pendientes = [p for p in picks_res if p.get('resultado_1x2') is None]
 
-        if picks_sin_resultado:
-            st.markdown(f"#### 📋 {len(picks_sin_resultado)} picks pendientes de resultado")
+        col_r1, col_r2 = st.columns(2)
+        with col_r1:
+            st.metric("✅ Resueltos", len(picks_con_resultado))
+        with col_r2:
+            st.metric("⏳ Pendientes", len(picks_pendientes))
 
-            for p in picks_sin_resultado:
-                pick_id = p.get('id')
-                local = p.get('equipo_local', '?')
-                visitante = p.get('equipo_visitante', '?')
-                fecha = p.get('fecha', '')[:10]
+        if picks_pendientes:
+            with st.expander(f"📋 {len(picks_pendientes)} picks esperando resultados"):
+                for p in picks_pendientes[:10]:
+                    st.write(f"⚽ **{p.get('equipo_local', '?')} vs {p.get('equipo_visitante', '?')}** ({p.get('fecha', '')[:10]})")
 
-                with st.expander(f"⚽ {local} VS {visitante} ({fecha})"):
-                    st.markdown(f"**Predicciones:** 1X2: {p.get('prediccion_1x2', 'N/A')} | O/U: {p.get('prediccion_ou', 'N/A')} | BTTS: {p.get('prediccion_btts', 'N/A')}")
+        if picks_con_resultado:
+            with st.expander(f"✅ {len(picks_con_resultado)} picks ya resueltos"):
+                for p in picks_con_resultado[:10]:
+                    acertado = p.get('acertado_1x2')
+                    icon = "✅" if acertado else "❌"
+                    st.write(f"{icon} **{p.get('equipo_local', '?')} vs {p.get('equipo_visitante', '?')}** → Real: {p.get('resultado_1x2', '?')} | Marcador: {p.get('marcador', '?')}")
 
-                    col1, col2, col3, col4 = st.columns([1,1,1,1])
-                    with col1:
-                        gl = st.number_input("GF Local", min_value=0, max_value=15, value=0, key=f"gf_l_{pick_id}")
-                    with col2:
-                        gv = st.number_input("GF Visit", min_value=0, max_value=15, value=0, key=f"gf_v_{pick_id}")
-
-                    col5, col6 = st.columns([1,1])
-                    with col5:
-                        remates = st.number_input("Remates", min_value=0, max_value=50, value=0, key=f"rem_{pick_id}")
-                    with col6:
-                        corners = st.number_input("Corners", min_value=0, max_value=30, value=0, key=f"corn_{pick_id}")
-
-                    col7, col8 = st.columns([1,1])
-                    with col7:
-                        tarjetas = st.number_input("Tarjetas", min_value=0, max_value=20, value=0, key=f"tarj_{pick_id}")
-
-                    if st.button("💾 Guardar Resultado", key=f"btn_res_{pick_id}"):
-                        # Calcular resultado 1X2
-                        if gl > gv:
-                            resultado_1x2 = "1"
-                        elif gl < gv:
-                            resultado_1x2 = "2"
-                        else:
-                            resultado_1x2 = "X"
-
-
-                        total_goles = gl + gv
-                        resultado_ou = "Over 2.5" if total_goles > 2.5 else "Under 2.5"
-
-
-                        ambos_marcan = "Si" if gl > 0 and gv > 0 else "No"
-
-                        # Verificar aciertos
-                        acertado_1x2 = p.get('prediccion_1x2') == resultado_1x2
-                        acertado_ou = p.get('prediccion_ou') == resultado_ou
-                        acertado_btts = p.get('prediccion_btts') == ambos_marcan
-                        acertado_corners = p.get('prediccion_corners') is not None
-                        acertado_tarjetas = p.get('prediccion_tarjetas') is not None
-                        acertado_remates = p.get('prediccion_remates') is not None
-
-                        # RECALIBRACIÓN AUTOMÁTICA
-                        try:
-                            registrar_resultado(
-                                equipo_local=local,
-                                equipo_visitante=visitante,
-                                lambda_local_predicha=p.get('lambda_local', 1.5),
-                                lambda_visitante_predicha=p.get('lambda_visitante', 1.3),
-                                goles_local_real=gl,
-                                goles_visitante_real=gv,
-                                predicciones={
-                                    '1x2': {'pick': p.get('prediccion_1x2', ''), 'prob': p.get('p1', 50)},
-                                    'over_under': {'pick': p.get('prediccion_ou', ''), 'prob': p.get('over_25', 50)},
-                                    'btts': {'pick': p.get('prediccion_btts', ''), 'prob': p.get('btts_yes', 50)},
-                                },
-                                resultado_real=resultado_1x2,
-                                marcador=f"{gl}-{gv}",
-                                confianza=p.get('confianza', 70),
-                                rango=p.get('rango', 'B')
-                            )
-                        except Exception as cal_e:
-                            logger.warning(f"Calibración no actualizada: {cal_e}")
-
-                        try:
-                            client.table('picks').update({
-                                'marcador': f"{gl}-{gv}",
-                                'resultado_1x2': resultado_1x2,
-                                'resultado_ou': resultado_ou,
-                                'resultado_btts': ambos_marcan,
-                                'resultado_corners': str(corners),
-                                'resultado_tarjetas': str(tarjetas),
-                                'resultado_remates': str(remates),
-                                'acertado_1x2': acertado_1x2,
-                                'acertado_ou': acertado_ou,
-                                'acertado_btts': acertado_btts,
-                                'acertado_corners': acertado_corners,
-                                'acertado_tarjetas': acertado_tarjetas,
-                                'acertado_remates': acertado_remates,
-                            }).eq('id', pick_id).execute()
-                            st.success("✅ Resultado guardado! La calibración se actualiza automáticamente.")
-                        except Exception as e:
-                            st.error(f"Error: {str(e)[:50]}")
-        else:
-            st.success("📊 ¡Todos los picks tienen resultado!")
-            st.info("Los resultados ayudan a calibrar las próximas predicciones.")
+        st.markdown("---")
+        st.markdown("#### 🔄 Cómo funciona")
+        st.markdown("""
+        1. **Analiza** un partido en el Analizador y guarda el pick
+        2. **Aposta** desde el Bankroll
+        3. Cuando el partido termine, ve a **📊 Partidos → 🔄 Sincronizar**
+        4. El sistema obtiene resultados reales y actualiza TODO automáticamente:
+           - ✅ Resultados 1X2, O/U, BTTS
+           - ✅ Córners, Tarjetas, Remates, Tiros Arco
+           - ✅ Bankroll (ganancias/pérdidas)
+           - ✅ Calibración de lambdas
+        """)
 
     # ========== TAB 3: BANKROLL ==========
     with tab_bankroll:
@@ -4305,71 +4238,42 @@ def render_vip_page():
 
                 # Mostrar tabla
                 st.write(f"**Mostrando: {len(apuestas_filtradas)} apuestas**")
+                st.caption("_💡 Los resultados se actualizan automáticamente al sincronizar partidos_")
 
                 for i, a in enumerate(apuestas_filtradas):
-                    col_a1, col_a2 = st.columns([4, 1])
-                    with col_a1:
-                        estado_icon = "✅" if a.get('resultado') == True else ("❌" if a.get('resultado') == False else "⏳")
-                        ganancia = a.get('ganancia', 0)
-                        ganancia_fmt = format_money(ganancia, simbolo)
-                        cantidad_fmt = format_money(a.get('cantidad', 0), simbolo)
+                    estado_icon = "✅" if a.get('resultado') == True else ("❌" if a.get('resultado') == False else "⏳")
+                    ganancia = a.get('ganancia', 0)
+                    ganancia_fmt = format_money(ganancia, simbolo)
+                    cantidad_fmt = format_money(a.get('cantidad', 0), simbolo)
 
-                        # Color según resultado
-                        if a.get('resultado') == True:
-                            border_color = "#22c55e"
-                            bg_color = "rgba(34, 197, 94, 0.1)"
-                        elif a.get('resultado') == False:
-                            border_color = "#ef4444"
-                            bg_color = "rgba(239, 68, 68, 0.1)"
-                        else:
-                            border_color = "#64748b"
-                            bg_color = "rgba(100, 116, 139, 0.1)"
+                    # Color según resultado
+                    if a.get('resultado') == True:
+                        border_color = "#22c55e"
+                        bg_color = "rgba(34, 197, 94, 0.1)"
+                    elif a.get('resultado') == False:
+                        border_color = "#ef4444"
+                        bg_color = "rgba(239, 68, 68, 0.1)"
+                    else:
+                        border_color = "#64748b"
+                        bg_color = "rgba(100, 116, 139, 0.1)"
 
-                        st.markdown(f"""
-                        <div style="background: {bg_color}; border-left: 4px solid {border_color}; 
-                                    border-radius: 8px; padding: 12px 16px; margin: 8px 0;">
-                            <div style="color: #f8fafc; font-weight: 600; font-size: 1rem;">
+                    st.markdown(f"""
+                    <div style="background: {bg_color}; border-left: 4px solid {border_color}; 
+                                border-radius: 8px; padding: 12px 16px; margin: 8px 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #f8fafc; font-weight: 600; font-size: 1rem;">
                                 {estado_icon} {a.get('equipo', 'N/A')}
-                            </div>
-                            <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 4px;">
-                                📅 {a.get('fecha', 'N/A')} | 🏆 {cantidad_fmt} @ {a.get('cuota', 'N/A')} | 📋 {a.get('mercado', 'N/A')}
-                            </div>
-                            <div style="color: {'#4ade80' if ganancia > 0 else '#f87171' if ganancia < 0 else '#94a3b8'}; 
-                                        font-weight: 700; margin-top: 4px;">
-                                💰 Ganancia: {ganancia_fmt}
-                            </div>
+                            </span>
+                            <span style="color: {'#4ade80' if ganancia > 0 else '#f87171' if ganancia < 0 else '#94a3b8'}; 
+                                        font-weight: 700; font-size: 1.1rem;">
+                                {'+' if ganancia > 0 else ''}{ganancia_fmt}
+                            </span>
                         </div>
-                        """, unsafe_allow_html=True)
-
-                    with col_a2:
-                        # Actualizar resultado
-                        nuevo_resultado = st.selectbox("Resultado", ["Pendiente", "Ganada", "Perdida"], 
-                                                      index=0 if a.get('resultado') is None else (1 if a.get('resultado') else 2),
-                                                      key=f"res_{i}_{a.get('id', i)}")
-
-                        if st.button("💾 Guardar", key=f"btn_res_{i}_{a.get('id', i)}"):
-                            cantidad = a.get('cantidad', 0)
-                            cuota = a.get('cuota', 2.0)
-                            resultado_new = None
-                            ganancia_new = 0
-
-                            if nuevo_resultado == "Ganada":
-                                resultado_new = True
-                                ganancia_new = cantidad * (cuota - 1)
-                            elif nuevo_resultado == "Perdida":
-                                resultado_new = False
-                                ganancia_new = -cantidad
-
-                            try:
-                                client.table('bankroll_apuestas').update({
-                                    'resultado': resultado_new,
-                                    'ganancia': ganancia_new
-                                }).eq('id', a.get('id')).execute()
-                                st.success("Actualizado")
-                            except Exception as e:
-                                st.error(f"Error: {e}")
-
-                    st.markdown("---")
+                        <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 4px;">
+                            📅 {a.get('fecha', 'N/A')} | 🏆 {cantidad_fmt} @ {a.get('cuota', 'N/A')} | 📋 {a.get('mercado', 'N/A')}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
             else:
                 st.info("No tienes apuestas registradas")
 
