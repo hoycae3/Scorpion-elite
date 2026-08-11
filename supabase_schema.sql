@@ -92,51 +92,53 @@ CREATE POLICY "equipos_all" ON equipos_stats FOR ALL USING (true) WITH CHECK (tr
 -- Estadísticas DETALLADAS de partidos específicos (histórico)
 -- Para cuando quieras ver qué pasó en un partido específico
 -- ═══════════════════════════════════════════════════════════════════════════════
-CREATE TABLE IF NOT EXISTS partidos_stats (
-    id BIGSERIAL PRIMARY KEY,
-    fixture_id BIGINT UNIQUE,
-    fecha DATE,
-    liga VARCHAR(255),
-    equipo_local VARCHAR(255),
-    equipo_visitante VARCHAR(255),
-    -- Goles
-    goles_local INTEGER,
-    goles_visitante INTEGER,
-    -- Tiros
-    tiros_local INTEGER,
-    tiros_visitante INTEGER,
-    tiros_arco_local INTEGER,
-    tiros_arco_visitante INTEGER,
-    -- Corners
-    corners_local INTEGER,
-    corners_visitante INTEGER,
-    corners_total INTEGER,
-    -- Tarjetas
-    amarillas_local INTEGER,
-    amarillas_visitante INTEGER,
-    rojas_local INTEGER,
-    rojas_visitante INTEGER,
-    -- Posesión
-    posesion_local INTEGER,
-    posesion_visitante INTEGER,
-    -- Atajadas (guardadas)
-    atajadas_local INTEGER,
-    atajadas_visitante INTEGER,
-    -- Faltas y otras
-    faltas_local INTEGER,
-    faltas_visitante INTEGER,
-    fueras_juego_local INTEGER,
-    fueras_juego_visitante INTEGER,
-    source VARCHAR(50),
-    creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- DEPRECATED (not referenced in code, kept for reference):
+-- CREATE TABLE IF NOT EXISTS partidos_stats (
+--     id BIGSERIAL PRIMARY KEY,
+--     fixture_id BIGINT UNIQUE,
+--     fecha DATE,
+--     liga VARCHAR(255),
+--     equipo_local VARCHAR(255),
+--     equipo_visitante VARCHAR(255),
+--     -- Goles
+--     goles_local INTEGER,
+--     goles_visitante INTEGER,
+--     -- Tiros
+--     tiros_local INTEGER,
+--     tiros_visitante INTEGER,
+--     tiros_arco_local INTEGER,
+--     tiros_arco_visitante INTEGER,
+--     -- Corners
+--     corners_local INTEGER,
+--     corners_visitante INTEGER,
+--     corners_total INTEGER,
+--     -- Tarjetas
+--     amarillas_local INTEGER,
+--     amarillas_visitante INTEGER,
+--     rojas_local INTEGER,
+--     rojas_visitante INTEGER,
+--     -- Posesión
+--     posesion_local INTEGER,
+--     posesion_visitante INTEGER,
+--     -- Atajadas (guardadas)
+--     atajadas_local INTEGER,
+--     atajadas_visitante INTEGER,
+--     -- Faltas y otras
+--     faltas_local INTEGER,
+--     faltas_visitante INTEGER,
+--     fueras_juego_local INTEGER,
+--     fueras_juego_visitante INTEGER,
+--     source VARCHAR(50),
+--     creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- );
+-- 
+-- CREATE INDEX IF NOT EXISTS idx_partidos_stats_fixture ON partidos_stats(fixture_id);
+-- CREATE INDEX IF NOT EXISTS idx_partidos_stats_fecha ON partidos_stats(fecha);
+-- CREATE INDEX IF NOT EXISTS idx_partidos_stats_local ON partidos_stats(equipo_local);
+-- 
+-- ALTER TABLE partidos_stats ENABLE ROW LEVEL SECURITY;
+-- CREATE POLICY "partidos_stats_all" ON partidos_stats FOR ALL USING (true) WITH CHECK (true);
 
-CREATE INDEX IF NOT EXISTS idx_partidos_stats_fixture ON partidos_stats(fixture_id);
-CREATE INDEX IF NOT EXISTS idx_partidos_stats_fecha ON partidos_stats(fecha);
-CREATE INDEX IF NOT EXISTS idx_partidos_stats_local ON partidos_stats(equipo_local);
-
-ALTER TABLE partidos_stats ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "partidos_stats_all" ON partidos_stats FOR ALL USING (true) WITH CHECK (true);
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- TABLA PICKS
@@ -349,83 +351,87 @@ END $$;
 -- TABLA HISTORIAL_PREDICCIONES
 -- Guarda TODAS las predicciones para calcular % de acierto por modelo
 -- ═══════════════════════════════════════════════════════════════════════════════
-CREATE TABLE IF NOT EXISTS historial_predicciones (
-    id BIGSERIAL PRIMARY KEY,
-    fixture_id BIGINT,
-    fecha DATE NOT NULL,
-    liga VARCHAR(255),
-    equipo_local VARCHAR(255),
-    equipo_visitante VARCHAR(255),
-    -- Resultado real
-    goles_local INTEGER,
-    goles_visitante INTEGER,
-    resultado_real VARCHAR(10),  -- '1', 'X', '2'
-    total_goles INTEGER,  -- Para Over/Under
-    ambos_marcan VARCHAR(10),  -- 'SI', 'NO'
-    -- Predicciones Poisson
-    poisson_1 DECIMAL(5,2),
-    poisson_X DECIMAL(5,2),
-    poisson_2 DECIMAL(5,2),
-    poisson_acierto BOOLEAN,
-    -- Predicciones Dixon-Coles
-    dc_1 DECIMAL(5,2),
-    dc_X DECIMAL(5,2),
-    dc_2 DECIMAL(5,2),
-    dc_acierto BOOLEAN,
-    -- Predicciones Monte Carlo
-    mc_1 DECIMAL(5,2),
-    mc_X DECIMAL(5,2),
-    mc_2 DECIMAL(5,2),
-    mc_acierto BOOLEAN,
-    -- Predicciones Forma Reciente
-    forma_local_pct DECIMAL(5,2),
-    forma_visitante_pct DECIMAL(5,2),
-    forma_acierto BOOLEAN,
-    -- Predicciones Estilo
-    estilo_local VARCHAR(50),
-    estilo_visitante VARCHAR(50),
-    -- Predicción final COMBINADA (la que se usó)
-    prediccion_final VARCHAR(10),
-    probabilidad_final DECIMAL(5,2),
-    -- Pesos usados en ese momento
-    peso_poisson DECIMAL(5,2),
-    peso_dixon DECIMAL(5,2),
-    peso_montecarlo DECIMAL(5,2),
-    peso_forma DECIMAL(5,2),
-    peso_estilo DECIMAL(5,2),
-    -- Confianza y rango
-    confianza INTEGER,
-    rango VARCHAR(5),
-    -- Veredicto
-    acierto BOOLEAN,
-    -- Metadatos
-    creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- DEPRECATED (not referenced in code, kept for reference):
+-- CREATE TABLE IF NOT EXISTS historial_predicciones (
+--     id BIGSERIAL PRIMARY KEY,
+--     fixture_id BIGINT,
+--     fecha DATE NOT NULL,
+--     liga VARCHAR(255),
+--     equipo_local VARCHAR(255),
+--     equipo_visitante VARCHAR(255),
+--     -- Resultado real
+--     goles_local INTEGER,
+--     goles_visitante INTEGER,
+--     resultado_real VARCHAR(10),  -- '1', 'X', '2'
+--     total_goles INTEGER,  -- Para Over/Under
+--     ambos_marcan VARCHAR(10),  -- 'SI', 'NO'
+--     -- Predicciones Poisson
+--     poisson_1 DECIMAL(5,2),
+--     poisson_X DECIMAL(5,2),
+--     poisson_2 DECIMAL(5,2),
+--     poisson_acierto BOOLEAN,
+--     -- Predicciones Dixon-Coles
+--     dc_1 DECIMAL(5,2),
+--     dc_X DECIMAL(5,2),
+--     dc_2 DECIMAL(5,2),
+--     dc_acierto BOOLEAN,
+--     -- Predicciones Monte Carlo
+--     mc_1 DECIMAL(5,2),
+--     mc_X DECIMAL(5,2),
+--     mc_2 DECIMAL(5,2),
+--     mc_acierto BOOLEAN,
+--     -- Predicciones Forma Reciente
+--     forma_local_pct DECIMAL(5,2),
+--     forma_visitante_pct DECIMAL(5,2),
+--     forma_acierto BOOLEAN,
+--     -- Predicciones Estilo
+--     estilo_local VARCHAR(50),
+--     estilo_visitante VARCHAR(50),
+--     -- Predicción final COMBINADA (la que se usó)
+--     prediccion_final VARCHAR(10),
+--     probabilidad_final DECIMAL(5,2),
+--     -- Pesos usados en ese momento
+--     peso_poisson DECIMAL(5,2),
+--     peso_dixon DECIMAL(5,2),
+--     peso_montecarlo DECIMAL(5,2),
+--     peso_forma DECIMAL(5,2),
+--     peso_estilo DECIMAL(5,2),
+--     -- Confianza y rango
+--     confianza INTEGER,
+--     rango VARCHAR(5),
+--     -- Veredicto
+--     acierto BOOLEAN,
+--     -- Metadatos
+--     creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- );
+-- 
+-- CREATE INDEX IF NOT EXISTS idx_historial_fecha ON historial_predicciones(fecha);
+-- CREATE INDEX IF NOT EXISTS idx_historial_acierto ON historial_predicciones(acierto);
+-- CREATE INDEX IF NOT EXISTS idx_historial_fixture ON historial_predicciones(fixture_id);
+-- 
+-- ALTER TABLE historial_predicciones ENABLE ROW LEVEL SECURITY;
+-- CREATE POLICY "historial_all" ON historial_predicciones FOR ALL USING (true) WITH CHECK (true);
 
-CREATE INDEX IF NOT EXISTS idx_historial_fecha ON historial_predicciones(fecha);
-CREATE INDEX IF NOT EXISTS idx_historial_acierto ON historial_predicciones(acierto);
-CREATE INDEX IF NOT EXISTS idx_historial_fixture ON historial_predicciones(fixture_id);
-
-ALTER TABLE historial_predicciones ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "historial_all" ON historial_predicciones FOR ALL USING (true) WITH CHECK (true);
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- TABLA PESOS_MODELOS
 -- Almacena los pesos ÓPTIMOS aprendidos del historial
 -- Se actualizan automáticamente después de N predicciones
 -- ═══════════════════════════════════════════════════════════════════════════════
-CREATE TABLE IF NOT EXISTS pesos_modelos (
-    id BIGSERIAL PRIMARY KEY,
-    modelo VARCHAR(50) NOT NULL,
-    peso DECIMAL(5,2) NOT NULL,
-    -- Métricas de este modelo
-    total_predicciones INTEGER DEFAULT 0,
-    aciertos INTEGER DEFAULT 0,
-    porcentaje_acierto DECIMAL(5,2) DEFAULT 0,
-    -- Configuración
-    es_activo BOOLEAN DEFAULT TRUE,
-    actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- DEPRECATED (not referenced in code, kept for reference):
+-- CREATE TABLE IF NOT EXISTS pesos_modelos (
+--     id BIGSERIAL PRIMARY KEY,
+--     modelo VARCHAR(50) NOT NULL,
+--     peso DECIMAL(5,2) NOT NULL,
+--     -- Métricas de este modelo
+--     total_predicciones INTEGER DEFAULT 0,
+--     aciertos INTEGER DEFAULT 0,
+--     porcentaje_acierto DECIMAL(5,2) DEFAULT 0,
+--     -- Configuración
+--     es_activo BOOLEAN DEFAULT TRUE,
+--     actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- );
+
 
 -- Pesos iniciales (los que usamos ahora)
 INSERT INTO pesos_modelos (modelo, peso, es_activo) VALUES
@@ -709,40 +715,42 @@ CREATE POLICY "cuotas_all" ON cuotas FOR ALL USING (true) WITH CHECK (true);
 -- TABLA CUOTAS_CACHE (alternativa simplificada)
 -- Guarda cuotas de partidos para revisión posterior
 -- ═══════════════════════════════════════════════════════════════════════════════
-CREATE TABLE IF NOT EXISTS cuotas_cache (
-    id BIGSERIAL PRIMARY KEY,
-    fixture_id BIGINT,
-    fecha DATE NOT NULL,
-    liga VARCHAR(255),
-    equipo_local VARCHAR(255),
-    equipo_visitante VARCHAR(255),
-    -- Cuotas 1X2
-    cuota_1 DECIMAL(5,2),
-    cuota_X DECIMAL(5,2),
-    cuota_2 DECIMAL(5,2),
-    -- Cuotas Over/Under
-    cuota_over_25 DECIMAL(5,2),
-    cuota_under_25 DECIMAL(5,2),
-    cuota_over_35 DECIMAL(5,2),
-    cuota_under_35 DECIMAL(5,2),
-    -- Cuotas BTTS
-    cuota_btts_yes DECIMAL(5,2),
-    cuota_btts_no DECIMAL(5,2),
-    -- Cuotas Corners
-    cuota_corners_over_95 DECIMAL(5,2),
-    cuota_corners_under_95 DECIMAL(5,2),
-    -- Casa de apuestas
-    casa_apuestas VARCHAR(100),
-    -- Metadatos
-    buscado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- DEPRECATED (not referenced in code, kept for reference):
+-- CREATE TABLE IF NOT EXISTS cuotas_cache (
+--     id BIGSERIAL PRIMARY KEY,
+--     fixture_id BIGINT,
+--     fecha DATE NOT NULL,
+--     liga VARCHAR(255),
+--     equipo_local VARCHAR(255),
+--     equipo_visitante VARCHAR(255),
+--     -- Cuotas 1X2
+--     cuota_1 DECIMAL(5,2),
+--     cuota_X DECIMAL(5,2),
+--     cuota_2 DECIMAL(5,2),
+--     -- Cuotas Over/Under
+--     cuota_over_25 DECIMAL(5,2),
+--     cuota_under_25 DECIMAL(5,2),
+--     cuota_over_35 DECIMAL(5,2),
+--     cuota_under_35 DECIMAL(5,2),
+--     -- Cuotas BTTS
+--     cuota_btts_yes DECIMAL(5,2),
+--     cuota_btts_no DECIMAL(5,2),
+--     -- Cuotas Corners
+--     cuota_corners_over_95 DECIMAL(5,2),
+--     cuota_corners_under_95 DECIMAL(5,2),
+--     -- Casa de apuestas
+--     casa_apuestas VARCHAR(100),
+--     -- Metadatos
+--     buscado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+--     actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- );
+-- 
+-- CREATE INDEX IF NOT EXISTS idx_cuotas_cache_fixture ON cuotas_cache(fixture_id);
+-- CREATE INDEX IF NOT EXISTS idx_cuotas_cache_fecha ON cuotas_cache(fecha);
+-- 
+-- ALTER TABLE cuotas_cache ENABLE ROW LEVEL SECURITY;
+-- CREATE POLICY "cuotas_cache_all" ON cuotas_cache FOR ALL USING (true) WITH CHECK (true);
 
-CREATE INDEX IF NOT EXISTS idx_cuotas_cache_fixture ON cuotas_cache(fixture_id);
-CREATE INDEX IF NOT EXISTS idx_cuotas_cache_fecha ON cuotas_cache(fecha);
-
-ALTER TABLE cuotas_cache ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "cuotas_cache_all" ON cuotas_cache FOR ALL USING (true) WITH CHECK (true);
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- TABLAS DE CALIBRACIÓN (Fix #4 - migrar de /tmp a Supabase)
@@ -797,11 +805,13 @@ CREATE INDEX IF NOT EXISTS idx_calibracion_historico_local ON calibracion_histor
 ALTER TABLE calibracion_historico ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "calibracion_historico_all" ON calibracion_historico FOR ALL USING (true) WITH CHECK (true);
 -- Tabla para trackear qué días se procesaron las estadísticas
-CREATE TABLE IF NOT EXISTS dias_procesados (
-    fecha DATE PRIMARY KEY,
-    equipos_procesados INTEGER DEFAULT 0,
-    fecha_procesamiento TIMESTAMP DEFAULT NOW()
-);
+-- DEPRECATED (not referenced in code, kept for reference):
+-- CREATE TABLE IF NOT EXISTS dias_procesados (
+--     fecha DATE PRIMARY KEY,
+--     equipos_procesados INTEGER DEFAULT 0,
+--     fecha_procesamiento TIMESTAMP DEFAULT NOW()
+-- );
+
 
 -- Permitir upsert
 ALTER TABLE dias_procesados ENABLE ROW LEVEL SECURITY;
@@ -812,36 +822,40 @@ CREATE POLICY "Allow all" ON dias_procesados FOR ALL USING (true) WITH CHECK (tr
 -- TABLA MATCH_STATS
 -- Estadísticas detalladas de partidos (tiros, corners, tarjetas, posesión)
 -- ═══════════════════════════════════════════════════════════════════════════════
-CREATE TABLE IF NOT EXISTS match_stats (
-    id BIGSERIAL PRIMARY KEY,
-    fixture_id BIGINT UNIQUE NOT NULL,
-    stats_data JSONB DEFAULT '[]',
-    h2h_data JSONB DEFAULT '[]',
-    actualizado_en TIMESTAMPTZ DEFAULT NOW()
-);
+-- DEPRECATED (not referenced in code, kept for reference):
+-- CREATE TABLE IF NOT EXISTS match_stats (
+--     id BIGSERIAL PRIMARY KEY,
+--     fixture_id BIGINT UNIQUE NOT NULL,
+--     stats_data JSONB DEFAULT '[]',
+--     h2h_data JSONB DEFAULT '[]',
+--     actualizado_en TIMESTAMPTZ DEFAULT NOW()
+-- );
+-- 
+-- CREATE INDEX IF NOT EXISTS idx_match_stats_fixture ON match_stats(fixture_id);
+-- 
+-- ALTER TABLE match_stats ENABLE ROW LEVEL SECURITY;
+-- CREATE POLICY "match_stats_all" ON match_stats FOR ALL USING (true) WITH CHECK (true);
 
-CREATE INDEX IF NOT EXISTS idx_match_stats_fixture ON match_stats(fixture_id);
-
-ALTER TABLE match_stats ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "match_stats_all" ON match_stats FOR ALL USING (true) WITH CHECK (true);
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- TABLA TEAM_FORM
 -- Forma/recientes de equipos (últimos 5 partidos)
 -- ═══════════════════════════════════════════════════════════════════════════════
-CREATE TABLE IF NOT EXISTS team_form (
-    id BIGSERIAL PRIMARY KEY,
-    team_id BIGINT UNIQUE NOT NULL,
-    equipo VARCHAR(255),
-    liga_id BIGINT,
-    forma_data JSONB DEFAULT '[]',
-    actualizado_en TIMESTAMPTZ DEFAULT NOW()
-);
+-- DEPRECATED (not referenced in code, kept for reference):
+-- CREATE TABLE IF NOT EXISTS team_form (
+--     id BIGSERIAL PRIMARY KEY,
+--     team_id BIGINT UNIQUE NOT NULL,
+--     equipo VARCHAR(255),
+--     liga_id BIGINT,
+--     forma_data JSONB DEFAULT '[]',
+--     actualizado_en TIMESTAMPTZ DEFAULT NOW()
+-- );
+-- 
+-- CREATE INDEX IF NOT EXISTS idx_team_form_team ON team_form(team_id);
+-- 
+-- ALTER TABLE team_form ENABLE ROW LEVEL SECURITY;
+-- CREATE POLICY "team_form_all" ON team_form FOR ALL USING (true) WITH CHECK (true);
 
-CREATE INDEX IF NOT EXISTS idx_team_form_team ON team_form(team_id);
-
-ALTER TABLE team_form ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "team_form_all" ON team_form FOR ALL USING (true) WITH CHECK (true);
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- TABLA EQUIPO_PARTIDOS_STATS
