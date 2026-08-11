@@ -3136,6 +3136,299 @@ def render_claves_page():
 # PÁGINA VIP DASHBOARD - Solo para usuarios Elite/Premium
 # ══════════════════════════════════════════════════════════
 
+def render_vip_value_bets(client, usuario_id):
+    """Tab Value Bets: detector de apuestas con value."""
+    st.markdown("### 🎯 Detector de Value Bets")
+    st.markdown("_Encuentra apuestas donde la probabilidad del modelo es MAYOR que la cuota del mercado_")
+
+    col_v1, col_v2, col_v3 = st.columns(3)
+    with col_v1:
+        prob_modelo = st.slider("📥 Probabilidad del Modelo (%)", 10, 99, 60)
+    with col_v2:
+        cuota_mercado = st.number_input("🏆 Cuota del Mercado", value=2.0, min_value=1.01, max_value=20.0, step=0.05)
+    with col_v3:
+        tipo_apuesta = st.selectbox("📋 Tipo de Apuesta", ["1X2", "Over/Under", "BTTS", "Corners", "Tarjetas"])
+
+    prob_implicita = (1 / cuota_mercado) * 100
+    value = prob_modelo - prob_implicita
+
+    col_calc1, col_calc2, col_calc3 = st.columns(3)
+    with col_calc1:
+        st.metric("📥 Prob. Modelo", f"{prob_modelo:.1f}%")
+    with col_calc2:
+        st.metric("🔽 Prob. Implícita", f"{prob_implicita:.1f}%")
+    with col_calc3:
+        if value > 5:
+            st.metric("🎯 VALUE", f"+{value:.1f}%", delta="📘📘 ALTO VALUE")
+        elif value > 0:
+            st.metric("🎯 VALUE", f"+{value:.1f}%", delta="✅ Value positivo")
+        else:
+            st.metric("🎯 VALUE", f"{value:.1f}%", delta="❌ Sin value")
+
+    if value >= 10:
+        st.success("📘📘 **APUESTA FUERTE** - Value muy alto, alta confianza")
+    elif value >= 5:
+        st.success("✅ **APUESTA** - Value positivo, buena oportunidad")
+    elif value >= 0:
+        st.info("📥 **CAUTELA** - Value marginal, depende de otros factores")
+    else:
+        st.error("❌ **EVITAR** - La cuota está por encima de lo que el modelo sugiere")
+
+    st.markdown("---")
+    st.markdown("#### 📋 Value Bets Registrados")
+
+    try:
+        vb_response = client.table('value_bets').select('*').eq('usuario_id', usuario_id).order('value', desc=True).limit(20).execute()
+        value_bets = vb_response.data if vb_response.data else []
+
+        if value_bets:
+            df_vb = pd.DataFrame([
+                {
+                    "Fecha": vb.get('fecha', ''),
+                    "Partido": f"{vb.get('equipo_local', '')} vs {vb.get('equipo_visitante', '')}",
+                    "Tipo": vb.get('tipo', ''),
+                    "Prob Modelo": f"{vb.get('prob_modelo', 0):.1f}%",
+                    "Cuota": vb.get('cuota_mercado', 0),
+                    "Value": f"{vb.get('value', 0):.1f}%",
+                    "Resultado": vb.get('resultado', 'pendiente'),
+                }
+                for vb in value_bets
+            ])
+            st.dataframe(df_vb, use_container_width=True)
+        else:
+            st.info("⚽ No hay value bets registrados.")
+    except Exception:
+        st.info("⚽ Conecta a Supabase para ver value bets guardados.")
+
+
+def render_vip_alertas(client, usuario_id):
+    """Tab Alertas: centro de notificaciones VIP."""
+    st.markdown("### 🔔 Centro de Alertas VIP")
+
+    st.markdown("#### 🔊 Crear Nueva Alerta")
+    col_al1, col_al2, col_al3 = st.columns(3)
+    with col_al1:
+        tipo_alerta = st.selectbox("Tipo", ["alta_confianza", "value_bet", "streak", "resultado", "custom"])
+    with col_al2:
+        prioridad = st.selectbox("Prioridad", ["alta", "media", "baja"])
+    with col_al3:
+        st.write("")
+
+    titulo = st.text_input("Título de la Alerta")
+    mensaje = st.text_area("Mensaje")
+
+    if st.button("🔔 Crear Alerta", type="primary"):
+        try:
+            client.table('alertas').insert({
+                'usuario_id': usuario_id,
+                'tipo': tipo_alerta,
+                'titulo': titulo,
+                'mensaje': mensaje,
+                'prioridad': prioridad,
+                'leida': False
+            }).execute()
+            st.success("✅ Alerta creada")
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
+
+    st.markdown("---")
+    st.markdown("#### 🎯 Alertas Recientes")
+
+    try:
+        alertas_response = client.table('alertas').select('*').eq('usuario_id', usuario_id).order('creado_en', desc=True).limit(20).execute()
+        alertas = alertas_response.data if alertas_response.data else []
+
+        if alertas:
+            alertas_alta = [a for a in alertas if a.get('prioridad') == 'alta' and not a.get('leida')]
+            alertas_media = [a for a in alertas if a.get('prioridad') == 'media' and not a.get('leida')]
+            alertas_baja = [a for a in alertas if a.get('prioridad') == 'baja' and not a.get('leida')]
+
+            col_alerta1, col_alerta2, col_alerta3 = st.columns(3)
+            with col_alerta1:
+                st.metric("📘 Alta Prioridad", len(alertas_alta))
+            with col_alerta2:
+                st.metric("⭐ Media Prioridad", len(alertas_media))
+            with col_alerta3:
+                st.metric("🔽 Baja Prioridad", len(alertas_baja))
+
+            for alerta in alertas[:10]:
+                color = "🔽" if alerta.get('prioridad') == 'alta' else "🟠" if alerta.get('prioridad') == 'media' else "🔴"
+                with st.expander(f"{color} [{alerta.get('tipo', '')}] {alerta.get('titulo', '')}"):
+                    st.write(alerta.get('mensaje', ''))
+                    st.caption(f"Creada: {alerta.get('creado_en', '')}")
+                    if st.button("✅ Marcar leída", key=f"leer_{alerta.get('id')}"):
+                        try:
+                            client.table('alertas').update({'leida': True}).eq('id', alerta.get('id')).execute()
+                            st.success("Marcada como leída")
+                        except Exception as e:
+                            st.warning(f"⚠️ No se pudo marcar como leída: {e}")
+        else:
+            st.info("⚽ No hay alertas.")
+    except Exception:
+        st.info("⚽ Conecta a Supabase para ver alertas.")
+
+
+def render_vip_ranking(client, usuario_id, picks=None):
+    """Tab Ranking: ranking mensual de pickers + badges."""
+    st.markdown("### 🏆 Ranking Mensual VIP")
+
+    st.markdown("####  Top Pickers del Mes")
+
+    try:
+        ranking_response = client.table('ranking').select('*').order('posicion').limit(10).execute()
+        ranking = ranking_response.data if ranking_response.data else []
+
+        if ranking:
+            df_ranking = pd.DataFrame([
+                {
+                    " Posición": r.get('posicion', i+1),
+                    "💰 Usuario": r.get('nombre', 'Anon'),
+                    "📥 Picks": r.get('total_picks', 0),
+                    "📲 ROI": f"{r.get('roi', 0):.1f}%",
+                    "🏆 Yield": f"{r.get('yield', 0):.1f}%",
+                }
+                for i, r in enumerate(ranking)
+            ])
+            st.dataframe(df_ranking, use_container_width=True)
+        else:
+            st.info("⚽ No hay ranking aún. ¡Sé el primero!")
+
+            if picks:
+                st.markdown("##### 📥 Generar Ranking")
+                if st.button("🔄 Calcular Ranking"):
+                    st.info("Ranking calculado (funcionalidad completa con más usuarios)")
+    except Exception:
+        st.info("⚽ Ranking no disponible. Conecta a Supabase.")
+
+    st.markdown("---")
+    st.markdown("#### … Mis Badges y Logros")
+
+    num_picks = len(picks) if picks else 0
+    badges_disponibles = {
+        "🎯 Primer Pick": num_picks >= 1,
+        "📥 10 Picks": num_picks >= 10,
+        "📘 50 Picks": num_picks >= 50,
+        "👑 100 Picks": num_picks >= 100,
+        "🏆 ROI 10%": True,
+        "🎯 Racha 5": True,
+        "📘 Racha 10": True,
+        "⭐ Valoración 5★": False,
+    }
+
+    cols_badge = st.columns(4)
+    for i, (badge, unlocked) in enumerate(badges_disponibles.items()):
+        with cols_badge[i % 4]:
+            if unlocked:
+                st.success(badge)
+            else:
+                st.info(f"👑 {badge}")
+
+
+def render_vip_export(client, usuario_id, picks=None):
+    """Tab Exportar: descarga de reportes en CSV/Excel/JSON."""
+    st.markdown("### 🔄 Exportar Reportes")
+
+    col_exp1, col_exp2 = st.columns(2)
+    with col_exp1:
+        formato = st.radio("Formato", ["CSV", "Excel (.xlsx)", "JSON"], horizontal=True)
+    with col_exp2:
+        tipo_reporte = st.selectbox("Tipo de Reporte", [
+            "Picks Completos",
+            "Solo Resueltos",
+            "ROI por Tipo",
+            "Bankroll History",
+            "Value Bets"
+        ])
+
+    col_per1, col_per2 = st.columns(2)
+    with col_per1:
+        fecha_inicio = st.date_input("Desde", value=pd.Timestamp.now() - pd.Timedelta(days=30))
+    with col_per2:
+        fecha_fin = st.date_input("Hasta", value=pd.Timestamp.now())
+
+    if picks:
+        picks_filtrados = [
+            p for p in picks
+            if p.get('fecha') and pd.Timestamp(fecha_inicio) <= pd.to_datetime(p.get('fecha')) <= pd.Timestamp(fecha_fin)
+        ]
+
+        st.markdown(f"📥 **{len(picks_filtrados)} pick** en el período seleccionado")
+
+        if st.button("📘 Descargar Reporte", type="primary"):
+            if tipo_reporte == "Picks Completos":
+                df_export = pd.DataFrame(picks_filtrados)
+            elif tipo_reporte == "Solo Resueltos":
+                df_export = pd.DataFrame([p for p in picks_filtrados if p.get('acertado_1x2') is not None])
+            elif tipo_reporte == "ROI por Tipo":
+                data_roi = {
+                    'Tipo': ['1X2', 'Over/Under', 'BTTS', 'Corners', 'Tarjetas', 'Remates'],
+                    'Total': [
+                        len([p for p in picks_filtrados if p.get('acertado_1x2') is not None]),
+                        len([p for p in picks_filtrados if p.get('acertado_ou') is not None]),
+                        len([p for p in picks_filtrados if p.get('acertado_btts') is not None]),
+                        len([p for p in picks_filtrados if p.get('acertado_corners') is not None]),
+                        len([p for p in picks_filtrados if p.get('acertado_tarjetas') is not None]),
+                        len([p for p in picks_filtrados if p.get('acertado_remates') is not None]),
+                    ],
+                    'Aciertos': [
+                        len([p for p in picks_filtrados if p.get('acertado_1x2')]),
+                        len([p for p in picks_filtrados if p.get('acertado_ou')]),
+                        len([p for p in picks_filtrados if p.get('acertado_btts')]),
+                        len([p for p in picks_filtrados if p.get('acertado_corners')]),
+                        len([p for p in picks_filtrados if p.get('acertado_tarjetas')]),
+                        len([p for p in picks_filtrados if p.get('acertado_remates')]),
+                    ]
+                }
+                df_export = pd.DataFrame(data_roi)
+                df_export['% Acierto'] = (df_export['Aciertos'] / df_export['Total'] * 100).round(1)
+            elif tipo_reporte == "Bankroll History":
+                try:
+                    bh_response = client.table('bankroll_history').select('*').eq('usuario_id', usuario_id).execute()
+                    bh = bh_response.data if bh_response.data else []
+                    df_export = pd.DataFrame(bh)
+                except Exception:
+                    df_export = pd.DataFrame()
+            else:  # Value Bets
+                try:
+                    vb_response = client.table('value_bets').select('*').eq('usuario_id', usuario_id).execute()
+                    vb = vb_response.data if vb_response.data else []
+                    df_export = pd.DataFrame(vb)
+                except Exception:
+                    df_export = pd.DataFrame()
+
+            if not df_export.empty:
+                if formato == "CSV":
+                    csv = df_export.to_csv(index=False)
+                    st.download_button(
+                        "📘 Descargar CSV",
+                        csv,
+                        f"scorpion_report_{pd.Timestamp.now().strftime('%Y%m%d')}.csv",
+                        "text/csv"
+                    )
+                elif formato == "Excel (.xlsx)":
+                    buffer = io.BytesIO()
+                    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                        df_export.to_excel(writer, index=False, sheet_name='Report')
+                    st.download_button(
+                        "📘 Descargar Excel",
+                        buffer.getvalue(),
+                        f"scorpion_report_{pd.Timestamp.now().strftime('%Y%m%d')}.xlsx",
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+                else:  # JSON
+                    json_str = df_export.to_json(orient='records')
+                    st.download_button(
+                        "📘 Descargar JSON",
+                        json_str,
+                        f"scorpion_report_{pd.Timestamp.now().strftime('%Y%m%d')}.json",
+                        "application/json"
+                    )
+            else:
+                st.warning("No hay datos para el período seleccionado")
+    else:
+        st.info("⚽ No hay picks para exportar.")
+
+
 def render_vip_page():
 
     # Verificar si el usuario es VIP/Elite
@@ -3952,314 +4245,21 @@ def render_vip_page():
 
     # ========== TAB 4: VALUE BETS ==========
     with tab_value:
-        st.markdown("### 🎯 Detector de Value Bets")
-        st.markdown("_Encuentra apuestas donde la probabilidad del modelo es MAYOR que la cuota del mercado_")
-
-        # Ingresar datos del pick
-        col_v1, col_v2, col_v3 = st.columns(3)
-        with col_v1:
-            prob_modelo = st.slider("📥 Probabilidad del Modelo (%)", 10, 99, 60)
-        with col_v2:
-            cuota_mercado = st.number_input("🏆 Cuota del Mercado", value=2.0, min_value=1.01, max_value=20.0, step=0.05)
-        with col_v3:
-            tipo_apuesta = st.selectbox("📋 Tipo de Apuesta", ["1X2", "Over/Under", "BTTS", "Corners", "Tarjetas"])
-
-        # Calcular value
-        prob_implicita = (1 / cuota_mercado) * 100
-        value = prob_modelo - prob_implicita
-
-        col_calc1, col_calc2, col_calc3 = st.columns(3)
-        with col_calc1:
-            st.metric("📥 Prob. Modelo", f"{prob_modelo:.1f}%")
-        with col_calc2:
-            st.metric("🔽 Prob. Implícita", f"{prob_implicita:.1f}%")
-        with col_calc3:
-            if value > 5:
-                st.metric("🎯 VALUE", f"+{value:.1f}%", delta="📘📘 ALTO VALUE")
-            elif value > 0:
-                st.metric("🎯 VALUE", f"+{value:.1f}%", delta="✅ Value positivo")
-            else:
-                st.metric("🎯 VALUE", f"{value:.1f}%", delta="❌ Sin value")
-
-        # Recomendación
-        if value >= 10:
-            st.success("📘📘 **APUESTA FUERTE** - Value muy alto, alta confianza")
-        elif value >= 5:
-            st.success("✅ **APUESTA** - Value positivo, buena oportunidad")
-        elif value >= 0:
-            st.info("📥 **CAUTELA** - Value marginal, depende de otros factores")
-        else:
-            st.error("❌ **EVITAR** - La cuota está por encima de lo que el modelo sugiere")
-
-        st.markdown("---")
-
-        # Tabla de value bets guardados
-        st.markdown("#### 📋 Value Bets Registrados")
-
-        try:
-            vb_response = client.table('value_bets').select('*').eq('usuario_id', usuario_id).order('value', desc=True).limit(20).execute()
-            value_bets = vb_response.data if vb_response.data else []
-
-            if value_bets:
-                df_vb = pd.DataFrame([
-                    {
-                        "Fecha": vb.get('fecha', ''),
-                        "Partido": f"{vb.get('equipo_local', '')} vs {vb.get('equipo_visitante', '')}",
-                        "Tipo": vb.get('tipo', ''),
-                        "Prob Modelo": f"{vb.get('prob_modelo', 0):.1f}%",
-                        "Cuota": vb.get('cuota_mercado', 0),
-                        "Value": f"{vb.get('value', 0):.1f}%",
-                        "Resultado": vb.get('resultado', 'pendiente'),
-                    }
-                    for vb in value_bets
-                ])
-                st.dataframe(df_vb, use_container_width=True)
-            else:
-                st.info("⚽ No hay value bets registrados.")
-        except Exception as e:
-            st.info("⚽ Conecta a Supabase para ver value bets guardados.")
+        render_vip_value_bets(client, usuario_id)
 
     # ========== TAB 5: ALERTAS ==========
     with tab_alertas:
-        st.markdown("### 🔔 Centro de Alertas VIP")
-
-        # Crear alertas
-        st.markdown("#### 🔊 Crear Nueva Alerta")
-
-        col_al1, col_al2, col_al3 = st.columns(3)
-        with col_al1:
-            tipo_alerta = st.selectbox("Tipo", ["alta_confianza", "value_bet", "streak", "resultado", "custom"])
-        with col_al2:
-            prioridad = st.selectbox("Prioridad", ["alta", "media", "baja"])
-        with col_al3:
-            st.write("")  # spacer
-
-        titulo = st.text_input("Título de la Alerta")
-        mensaje = st.text_area("Mensaje")
-
-        if st.button("🔔 Crear Alerta", type="primary"):
-            try:
-                client.table('alertas').insert({
-                    'usuario_id': usuario_id,
-                    'tipo': tipo_alerta,
-                    'titulo': titulo,
-                    'mensaje': mensaje,
-                    'prioridad': prioridad,
-                    'leida': False
-                }).execute()
-                st.success("✅ Alerta creada")
-            except Exception as e:
-                st.error(f"Error: {str(e)}")
-
-        st.markdown("---")
-
-        # Ver alertas
-        st.markdown("#### 🎯 Alertas Recientes")
-
-        try:
-            alertas_response = client.table('alertas').select('*').eq('usuario_id', usuario_id).order('creado_en', desc=True).limit(20).execute()
-            alertas = alertas_response.data if alertas_response.data else []
-
-            if alertas:
-                # Separar por prioridad
-                alertas_alta = [a for a in alertas if a.get('prioridad') == 'alta' and not a.get('leida')]
-                alertas_media = [a for a in alertas if a.get('prioridad') == 'media' and not a.get('leida')]
-                alertas_baja = [a for a in alertas if a.get('prioridad') == 'baja' and not a.get('leida')]
-
-                col_alerta1, col_alerta2, col_alerta3 = st.columns(3)
-                with col_alerta1:
-                    st.metric("📘 Alta Prioridad", len(alertas_alta))
-                with col_alerta2:
-                    st.metric("⭐ Media Prioridad", len(alertas_media))
-                with col_alerta3:
-                    st.metric("🔽 Baja Prioridad", len(alertas_baja))
-
-                for alerta in alertas[:10]:
-                    color = "🔽" if alerta.get('prioridad') == 'alta' else "🟠" if alerta.get('prioridad') == 'media' else "🔴"
-                    with st.expander(f"{color} [{alerta.get('tipo', '')}] {alerta.get('titulo', '')}"):
-                        st.write(alerta.get('mensaje', ''))
-                        st.caption(f"Creada: {alerta.get('creado_en', '')}")
-
-                        # Marcar como leída
-                        if st.button("✅ Marcar leída", key=f"leer_{alerta.get('id')}"):
-                            try:
-                                client.table('alertas').update({'leida': True}).eq('id', alerta.get('id')).execute()
-                                st.success("Marcada como leída")
-                            except Exception as e:
-                                st.warning(f"⚠️ No se pudo marcar como leída: {e}")
-            else:
-                st.info("⚽ No hay alertas.")
-        except Exception as e:
-            st.info("⚽ Conecta a Supabase para ver alertas.")
+        render_vip_alertas(client, usuario_id)
 
     # ========== TAB 6: RANKING ==========
     with tab_ranking:
-        st.markdown("### 🏆 Ranking Mensual VIP")
-
-        # Ranking de la comunidad
-        st.markdown("####  Top Pickers del Mes")
-
-        try:
-            ranking_response = client.table('ranking').select('*').order('posicion').limit(10).execute()
-            ranking = ranking_response.data if ranking_response.data else []
-
-            if ranking:
-                df_ranking = pd.DataFrame([
-                    {
-                        " Posición": r.get('posicion', i+1),
-                        "💰 Usuario": r.get('nombre', 'Anon'),
-                        "📥 Picks": r.get('total_picks', 0),
-                        "📲 ROI": f"{r.get('roi', 0):.1f}%",
-                        "🏆 Yield": f"{r.get('yield', 0):.1f}%",
-                    }
-                    for i, r in enumerate(ranking)
-                ])
-                st.dataframe(df_ranking, use_container_width=True)
-            else:
-                st.info("⚽ No hay ranking aún. ¡Sé el primero!")
-
-                # Sugerir crear ranking basado en picks
-                if picks:
-                    st.markdown("##### 📥 Generar Ranking")
-                    if st.button("🔄 Calcular Ranking"):
-                        st.info("Ranking calculado (funcionalidad completa con más usuarios)")
-        except Exception as e:
-            st.info("⚽ Ranking no disponible. Conecta a Supabase.")
-
-        st.markdown("---")
-
-        # Badges y Logros
-        st.markdown("#### … Mis Badges y Logros")
-
-        # Badges predefinidos
-        badges_disponibles = {
-            "🎯 Primer Pick": len(picks) >= 1,
-            "📥 10 Picks": len(picks) >= 10,
-            "📘 50 Picks": len(picks) >= 50,
-            "👑 100 Picks": len(picks) >= 100,
-            "🏆 ROI 10%": True,  # Calcular
-            "🎯 Racha 5": True,  # Calcular
-            "📘 Racha 10": True,  # Calcular
-            "⭐ Valoración 5★": False,
-        }
-
-        cols_badge = st.columns(4)
-        for i, (badge, unlocked) in enumerate(badges_disponibles.items()):
-            with cols_badge[i % 4]:
-                if unlocked:
-                    st.success(badge)
-                else:
-                    st.info(f"👑 {badge}")
+        render_vip_ranking(client, usuario_id, picks)
 
     # ========== TAB 7: EXPORTAR ==========
     with tab_export:
-        st.markdown("### 🔄 Exportar Reportes")
+        render_vip_export(client, usuario_id, picks)
 
-        # Selector de formato
-        col_exp1, col_exp2 = st.columns(2)
-        with col_exp1:
-            formato = st.radio("Formato", ["CSV", "Excel (.xlsx)", "JSON"], horizontal=True)
-        with col_exp2:
-            tipo_reporte = st.selectbox("Tipo de Reporte", [
-                "Picks Completos",
-                "Solo Resueltos",
-                "ROI por Tipo",
-                "Bankroll History",
-                "Value Bets"
-            ])
-
-        # Período
-        col_per1, col_per2 = st.columns(2)
-        with col_per1:
-            fecha_inicio = st.date_input("Desde", value=pd.Timestamp.now() - pd.Timedelta(days=30))
-        with col_per2:
-            fecha_fin = st.date_input("Hasta", value=pd.Timestamp.now())
-
-        # Generar preview
-        if picks:
-            picks_filtrados = [
-                p for p in picks 
-                if p.get('fecha') and pd.Timestamp(fecha_inicio) <= pd.to_datetime(p.get('fecha')) <= pd.Timestamp(fecha_fin)
-            ]
-
-            st.markdown(f"📥 **{len(picks_filtrados)} picks** en el período seleccionado")
-
-            if st.button("📘 Descargar Reporte", type="primary"):
-                if tipo_reporte == "Picks Completos":
-                    df_export = pd.DataFrame(picks_filtrados)
-                elif tipo_reporte == "Solo Resueltos":
-                    df_export = pd.DataFrame([p for p in picks_filtrados if p.get('acertado_1x2') is not None])
-                elif tipo_reporte == "ROI por Tipo":
-                    # Crear resumen
-                    data_roi = {
-                        'Tipo': ['1X2', 'Over/Under', 'BTTS', 'Corners', 'Tarjetas', 'Remates'],
-                        'Total': [
-                            len([p for p in picks_filtrados if p.get('acertado_1x2') is not None]),
-                            len([p for p in picks_filtrados if p.get('acertado_ou') is not None]),
-                            len([p for p in picks_filtrados if p.get('acertado_btts') is not None]),
-                            len([p for p in picks_filtrados if p.get('acertado_corners') is not None]),
-                            len([p for p in picks_filtrados if p.get('acertado_tarjetas') is not None]),
-                            len([p for p in picks_filtrados if p.get('acertado_remates') is not None]),
-                        ],
-                        'Aciertos': [
-                            len([p for p in picks_filtrados if p.get('acertado_1x2')]),
-                            len([p for p in picks_filtrados if p.get('acertado_ou')]),
-                            len([p for p in picks_filtrados if p.get('acertado_btts')]),
-                            len([p for p in picks_filtrados if p.get('acertado_corners')]),
-                            len([p for p in picks_filtrados if p.get('acertado_tarjetas')]),
-                            len([p for p in picks_filtrados if p.get('acertado_remates')]),
-                        ]
-                    }
-                    df_export = pd.DataFrame(data_roi)
-                    df_export['% Acierto'] = (df_export['Aciertos'] / df_export['Total'] * 100).round(1)
-                elif tipo_reporte == "Bankroll History":
-                    try:
-                        bh_response = client.table('bankroll_history').select('*').eq('usuario_id', usuario_id).execute()
-                        bh = bh_response.data if bh_response.data else []
-                        df_export = pd.DataFrame(bh)
-                    except Exception as e:
-                        df_export = pd.DataFrame()
-                else:  # Value Bets
-                    try:
-                        vb_response = client.table('value_bets').select('*').eq('usuario_id', usuario_id).execute()
-                        vb = vb_response.data if vb_response.data else []
-                        df_export = pd.DataFrame(vb)
-                    except Exception as e:
-                        df_export = pd.DataFrame()
-
-                if not df_export.empty:
-                    if formato == "CSV":
-                        csv = df_export.to_csv(index=False)
-                        st.download_button(
-                            "📘 Descargar CSV",
-                            csv,
-                            f"scorpion_report_{pd.Timestamp.now().strftime('%Y%m%d')}.csv",
-                            "text/csv"
-                        )
-                    elif formato == "Excel (.xlsx)":
-                        buffer = io.BytesIO()
-                        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                            df_export.to_excel(writer, index=False, sheet_name='Report')
-                        st.download_button(
-                            "📘 Descargar Excel",
-                            buffer.getvalue(),
-                            f"scorpion_report_{pd.Timestamp.now().strftime('%Y%m%d')}.xlsx",
-                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                        )
-                    else:  # JSON
-                        json_str = df_export.to_json(orient='records')
-                        st.download_button(
-                            "📘 Descargar JSON",
-                            json_str,
-                            f"scorpion_report_{pd.Timestamp.now().strftime('%Y%m%d')}.json",
-                            "application/json"
-                        )
-                else:
-                    st.warning("No hay datos para el período seleccionado")
-        else:
-            st.info("⚽ No hay picks para exportar.")
-
-    # Mostrar Consensus Meter
+        # Mostrar Consensus Meter
     st.markdown("---")
     st.markdown("### 🎲 Consensus de Modelos")
     st.markdown("_¿Cuántos modelos están de acuerdo en el último pick?_" )
