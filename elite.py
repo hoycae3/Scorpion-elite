@@ -3030,8 +3030,8 @@ def render_claves_page():
                 elif len(nueva_clave) < 4:
                     st.error("⚠️ La contraseña debe tener al menos 4 caracteres")
                 else:
-                    # Todos los planes son VIP (semana, mes, elite, vip)
-                    plan_asignar = "elite"
+                    # Asignar el plan seleccionado por el usuario
+                    plan_asignar = plan
                     success = db_crear_usuario(nueva_clave.strip(), nombre.strip(), plan_asignar, dias)
                     if success:
                         st.success(f"✅ Contraseña '{nueva_clave}' creada para {nombre} - Plan {plan.upper()}")
@@ -4289,7 +4289,7 @@ def render_vip_page():
         p1_values = []
         for i, (nombre, p1) in enumerate(modelos_info):
             with col_modelos[i]:
-                st.metric(f"ðŸ“Š {nombre}", f"{p1:.1f}%")
+                st.metric(f"📊 {nombre}", f"{p1:.1f}%")
             p1_values.append(p1)
 
         # Calcular discrepancia
@@ -4302,9 +4302,9 @@ def render_vip_page():
         if discrepancia < 8:
             st.success("📌 **ALTO CONSENSO** - Los modelos están muy alineados")
         elif discrepancia < 15:
-            st.info("ðŸ“¥ **CONSENSO MODERADO** - Buena señal")
+            st.info("📥 **CONSENSO MODERADO** - Buena señal")
         else:
-            st.warning("ðŸ™ **BAJO CONSENSO** - Los modelos discrepan, mayor riesgo")
+            st.warning("🙏 **BAJO CONSENSO** - Los modelos discrepan, mayor riesgo")
     else:
         st.info("No hay datos de modelos disponibles (analiza un partido primero)")
 

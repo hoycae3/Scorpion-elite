@@ -42,7 +42,7 @@ def obtener_stats_partido(fixture_id, team_id, team_name, headers, API_URL):
                                 val = val.replace('%', '')
                             try:
                                 return int(float(val))
-                            except:
+                            except (ValueError, TypeError):
                                 return 0
                     return 0
                 
