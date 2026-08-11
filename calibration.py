@@ -25,7 +25,7 @@ try:
             SUPABASE_URL = os.getenv("SUPABASE_URL")
             SUPABASE_KEY = os.getenv("SUPABASE_KEY")
         except ImportError:
-            pass
+            logging.debug("python-dotenv no instalado, usando variables de entorno del sistema")
     
     _client = None
     
@@ -37,6 +37,7 @@ try:
             _client = create_client(SUPABASE_URL, SUPABASE_KEY)
         return _client
 except ImportError:
+    logging.debug("supabase-py no instalado, calibración no disponible")
     _get_client = None
 
 logger = logging.getLogger(__name__)
