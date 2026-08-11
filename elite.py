@@ -94,7 +94,7 @@ def get_conteos_cached():
         eq_count = len(client.table('equipos_stats').select('team_id').execute().data or [])
         picks_count = len(client.table('picks').select('id').execute().data or [])
         return part_count, eq_count, picks_count
-    except:
+    except Exception as e:
         return 0, 0, 0
 
 
@@ -104,7 +104,7 @@ def get_partidos_cache():
     client = get_client()
     try:
         return client.table('partidos').select('*').execute().data or []
-    except:
+    except Exception as e:
         return []
 
 st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
@@ -144,7 +144,7 @@ def get_supabase_client():
         # Verificar/crear columna team_id en equipos_stats
         try:
             client.table('equipos_stats').select('team_id').limit(1).execute()
-        except:
+        except Exception as e:
             # La columna no existe, intentar crear mediante RPC
             logger.info("Verificando columna team_id en equipos_stats...")
         return client
@@ -311,7 +311,7 @@ def utc_to_colombia(utc_datetime_str):
         colombia_tz = timezone(timedelta(hours=-5))
         colombia_dt = utc_dt.astimezone(colombia_tz)
         return colombia_dt.strftime('%H:%M')
-    except:
+    except Exception as e:
         # Si falla, intentar con formato simple
         try:
             hora_str = utc_datetime_str[11:16]  # Extraer HH:MM
@@ -320,7 +320,7 @@ def utc_to_colombia(utc_datetime_str):
             # Restar 5 horas
             hora_colombia = (hora - 5) % 24
             return f"{hora_colombia:02d}:{minuto:02d}"
-        except:
+        except Exception as e:
             return utc_datetime_str[11:16] if len(utc_datetime_str) > 16 else ""
 
 def db_todos():
@@ -1051,7 +1051,7 @@ def render_login_form():
                                     f = datetime.strptime(str(p['fecha'])[:10], '%Y-%m-%d').date()
                                     if f >= hoy:
                                         fechas_futuras.append(f)
-                                except:
+                                except Exception:
                                     pass
                             
                             # Siempre descargar resultados de ayer
@@ -1355,7 +1355,7 @@ def render_login_form():
                                                                         'resultado': resultado_apuesta,
                                                                         'ganancia': ganancia
                                                                     }).eq('id', apuesta_id).execute()
-                                                        except:
+                                                        except Exception:
                                                             pass  # Si no hay bankroll, continuar
                                             except Exception as e:
                                                 pass  # Silencioso, no mostrar error por cada pick
@@ -1693,7 +1693,7 @@ def render_login_form():
             client = get_client()
             response = client.table('partidos').select('*').execute()
             partidos_db = response.data if response.data else []
-        except:
+        except Exception as e:
             partidos_db = []
         
         if partidos_db:
@@ -1782,7 +1782,7 @@ def render_login_form():
                             tiene_local = len(resp_local.data) > 0 if resp_local.data else False
                             tiene_visit = len(resp_visit.data) > 0 if resp_visit.data else False
                             tiene_stats = tiene_local and tiene_visit
-                        except:
+                        except Exception as e:
                             tiene_stats = None
 
                         # Badge de estado
@@ -1826,7 +1826,7 @@ def render_login_form():
                         nombre = eq.get('equipo', '')
                         if nombre and nombre not in equipos_lista:
                             equipos_lista.append(nombre)
-            except:
+            except Exception:
                 pass
 
             st.markdown("### 📊 Seleccionar Equipos")
@@ -1879,14 +1879,14 @@ def render_login_form():
                 resp_local = client.table('equipos_stats').select('*').ilike('equipo', f'%{local_nombre}%').execute()
                 if resp_local.data:
                     stats_local = resp_local.data[0]
-            except:
+            except Exception:
                 pass
             
             try:
                 resp_visitante = client.table('equipos_stats').select('*').ilike('equipo', f'%{visitante_nombre}%').execute()
                 if resp_visitante.data:
                     stats_visitante = resp_visitante.data[0]
-            except:
+            except Exception:
                 pass
             
             # Buscar promedios_dinamicos por team_id directo
@@ -2377,7 +2377,7 @@ def render_login_form():
                         return '?'
                     try:
                         return f'{float(val):{fmt}}'
-                    except:
+                    except Exception as e:
                         return str(val)
 
                 def safe_fmt_int(val):
@@ -2386,7 +2386,7 @@ def render_login_form():
                         return '?'
                     try:
                         return f'{int(float(val))}'
-                    except:
+                    except Exception as e:
                         return str(val)
 
                 # CONVERTIR TODAS LAS VARIABLES A STRINGS PARA EL F-STRING
@@ -3567,7 +3567,7 @@ def render_login_form():
                     else:
                         bankroll_guardado = 1000.0
                         total_retirado_guardado = 0.0
-                except:
+                except Exception as e:
                     bankroll_guardado = 1000.0
                     total_retirado_guardado = 0.0
                 
@@ -3575,7 +3575,7 @@ def render_login_form():
                 try:
                     resp_retiros = client.table('bankroll_retiros').select('*').eq('usuario', usuario_id).order('fecha', desc=True).execute()
                     retiros = resp_retiros.data if resp_retiros.data else []
-                except:
+                except Exception as e:
                     retiros = []
 
                 # Info de bankroll (moneda por defecto)
@@ -3878,7 +3878,7 @@ def render_login_form():
                     bankroll_actual_db = stats_data.get('bankroll_inicial', 1000.0)
                 else:
                     bankroll_actual_db = 1000.0
-            except:
+            except Exception as e:
                 bankroll_actual_db = 1000.0
             
             # TODO en una sola línea compacta
@@ -3951,7 +3951,7 @@ def render_login_form():
             try:
                 resp_hist = client.table('bankroll_retiros').select('*').eq('usuario', usuario_id).order('fecha', desc=True).execute()
                 retiros_list = resp_hist.data if resp_hist.data else []
-            except:
+            except Exception as e:
                 retiros_list = []
             
             if retiros_list:
@@ -4105,8 +4105,8 @@ def render_login_form():
                                 try:
                                     client.table('alertas').update({'leida': True}).eq('id', alerta.get('id')).execute()
                                     st.success("Marcada como leída")
-                                    pass
-                                except: pass
+                                except Exception as e:
+                                    st.warning(f"⚠️ No se pudo marcar como leída: {e}")
                 else:
                     st.info("⚽ No hay alertas.")
             except Exception as e:
@@ -4239,14 +4239,14 @@ def render_login_form():
                             bh_response = client.table('bankroll_history').select('*').eq('usuario_id', usuario_id).execute()
                             bh = bh_response.data if bh_response.data else []
                             df_export = pd.DataFrame(bh)
-                        except:
+                        except Exception as e:
                             df_export = pd.DataFrame()
                     else:  # Value Bets
                         try:
                             vb_response = client.table('value_bets').select('*').eq('usuario_id', usuario_id).execute()
                             vb = vb_response.data if vb_response.data else []
                             df_export = pd.DataFrame(vb)
-                        except:
+                        except Exception as e:
                             df_export = pd.DataFrame()
                     
                     if not df_export.empty:
