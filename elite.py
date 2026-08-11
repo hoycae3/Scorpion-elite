@@ -9,6 +9,7 @@ import math
 import random
 import io
 import bcrypt
+import psycopg2
 from datetime import date, timedelta, datetime, timezone
 from pathlib import Path
 from dotenv import load_dotenv
@@ -229,14 +230,12 @@ def recalcular_lambdas_desde_historial(client):
 
 def migrate_team_id_column():
     """Migra la columna team_id a la tabla equipos_stats si no existe"""
-    import psycopg2
-    import os
     try:
         # Obtener connection string de las variables de entorno de Render
         conn_url = os.getenv('DATABASE_URL', '')
-        if not conn_url:
-            # Intentar construir desde SUPABASE_URL
-            conn_url = f"postgresql://postgres:{os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')}@db.jjtifureeygvygxtpuku.supabase.co:5432/postgres"
+        if not conn_url and os.getenv('SUPABASE_URL') and os.getenv('SUPABASE_SERVICE_ROLE_KEY'):
+            supabase_host = os.getenv('SUPABASE_URL').replace('https://', '').replace('http://', '')
+            conn_url = f"postgresql://postgres:{os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')}@db.{supabase_host}:5432/postgres"
         
         if conn_url:
             conn = psycopg2.connect(conn_url)
