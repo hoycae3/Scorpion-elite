@@ -1,6 +1,6 @@
 # Scorpion Elite - Documentacion del Proyecto
 
-> Ultima actualizacion: 2026-08-11
+> Ultima actualizacion: 2026-08-11 (post-auditoria completa)
 
 ---
 
@@ -12,294 +12,240 @@
 | **App Produccion** | https://scorpion-elite.onrender.com |
 | **Base de datos** | Supabase (jjtifureeygvygxtpuku.supabase.co) |
 | **Deploy** | Render (srv-d9e1thbbc2fs73f30jh0) - auto-deploy desde main |
-| **Password app** | scorpion2026 |
-| **Stack** | Python + Streamlit + Supabase + API-Football |
+| **Login** | bcrypt (tabla `usuarios` en Supabase) |
+| **Stack** | Python 3.11 + Streamlit + Supabase + API-Football |
 
 ---
 
 ## Estructura del Proyecto
 
-    Scorpion-elite/
-    +-- elite.py                 # APP PRINCIPAL Streamlit (4335 lineas)
-    +-- analysis_models.py       # Modelos matematicos (Poisson, Dixon-Coles, Monte Carlo, Elo) - 907 lineas
-    +-- funciones_stats.py      # Funciones de stats de partidos - 333 lineas
-    +-- calibration.py           # Sistema de calibracion automatica - 399 lineas
-    +-- model_optimizer.py       # Optimizador de pesos de modelos - 492 lineas
-    +-- data_loader.py           # Procesa Excel de Flashscore - 243 lineas
-    +-- partidos_manager.py      # Gestion de partidos - 62 lineas
-    +-- supabase_schema.sql      # Schema completo de la BD
-    +-- requirements.txt          # Dependencias
-    +-- styles.css               # Estilos CSS
-    +-- Dockerfile               # Docker para produccion
-    +-- render.yaml              # Configuracion de deploy
-    +-- fix_mojibake.py          # Script: limpia mojibake cirilico
-    +-- fix_bare_excepts.py      # Script: reemplaza bare excepts
-    +-- backups/                 # CODIGO MUERTO (8985 lineas) - en .gitignore
-    +-- scorpion/                # Modulo NO CONECTADO a elite.py (1958 lineas)
-        +-- __init__.py
-        +-- config.py
-        +-- api/ (football.py, scraper.py)
-        +-- db/ (database.py)
-        +-- models/ (math.py)
-        +-- ui/ (components.py)
+```
+Scorpion-elite/
+├── elite.py                 # ⭐ App principal Streamlit (~4350 lineas)
+├── analysis_models.py       # 5 modelos matematicos (ensemble)
+├── funciones_stats.py       # Stats y promedios dinamicos
+├── calibration.py           # Calibracion automatica de lambdas
+├── supabase_schema.sql      # Schema DB (15 tablas activas)
+├── requirements.txt         # Dependencias (versiones fijadas)
+├── Dockerfile               # Docker para produccion
+├── render.yaml              # Config de deploy
+├── .streamlit/config.toml   # Tema oscuro + config
+├── .env.example             # Template de variables de entorno
+├── .gitignore                # Reglas de git
+└── backups/                 # Backups (gitignored)
+```
 
-### Archivos que NO existen (referenciados en docs antiguas)
-
-| Archivo | Estado |
-|---------|--------|
-| `robot_extractor.py` | NO EXISTE (era el SuperRobot) |
-| `stats_extractor.py` | NO EXISTE |
-| `stats_robot.py` | NO EXISTE |
-| `scrapers_fallback.py` | NO EXISTE |
-
-### Modulo scorpion/
-
-El modulo `scorpion/` (1,958 lineas) NO esta importado en ningun archivo del proyecto.
-Es codigo en desarrollo que no se usa. Decision pendiente: terminar el modulo o eliminarlo.
-
----
-
-## Menu de la Aplicacion
-
-El menu real tiene 4 paginas (no 6 como decia la documentacion anterior):
-
-    PAGINA PRINCIPAL:
-    +-- Landing (sin login)
-    |   +-- 4 partidos aleatorios + preview analisis
-    |
-    MENU (despues de login):
-    +-- VIP (por defecto)
-    |   +-- Tab: ROI por modelo
-    |   +-- Tab: Bankroll (Dashboard/Agregar/Historial/Config)
-    |   +-- Tab: Value Bets
-    |   +-- Tab: Alertas
-    |   +-- Tab: Ranking
-    |   +-- Tab: Exportar
-    +-- Partidos
-    |   +-- Sincronizar (descarga partidos + stats)
-    |   +-- Limpiar Equipos
-    |   +-- Recalcular Lambdas
-    |   +-- Ingresar Resultados
-    +-- Analizador
-    |   +-- Analisis con 4 modelos matematicos
-    +-- Claves (solo admin)
-        +-- Crear Contrasena
-        +-- Ver Contrasenas
-
----
-
-## Flujo de Sincronizacion
-
-### Boton "Sincronizar"
-
-| Configuracion | Valor |
-|---------------|-------|
-| **Ventana de fechas** | HOY-2 a HOY+6 |
-| **Ligas** | 55 ligas mundiales (activas, linea 1081) |
-| **Goals extraction** | `f.get('goals', {})` (corregido) |
-| **Upsert** | Sin DELETE, solo inserta/actualiza |
-
-### Nota sobre la variable LIGAS
-
-Hay dos asignaciones de `LIGAS` en elite.py:
-- Linea 951: `LIGAS = [solo Argentina]` - placeholder, se ejecuta al cargar la pagina pero
-  es codigo muerto porque se sobrescribe.
-- Linea 1081: `LIGAS = [55 ligas]` - DENTRO del boton Sincronizar, es la que realmente se usa.
-
-Al sincronizar, la linea 1081 pisa la 951 y se procesan las 55 ligas.
-
-### Optimizacion de Sincronizacion (2026-08-11)
-
-El CASO B (equipos existentes) ahora filtra FT ya guardados antes de descargar:
-
-    PASO 1: Descargar partidos (hoy-2 a hoy+6) -> upsert a tabla partidos
-    PASO 2: Sincronizar stats de equipos
-      +-- CASO A: Equipo NUEVO (0 records en DB)
-      |   +-- Fetch /teams/statistics + 5 partidos iniciales (~6 API calls)
-      +-- CASO B: Equipo EXISTENTE (tiene records)
-          +-- Consultar fixture_ids ya guardados (1 query Supabase)
-          +-- Filtrar FT de la ventana que YA estan guardados (0 API calls)
-          +-- Solo buscar mas FT si faltan por guardar
-          +-- Upsert solo los FT pendientes
-
-El resumen final muestra: "API calls ahorradas" (cuantas calls se evitaron).
-
-### Otros botones
-
-| Boton | Funcion |
-|-------|---------|
-| **Limpiar Equipos** | Elimina equipos sin stats |
-| **Recalcular Lambdas** | Recalcula lambda_local/visitante desde historial |
-| **Ingresar Resultados** | Actualiza marcadores para calibrar predicciones |
-
----
-
-## Base de Datos Supabase
-
-### Tablas (15 referenciadas en codigo)
-
-| Tabla | Descripcion |
-|-------|-------------|
-| `partidos` | Partidos descargados de API-Football |
-| `equipos_stats` | Stats acumuladas por equipo (lambda_local/visitante) |
-| `equipo_partidos_stats` | Historial de partidos con stats detalladas |
-| `picks` | Picks guardados (1X2, O/U, BTTS, corners, tiros, tarjetas) |
-| `bankroll_apuestas` | Apuestas del bankroll |
-| `bankroll_history` | Historial de bankroll |
-| `bankroll_retiros` | Retiros de bankroll |
-| `user_stats` | Stats acumuladas por usuario |
-| `alertas` | Centro de notificaciones |
-| `value_bets` | Picks con value detectado |
-| `ranking` | Ranking mensual |
-| `cuotas` | Cuotas de apuestas |
-| `usuarios` | Usuarios del sistema |
-| `calibracion_equipos` | Factores de calibracion por equipo |
-| `calibracion_historico` | Historico de calibracion |
-
-### Logica de Lambda
-
-    # Lambda FINAL = 60% dinamico + 40% historico
-    if lambda_dinamico_calc is not None:
-        lambda_final = lambda_dinamico_calc * 0.6 + lambda_historico * 0.4
-    else:
-        lambda_final = lambda_historico
-
-Ponderacion exponencial (decay=0.92): partidos recientes pesan mas.
+### Archivos en .gitignore (codigo muerto, NO tracked)
+- `scorpion/` - modulo modular en desarrollo, no integrado
+- `model_optimizer.py` - optimizador, no importado
+- `data_loader.py` - loader de Excel, no usado
+- `partidos_manager.py` - manager, no usado
+- `test_ligas.py`, `test_sync.py` - scripts de prueba manuales
 
 ---
 
 ## Modelos Matematicos (analysis_models.py)
 
-| Modelo | Descripcion |
-|--------|-------------|
-| **Poisson** | Distribucion de Poisson para goles esperados |
-| **Dixon-Coles** | Mejora de Poisson con correccion de baja puntuacion |
-| **Monte Carlo** | Simulacion de 10,000 partidos |
-| **Elo** | Rating Elo de equipos |
+### Ensemble de 5 modelos:
 
-### Predicciones adicionales (funciones en analysis_models.py)
+| Modelo | Peso | Funcion |
+|--------|------|---------|
+| Poisson | 30% | `poisson_1x2()`, `poisson_over_under()` |
+| Dixon-Coles | 25% | `dc_1x2()` |
+| Monte Carlo | 20% | `monte_carlo()` (3000 simulaciones) |
+| Forma Reciente | 15% | `analizar_forma_reciente()` |
+| Estilo de Juego | 10% | `analizar_estilo_juego()` |
 
-| Funcion | Linea tipica | Descripcion |
-|---------|-------------|-------------|
-| `predecir_tiros()` | Over/Under 24 | Distribucion normal |
-| `predecir_tarjetas()` | Over/Under 6 | Distribucion normal |
-| `predecir_tiros_arco()` | Over/Under 8 | Distribucion normal |
-| `normal_cdf()` | - | Aproximacion Abramowitz y Stegun |
+### Funcion principal: `calcular(lambda_local, lambda_visitante, ...)`
+- Retorna: 1X2, Over/Under, BTTS, Corners, Tiros, Tarjetas, Tiros Arco
+- Incluye `modelos` dict con scores individuales de cada modelo
+- `verificar_coherencia()` ajusta BTTS y tarjetas para coherencia
+
+### Predicciones adicionales (distribucion normal):
+- `predecir_tiros()` - Over/Under 24
+- `predecir_tarjetas()` - Over/Under 6
+- `predecir_tiros_arco()` - Over/Under 8
+- `normal_cdf()` - aproximacion Abramowitz-Stegun
+
+---
+
+## Sistema de Lambdas
+
+### Calculo:
+```
+λ Final = (λ Dinamico × 0.6) + (λ Historico × 0.4)
+```
+
+### λ Local vs Visitante:
+- `equipos_stats` tiene `lambda_local` y `lambda_visitante` separados
+- El analizador usa el lambda correcto segun el rol del equipo
+- **BUG CORREGIDO (2026-08-11)**: visitante ahora usa `lambda_visitante` (antes usaba `lambda_local`)
+
+### Ponderacion exponencial (decay=0.92):
+- Partido mas reciente: peso = 1.0
+- Partido 5to: peso = 0.92^5 = 0.66
+- Partido 10mo: peso = 0.92^10 = 0.43
+
+### Funcion: `recalcular_lambdas_desde_historial()`
+- Lee de `equipo_partidos_stats`
+- Separa por `es_local=true/false`
+- Calcula λ_local y λ_visitante correctos
+- Boton: "🔄 Recalcular Lambdas" en pagina Carga
+
+---
+
+## Base de Datos (Supabase)
+
+### 15 tablas activas:
+
+| Tabla | Descripcion |
+|-------|-------------|
+| `partidos` | Partidos descargados con fixtures |
+| `equipos_stats` | Stats acumuladas + lambdas |
+| `equipo_partidos_stats` | Historial de partidos con stats |
+| `picks` | Picks guardados |
+| `bankroll_apuestas` | Apuestas del bankroll VIP |
+| `bankroll_history` | Historial de bankroll |
+| `bankroll_retiros` | Retiros de bankroll |
+| `usuarios` | Usuarios + password_hash (bcrypt) |
+| `calibracion_equipos` | Factores de correccion |
+| `calibracion_historico` | Registro de resultados |
+| `user_stats` | Stats acumuladas por usuario |
+| `alertas` | Centro de notificaciones |
+| `value_bets` | Picks con value detectado |
+| `ranking` | Ranking mensual |
+| `cuotas` | Cuotas de mercado |
+
+### Tablas DEPRECATED (en schema pero no usadas):
+- `bankroll_history`, `bankroll_retiros`, `user_stats`, `alertas`, `value_bets`, `ranking`, `cuotas` (marcadas como deprecated en supabase_schema.sql)
+
+---
+
+## Paginas de la App
+
+```
+PAGINA PRINCIPAL:
+├── 🌐 Landing (sin login)
+│   └── 4 partidos aleatorios + preview analisis
+│
+MENU (despues de login):
+├── 👑 VIP (por defecto)
+│   ├── 📥 ROI por Modelo
+│   ├── 📊 Resultados
+│   ├── 🏆 Bankroll (Dashboard/Agregar/Historial)
+│   ├── 🎯 Value Bets
+│   ├── 🔔 Alertas
+│   ├── 🏆 Ranking
+│   └── 🔄 Exportar
+├── 📊 Partidos
+│   ├── 🔄 Sincronizar
+│   ├── 📊 Stats Ayer
+│   ├── 🧹 Limpiar Equipos
+│   └── 🔄 Recalcular Lambdas
+├── 📥 Analizador
+│   └── Consenso de modelos en VIP
+└── 👑 Claves (solo admin)
+```
+
+---
+
+## Sincronizacion
+
+### Boton "🔄 Sincronizar":
+- Ventana: HOY-3 a HOY+10 (13 dias)
+- 55 ligas mundiales
+- Sincronizacion INCREMENTAL (no re-descarga lo existente)
+- Agrega TODOS los equipos de TODOS los fixtures
+
+### Boton "📊 Stats Ayer":
+- Actualiza SOLO partidos de ayer (hoy-1)
+- Obtiene estado FT y scores finales
+- Guarda stats en `equipo_partidos_stats`
+
+### Boton "🔄 Recalcular Lambdas":
+- Recalcula λ_local/λ_visitante desde historial
+- Corrige lambdas corruptos
 
 ---
 
 ## Seguridad
 
-### Configuracion de credenciales (2026-08-11)
-
-Las credenciales se leen de variables de entorno:
-
-    SUPABASE_URL = os.getenv("SUPABASE_URL", "https://jjtifureeygvygxtpuku.supabase.co")
-    SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-    API_FOOTBALL_KEY = os.getenv("API_FOOTBALL_KEY")
-    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "scorpion2026")
-
-### Accion pendiente del usuario
-
-Las API keys y Supabase keys fueron commiteadas previamente. Se limpiaron del codigo
-pero siguen en el historial de git. El usuario debe rotar:
-1. API-Football key en https://dashboard.api-football.com
-2. Supabase anon key en https://supabase.com/dashboard
-
----
-
-## Funcionalidades Implementadas
-
-| Seccion | Estado |
+| Aspecto | Estado |
 |---------|--------|
-| Login con contrasena | OK |
-| Landing page (4 partidos aleatorios) | OK |
-| Pagina Partidos (todos los partidos) | OK |
-| Sincronizacion de partidos | OK (optimizada 2026-08-11) |
-| Auto-actualizacion de picks | OK |
-| Barra de progreso en sincronizacion | OK |
-| Analisis con 4 modelos | OK |
-| Predicciones adicionales (O/U, BTTS, corners, tiros, tarjetas) | OK |
-| Bankroll (Dashboard/Agregar/Historial/Config) | OK |
-| Guardar picks en Supabase | OK |
-| Recalcular Lambdas | OK |
-| Limpiar Bankroll | OK |
-| Sistema de calibracion | OK |
+| Passwords | ✅ bcrypt (no texto plano) |
+| SQL Injection | ✅ No vulnerable (Supabase ORM) |
+| Variables entorno | ✅ os.getenv() para secrets |
+| .env en gitignore | ✅ |
+| RLS policies | ✅ 22 policies activas |
+| Input validation | ⚠️ Basica (5 text_inputs) |
 
 ---
 
-## Problemas Conocidos / Pendientes
+## Estado del Codigo (Auditoria 2026-08-11)
 
-### Alta prioridad
+### Metricas:
+- **elite.py**: ~4350 lineas, 40+ funciones
+- **Complejidad ciclomatica**: 708 (alta, concentrada en render_*)
+- **Funciones mas largas**: render_analizador_page (937), render_vip_page (874)
+- **Imports sin usar**: 0 (limpiados)
+- **Bare excepts**: 0
+- **Funciones anidadas**: 0
+- **Mojibake**: 0
+- **logger.error/warning**: 33 calls
 
-| Problema | Detalle |
-|----------|---------|
-| **LIGAS tiene asignacion duplicada** | Linea 951 placeholder muerto + linea 1081 activa (55 ligas). Limpiar la 951 |
-| **API keys en historial git** | Limpiadas del codigo actual, pero siguen en git history. Rotar keys |
-| **scorpion/ no conectado** | 1,958 lineas de codigo muerto. Decidir: terminar o eliminar |
+### Limpieza completada (2026-08-11):
+- ✅ Eliminados imports sin usar (date, Path, List, Optional)
+- ✅ Eliminada duplicacion de `pp()` (importada de analysis_models)
+- ✅ Extraida `_construir_pick_data()` de render_analizador_page
+- ✅ Corregido bug lambda_visitante
+- ✅ Consenso de modelos YA funcionaba (AGENTS.md desactualizado)
 
-### Media prioridad
+### Pendiente:
+- ❌ Tests automatizados (no existen)
+- ⚠️ elite.py sigue siendo un monolito (4350 lineas)
+- ⚠️ Funciones render_* largas (>900 lineas cada una)
 
-| Problema | Detalle |
-|----------|---------|
-| **backups/ (8985 lineas)** | Codigo muerto en .gitignore pero sigue tracked en git |
-| **Consenso de modelos simulado** | Muestra 1 valor repetido 4 veces en VIP |
+---
 
-### Resueltos (sesion 2026-08-11)
+## Como Continuar en Nuevo Chat
 
-| Problema | Solucion |
-|----------|----------|
-| Secretos hardcodeados | Reemplazados por os.getenv() en 8 archivos |
-| Mojibake cirilico (4124 chars) | Limpiado a 0 caracteres. Script: fix_mojibake.py |
-| Bare excepts (21) | Reemplazados por except Exception. Script: fix_bare_excepts.py |
-| Sincronizacion ineficiente | Optimizada: filtra FT ya guardados, ahorra API calls |
+1. **LEER ESTE ARCHIVO PRIMERO** (AGENTS.md)
+2. Verificar app en produccion:
+   ```bash
+   curl -s -o /dev/null -w "%{http_code}" https://scorpion-elite.onrender.com/
+   ```
+3. Probar modelos:
+   ```bash
+   cd /workspace/project/Scorpion-elite
+   python3 -c "from analysis_models import calcular; r=calcular(1.5,1.2); print(r['p1'], r['pick_1x2'])"
+   ```
+4. **REGLAS IMPORTANTES:**
+   - NO eliminar archivos sin confirmar con el usuario
+   - NO hacer deploy automatico sin confirmar con el usuario
+   - Guardar cambios en git ANTES de hacer cambios grandes
+   - Los backups estan en `backups/` - NO perderlos
 
 ---
 
 ## Comandos Utiles
 
-    # Deploy en Render (auto-deploy desde main, pero se puede forzar)
-    curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploys" \
-      -H "Authorization: Bearer $RENDER_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{"clearCache": "dont_clear"}'
+```bash
+# Probar modelos
+python3 -c "from analysis_models import calcular; r=calcular(1.5,1.2); print(r)"
 
-    # Verificar app
-    curl -s -o /dev/null -w "%{http_code}" https://scorpion-elite.onrender.com/
+# Probar pp() (Poisson)
+python3 -c "from analysis_models import pp; print(pp(1.5,0))"
 
-    # Verificar sintaxis de un archivo
-    python3 -c "import ast; ast.parse(open('elite.py').read()); print('OK')"
+# Verificar sintaxis
+python3 -c "import ast; ast.parse(open('elite.py').read()); print('OK')"
 
-    # Limpiar mojibake (si reaparece)
-    python3 fix_mojibake.py elite.py
+# Deploy en Render
+curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploys" \
+  -H "Authorization: Bearer $RENDER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"clearCache": "dont_clear"}'
 
-    # Reemplazar bare excepts (si se agregan nuevos)
-    python3 fix_bare_excepts.py
+# Verificar app
+curl -s -o /dev/null -w "%{http_code}" https://scorpion-elite.onrender.com/
+```
 
----
-
-## Historial de Cambios
-
-### 2026-08-11 - Limpieza y optimizacion
-
-| Cambio | Commit |
-|--------|--------|
-| Limpieza de secretos hardcodeados (8 archivos) | d23728f |
-| Optimizacion de sincronizacion (filtro FT) | ca62363 |
-| Limpieza de mojibake cirilico (4124 a 0 chars) | dc4f301 |
-| Reemplazo de bare excepts (21 a 0) | este commit |
-| Actualizacion de AGENTS.md | este commit |
-
-### Sesiones anteriores (resumen)
-
-- **2026-08-07**: Rediseno Bankroll VIP, correccion BTTS, recalcular lambdas
-- **2026-08-04**: Sincronizacion incremental, goals extraction, modelos matematicos reales
-- **2026-08-03**: Lambda dinamico con ponderacion exponencial
-- **2026-08-01**: Correcciones al sincronizar (temporada dinamica, 55 ligas)
-- **2026-07-25**: Landing page publica, analisis preview gratis
-- **2026-07-22**: Integracion UI con SuperRobot, dashboard
-- **2026-07-20**: SuperRobot creado (4 fuentes de datos)
-
-Nota: El "SuperRobot" (robot_extractor.py) fue eliminado del proyecto.
-La obtencion de datos ahora se hace exclusivamente via API-Football en elite.py
-y funciones_stats.py.

@@ -10,8 +10,7 @@ import random
 import io
 import bcrypt
 import psycopg2
-from datetime import date, timedelta, datetime, timezone
-from pathlib import Path
+from datetime import timedelta, datetime, timezone
 from dotenv import load_dotenv
 from supabase import create_client
 
@@ -75,13 +74,11 @@ logger = logging.getLogger(__name__)
 # En producción (Render) las variables vienen del Dashboard
 load_dotenv()
 
-from analysis_models import calcular
+from analysis_models import calcular, pp
 from funciones_stats import obtener_ultimos_partidos_equipo, guardar_stats_equipo, calcular_promedios_equipo, obtener_stats_partido
 from calibration import (
     get_lambda_ajustada,
     registrar_resultado,
-    obtener_estadisticas_calibracion,
-    resetear_calibracion
 )
 
 
@@ -362,10 +359,6 @@ def safe_fmt_int(val):
         return f'{int(float(val))}'
     except Exception:
         return str(val)
-
-def pp(lmbda, k):
-    """Función de masa de probabilidad de Poisson."""
-    return (lmbda ** k) * math.exp(-lmbda) / math.factorial(k) if lmbda > 0 and k >= 0 else 0
 
 def calcular_value(prob_modelo, cuota):
     if cuota <= 0:
@@ -2037,6 +2030,37 @@ def render_cuotas_mercado(r):
             logger.warning(f"Error consultando cuotas: {e}")
 
 
+def _construir_pick_data(r, home, away, stats_local):
+    """Construye el dict de datos del pick a partir del resultado del análisis."""
+    usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
+    fixture_id = st.session_state.get('selected_fixture_id', 0)
+    return {
+        'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
+        'usuario': usuario_id,
+        'fixture_id': fixture_id,
+        'pick': r.get('pick_1x2', '1'),
+        'liga': stats_local.get('liga', 'Desconocida') if stats_local else 'N/A',
+        'equipo_local': home,
+        'equipo_visitante': away,
+        'prediccion_1x2': r.get('pick_1x2', '1'),
+        'prob_1x2': float(r.get('prob_1x2', 50)),
+        'p1': float(r.get('p1', 33)),
+        'px': float(r.get('px', 33)),
+        'p2': float(r.get('p2', 33)),
+        'prediccion_ou': r.get('pick_over_under', 'Over'),
+        'prob_ou': float(r.get('prob_over_under', 50)),
+        'prediccion_btts': r.get('pick_btts', 'Si'),
+        'btts_yes': float(r.get('btts_yes', 50)),
+        'prediccion_corners': r.get('pick_corners', 'Over'),
+        'corners_total_estimado': float(r.get('corners', {}).get('total_estimado', 10)),
+        'prediccion_remates': r.get('pick_tiros', 'Over'),
+        'remates_total_estimado': float(r.get('tiros', {}).get('total_estimado', 24)),
+        'prediccion_tarjetas': r.get('pick_tarjetas', 'Over'),
+        'tarjetas_total_estimado': float(r.get('tarjetas', {}).get('total_estimado', 5)),
+        'confianza': int(r.get('confianza', 50)),
+        'rango': r.get('rango', 'C'),
+    }
+
 
 def render_analizador_page():
     st.markdown("## 🎯 Analizador de Partidos")
@@ -2130,7 +2154,9 @@ def render_analizador_page():
 
         if stats_local and stats_visitante:
             lambda_local = stats_local.get('lambda_local', 0)
-            lambda_visitante = stats_visitante.get('lambda_local', 0)
+            # Usar lambda_visitante del visitante (goles como visitante)
+            # Fallback a lambda_local solo si lambda_visitante es nulo/0/corrupto
+            lambda_visitante = stats_visitante.get('lambda_visitante') or stats_visitante.get('lambda_local', 0)
 
             # Usar promedios_dinamicos si existen
             if promedios_dinamicos_local:
@@ -2689,40 +2715,7 @@ def render_analizador_page():
         if st.button("💾 GUARDAR PICK", type="primary", use_container_width=True):
             try:
                 client = get_client()
-                usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
-
-                # Obtener fixture_id si está disponible
-                fixture_id = st.session_state.get('selected_fixture_id', 0)
-
-                pick_data = {
-                    'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
-                    'usuario': usuario_id,
-                    'fixture_id': fixture_id,  # Para vincular con partidos y auto-actualizar resultados
-                    'pick': r.get('pick_1x2', '1'),
-                    'liga': stats_local.get('liga', 'Desconocida') if stats_local else 'N/A',
-                    'equipo_local': home,
-                    'equipo_visitante': away,
-
-                    'prediccion_1x2': r.get('pick_1x2', '1'),
-                    'prob_1x2': float(r.get('prob_1x2', 50)),
-                    'p1': float(r.get('p1', 33)),
-                    'px': float(r.get('px', 33)),
-                    'p2': float(r.get('p2', 33)),
-
-                    'prediccion_ou': r.get('pick_over_under', 'Over'),
-                    'prob_ou': float(r.get('prob_over_under', 50)),
-
-                    'prediccion_btts': r.get('pick_btts', 'Si'),
-                    'btts_yes': float(r.get('btts_yes', 50)),
-                    'prediccion_corners': r.get('pick_corners', 'Over'),
-                    'corners_total_estimado': float(r.get('corners', {}).get('total_estimado', 10)),
-                    'prediccion_remates': r.get('pick_tiros', 'Over'),
-                    'remates_total_estimado': float(r.get('tiros', {}).get('total_estimado', 24)),
-                    'prediccion_tarjetas': r.get('pick_tarjetas', 'Over'),
-                    'tarjetas_total_estimado': float(r.get('tarjetas', {}).get('total_estimado', 5)),
-                    'confianza': int(r.get('confianza', 50)),
-                    'rango': r.get('rango', 'C'),
-                }
+                pick_data = _construir_pick_data(r, home, away, stats_local)
                 client.table('picks').insert(pick_data).execute()
                 st.success(f"✅ Pick guardado: {home} vs {away}")
             except Exception as e:

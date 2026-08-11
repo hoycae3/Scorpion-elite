@@ -10,7 +10,7 @@ Usa Supabase como backend para persistencia.
 import os
 import logging
 import unicodedata
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from datetime import datetime
 
 try:

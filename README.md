@@ -35,56 +35,59 @@ Partidos más recientes: peso = 1.0, 0.92, 0.85, 0.78, 0.72...
 - Si un equipo está en mala racha, el λ dinámico baja más rápido
 - El λ histórico mantiene estabilidad y no se afecta por rachas temporales
 
+### λ Local vs Visitante
+
+Cada equipo tiene dos lambdas separados:
+- **λ Local**: goles marcados cuando juega como local
+- **λ Visitante**: goles marcados cuando juega como visitante
+
+El análisis usa el λ correspondiente al rol del equipo en el partido (local usa λ_local, visitante usa λ_visitante).
+
 ---
 
 ## 🧮 Modelos Matemáticos
 
-El sistema combina **4 modelos estadísticos** para generar predicciones:
+El sistema combina **5 modelos estadísticos** con un enfoque de *ensemble*:
 
 | Modelo | Peso | Descripción |
 |--------|------|-------------|
-| **Poisson** | 35% | Distribución de Poisson para predecir goles |
-| **Dixon-Coles** | 30% | Corrige dependencia entre goles marcados/recibidos |
+| **Poisson** | 30% | Distribución de Poisson para predecir goles |
+| **Dixon-Coles** | 25% | Corrige dependencia entre goles marcados/recibidos |
 | **Monte Carlo** | 20% | 3,000 simulaciones de partidos |
-| **Elo** | 15% | Rating histórico del equipo |
+| **Forma Reciente** | 15% | Análisis de últimos 5 partidos |
+| **Estilo de Juego** | 10% | Corners, tarjetas, tiros |
 
 ### Mercados Analizados
 
 - **1X2**: Victoria local, empate, victoria visitante
-- **Over/Under 2.5**: Más/menos de 2.5 goles
+- **Over/Under 1.5, 2.5, 3.5**: Más/menos goles
 - **BTTS**: Ambos equipos marcan (Sí/No)
-- **Corners Total**: Total de córners estimados
-- **Tiros Total**: Estimación de remates al arco
-- **Tarjetas**: Total de tarjetas amarillas
-- **Tiros al Arco**: Remates entre los 3 palos
+- **Corners Total**: Total de córners estimados (Over/Under 9.5, 10.5)
+- **Tiros Total**: Estimación de remates (Over/Under 22, 24, 26)
+- **Tarjetas**: Total de tarjetas amarillas (Over/Under 5, 6, 7)
+- **Tiros al Arco**: Remates entre los 3 palos (Over/Under 6, 8, 10)
+
+### Consenso de Modelos
+
+El panel VIP muestra el consenso real de modelos: cada modelo (Poisson, Dixon-Coles, Monte Carlo, Forma) muestra su probabilidad individual de victoria local. La discrepancia entre modelos determina el nivel de consenso (alto/moderado/bajo).
 
 ---
 
-## 🔄 Fuentes de Datos (SUPERROBOT)
+## 🔄 Fuentes de Datos
 
-El sistema consulta múltiples fuentes automáticamente:
+El sistema usa **API-Football** como fuente principal de datos:
 
-| Fuente | Datos | Anti-Bloqueo | Cobertura |
-|--------|-------|--------------|-----------|
-| **football-data.co.uk** | Partidos, GF, GC, V/E/D | Requests | 20+ ligas europeas |
-| **API-Football** | Stats completas | API oficial | Mundial (88/mes) |
-| **Soccerway** | Resultados históricos | cloudscraper | Mundial |
-| **WhoScored** | Corners, Tarjetas, Posesión | cloudscraper | Mundial |
-| **FBref** | Stats detalladas | cloudscraper | 7 ligas top europeas |
+| Fuente | Datos | Cobertura |
+|--------|-------|-----------|
+| **API-Football** | Partidos, fixtures, stats completas, equipos | Mundial (55 ligas) |
+| **Supabase** | Base de datos PostgreSQL | Persistencia local |
 
-### Flujo del Robot
+### Sincronización Incremental
 
-```
-1. football-data.co.uk → Equipos europeos (sin límite)
-   ↓ (si no encuentra)
-2. API-Football → Equipos no encontrados (máx 88)
-   ↓ (si se acaban los 88)
-3. Soccerway → Equipos no encontrados (mundial)
-   ↓ (si no encuentra)
-4. WhoScored → Equipos no encontrados (mundial)
-   ↓ (si no encuentra)
-5. FBref → Equipos no encontrados (europa +)
-```
+- Descarga partidos de **HOY-3 a HOY+10**
+- **Stats incrementales**: solo descarga fixtures nuevos (no re-descarga los ya guardados)
+- Equipos nuevos: descarga 5 partidos iniciales con stats
+- Equipos existentes: 0 API calls si no hay fixtures nuevos
 
 ---
 
@@ -98,8 +101,10 @@ El sistema consulta múltiples fuentes automáticamente:
 | `equipos_stats` | Stats acumuladas por equipo (V/E/D, GF/GC, lambdas) |
 | `equipo_partidos_stats` | Historial de partidos con stats detalladas |
 | `picks` | Picks generados y guardados |
+| `bankroll_apuestas` | Apuestas del bankroll VIP |
 | `calibracion_equipos` | Factores de corrección por equipo |
 | `calibracion_historico` | Registro de resultados para calibración |
+| `usuarios` | Usuarios y contraseñas (bcrypt) |
 
 ### Estructura equipo_partidos_stats
 
@@ -117,15 +122,17 @@ El sistema consulta múltiples fuentes automáticamente:
 
 ```
 Scorpion-elite/
-├── elite.py                 # App principal Streamlit (~2800 líneas)
-├── robot_extractor.py      # SUPERROBOT - Todos los scrapers
-├── funciones_stats.py       # Funciones de stats y promedios
-├── analysis_models.py       # Modelos matemáticos (Poisson, etc.)
+├── elite.py                 # ⭐ App principal Streamlit (~4350 líneas)
+├── analysis_models.py       # Modelos matemáticos (Poisson, Dixon-Coles, Monte Carlo, Forma, Estilo)
+├── funciones_stats.py       # Funciones de stats y promedios dinámicos
 ├── calibration.py           # Sistema de calibración automática
-├── supabase_schema.sql     # Schema completo de DB
+├── supabase_schema.sql     # Schema completo de DB (15 tablas)
 ├── requirements.txt         # Dependencias
-├── styles.css              # Estilos CSS
-└── backups/                # Backups de archivos
+├── Dockerfile              # Docker para producción
+├── render.yaml             # Configuración de deploy
+├── .streamlit/config.toml  # Configuración de Streamlit
+├── .env.example            # Template de variables de entorno
+└── backups/                # Backups (gitignored)
 ```
 
 ---
@@ -134,8 +141,11 @@ Scorpion-elite/
 
 ### Render
 ```bash
-# Deploy automático desde GitHub
-curl -X POST "https://api.render.com/v1/services/srv-XXX/deploys" \
+# Deploy automático desde GitHub (push a main)
+git push origin main
+
+# Deploy manual
+curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploys" \
   -H "Authorization: Bearer $RENDER_API_KEY"
 ```
 
@@ -150,13 +160,21 @@ curl -X POST "https://api.render.com/v1/services/srv-XXX/deploys" \
 ### Sincronización
 
 El botón "🔄 Sincronizar" descarga:
-- Partidos de **HOY-2 a HOY+6**
+- Partidos de **HOY-3 a HOY+10** (13 días)
 - Stats de equipos de **55 ligas** mundiales
 - Stats de partidos **incrementales** (solo nuevos fixtures)
 
+### Botones de Sincronización
+
+| Botón | Función |
+|-------|---------|
+| **🔄 Sincronizar** | Descarga partidos y stats de equipos |
+| **📊 Stats Ayer** | Actualiza stats SOLO de partidos de ayer |
+| **🔄 Recalcular Lambdas** | Recalcula λ_local/λ_visitante desde historial |
+
 ### Login
-- **Contraseña**: `scorpion2026`
-- Ubicado en landing page
+- Autenticación con **bcrypt** (no texto plano)
+- Usuarios gestionados en tabla `usuarios` de Supabase
 
 ---
 
@@ -180,27 +198,26 @@ El sistema ajusta los lambdas según resultados reales:
 
 | Funcionalidad | Estado |
 |--------------|--------|
-| Login con contraseña | ✅ |
-| Landing page pública | ✅ |
+| Login con bcrypt | ✅ |
+| Landing page pública (4 partidos aleatorios) | ✅ |
 | Sincronización con 55 ligas | ✅ |
-| Scraping de 5 fuentes | ✅ |
-| 4 modelos matemáticos | ✅ |
-| Predicciones: 1X2, O/U, BTTS, Corners, Tiros, Tarjetas | ✅ |
+| 5 modelos matemáticos (ensemble) | ✅ |
+| Consenso real de modelos en VIP | ✅ |
+| Predicciones: 1X2, O/U, BTTS, Corners, Tiros, Tarjetas, Arco | ✅ |
 | Sistema de calibración | ✅ |
 | Ponderación exponencial de partidos | ✅ |
-| Mostrar λ dinámico + histórico + final | ✅ |
-| Dashboard con métricas | ✅ |
+| λ dinámico + histórico + final | ✅ |
+| Panel VIP (Bankroll, ROI, Value Bets, Alertas, Ranking) | ✅ |
 | Guardar picks en Supabase | ✅ |
-| Panel VIP | ✅ |
+| Sincronización incremental (optimiza API credits) | ✅ |
 
 ### 🔄 En Desarrollo
 
 | Funcionalidad | Estado |
 |--------------|--------|
-| Mejorar UI del análisis preview | 🔄 |
 | Exportar picks a PDF | 🔄 |
 | Notificaciones de alta confianza | 🔄 |
-| Modo claro/oscuro | 🔄 |
+| Tests automatizados | 🔄 |
 
 ---
 
@@ -212,8 +229,10 @@ Este sistema es solo para uso informativo y estadístico. Las apuestas deportiva
 
 ## 🛠️ Tecnologías
 
-- **Python 3.8+** - Lenguaje principal
+- **Python 3.11** - Lenguaje principal
 - **Streamlit** - Framework web
 - **Supabase** - Base de datos PostgreSQL
-- **cloudscraper** - Anti-bloqueo para scrapers
-- **Render** - Hosting
+- **API-Football** - Fuente de datos deportivos
+- **bcrypt** - Hash de contraseñas
+- **Render** - Hosting (Docker)
+
