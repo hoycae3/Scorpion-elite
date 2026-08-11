@@ -3396,9 +3396,20 @@ def render_vip_ranking(client, usuario_id, picks=None):
     for i, (badge, unlocked) in enumerate(badges_disponibles.items()):
         with cols_badge[i % 4]:
             if unlocked:
-                st.success(badge)
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #1a3a2a 0%, #0f2518 100%); 
+                            border: 2px solid #22c55e; border-radius: 10px; padding: 12px; 
+                            text-align: center; margin: 4px 0;">
+                    <div style="color: #4ade80; font-weight: 700; font-size: 0.95rem;">{badge}</div>
+                </div>
+                """, unsafe_allow_html=True)
             else:
-                st.info(f"👑 {badge}")
+                st.markdown(f"""
+                <div style="background: #1e293b; border: 2px solid #334155; border-radius: 10px; 
+                            padding: 12px; text-align: center; margin: 4px 0; opacity: 0.6;">
+                    <div style="color: #64748b; font-weight: 600; font-size: 0.95rem;">🔒 {badge}</div>
+                </div>
+                """, unsafe_allow_html=True)
 
 
 def render_vip_export(client, usuario_id, picks=None):
@@ -3517,29 +3528,29 @@ def render_vip_page():
     if not es_vip:
         # Mostrar pantalla de upgrade
         st.markdown("""
-        <div style="text-align: center; padding: 50px 20px;">
-            <h1>👑 Contenido Exclusivo para Miembros VIP</h1>
-            <p style="font-size: 1.2em; color: #666; margin: 30px 0;">
-                El Dashboard VIP está disponible solo para miembros con plan <strong>Elite VIP</strong>
+        <div style="text-align: center; padding: 50px 20px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 16px; margin: 20px 0; border: 1px solid #334155;">
+            <h1 style="color: #f8fafc; margin-bottom: 20px;">👑 Contenido Exclusivo para Miembros VIP</h1>
+            <p style="font-size: 1.2em; color: #cbd5e1; margin: 30px 0;">
+                El Dashboard VIP está disponible solo para miembros con plan <strong style="color: #00d4aa;">Elite VIP</strong>
             </p>
         </div>
         """, unsafe_allow_html=True)
 
         # Plan card
         st.markdown("""
-        <div class="plan-card plan-vip" style="max-width: 400px; margin: 0 auto; text-align: center;">
-            <h3>👑 Plan Elite VIP</h3>
-            <p class="plan-price">$29.99 <span>/mes</span></p>
-            <ul style="text-align: left;">
-                <li>✅ Dashboard VIP completo</li>
-                <li>✅ ROI por modelo y tipo de pick</li>
-                <li>✅ Simulador de Bankroll</li>
-                <li>✅ Detector de Value Bets</li>
-                <li>✅ Alertas y notificaciones</li>
-                <li>✅ Ranking mensual</li>
-                <li>✅ Reportes exportables</li>
+        <div class="plan-card plan-vip" style="max-width: 400px; margin: 0 auto; text-align: center; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid #00d4aa; border-radius: 12px; padding: 25px;">
+            <h3 style="color: #f8fafc;">👑 Plan Elite VIP</h3>
+            <p class="plan-price" style="color: #00d4aa; font-size: 2rem; font-weight: 800;">$29.99 <span style="color: #94a3b8; font-size: 1rem;">/mes</span></p>
+            <ul style="text-align: left; color: #e2e8f0; padding-left: 20px;">
+                <li style="margin-bottom: 8px;">✅ Dashboard VIP completo</li>
+                <li style="margin-bottom: 8px;">✅ ROI por modelo y tipo de pick</li>
+                <li style="margin-bottom: 8px;">✅ Simulador de Bankroll</li>
+                <li style="margin-bottom: 8px;">✅ Detector de Value Bets</li>
+                <li style="margin-bottom: 8px;">✅ Alertas y notificaciones</li>
+                <li style="margin-bottom: 8px;">✅ Ranking mensual</li>
+                <li style="margin-bottom: 8px;">✅ Reportes exportables</li>
             </ul>
-            <p style="margin-top: 20px;"><strong> 7 días GRATIS - Sin tarjeta</strong></p>
+            <p style="margin-top: 20px; color: #f8fafc;"><strong style="color: #00d4aa;"> 7 días GRATIS - Sin tarjeta</strong></p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -3552,6 +3563,90 @@ def render_vip_page():
 
     # Usuario VIP - mostrar dashboard
     st.markdown("### 👑 Dashboard VIP - Gestión Inteligente de Apuestas")
+
+    # CSS global para todo el VIP - Contraste mejorado
+    st.markdown("""
+    <style>
+    /* Tabs del VIP */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background: #1e293b;
+        color: #cbd5e1;
+        border-radius: 8px 8px 0 0;
+        padding: 10px 16px;
+        font-weight: 600;
+        border: 1px solid #334155;
+    }
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {
+        background: linear-gradient(135deg, #00d4aa 0%, #00a88a 100%);
+        color: #ffffff;
+        border-color: #00d4aa;
+    }
+    .stTabs [data-baseweb="tab"]:hover:not([aria-selected="true"]) {
+        background: #334155;
+        color: #f8fafc;
+    }
+
+    /* Tabla de datos */
+    .stDataFrame, .stTable {
+        color: #f8fafc;
+    }
+    .stDataFrame table, .stTable table {
+        color: #f8fafc;
+    }
+    .stDataFrame th, .stTable th {
+        color: #00d4aa !important;
+        background: #1e293b !important;
+        font-weight: 700;
+    }
+    .stDataFrame td, .stTable td {
+        color: #e2e8f0 !important;
+    }
+
+    /* Expanders */
+    .stExpander {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 8px;
+    }
+    .stExpander summary, .stExpander [data-testid="stExpander"] summary {
+        color: #f8fafc !important;
+        font-weight: 600;
+    }
+
+    /* Texto markdown dentro del VIP */
+    .stMarkdown p, .stMarkdown li, .stMarkdown span {
+        color: #e2e8f0;
+    }
+    .stMarkdown strong {
+        color: #f8fafc;
+    }
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4, .stMarkdown h5 {
+        color: #f8fafc;
+    }
+
+    /* Info/Warning/Success/Error boxes */
+    .stAlert, [data-testid="stAlert"] {
+        color: #f8fafc;
+    }
+
+    /* Radio buttons */
+    .stRadio label {
+        color: #e2e8f0 !important;
+    }
+
+    /* Text input */
+    .stTextInput input {
+        color: #f8fafc !important;
+        background: #1e293b !important;
+    }
+    .stTextInput label {
+        color: #e2e8f0 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
     # Obtener datos de Supabase
     client = get_client()
@@ -3834,7 +3929,7 @@ def render_vip_page():
 
     # ========== TAB 3: BANKROLL ==========
     with tab_bankroll:
-        # CSS específico para bankroll
+        # CSS específico para bankroll - Contraste mejorado
         st.markdown("""
         <style>
         /* Checkbox verde */
@@ -3853,8 +3948,9 @@ def render_vip_page():
         }
 
         [data-testid="stCheckbox"] label {
-            color: white !important;
+            color: #f1f5f9 !important;
             font-size: 14px !important;
+            font-weight: 500 !important;
         }
 
         /* Inputs de número (cuota) */
@@ -3863,23 +3959,42 @@ def render_vip_page():
         }
 
         div[data-testid="stNumberInput"] label {
-            color: #ffffff !important;
-            font-size: 10px !important;
-            font-weight: bold !important;
+            color: #e2e8f0 !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
         }
 
         div[data-testid="stNumberInput"] input {
-            color: #ffffff !important;
+            color: #f8fafc !important;
             font-size: 14px !important;
             font-weight: bold !important;
+            background: #1e293b !important;
         }
 
         /* Selectbox */
         div[data-testid="stSelectbox"] label {
-            color: #ffffff !important;
+            color: #e2e8f0 !important;
+            font-weight: 500 !important;
         }
         div[data-testid="stSelectbox"] span {
-            color: #ffffff !important;
+            color: #f8fafc !important;
+        }
+
+        /* Texto de captions */
+        .stCaption, [data-testid="stCaptionContainer"] {
+            color: #94a3b8 !important;
+        }
+
+        /* Métricas */
+        [data-testid="stMetric"] label {
+            color: #cbd5e1 !important;
+            font-weight: 600 !important;
+        }
+        [data-testid="stMetric"] [data-testid="stMetricValue"] {
+            color: #f8fafc !important;
+        }
+        [data-testid="stMetric"] [data-testid="stMetricDelta"] {
+            color: #94a3b8 !important;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -3959,14 +4074,16 @@ def render_vip_page():
                 tasa_acierto = (apuestas_ganadas / total_apuestas * 100) if total_apuestas > 0 else 0
 
                 # Bankroll grande
-                color_ganancia = "#22c55e" if ganancias >= 0 else "#ef4444"
+                color_ganancia = "#4ade80" if ganancias >= 0 else "#f87171"
+                color_label = "#cbd5e1"
                 st.markdown(f"""
                 <div style="background: linear-gradient(135deg, #1a3a2a 0%, #0f2518 100%); 
                             border-radius: 16px; padding: 30px; text-align: center; 
-                            border: 2px solid {color_ganancia}; margin: 20px 0;">
-                    <div style="color: #888; font-size: 0.9rem;">BANKROLL ACTUAL</div>
-                    <div style="font-size: 3rem; font-weight: 700; color: {color_ganancia};">{format_money(bankroll_actual, simbolo)}</div>
-                    <div style="color: {color_ganancia}; font-size: 1.1rem;">{'+' if ganancias >= 0 else ''}{format_money(ganancias, simbolo)} ({'+' if roi >= 0 else ''}{roi:.1f}%)</div>
+                            border: 2px solid {color_ganancia}; margin: 20px 0;
+                            box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
+                    <div style="color: {color_label}; font-size: 0.9rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Bankroll Actual</div>
+                    <div style="font-size: 3rem; font-weight: 800; color: {color_ganancia}; margin: 10px 0; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">{format_money(bankroll_actual, simbolo)}</div>
+                    <div style="color: {color_ganancia}; font-size: 1.2rem; font-weight: 600;">{'+' if ganancias >= 0 else ''}{format_money(ganancias, simbolo)} ({'+' if roi >= 0 else ''}{roi:.1f}%)</div>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -4064,10 +4181,11 @@ def render_vip_page():
 
                             st.markdown(f"""
                             <div style="background: linear-gradient(135deg, #2a1a3a 0%, #1a0f25 100%); 
-                                        border-radius: 12px; padding: 20px; border: 2px solid #8b5cf6; margin: 15px 0;">
+                                        border-radius: 12px; padding: 20px; border: 2px solid #8b5cf6; margin: 15px 0;
+                                        box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="font-weight: 700; font-size: 1.1rem;">🔥 COMBINADA {len(seleccionados)} LEGS</span>
-                                    <span style="background: #8b5cf6; padding: 5px 15px; border-radius: 10px; font-weight: 700;">@ {cuota_total:.2f}</span>
+                                    <span style="font-weight: 700; font-size: 1.1rem; color: #f8fafc;">🔥 COMBINADA {len(seleccionados)} LEGS</span>
+                                    <span style="background: #8b5cf6; padding: 5px 15px; border-radius: 10px; font-weight: 700; color: #ffffff;">@ {cuota_total:.2f}</span>
                                 </div>
                             </div>
                             """, unsafe_allow_html=True)
@@ -4196,8 +4314,32 @@ def render_vip_page():
                         ganancia_fmt = format_money(ganancia, simbolo)
                         cantidad_fmt = format_money(a.get('cantidad', 0), simbolo)
 
-                        st.markdown(f"{estado_icon} **{a.get('equipo', 'N/A')}** - {a.get('fecha', 'N/A')}")
-                        st.caption(f"🏆 {cantidad_fmt} @ {a.get('cuota', 'N/A')} | {a.get('mercado', 'N/A')} ↩️' **Ganancia: {ganancia_fmt}**")
+                        # Color según resultado
+                        if a.get('resultado') == True:
+                            border_color = "#22c55e"
+                            bg_color = "rgba(34, 197, 94, 0.1)"
+                        elif a.get('resultado') == False:
+                            border_color = "#ef4444"
+                            bg_color = "rgba(239, 68, 68, 0.1)"
+                        else:
+                            border_color = "#64748b"
+                            bg_color = "rgba(100, 116, 139, 0.1)"
+
+                        st.markdown(f"""
+                        <div style="background: {bg_color}; border-left: 4px solid {border_color}; 
+                                    border-radius: 8px; padding: 12px 16px; margin: 8px 0;">
+                            <div style="color: #f8fafc; font-weight: 600; font-size: 1rem;">
+                                {estado_icon} {a.get('equipo', 'N/A')}
+                            </div>
+                            <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 4px;">
+                                📅 {a.get('fecha', 'N/A')} | 🏆 {cantidad_fmt} @ {a.get('cuota', 'N/A')} | 📋 {a.get('mercado', 'N/A')}
+                            </div>
+                            <div style="color: {'#4ade80' if ganancia > 0 else '#f87171' if ganancia < 0 else '#94a3b8'}; 
+                                        font-weight: 700; margin-top: 4px;">
+                                💰 Ganancia: {ganancia_fmt}
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
 
                     with col_a2:
                         # Actualizar resultado
@@ -4388,7 +4530,14 @@ def render_vip_page():
         discrepancia = max(p1_values) - min(p1_values)
 
         # Mostrar resumen
-        st.markdown(f"**Promedio:** {promedio:.1f}% | **Rango:** {discrepancia:.1f}%")
+        st.markdown(f"""
+        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin: 10px 0;">
+            <span style="color: #cbd5e1; font-weight: 600;">Promedio:</span> 
+            <span style="color: #f8fafc; font-weight: 700;">{promedio:.1f}%</span> | 
+            <span style="color: #cbd5e1; font-weight: 600;">Rango:</span> 
+            <span style="color: #f8fafc; font-weight: 700;">{discrepancia:.1f}%</span>
+        </div>
+        """, unsafe_allow_html=True)
 
         if discrepancia < 8:
             st.success("📌 **ALTO CONSENSO** - Los modelos están muy alineados")
