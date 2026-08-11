@@ -3913,6 +3913,33 @@ def render_vip_page():
             color: #f8fafc !important;
         }
 
+        /* Filas de selección de picks - COMPACTAS */
+        div[data-testid="stHorizontalBlock"] {
+            gap: 4px !important;
+        }
+        [data-testid="stCheckbox"] {
+            padding: 2px 4px !important;
+            margin: 0 !important;
+        }
+        [data-testid="stCheckbox"] input[type="checkbox"] {
+            width: 18px !important;
+            height: 18px !important;
+        }
+        [data-testid="stCheckbox"] label {
+            font-size: 0px !important;
+        }
+        div[data-testid="stNumberInput"] {
+            min-height: 32px !important;
+        }
+        div[data-testid="stNumberInput"] input {
+            padding: 2px 6px !important;
+            min-height: 32px !important;
+        }
+        div[data-testid="stNumberInput"] label {
+            margin-bottom: 0 !important;
+            padding-bottom: 0 !important;
+        }
+
         /* Texto de captions */
         .stCaption, [data-testid="stCaptionContainer"] {
             color: #94a3b8 !important;
@@ -4085,19 +4112,16 @@ def render_vip_page():
                 seleccionados = []
                 cantidades_dict = {}
                 for i, opt in enumerate(opciones):
-                    cols = st.columns([1, 3, 1, 1])
+                    cols = st.columns([1, 4, 2])
                     with cols[0]:
                         sel = st.checkbox("", value=False, key=f"sel_pick_{i}")
                         if sel:
                             seleccionados.append(i)
                     with cols[1]:
-                        st.markdown(f"**{opt['display']}**")
-                        st.caption(f"📊 Prob: {(opt.get('prob') or 0):.0f}% | Conf: {(opt.get('conf') or 0):.0f}%")
+                        st.markdown(f"**{opt['display']}** <span style='color:#94a3b8;font-size:0.8rem'> | {opt['tipo']} | {(opt.get('prob') or 0):.0f}%</span>", unsafe_allow_html=True)
                     with cols[2]:
-                        cantidad_input = st.number_input("Cuota", value=float(opt['cuota']), min_value=1.01, max_value=100.0, step=0.05, key=f"cuota_{i}")
+                        cantidad_input = st.number_input("Cuota", value=float(opt['cuota']), min_value=1.01, max_value=100.0, step=0.05, key=f"cuota_{i}", label_visibility="collapsed")
                         cantidades_dict[i] = cantidad_input
-                    with cols[3]:
-                        st.markdown(f"_{opt['tipo']}_")
 
                 st.markdown("---")
 
