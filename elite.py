@@ -914,8 +914,8 @@ def render_partidos_page():
             resp_fechas = client.table('partidos').select('fecha').order('fecha', desc=True).limit(1).execute()
             ult_fecha = resp_fechas.data[0]['fecha'] if resp_fechas.data else 'Nunca'
 
-            # Equipos con stats
-            resp_stats = client.table('equipos_stats').select('team_id', count='exact').execute()
+            # Equipos con stats reales (lambda_local no nulo)
+            resp_stats = client.table('equipos_stats').select('team_id', count='exact').not_.is_('lambda_local', 'null').execute()
             num_stats = len(resp_stats.data) if resp_stats.data else 0
 
             # Mostrar estado
