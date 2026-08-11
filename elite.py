@@ -1865,6 +1865,173 @@ def render_partidos_page():
 
 # Página: Analizador
 
+def render_cuotas_mercado(r):
+    """Muestra cuotas del mercado y value bets para un partido."""
+    fixture_id_partido = r.get('fixture_id')
+    if fixture_id_partido:
+        try:
+            client = get_client()
+            cuotas_resp = client.table('cuotas').select('*').eq('fixture_id', fixture_id_partido).execute()
+
+            if cuotas_resp.data:
+                st.markdown("##### 🏆 Cuotas del Mercado")
+
+                # Obtener probabilidades del modelo
+                prob_1 = r.get('p1', 0)
+                prob_x = r.get('px', 0)
+                prob_2 = r.get('p2', 0)
+                prob_ou = r.get('prob_over_under', 50)
+                prob_btts = r.get('btts_yes', 50)
+
+                # Agrupar por tipo de apuesta
+                cuotas_1x2 = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Match Winner']
+                cuotas_btts = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Both Teams To Score']
+                cuotas_ou = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Over/Under']
+
+                # Función para calcular VALUE
+                # Mostrar 1X2 con VALUE
+                if cuotas_1x2:
+                    st.markdown("**🎯 1X2**")
+                    col_c1, col_c2, col_c3 = st.columns(3)
+
+                    for i, cuota in enumerate(cuotas_1x2[:3]):
+                        opcion = cuota.get('opcion', '')
+                        valor = cuota.get('cuota', 0)
+                        bookie = cuota.get('bookmaker', '')
+                        col = [col_c1, col_c2, col_c3][i] if i < 3 else None
+
+                        if col:
+                            with col:
+                                if 'Home' in opcion or '1' in opcion:
+                                    value, prob_imp = calcular_value(prob_1, valor)
+                                elif 'Draw' in opcion or 'X' in opcion:
+                                    value, prob_imp = calcular_value(prob_x, valor)
+                                elif 'Away' in opcion or '2' in opcion:
+                                    value, prob_imp = calcular_value(prob_2, valor)
+                                else:
+                                    value, prob_imp = calcular_value(33, valor)
+
+                                # Color según VALUE
+                                if value > 5:
+                                    value_color = "🔴"
+                                    value_text = f"+{value:.1f}%"
+                                elif value > 0:
+                                    value_color = "🟠"
+                                    value_text = f"+{value:.1f}%"
+                                else:
+                                    value_color = "🔽"
+                                    value_text = f"{value:.1f}%"
+
+                                label = f"{'📊 Local' if 'Home' in opcion or '1' in opcion else ('⚖️ Empate' if 'Draw' in opcion or 'X' in opcion else '✈️ Visita')}"
+                                st.metric(f"{label}", f"@ {valor:.2f}", f"{value_color} {value_text} VALUE")
+
+                # Mostrar BTTS con VALUE
+                if cuotas_btts:
+                    st.markdown("**⚽ Ambos Marcan (BTTS)**")
+                    for cuota in cuotas_btts[:4]:
+                        opcion = cuota.get('opcion', '')
+                        valor = cuota.get('cuota', 0)
+                        bookie = cuota.get('bookmaker', '')
+
+                        # Probabilidad del modelo para BTTS
+                        prob_modelo_btts = prob_btts if 'Yes' in opcion else (100 - prob_btts)
+                        value, prob_imp = calcular_value(prob_modelo_btts, valor)
+
+                        if value > 5:
+                            value_color = "🔴"
+                        elif value > 0:
+                            value_color = "🟠"
+                        else:
+                            value_color = "🔽"
+
+                        st.write(f"{opcion}: **@ {valor:.2f}** | {value_color} VALUE: {value:+.1f}% | Modelo: {prob_modelo_btts:.0f}% | Implicita: {prob_imp:.0f}% ({bookie})")
+
+                # Mostrar Over/Under con VALUE
+                if cuotas_ou:
+                    st.markdown("**📲 Over/Under**")
+                    for cuota in cuotas_ou[:6]:
+                        opcion = cuota.get('opcion', '')
+                        valor = cuota.get('cuota', 0)
+                        bookie = cuota.get('bookmaker', '')
+
+                        # Extraer línea (ej: "Over 2.5" -> 2.5)
+                        if 'Over' in opcion:
+                            prob_modelo_ou = prob_ou
+                        else:
+                            prob_modelo_ou = 100 - prob_ou
+
+                        value, prob_imp = calcular_value(prob_modelo_ou, valor)
+
+                        if value > 5:
+                            value_color = "🔴"
+                        elif value > 0:
+                            value_color = "🟠"
+                        else:
+                            value_color = "🔽"
+
+                        st.write(f"{opcion}: **@ {valor:.2f}** | {value_color} VALUE: {value:+.1f}% | Modelo: {prob_modelo_ou:.0f}% | Implicita: {prob_imp:.0f}% ({bookie})")
+
+                # Resumen de VALUE bets
+                st.markdown("---")
+                st.markdown("**📥 Resumen de Value Bets:**")
+
+                value_bets = []
+                for cuota in cuotas_resp.data:
+                    if not isinstance(cuota, dict):
+                        continue
+
+                    tipo = cuota.get('tipo_apuesta', '')
+                    opcion = cuota.get('opcion', '')
+                    valor_raw = cuota.get('cuota', 0)
+
+                    # Convertir a float si es string
+                    try:
+                        valor = float(valor_raw) if valor_raw else 0
+                    except (ValueError, TypeError):
+                        continue
+
+                    bookie = cuota.get('bookmaker', '')
+
+                    if tipo == 'Match Winner':
+                        if 'Home' in opcion or '1' in opcion:
+                            prob = prob_1
+                        elif 'Draw' in opcion or 'X' in opcion:
+                            prob = prob_x
+                        else:
+                            prob = prob_2
+                    elif tipo == 'Both Teams To Score':
+                        prob = prob_btts if 'Yes' in opcion else (100 - prob_btts)
+                    elif tipo == 'Over/Under':
+                        prob = prob_ou if 'Over' in opcion else (100 - prob_ou)
+                    else:
+                        continue
+
+                    value, _ = calcular_value(prob, valor)
+                    if value > 0:
+                        value_bets.append({
+                            'tipo': tipo,
+                            'opcion': opcion,
+                            'cuota': valor,
+                            'value': value,
+                            'bookie': bookie,
+                            'prob_modelo': prob
+                        })
+
+                if value_bets:
+                    # Ordenar por VALUE
+                    value_bets.sort(key=lambda x: x['value'], reverse=True)
+
+                    for vb in value_bets[:5]:
+                        st.success(f"✅ **{vb['opcion']}** @ {vb['cuota']:.2f} | VALUE: +{vb['value']:.1f}% | {vb['bookie']}")
+                else:
+                    st.info("🔽 Sin value bets en este momento")
+            else:
+                st.info("🔻 Sin cuotas guardadas para este partido. Actualiza los partidos desde Carga.")
+        except Exception as e:
+            logger.warning(f"Error consultando cuotas: {e}")
+
+
+
 def render_analizador_page():
     st.markdown("## 🎯 Analizador de Partidos")
 
@@ -2832,169 +2999,7 @@ def render_analizador_page():
             </div>
             """, unsafe_allow_html=True)
 
-        fixture_id_partido = r.get('fixture_id')
-        if fixture_id_partido:
-            try:
-                client = get_client()
-                cuotas_resp = client.table('cuotas').select('*').eq('fixture_id', fixture_id_partido).execute()
-
-                if cuotas_resp.data:
-                    st.markdown("##### 🏆 Cuotas del Mercado")
-
-                    # Obtener probabilidades del modelo
-                    prob_1 = r.get('p1', 0)
-                    prob_x = r.get('px', 0)
-                    prob_2 = r.get('p2', 0)
-                    prob_ou = r.get('prob_over_under', 50)
-                    prob_btts = r.get('btts_yes', 50)
-
-                    # Agrupar por tipo de apuesta
-                    cuotas_1x2 = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Match Winner']
-                    cuotas_btts = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Both Teams To Score']
-                    cuotas_ou = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Over/Under']
-
-                    # Función para calcular VALUE
-                    # Mostrar 1X2 con VALUE
-                    if cuotas_1x2:
-                        st.markdown("**🎯 1X2**")
-                        col_c1, col_c2, col_c3 = st.columns(3)
-
-                        for i, cuota in enumerate(cuotas_1x2[:3]):
-                            opcion = cuota.get('opcion', '')
-                            valor = cuota.get('cuota', 0)
-                            bookie = cuota.get('bookmaker', '')
-                            col = [col_c1, col_c2, col_c3][i] if i < 3 else None
-
-                            if col:
-                                with col:
-                                    if 'Home' in opcion or '1' in opcion:
-                                        value, prob_imp = calcular_value(prob_1, valor)
-                                    elif 'Draw' in opcion or 'X' in opcion:
-                                        value, prob_imp = calcular_value(prob_x, valor)
-                                    elif 'Away' in opcion or '2' in opcion:
-                                        value, prob_imp = calcular_value(prob_2, valor)
-                                    else:
-                                        value, prob_imp = calcular_value(33, valor)
-
-                                    # Color según VALUE
-                                    if value > 5:
-                                        value_color = "🔴"
-                                        value_text = f"+{value:.1f}%"
-                                    elif value > 0:
-                                        value_color = "🟠"
-                                        value_text = f"+{value:.1f}%"
-                                    else:
-                                        value_color = "🔽"
-                                        value_text = f"{value:.1f}%"
-
-                                    label = f"{'📊 Local' if 'Home' in opcion or '1' in opcion else ('⚖️ Empate' if 'Draw' in opcion or 'X' in opcion else '✈️ Visita')}"
-                                    st.metric(f"{label}", f"@ {valor:.2f}", f"{value_color} {value_text} VALUE")
-
-                    # Mostrar BTTS con VALUE
-                    if cuotas_btts:
-                        st.markdown("**⚽ Ambos Marcan (BTTS)**")
-                        for cuota in cuotas_btts[:4]:
-                            opcion = cuota.get('opcion', '')
-                            valor = cuota.get('cuota', 0)
-                            bookie = cuota.get('bookmaker', '')
-
-                            # Probabilidad del modelo para BTTS
-                            prob_modelo_btts = prob_btts if 'Yes' in opcion else (100 - prob_btts)
-                            value, prob_imp = calcular_value(prob_modelo_btts, valor)
-
-                            if value > 5:
-                                value_color = "🔴"
-                            elif value > 0:
-                                value_color = "🟠"
-                            else:
-                                value_color = "🔽"
-
-                            st.write(f"{opcion}: **@ {valor:.2f}** | {value_color} VALUE: {value:+.1f}% | Modelo: {prob_modelo_btts:.0f}% | Implicita: {prob_imp:.0f}% ({bookie})")
-
-                    # Mostrar Over/Under con VALUE
-                    if cuotas_ou:
-                        st.markdown("**📲 Over/Under**")
-                        for cuota in cuotas_ou[:6]:
-                            opcion = cuota.get('opcion', '')
-                            valor = cuota.get('cuota', 0)
-                            bookie = cuota.get('bookmaker', '')
-
-                            # Extraer línea (ej: "Over 2.5" -> 2.5)
-                            if 'Over' in opcion:
-                                prob_modelo_ou = prob_ou
-                            else:
-                                prob_modelo_ou = 100 - prob_ou
-
-                            value, prob_imp = calcular_value(prob_modelo_ou, valor)
-
-                            if value > 5:
-                                value_color = "🔴"
-                            elif value > 0:
-                                value_color = "🟠"
-                            else:
-                                value_color = "🔽"
-
-                            st.write(f"{opcion}: **@ {valor:.2f}** | {value_color} VALUE: {value:+.1f}% | Modelo: {prob_modelo_ou:.0f}% | Implicita: {prob_imp:.0f}% ({bookie})")
-
-                    # Resumen de VALUE bets
-                    st.markdown("---")
-                    st.markdown("**📥 Resumen de Value Bets:**")
-
-                    value_bets = []
-                    for cuota in cuotas_resp.data:
-                        if not isinstance(cuota, dict):
-                            continue
-
-                        tipo = cuota.get('tipo_apuesta', '')
-                        opcion = cuota.get('opcion', '')
-                        valor_raw = cuota.get('cuota', 0)
-
-                        # Convertir a float si es string
-                        try:
-                            valor = float(valor_raw) if valor_raw else 0
-                        except (ValueError, TypeError):
-                            continue
-
-                        bookie = cuota.get('bookmaker', '')
-
-                        if tipo == 'Match Winner':
-                            if 'Home' in opcion or '1' in opcion:
-                                prob = prob_1
-                            elif 'Draw' in opcion or 'X' in opcion:
-                                prob = prob_x
-                            else:
-                                prob = prob_2
-                        elif tipo == 'Both Teams To Score':
-                            prob = prob_btts if 'Yes' in opcion else (100 - prob_btts)
-                        elif tipo == 'Over/Under':
-                            prob = prob_ou if 'Over' in opcion else (100 - prob_ou)
-                        else:
-                            continue
-
-                        value, _ = calcular_value(prob, valor)
-                        if value > 0:
-                            value_bets.append({
-                                'tipo': tipo,
-                                'opcion': opcion,
-                                'cuota': valor,
-                                'value': value,
-                                'bookie': bookie,
-                                'prob_modelo': prob
-                            })
-
-                    if value_bets:
-                        # Ordenar por VALUE
-                        value_bets.sort(key=lambda x: x['value'], reverse=True)
-
-                        for vb in value_bets[:5]:
-                            st.success(f"✅ **{vb['opcion']}** @ {vb['cuota']:.2f} | VALUE: +{vb['value']:.1f}% | {vb['bookie']}")
-                    else:
-                        st.info("🔽 Sin value bets en este momento")
-                else:
-                    st.info("🔻 Sin cuotas guardadas para este partido. Actualiza los partidos desde Carga.")
-            except Exception as e:
-                logger.warning(f"Error consultando cuotas: {e}")
-
+        render_cuotas_mercado(r)
 # Página: Estadísticas
 
 def render_claves_page():
