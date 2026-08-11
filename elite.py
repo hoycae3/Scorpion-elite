@@ -1377,6 +1377,7 @@ def render_login_form():
                     errores_equipos = 0
                     partidos_iniciales_cargados = 0
                     picks_actualizados_auto = 0  # Contador de picks auto-actualizados
+                    api_calls_ahorradas = 0  # вҳ… API calls evitadas por filtrado de FT ya guardados
                     
                     if equipos_unicos:
                         
@@ -1398,16 +1399,7 @@ def render_login_form():
                             season_eq = equipo['season']
                             
                             is_new_team = team_id not in equipos_existentes_ids
-                            
-                            # Obtener fixture_ids ya guardados para este equipo
-                            fixtures_guardados = set()
-                            try:
-                                resp_fixtures = client.table('equipo_partidos_stats').select('fixture_id').eq('team_id', team_id).execute()
-                                if resp_fixtures.data:
-                                    fixtures_guardados = {p['fixture_id'] for p in resp_fixtures.data}
-                            except Exception as e:
-                                st.warning(f"⚠️ Error al verificar fixtures de {team_name}: {e}")
-                            
+
                             # вҳ… CASO A: EQUIPO NUEVO (0 records en DB)
                             if is_new_team:
                                 equipos_nuevos += 1
@@ -1493,7 +1485,27 @@ def render_login_form():
                                 equipos_existentes += 1
                                 ft_en_ventana = equipos_ft_fixtures.get(team_id, [])
 
-                                # NUEVO: Si no hay partidos terminados en ventana, buscar directamente
+                                # вҳ… OPTIMIZACIÓN: Filtrar FT ya guardados ANTES de buscar más
+                                # Solo para equipos existentes (ya tienen registros)
+                                fixtures_guardados = set()
+                                try:
+                                    resp_fixtures = client.table('equipo_partidos_stats').select('fixture_id').eq('team_id', team_id).execute()
+                                    if resp_fixtures.data:
+                                        fixtures_guardados = {p['fixture_id'] for p in resp_fixtures.data}
+                                except Exception as e:
+                                    st.warning(f"⚠️ Error al verificar fixtures de {team_name}: {e}")
+
+                                # Filtrar los FT de la ventana que YA están guardados (0 API calls)
+                                if ft_en_ventana:
+                                    antes = len(ft_en_ventana)
+                                    ft_en_ventana = [
+                                        f for f in ft_en_ventana
+                                        if f.get('fixture_id') not in fixtures_guardados
+                                    ]
+                                    api_calls_ahorradas += (antes - len(ft_en_ventana))
+
+                                # вҳ… Solo buscar más FT si faltan por guardar
+                                # Antes buscaba siempre; ahora solo si no hay FT pendientes en ventana
                                 if not ft_en_ventana:
                                     try:
                                         resp_last = requests.get(
@@ -1515,6 +1527,10 @@ def render_login_form():
                                                 for fix in data_last["response"]:
                                                     f2 = fix.get("fixture", {})
                                                     fix_id = f2.get("id")
+                                                    # вҳ… OPTIMIZACIÓN: saltar FT ya guardados
+                                                    if fix_id in fixtures_guardados:
+                                                        api_calls_ahorradas += 1
+                                                        continue
                                                     teams = fix.get("teams", {})
                                                     score = f2.get("score", {}) or {}
                                                     goals = fix.get("goals", {}) or {}
@@ -1532,11 +1548,10 @@ def render_login_form():
                                                         "goles_favor": score_visitante if not es_local else score_local,
                                                         "goles_contra": score_local if not es_local else score_visitante
                                                     })
-                                    except:
-                                        pass
+                                    except Exception as e:
+                                        st.warning(f"⚠️ Error buscando FT de {team_name}: {e}")
 
-                                # вҳ… CORREGIDO: Siempre intentar guardar/actualizar TODOS los FT
-                                # El upsert no duplica, solo actualiza si ya existe
+                                # вҳ… Si tras todo lo anterior no hay FT pendientes, saltar (0 API calls)
                                 if ft_en_ventana:
                                     for fix_info in ft_en_ventana:
                                         try:
@@ -1548,7 +1563,7 @@ def render_login_form():
                                                 headers=headers,
                                                 API_URL=API_URL
                                             )
-                                            
+
                                             # Crear datos del partido (siempre incluir goles)
                                             partido_data = {
                                                 'team_id': team_id,
@@ -1561,11 +1576,11 @@ def render_login_form():
                                                 'goles_favor': fix_info['goles_favor'] if fix_info.get('goles_favor') is not None else 0,
                                                 'goles_contra': fix_info['goles_contra'] if fix_info.get('goles_contra') is not None else 0,
                                             }
-                                            
+
                                             # Agregar stats si están disponibles
                                             if stats_partido:
                                                 partido_data.update(stats_partido)
-                                            
+
                                             try:
                                                 client.table('equipo_partidos_stats').upsert(
                                                     partido_data,
@@ -1573,10 +1588,10 @@ def render_login_form():
                                                 ).execute()
                                                 stats_ft_nuevos += 1
                                             except Exception as e:
-                                                pass
-                                            
+                                                st.warning(f"⚠️ Error guardando FT {fix_info['fixture_id']} de {team_name}: {e}")
+
                                         except Exception as e:
-                                            pass
+                                            st.warning(f"⚠️ Error procesando FT {fix_info.get('fixture_id')} de {team_name}: {e}")
                     
                     # Actualizar progreso antes del resumen (70-90%)
                     progress_bar.progress(90)
@@ -1606,6 +1621,7 @@ def render_login_form():
                     | 📥 **Stats equipos descargadas** | {equipos_stats_descargados} |
                     | 📲 **Stats partidos nuevos** | {partidos_iniciales_cargados} |
                     | 📊 **Stats FT incrementales** | {stats_ft_nuevos} |
+                    | 💰 **API calls ahorradas** | {api_calls_ahorradas} |
                     | 🎯 **Picks actualizados** | {picks_actualizados_auto} |
                     | ⚠️ **Errores** | {errores_equipos} |
                     """)
