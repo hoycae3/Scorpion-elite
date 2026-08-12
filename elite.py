@@ -4002,6 +4002,31 @@ def render_vip_page():
                 es_combinada = modo == "🔥 Combinada"
                 st.markdown("---")
 
+                # Sección de borrado de picks (colapsable, no interfiere con apostar)
+                with st.expander("🗑️ Borrar Picks"):
+                    if picks_sin:
+                        opciones_borrar = {}
+                        for p in picks_sin:
+                            label = f"{p.get('equipo_local', '?')} vs {p.get('equipo_visitante', '?')}"
+                            if label not in opciones_borrar:
+                                opciones_borrar[label] = p.get('id')
+                        seleccion_borrar = st.multiselect(
+                            "Selecciona los partidos a borrar",
+                            list(opciones_borrar.keys()),
+                            key="borrar_picks_sel"
+                        )
+                        if seleccion_borrar:
+                            if st.button("🗑️ Borrar seleccionados", type="secondary", key="btn_borrar_picks"):
+                                try:
+                                    ids_borrar = [opciones_borrar[s] for s in seleccion_borrar]
+                                    client.table('picks').delete().in_('id', ids_borrar).execute()
+                                    st.success(f"✅ {len(ids_borrar)} pick(s) borrado(s)")
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Error al borrar: {e}")
+                    else:
+                        st.info("No hay picks para borrar")
+
                 # Recopilar opciones
                 opciones = []
                 for p in picks_sin:
