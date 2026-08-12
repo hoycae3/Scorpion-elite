@@ -914,3 +914,10 @@ CREATE TABLE IF NOT EXISTS usuarios (
 ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "usuarios_all" ON usuarios FOR ALL USING (true) WITH CHECK (true);
 
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- FOREIGN KEYS (integridad referencial)
+-- Ver add_foreign_keys.sql para la migración completa y segura.
+-- Solo equipo_partidos_stats.fixture_id → partidos.fixture_id es viable sin
+-- migración de datos; el resto requiere alinear tipos (ver archivo).
+-- ═══════════════════════════════════════════════════════════════════════════════
+

@@ -10,7 +10,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify Python syntax
+        run: |
+          set -e
+          for f in elite.py analysis_models.py funciones_stats.py calibration.py; do
+            python -c "import ast; ast.parse(open('$f').read()); print('✔ $f OK')"
+          done
+
       - name: Trigger Render Deploy
         run: |
           curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploys" \

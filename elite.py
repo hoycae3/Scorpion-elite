@@ -17,24 +17,25 @@ from supabase import create_client
 # set_page_config debe ser el primer comando de Streamlit
 st.set_page_config(page_title="Scorpion Elite", page_icon="🦂", layout="wide")
 
-# ══════════════════════════════════════════════════════════
-# 📋 SISTEMA DE DISEÑO - COLORES Y ESTILOS
-# ══════════════════════════════════════════════════════════
-# Colores principales (coinciden con styles.css)
-COLORS = {
-    'victoria': '#22c55e',     # Verde éxito
-    'derrota': '#ef4444',       # Rojo error
-    'empate': '#eab308',        # Amarillo
-    'primary': '#00d4aa',       # Cyan/acento
-    'local': '#fff',         # Verde brillante
-    'visitante': '#fff',     # Rojo suave
-    'hora': '#fff',          # Dorado
-    'bg_dark': '#0f172a',       # Fondo oscuro
-    'bg_card': '#111111',       # Fondo cards
-    'bg_header': '#121824',     # Fondo headers
-    'text': '#f8fafc',          # Texto principal
-    'text_secondary': '#94a3b8', # Texto secundario
-}
+from app_helpers import (
+    COLORS,
+    LIGAS_MAP,
+    hash_password,
+    verify_password,
+    get_hoy,
+    utc_to_colombia,
+    get_pais_emoji,
+    crear_badges,
+    fila_dato,
+    safe_fmt,
+    safe_fmt_int,
+    calcular_value,
+    format_money,
+)
+
+# Configurar logging (antes del try que usa logger)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # CSS global cargado desde archivo (version forzada para cache busting)
 try:
@@ -44,34 +45,6 @@ try:
         st.markdown(f'<style>/* v20260811 */ {css_content}</style>', unsafe_allow_html=True)
 except Exception as e:
     logger.warning(f"Error en linea 43: {e}")
-
-# Mapeo de league_id por nombre de liga
-LIGAS_MAP = {
-    'Premier League': 39,
-    'La Liga': 140,
-    'Bundesliga': 78,
-    'Serie A': 135,
-    'Ligue 1': 61,
-    'Liga MX': 262,
-    'MLS': 1,
-    'Copa Libertadores': 13,
-    'Champions League': 2,
-    'Europa League': 3,
-    'Primeira Liga': 94,
-    'Eredivisie': 88,
-    'Belgian Pro League': 61,
-    'Scottish Premiership': 50,
-    'Brasileirao': 71,
-    'Argentine Primera': 128,
-    'Chile Primera Division': 215,
-    'Primera Division': 215,
-    'Primera A': 215,
-    'Primera B': 216,
-}
-
-# Configurar logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # Cargar variables de entorno desde .env si existe
 # En producción (Render) las variables vienen del Dashboard
@@ -280,35 +253,14 @@ def migrate_team_id_column():
 
 # ══════════════════════════════════════════════════════════
 # SISTEMA DE USUARIOS (Supabase) - Solo hash bcrypt
+# (hash_password, verify_password, get_hoy importados de app_helpers)
 # ══════════════════════════════════════════════════════════
-
-def hash_password(password: str) -> str:
-    """Genera hash bcrypt con salt automático"""
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-
-def verify_password(password: str, hashed: str) -> bool:
-    """Verifica password contra hash bcrypt"""
-    try:
-        return bcrypt.checkpw(password.encode(), hashed.encode())
-    except Exception:
-        return False
-
-def get_hoy():
-    return str(datetime.now(timezone(timedelta(hours=-5))).date())
 
 # ══════════════════════════════════════════════════════════
 # 🔧 FUNCIONES HELPER (módulo-level, no se redefinen en cada rerun)
+# (get_pais_emoji, crear_badges, fila_dato, safe_fmt, safe_fmt_int,
+#  calcular_value, format_money, utc_to_colombia importados de app_helpers)
 # ══════════════════════════════════════════════════════════
-
-def get_pais_emoji(pais):
-    emojis = {
-        'Argentina': '🇦🇷', 'Brasil': '🇧🇷', 'Colombia': '🇨🇴', 'Chile': '🇨🇱',
-        'México': '🇲🇽', 'USA': '🇺🇸', 'Uruguay': '🇺🇾', 'Perú': '🇵🇪',
-        'Paraguay': '🇵🇾', 'Ecuador': '🇪🇨', 'España': '🇪🇸', 'Inglaterra': '🏴󠁧󠁢󠁥󠁮',
-        'Alemania': '🇩🇪', 'Italia': '🇮🇹', 'Francia': '🇫🇷', 'Portugal': '🇵🇹',
-        'Holanda': '🇳🇱', 'Turquía': '🇹🇷', 'Escocia': '🏴󠁧󠁢󠁳󠁣', 'Bélgica': '🇧🇪', 'Mundial': '🏴'
-    }
-    return emojis.get(pais, '🏴')
 
 def obtener_promedios_dinamicos(client, equipo_nombre, team_id=None):
     if team_id:
@@ -325,74 +277,6 @@ def obtener_promedios_dinamicos(client, equipo_nombre, team_id=None):
             if resp_eps.data:
                 return calcular_promedios_equipo(client, resp_eps.data[0]['team_id'])
     return None
-
-def crear_badges(lista):
-    if not lista:
-        return "Sin datos"
-    badges = ""
-    for c in lista:
-        if c in ['G', 'W']:
-            badges += f"🟢{c} "
-        elif c == 'D':
-            badges += f"🟡{c} "
-        else:
-            badges += f"🔴{c} "
-    return badges.strip()
-
-def fila_dato(valor_l, indicador, valor_v, color_val='white', bg_par=False):
-    bg = '#162031' if bg_par else '#0a0a0a'
-    return f"""<div style='background:{bg};padding:8px 5px;border-radius:4px;margin:2px 0;display:flex;'><div style='width:33%;text-align:center;color:{color_val};font-size:13px;'>{valor_l}</div><div style='width:34%;text-align:center;color:#fff;font-size:12px;'>{indicador}</div><div style='width:33%;text-align:center;color:{color_val};font-size:13px;'>{valor_v}</div></div>"""
-
-def safe_fmt(val, fmt='.1f'):
-    """Convierte valor a string, manteniendo '?' si no hay datos."""
-    if val == '?' or val is None or val == 0:
-        return '?'
-    try:
-        return f'{float(val):{fmt}}'
-    except Exception:
-        return str(val)
-
-def safe_fmt_int(val):
-    """Convierte valor a string entero, manteniendo '?' si no hay datos."""
-    if val == '?' or val is None:
-        return '?'
-    try:
-        return f'{int(float(val))}'
-    except Exception:
-        return str(val)
-
-def calcular_value(prob_modelo, cuota):
-    if cuota <= 0:
-        return 0, 0
-    prob_implicita = (1 / cuota) * 100
-    value = prob_modelo - prob_implicita
-    return value, prob_implicita
-
-def format_money(valor, simbolo):
-    return f"{simbolo}{valor:,.2f}"
-
-def utc_to_colombia(utc_datetime_str):
-    """Convierte datetime UTC a hora colombiana (UTC-5)"""
-    try:
-        if not utc_datetime_str:
-            return ""
-        # Parsear el datetime UTC
-        utc_dt = datetime.fromisoformat(utc_datetime_str.replace('Z', '+00:00'))
-        # Convertir a Colombia (UTC-5)
-        colombia_tz = timezone(timedelta(hours=-5))
-        colombia_dt = utc_dt.astimezone(colombia_tz)
-        return colombia_dt.strftime('%H:%M')
-    except Exception as e:
-        # Si falla, intentar con formato simple
-        try:
-            hora_str = utc_datetime_str[11:16]  # Extraer HH:MM
-            hora = int(hora_str.split(':')[0]) if hora_str else 0
-            minuto = int(hora_str.split(':')[1]) if ':' in hora_str else 0
-            # Restar 5 horas
-            hora_colombia = (hora - 5) % 24
-            return f"{hora_colombia:02d}:{minuto:02d}"
-        except Exception as e:
-            return utc_datetime_str[11:16] if len(utc_datetime_str) > 16 else ""
 
 def db_todos():
     """Obtiene todos los usuarios"""
@@ -3274,7 +3158,8 @@ def render_vip_value_bets(client, usuario_id):
             st.dataframe(df_vb, use_container_width=True)
         else:
             st.info("⚽ No hay value bets registrados.")
-    except Exception:
+    except Exception as e:
+        logger.warning(f"render_vip_value_bets falló: {e}")
         st.info("⚽ Conecta a Supabase para ver value bets guardados.")
 
 
@@ -3341,7 +3226,8 @@ def render_vip_alertas(client, usuario_id):
                             st.warning(f"⚠️ No se pudo marcar como leída: {e}")
         else:
             st.info("⚽ No hay alertas.")
-    except Exception:
+    except Exception as e:
+        logger.warning(f"render_vip_alertas falló: {e}")
         st.info("⚽ Conecta a Supabase para ver alertas.")
 
 
@@ -3374,7 +3260,8 @@ def render_vip_ranking(client, usuario_id, picks=None):
                 st.markdown("##### 📥 Generar Ranking")
                 if st.button("🔄 Calcular Ranking"):
                     st.info("Ranking calculado (funcionalidad completa con más usuarios)")
-    except Exception:
+    except Exception as e:
+        logger.warning(f"render_vip_ranking falló: {e}")
         st.info("⚽ Ranking no disponible. Conecta a Supabase.")
 
     st.markdown("---")
@@ -3474,14 +3361,16 @@ def render_vip_export(client, usuario_id, picks=None):
                     bh_response = client.table('bankroll_history').select('*').eq('usuario_id', usuario_id).execute()
                     bh = bh_response.data if bh_response.data else []
                     df_export = pd.DataFrame(bh)
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"export bankroll_history falló: {e}")
                     df_export = pd.DataFrame()
             else:  # Value Bets
                 try:
                     vb_response = client.table('value_bets').select('*').eq('usuario_id', usuario_id).execute()
                     vb = vb_response.data if vb_response.data else []
                     df_export = pd.DataFrame(vb)
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"export value_bets falló: {e}")
                     df_export = pd.DataFrame()
 
             if not df_export.empty:
@@ -3823,7 +3712,8 @@ def render_vip_page():
         try:
             response = client.table('picks').select('*').order('fecha', desc=True).execute()
             picks_res = response.data if response.data else []
-        except Exception:
+        except Exception as e:
+            logger.warning(f"carga de picks falló: {e}")
             picks_res = []
 
         picks_con_resultado = [p for p in picks_res if p.get('resultado_1x2') is not None]

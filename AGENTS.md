@@ -21,11 +21,14 @@
 
 ```
 Scorpion-elite/
-├── elite.py                 # ⭐ App principal Streamlit (~4350 lineas)
+├── elite.py                 # ⭐ App principal Streamlit (~4400 lineas)
+├── app_helpers.py           # Helpers puros y constantes (extraído de elite.py)
 ├── analysis_models.py       # 5 modelos matematicos (ensemble)
 ├── funciones_stats.py       # Stats y promedios dinamicos
 ├── calibration.py           # Calibracion automatica de lambdas
 ├── supabase_schema.sql      # Schema DB (15 tablas activas)
+├── add_foreign_keys.sql     # Migracion FK (integridad referencial)
+├── recalcular_lambdas.sql   # Script recalculo lambdas
 ├── requirements.txt         # Dependencias (versiones fijadas)
 ├── Dockerfile               # Docker para produccion
 ├── render.yaml              # Config de deploy
@@ -117,7 +120,10 @@ Scorpion-elite/
 | `cuotas` | Cuotas de mercado |
 
 ### Tablas DEPRECATED (en schema pero no usadas):
-- `bankroll_history`, `bankroll_retiros`, `user_stats`, `alertas`, `value_bets`, `ranking`, `cuotas` (marcadas como deprecated en supabase_schema.sql)
+- `partidos_stats`, `historial_predicciones`, `pesos_modelos`, `cuotas_cache`, `dias_procesados`, `match_stats`, `team_form` (tablas comentadas con `--` en supabase_schema.sql, código muerto legítimo, no se crean en DB)
+
+### Tablas marcadas como deprecated en AGENTS.md pero REALMENTE EN USO:
+- `bankroll_history`, `bankroll_retiros`, `user_stats`, `alertas`, `value_bets`, `ranking`, `cuotas` (todas con insert/select/update activo en elite.py - NO eliminar)
 
 ---
 
@@ -181,17 +187,19 @@ MENU (despues de login):
 
 ---
 
-## Estado del Codigo (Auditoria 2026-08-11)
+## Estado del Codigo (Auditoria 2026-08-11, actualizado 2026-08-12)
 
 ### Metricas:
-- **elite.py**: ~4350 lineas, 40+ funciones
-- **Complejidad ciclomatica**: 708 (alta, concentrada en render_*)
-- **Funciones mas largas**: render_analizador_page (937), render_vip_page (874)
+- **elite.py**: ~4400 lineas (reducido de 4508 tras refactor helpers)
+- **app_helpers.py**: 167 lineas (helpers puros extraidos de elite.py)
+- **Complejidad ciclomatica**: alta, concentrada en render_*
+- **Funciones mas largas**: render_analizador_page (939), sincronizar_partidos (642)
 - **Imports sin usar**: 0 (limpiados)
 - **Bare excepts**: 0
+- **Silent excepts (except Exception:)**: 0 (corregidos, ahora loguean)
 - **Funciones anidadas**: 0
 - **Mojibake**: 0
-- **logger.error/warning**: 33 calls
+- **logger.error/warning/debug**: 42 calls (aumentado tras fix de silent excepts)
 
 ### Limpieza completada (2026-08-11):
 - ✅ Eliminados imports sin usar (date, Path, List, Optional)
@@ -200,10 +208,19 @@ MENU (despues de login):
 - ✅ Corregido bug lambda_visitante
 - ✅ Consenso de modelos YA funcionaba (AGENTS.md desactualizado)
 
+### Mejoras completadas (2026-08-12):
+- ✅ CI con validacion de sintaxis antes del deploy (.github/workflows/deploy.yml)
+- ✅ 9 except Exception silenciados ahora capturan y loguean errores
+- ✅ Migracion de foreign keys (add_foreign_keys.sql, 1 FK viable + docs)
+- ✅ Corregido AGENTS.md: 7 tablas activas NO son deprecated
+- ✅ Refactor: helpers puros extraidos a app_helpers.py (COLORS, LIGAS_MAP, hash_password, verify_password, get_hoy, get_pais_emoji, crear_badges, fila_dato, safe_fmt, safe_fmt_int, calcular_value, format_money, utc_to_colombia)
+- ✅ Upgrade dependencias: streamlit 1.45->1.61.1, pandas 2.2.2->3.0.5, supabase 2.5->2.31, bcrypt 4.2->5.0
+- ✅ render.yaml: puerto 8501 explicito
+
 ### Pendiente:
 - ❌ Tests automatizados (no existen)
-- ⚠️ elite.py sigue siendo un monolito (4350 lineas)
-- ⚠️ Funciones render_* largas (>900 lineas cada una)
+- ⚠️ elite.py sigue siendo un monolito (~4400 lineas, funciones render_* largas)
+- ⚠️ FKs pendientes requieren migracion de datos (ver add_foreign_keys.sql)
 
 ---
 

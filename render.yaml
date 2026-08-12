@@ -8,6 +8,8 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /
     envVars:
+      - key: PORT
+        value: 8501
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY
