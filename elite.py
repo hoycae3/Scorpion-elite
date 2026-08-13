@@ -1004,10 +1004,11 @@ def sincronizar_partidos():
                 fecha_inicio = ayer
 
                 if fechas_futuras:
-                    # Ya hay fechas futuras → buscar 7 días adelante desde la última
+                    # Ya hay fechas futuras → buscar la última y descargar el siguiente día
                     ultima_futura = max(fechas_futuras)
-                    fecha_fin = (ultima_futura + timedelta(days=7)).strftime('%Y-%m-%d')
-                    modo_sync = f"☔ Incremental (última futura: {ultima_futura.strftime('%d/%m')}, +7 días)"
+                    siguiente_dia = (ultima_futura + timedelta(days=1)).strftime('%Y-%m-%d')
+                    fecha_fin = siguiente_dia
+                    modo_sync = f"☔ Incremental (última futura: {ultima_futura.strftime('%d/%m')})"
                 else:
                     # No hay fechas futuras → descargar HOY+1
                     fecha_fin = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
@@ -1086,6 +1087,8 @@ def sincronizar_partidos():
         partidos_guardados = 0
         errores_api = 0  # Ligas donde la API devolvió error (429/403/500)
         primer_error_api = None  # Guardar el primer error para mostrarlo
+        fixtures_totales = 0  # ★ Diagnóstico: total de fixtures que devolvió la API
+        fixtures_duplicados = 0  # ★ Diagnóstico: fixtures que ya estaban en la DB
 
         # Colección de equipos únicos: {team_id: {team_id, team_name, league_id, league_name, season}}
         equipos_unicos = {}
@@ -1116,6 +1119,7 @@ def sincronizar_partidos():
                     data = resp.json()
                     fixtures = data.get('response', []) or []
                     ligas_procesadas += 1
+                    fixtures_totales += len(fixtures)  # ★ Diagnóstico
 
                     # Procesar cada fixture
                     for f in fixtures:
@@ -1160,6 +1164,8 @@ def sincronizar_partidos():
                             }
 
                         es_partido_nuevo = fix_id not in partidos_existentes
+                        if not es_partido_nuevo:
+                            fixtures_duplicados += 1  # ★ Diagnóstico
 
                         # ★ NUEVO: Rastrear partidos FT (terminados) para sincronización incremental
                         if estado == 'FT' and fix_id:
@@ -1527,6 +1533,8 @@ def sincronizar_partidos():
         |---------|-------|
         | 🏆 **Ligas procesadas** | {ligas_procesadas} |
         | 📅 **Partidos guardados** | {partidos_guardados} |
+        | 🔍 **Fixtures descargados de API** | {fixtures_totales} |
+        | ♻️ **Fixtures ya en DB (duplicados)** | {fixtures_duplicados} |
         | 👥 **Equipos detectados** | {len(equipos_unicos)} |
         | 🆕 **Equipos nuevos** | {equipos_nuevos} |
         | ♻️ **Equipos existentes** | {equipos_existentes} |
