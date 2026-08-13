@@ -900,9 +900,12 @@ div[data-testid="stSelectbox"] {
     border-radius: 8px !important;
 }
 
+div[data-testid="stSelectbox"],
+div[data-testid="stSelectbox"] *,
 div[data-testid="stSelectbox"] input,
 div[data-testid="stSelectbox"] span,
-div[data-testid="stSelectbox"] p {
+div[data-testid="stSelectbox"] p,
+div[data-testid="stSelectbox"] div {
     color: #000000 !important;
 }
 
@@ -913,6 +916,11 @@ div[data-testid="stNumberInput"] {
     border-radius: 8px !important;
 }
 
-div[data-testid="stNumberInput"] input {
+div[data-testid="stNumberInput"],
+div[data-testid="stNumberInput"] *,
+div[data-testid="stNumberInput"] input,
+div[data-testid="stNumberInputField"],
+div[data-testid="stNumberInputField"] input {
     color: #000000 !important;
+    background: #ffffff !important;
 }
