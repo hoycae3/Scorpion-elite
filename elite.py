@@ -1004,11 +1004,10 @@ def sincronizar_partidos():
                 fecha_inicio = ayer
 
                 if fechas_futuras:
-                    # Ya hay fechas futuras → buscar la última y descargar el siguiente
+                    # Ya hay fechas futuras → buscar 7 días adelante desde la última
                     ultima_futura = max(fechas_futuras)
-                    siguiente_dia = (ultima_futura + timedelta(days=1)).strftime('%Y-%m-%d')
-                    fecha_fin = siguiente_dia
-                    modo_sync = f"☔ Incremental (última futura: {ultima_futura.strftime('%d/%m')})"
+                    fecha_fin = (ultima_futura + timedelta(days=7)).strftime('%Y-%m-%d')
+                    modo_sync = f"☔ Incremental (última futura: {ultima_futura.strftime('%d/%m')}, +7 días)"
                 else:
                     # No hay fechas futuras → descargar HOY+1
                     fecha_fin = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
