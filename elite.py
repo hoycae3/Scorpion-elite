@@ -4293,10 +4293,21 @@ def render_vip_page():
         with col1:
             st.markdown("""
             <style>
-            div[data-testid="stSelectbox"]:has(> div > div > p:contains("💰 Moneda")) [data-baseweb="select"] > div {
-                font-size: 1.15rem !important;
-                min-height: 3rem !important;
-                padding: 0.5rem 0.75rem !important;
+            /* Selector de moneda mas grande (Streamlit 1.61 usa react-aria, no baseweb).
+               Se apunta por aria-label del input para afectar SOLO a este selectbox. */
+            div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) .react-aria-ComboBox [role="combobox"] {
+                font-size: 1.4rem !important;
+                min-height: 3.5rem !important;
+                padding: 0.6rem 0.9rem !important;
+                border-radius: 8px !important;
+            }
+            div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) .react-aria-ComboBox button[aria-label="Open"] {
+                min-height: 3.5rem !important;
+                width: 3rem !important;
+            }
+            div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) [data-testid="stWidgetLabel"] p {
+                font-size: 1.05rem !important;
+                font-weight: 700 !important;
             }
             </style>
             """, unsafe_allow_html=True)
