@@ -4288,7 +4288,7 @@ def render_vip_page():
             bankroll_actual_db = 1000.0
 
         # TODO en una sola línea compacta
-        col1, col2, col3, col4 = st.columns([1.5, 1, 1, 1])
+        col1, col2, col3, col4 = st.columns([2.5, 1, 1, 1])
 
         with col1:
             moneda_select = st.selectbox(
