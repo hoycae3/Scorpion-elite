@@ -961,11 +961,17 @@ def sincronizar_partidos():
         # ═══════════════════════════════════════════════════════════════
         # Obtener partidos existentes para evitar duplicados
         partidos_existentes = set()
+        partidos_existentes_fechas = {}  # ★ fixture_id → fecha (para detectar reprogramados)
         fecha_max_db = None
         try:
-            resp_ex = client.table('partidos').select('fixture_id,fecha').execute()
+            resp_ex = client.table('partidos').select('fixture_id,fecha,estado').execute()
             if resp_ex.data:
                 partidos_existentes = {p['fixture_id'] for p in resp_ex.data}
+                # ★ Guardar fecha+estado de cada partido existente
+                partidos_existentes_fechas = {
+                    p['fixture_id']: {'fecha': str(p.get('fecha', ''))[:10], 'estado': p.get('estado', '')}
+                    for p in resp_ex.data
+                }
                 # Encontrar la fecha máxima en la DB
                 fechas = [p['fecha'] for p in resp_ex.data if p.get('fecha')]
                 if fechas:
@@ -1085,6 +1091,7 @@ def sincronizar_partidos():
         # Contadores
         ligas_procesadas = 0
         partidos_guardados = 0
+        partidos_actualizados = 0  # ★ Partidos existentes cuya fecha/estado cambió
         errores_api = 0  # Ligas donde la API devolvió error (429/403/500)
         primer_error_api = None  # Guardar el primer error para mostrarlo
         fixtures_totales = 0  # ★ Diagnóstico: total de fixtures que devolvió la API
@@ -1233,9 +1240,14 @@ def sincronizar_partidos():
                             client.table("partidos").upsert(partido_data, on_conflict="fixture_id").execute()
                             if es_partido_nuevo:
                                 partidos_guardados += 1
+                            else:
+                                # ★ Detectar si la fecha o estado cambiaron (partido reprogramado)
+                                existente = partidos_existentes_fechas.get(fix_id, {})
+                                if existente.get('fecha', '') != fix.get('date', '')[:10] or existente.get('estado', '') != estado:
+                                    partidos_actualizados += 1
                             # Actualizar progreso (10-30%)
                             progress_bar.progress(int(10 + (partidos_guardados / max(1, len(equipos_unicos)) * 20)))
-                            status_text.info(f"📥 Guardando partidos... ({partidos_guardados} guardados)")
+                            status_text.info(f"📥 Guardando partidos... ({partidos_guardados} guardados, {partidos_actualizados} actualizados)")
 
                             # 🎯 AUTO-ACTUALIZAR PICKS: Si el partido ya terminó (FT), calcular resultados automáticamente
                             if estado == 'FT' and score_local is not None and score_visitante is not None:
@@ -1545,6 +1557,7 @@ def sincronizar_partidos():
         |---------|-------|
         | 🏆 **Ligas procesadas** | {ligas_procesadas} |
         | 📅 **Partidos guardados** | {partidos_guardados} |
+        | 🔄 **Partidos actualizados (fecha/estado)** | {partidos_actualizados} |
         | 🔍 **Partidos descargados de API** | {fixtures_totales} |
         | ♻️ **Partidos ya en DB (duplicados)** | {fixtures_duplicados} |
         | 📆 **Fechas que devolvió la API** | {', '.join(sorted(fechas_api)) if fechas_api else 'Ninguna'} |
