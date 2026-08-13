@@ -1140,25 +1140,28 @@ def sincronizar_partidos():
                         score_local = score.get('fulltime', {}).get('home') if score.get('fulltime') else goals.get('home') or 0
                         score_visitante = score.get('fulltime', {}).get('away') if score.get('fulltime') else goals.get('away') or 0
 
-                        # ★ CORREGIDO: SIEMPRE agregar equipos a equipos_unicos para actualizar stats
-                        # Independientemente de si el partido es nuevo o existente
-                        if team_id_local:
-                            equipos_unicos[team_id_local] = {
-                                'team_id': team_id_local,
-                                'team_name': equipo_local,
-                                'league_id': liga_id,
-                                'league_name': liga_nombre,
-                                'season': season_stats
-                            }
+                        # ★ Agregar equipos SOLO de partidos nuevos a equipos_unicos
+                        # (los partidos ya existentes no necesitan re-procesar sus equipos)
+                        es_partido_nuevo = fix_id not in partidos_existentes
 
-                        if team_id_visitante:
-                            equipos_unicos[team_id_visitante] = {
-                                'team_id': team_id_visitante,
-                                'team_name': equipo_visitante,
-                                'league_id': liga_id,
-                                'league_name': liga_nombre,
-                                'season': season_stats
-                            }
+                        if es_partido_nuevo:
+                            if team_id_local:
+                                equipos_unicos[team_id_local] = {
+                                    'team_id': team_id_local,
+                                    'team_name': equipo_local,
+                                    'league_id': liga_id,
+                                    'league_name': liga_nombre,
+                                    'season': season_stats
+                                }
+
+                            if team_id_visitante:
+                                equipos_unicos[team_id_visitante] = {
+                                    'team_id': team_id_visitante,
+                                    'team_name': equipo_visitante,
+                                    'league_id': liga_id,
+                                    'league_name': liga_nombre,
+                                    'season': season_stats
+                                }
 
                         # ★ NUEVO: Rastrear partidos FT (terminados) para sincronización incremental
                         if estado == 'FT' and fix_id:
@@ -1195,7 +1198,7 @@ def sincronizar_partidos():
                                 })
 
                         # Guardar SOLO partidos nuevos en tabla partidos
-                        if fix_id not in partidos_existentes:
+                        if es_partido_nuevo:
                             partido_data = {
                                 'fixture_id': fix_id,
                                 'fecha': fix.get('date', '')[:10],
@@ -1329,14 +1332,15 @@ def sincronizar_partidos():
 
         if equipos_unicos:
 
-            # Paso 2a: Identificar equipos existentes en DB
+            # Paso 2a: Identificar equipos existentes en DB (tabla principal equipos_stats)
             equipos_existentes_ids = set()
             try:
-                # Obtener todos los team_ids que ya tienen stats
-                resp_existing = client.table('equipo_partidos_stats').select('team_id').execute()
+                # Obtener todos los team_ids que ya tienen stats en equipos_stats
+                resp_existing = client.table('equipos_stats').select('team_id').execute()
                 if resp_existing.data:
-                    equipos_existentes_ids = {p['team_id'] for p in resp_existing.data}
+                    equipos_existentes_ids = {p['team_id'] for p in resp_existing.data if p.get('team_id')}
             except Exception as e:
+                logger.warning(f"Error identificando equipos existentes: {e}")
                 equipos_existentes_ids = set()
 
             # Paso 2b: Para cada equipo, determinar si es nuevo o existente
