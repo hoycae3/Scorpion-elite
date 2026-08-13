@@ -290,3 +290,28 @@ Si el error persiste despues del deploy, hacer hard refresh:
 - **Ctrl+Shift+R** (Windows/Linux) o **Cmd+Shift+R** (Mac)
 - O limpiar cache del navegador
 
+---
+
+## Sesion 2026-08-12 - Fixes Sincronizacion (3 commits)
+
+### Problema 1: Sync mostraba "0 partidos guardados" sin explicacion
+- **Causa**: No habia `else` despues de `if resp.status_code == 200`. Errores de API (429/403/500) se ignoraban en silencio.
+- **Fix**: Anadido `errores_api` counter + `primer_error_api` + mensaje claro en resumen final.
+- **Commit**: `4d89fbc`
+
+### Problema 2: Sync marcaba 563 equipos como "nuevos" cada vez
+- **Causa**: Deteccion de equipos existentes consultaba `equipo_partidos_stats` (tabla de historial) en vez de `equipos_stats` (tabla principal). Si un equipo tenia stats pero no historial, se consideraba "nuevo".
+- **Fix**: Cambiar consulta a `equipos_stats` (tabla correcta).
+- **Commit**: `1ee743d` ( luego corregido en `551f34e`)
+
+### Problema 3: App "se salia" (crasheaba) al sincronizar
+- **Causa**: El CASO B (equipos existentes) hacia una llamada API por cada equipo (575 equipos x 10s timeout = ~96 min). Render mataba el proceso por timeout de request.
+- **Fix**: El CASO B ahora SALTAR equipos sin FT pendientes en la ventana (`continue` → 0 API calls). Solo procesa equipos con FT reales en la ventana actual.
+- **Commit**: `551f34e`
+
+### Lecciones aprendidas
+1. La deteccion de "equipo nuevo" debe usar la tabla PRINCIPAL (`equipos_stats`), no la de historial (`equipo_partidos_stats`)
+2. El CASO B (equipos existentes) NO debe hacer llamadas API para buscar FT si no hay FT en la ventana actual
+3. Con 575 equipos, una llamada API por equipo = timeout garantizado en Render free tier
+4. El codigo que agrega equipos a `equipos_unicos` debe incluir TODOS los equipos (no solo de partidos nuevos) para que el CASO B funcione
+
