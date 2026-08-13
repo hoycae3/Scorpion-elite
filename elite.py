@@ -4293,10 +4293,10 @@ def render_vip_page():
 
         with col1:
             moneda_select = st.selectbox(
-                "💰", 
+                "💰 Moneda",
                 options=list(MONEDAS.keys()),
-                format_func=lambda x: f"{MONEDAS[x]['simbolo']}",
-                index=0, 
+                format_func=lambda x: f"{MONEDAS[x]['simbolo']} {MONEDAS[x]['nombre']} ({x})",
+                index=0,
                 key="moneda_config"
             )
             simbolo = MONEDAS[moneda_select]["simbolo"]
