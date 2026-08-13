@@ -1089,6 +1089,7 @@ def sincronizar_partidos():
         primer_error_api = None  # Guardar el primer error para mostrarlo
         fixtures_totales = 0  # ★ Diagnóstico: total de fixtures que devolvió la API
         fixtures_duplicados = 0  # ★ Diagnóstico: fixtures que ya estaban en la DB
+        fechas_api = set()  # ★ Diagnóstico: fechas que devolvió la API
 
         # Colección de equipos únicos: {team_id: {team_id, team_name, league_id, league_name, season}}
         equipos_unicos = {}
@@ -1120,6 +1121,12 @@ def sincronizar_partidos():
                     fixtures = data.get('response', []) or []
                     ligas_procesadas += 1
                     fixtures_totales += len(fixtures)  # ★ Diagnóstico
+
+                    # ★ Diagnóstico: rastrear fechas que devuelve la API
+                    for f in fixtures:
+                        fix = f.get('fixture', {})
+                        f_date = fix.get('date', '')[:10]
+                        fechas_api.add(f_date)
 
                     # Procesar cada fixture
                     for f in fixtures:
@@ -1538,6 +1545,7 @@ def sincronizar_partidos():
         | 📅 **Partidos guardados** | {partidos_guardados} |
         | 🔍 **Partidos descargados de API** | {fixtures_totales} |
         | ♻️ **Partidos ya en DB (duplicados)** | {fixtures_duplicados} |
+        | 📆 **Fechas que devolvió la API** | {', '.join(sorted(fechas_api)) if fechas_api else 'Ninguna'} |
         | 👥 **Equipos detectados** | {len(equipos_unicos)} |
         | 🆕 **Equipos nuevos** | {equipos_nuevos} |
         | ♻️ **Equipos existentes** | {equipos_existentes} |
