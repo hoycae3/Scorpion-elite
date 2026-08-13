@@ -42,7 +42,7 @@ try:
     with open('styles.css', 'r') as f:
         css_content = f.read()
         # Forzar cache bust con version
-        st.markdown(f'<style>/* v20260813b */ {css_content}</style>', unsafe_allow_html=True)
+        st.markdown(f'<style>/* v20260813c */ {css_content}</style>', unsafe_allow_html=True)
 except Exception as e:
     logger.warning(f"Error en linea 43: {e}")
 
@@ -3790,12 +3790,15 @@ def render_vip_page():
         /* Inputs de número (cuota) */
         div[data-testid="stNumberInput"] {
             max-width: 80px !important;
+            min-height: 32px !important;
         }
 
         div[data-testid="stNumberInput"] label {
             color: #e2e8f0 !important;
             font-size: 11px !important;
             font-weight: 600 !important;
+            margin-bottom: 0 !important;
+            padding-bottom: 0 !important;
         }
 
         div[data-testid="stNumberInput"] input {
@@ -3803,13 +3806,27 @@ def render_vip_page():
             font-size: 14px !important;
             font-weight: bold !important;
             background: #ffffff !important;
+            padding: 2px 6px !important;
+            min-height: 32px !important;
         }
 
-        /* Selectbox */
+        /* Selectbox - IGUAL a los number inputs */
+        div[data-testid="stSelectbox"] {
+            max-width: 80px !important;
+            min-height: 32px !important;
+            background: #ffffff !important;
+            border: 2px solid #22c55e !important;
+            border-radius: 8px !important;
+        }
+
         div[data-testid="stSelectbox"] label {
             color: #e2e8f0 !important;
-            font-weight: 500 !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            margin-bottom: 0 !important;
+            padding-bottom: 0 !important;
         }
+
         div[data-testid="stSelectbox"],
         div[data-testid="stSelectbox"] *,
         div[data-testid="stSelectbox"] input,
@@ -3817,6 +3834,15 @@ def render_vip_page():
         div[data-testid="stSelectbox"] p,
         div[data-testid="stSelectbox"] div {
             color: #000000 !important;
+            font-size: 14px !important;
+            font-weight: bold !important;
+            background: #ffffff !important;
+        }
+        div[data-testid="stSelectbox"] [data-baseweb="select"] > div {
+            background: #ffffff !important;
+            border: none !important;
+            min-height: 32px !important;
+            padding: 2px 6px !important;
         }
 
         /* Filas de selección de picks - COMPACTAS */
@@ -3859,17 +3885,6 @@ def render_vip_page():
             height: 20px !important;
             margin: 0 !important;
             cursor: pointer;
-        }
-        div[data-testid="stNumberInput"] {
-            min-height: 32px !important;
-        }
-        div[data-testid="stNumberInput"] input {
-            padding: 2px 6px !important;
-            min-height: 32px !important;
-        }
-        div[data-testid="stNumberInput"] label {
-            margin-bottom: 0 !important;
-            padding-bottom: 0 !important;
         }
 
         /* Texto de captions */
