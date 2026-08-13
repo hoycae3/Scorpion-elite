@@ -900,8 +900,10 @@ div[data-testid="stSelectbox"] {
     border-radius: 8px !important;
 }
 
-div[data-testid="stSelectbox"] input {
-    color: #000 !important;
+div[data-testid="stSelectbox"] input,
+div[data-testid="stSelectbox"] span,
+div[data-testid="stSelectbox"] p {
+    color: #000000 !important;
 }
 
 /* Number input */
@@ -912,5 +914,5 @@ div[data-testid="stNumberInput"] {
 }
 
 div[data-testid="stNumberInput"] input {
-    color: #000 !important;
+    color: #000000 !important;
 }

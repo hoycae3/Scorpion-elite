@@ -42,7 +42,7 @@ try:
     with open('styles.css', 'r') as f:
         css_content = f.read()
         # Forzar cache bust con version
-        st.markdown(f'<style>/* v20260811 */ {css_content}</style>', unsafe_allow_html=True)
+        st.markdown(f'<style>/* v20260813 */ {css_content}</style>', unsafe_allow_html=True)
 except Exception as e:
     logger.warning(f"Error en linea 43: {e}")
 
@@ -3799,10 +3799,10 @@ def render_vip_page():
         }
 
         div[data-testid="stNumberInput"] input {
-            color: #f8fafc !important;
+            color: #000000 !important;
             font-size: 14px !important;
             font-weight: bold !important;
-            background: #1e293b !important;
+            background: #ffffff !important;
         }
 
         /* Selectbox */
@@ -3810,8 +3810,10 @@ def render_vip_page():
             color: #e2e8f0 !important;
             font-weight: 500 !important;
         }
-        div[data-testid="stSelectbox"] span {
-            color: #f8fafc !important;
+        div[data-testid="stSelectbox"] input,
+        div[data-testid="stSelectbox"] span,
+        div[data-testid="stSelectbox"] p {
+            color: #000000 !important;
         }
 
         /* Filas de selección de picks - COMPACTAS */
