@@ -975,7 +975,8 @@ def sincronizar_partidos():
 
         # ⚽ LÓGICA INTELIGENTE:
         # 1. Base vacía: Descargar HOY a HOY+6
-        # 2. Base con datos: Descargar HOY-1 (resultados) + siguiente día de última fecha FUTURA
+        # 2. Base con datos: Descargar desde AYER hasta completar 7 días
+        #    desde la última fecha guardada (siempre trae 7 días hacia adelante)
 
         ayer_date = hoy - timedelta(days=1)
         ayer = ayer_date.strftime('%Y-%m-%d')
@@ -1004,14 +1005,17 @@ def sincronizar_partidos():
                 fecha_inicio = ayer
 
                 if fechas_futuras:
-                    # Ya hay fechas futuras → buscar la última y descargar el siguiente
+                    # Ya hay fechas futuras → calcular el fin como última fecha + 7 días,
+                    # pero nunca menos de HOY+6 para mantener ventana mínima de 7 días
                     ultima_futura = max(fechas_futuras)
-                    siguiente_dia = (ultima_futura + timedelta(days=1)).strftime('%Y-%m-%d')
-                    fecha_fin = siguiente_dia
-                    modo_sync = f"☔ Incremental (última futura: {ultima_futura.strftime('%d/%m')})"
+                    # Garantizar mínimo 7 días desde hoy hacia adelante
+                    minimo_fin = hoy + timedelta(days=6)
+                    fecha_fin_date = max(ultima_futura + timedelta(days=7), minimo_fin)
+                    fecha_fin = fecha_fin_date.strftime('%Y-%m-%d')
+                    modo_sync = f"☔ Incremental (última guardada: {ultima_futura.strftime('%d/%m')}, extiende a {fecha_fin})"
                 else:
-                    # No hay fechas futuras → descargar HOY+1
-                    fecha_fin = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
+                    # No hay fechas futuras → descargar HOY a HOY+6
+                    fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
                     modo_sync = "☔ Actualizar"
 
         except Exception as e:
