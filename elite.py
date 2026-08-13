@@ -1143,29 +1143,32 @@ def sincronizar_partidos():
                         score_local = score.get('fulltime', {}).get('home') if score.get('fulltime') else goals.get('home') or 0
                         score_visitante = score.get('fulltime', {}).get('away') if score.get('fulltime') else goals.get('away') or 0
 
-                        # ★ Agregar TODOS los equipos a equipos_unicos (necesario para CASO B: FT de existentes)
-                        # La distinción nuevo/existente se hace en PASO 2 consultando equipos_stats
-                        if team_id_local:
-                            equipos_unicos[team_id_local] = {
-                                'team_id': team_id_local,
-                                'team_name': equipo_local,
-                                'league_id': liga_id,
-                                'league_name': liga_nombre,
-                                'season': season_stats
-                            }
-
-                        if team_id_visitante:
-                            equipos_unicos[team_id_visitante] = {
-                                'team_id': team_id_visitante,
-                                'team_name': equipo_visitante,
-                                'league_id': liga_id,
-                                'league_name': liga_nombre,
-                                'season': season_stats
-                            }
-
                         es_partido_nuevo = fix_id not in partidos_existentes
                         if not es_partido_nuevo:
                             fixtures_duplicados += 1  # ★ Diagnóstico
+
+                        # ★ Solo agregar equipos a equipos_unicos si:
+                        # - El partido es nuevo (necesita stats para el analizador), O
+                        # - El partido terminó FT (necesita procesar resultado para CASO B)
+                        # Esto evita descargar stats de equipos de partidos que ya existen sin FT
+                        if es_partido_nuevo or estado == 'FT':
+                            if team_id_local:
+                                equipos_unicos[team_id_local] = {
+                                    'team_id': team_id_local,
+                                    'team_name': equipo_local,
+                                    'league_id': liga_id,
+                                    'league_name': liga_nombre,
+                                    'season': season_stats
+                                }
+
+                            if team_id_visitante:
+                                equipos_unicos[team_id_visitante] = {
+                                    'team_id': team_id_visitante,
+                                    'team_name': equipo_visitante,
+                                    'league_id': liga_id,
+                                    'league_name': liga_nombre,
+                                    'season': season_stats
+                                }
 
                         # ★ NUEVO: Rastrear partidos FT (terminados) para sincronización incremental
                         if estado == 'FT' and fix_id:
@@ -1533,8 +1536,8 @@ def sincronizar_partidos():
         |---------|-------|
         | 🏆 **Ligas procesadas** | {ligas_procesadas} |
         | 📅 **Partidos guardados** | {partidos_guardados} |
-        | 🔍 **Fixtures descargados de API** | {fixtures_totales} |
-        | ♻️ **Fixtures ya en DB (duplicados)** | {fixtures_duplicados} |
+        | 🔍 **Partidos descargados de API** | {fixtures_totales} |
+        | ♻️ **Partidos ya en DB (duplicados)** | {fixtures_duplicados} |
         | 👥 **Equipos detectados** | {len(equipos_unicos)} |
         | 🆕 **Equipos nuevos** | {equipos_nuevos} |
         | ♻️ **Equipos existentes** | {equipos_existentes} |
