@@ -3944,7 +3944,7 @@ def render_vip_page():
         with sub_tab1:
             # Cargar bankroll guardado de user_stats
             try:
-                resp_stats = client.table('user_stats').select('bankroll_inicial,total_retirado').eq('usuario_id', usuario_id).execute()
+                resp_stats = client.table('user_stats').select('bankroll_inicial,total_retirado').eq('usuario', usuario_id).execute()
                 if resp_stats.data:
                     bankroll_guardado = resp_stats.data[0].get('bankroll_inicial', 1000.0)
                     total_retirado_guardado = resp_stats.data[0].get('total_retirado', 0.0) or 0.0
@@ -4279,7 +4279,7 @@ def render_vip_page():
 
         # Cargar datos actuales
         try:
-            resp_stats = client.table('user_stats').select('*').eq('usuario_id', usuario_id).execute()
+            resp_stats = client.table('user_stats').select('*').eq('usuario', usuario_id).execute()
             if resp_stats.data:
                 stats_data = resp_stats.data[0]
                 bankroll_actual_db = stats_data.get('bankroll_inicial', 1000.0)
@@ -4324,9 +4324,9 @@ def render_vip_page():
                 try:
                     # Siempre guardar bankroll inicial
                     client.table('user_stats').upsert({
-                        'usuario_id': usuario_id,
+                        'usuario': usuario_id,
                         'bankroll_inicial': float(nuevo_bankroll),
-                    }, on_conflict='usuario_id').execute()
+                    }, on_conflict='usuario').execute()
 
                     # Si hay retiro, registrarlo
                     if monto_retiro > 0:
@@ -4337,12 +4337,12 @@ def render_vip_page():
                             'cantidad': float(monto_retiro),
                             'nota': 'Retiro'
                         }).execute()
-                        resp_upd = client.table('user_stats').select('total_retirado').eq('usuario_id', usuario_id).execute()
+                        resp_upd = client.table('user_stats').select('total_retirado').eq('usuario', usuario_id).execute()
                         if resp_upd.data:
                             total_actual = resp_upd.data[0].get('total_retirado', 0) or 0
                             client.table('user_stats').update({
                                 'total_retirado': float(total_actual) + float(monto_retiro)
-                            }).eq('usuario_id', usuario_id).execute()
+                            }).eq('usuario', usuario_id).execute()
                         st.success(f"✅ Guardado + Retiro: {format_money(monto_retiro, simbolo)}")
                     else:
                         st.success(f"✅ Bankroll guardado")
