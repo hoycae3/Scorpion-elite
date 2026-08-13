@@ -1140,28 +1140,27 @@ def sincronizar_partidos():
                         score_local = score.get('fulltime', {}).get('home') if score.get('fulltime') else goals.get('home') or 0
                         score_visitante = score.get('fulltime', {}).get('away') if score.get('fulltime') else goals.get('away') or 0
 
-                        # ★ Agregar equipos SOLO de partidos nuevos a equipos_unicos
-                        # (los partidos ya existentes no necesitan re-procesar sus equipos)
+                        # ★ Agregar TODOS los equipos a equipos_unicos (necesario para CASO B: FT de existentes)
+                        # La distinción nuevo/existente se hace en PASO 2 consultando equipos_stats
+                        if team_id_local:
+                            equipos_unicos[team_id_local] = {
+                                'team_id': team_id_local,
+                                'team_name': equipo_local,
+                                'league_id': liga_id,
+                                'league_name': liga_nombre,
+                                'season': season_stats
+                            }
+
+                        if team_id_visitante:
+                            equipos_unicos[team_id_visitante] = {
+                                'team_id': team_id_visitante,
+                                'team_name': equipo_visitante,
+                                'league_id': liga_id,
+                                'league_name': liga_nombre,
+                                'season': season_stats
+                            }
+
                         es_partido_nuevo = fix_id not in partidos_existentes
-
-                        if es_partido_nuevo:
-                            if team_id_local:
-                                equipos_unicos[team_id_local] = {
-                                    'team_id': team_id_local,
-                                    'team_name': equipo_local,
-                                    'league_id': liga_id,
-                                    'league_name': liga_nombre,
-                                    'season': season_stats
-                                }
-
-                            if team_id_visitante:
-                                equipos_unicos[team_id_visitante] = {
-                                    'team_id': team_id_visitante,
-                                    'team_name': equipo_visitante,
-                                    'league_id': liga_id,
-                                    'league_name': liga_nombre,
-                                    'season': season_stats
-                                }
 
                         # ★ NUEVO: Rastrear partidos FT (terminados) para sincronización incremental
                         if estado == 'FT' and fix_id:
@@ -1456,94 +1455,52 @@ def sincronizar_partidos():
                         ]
                         api_calls_ahorradas += (antes - len(ft_en_ventana))
 
-                    # ★ Solo buscar más FT si faltan por guardar
-                    # Antes buscaba siempre; ahora solo si no hay FT pendientes en ventana
+                    # ★ Solo buscar más FT vía API si hay FT pendientes en la ventana
+                    # (evita 575 llamadas API innecesarias que causan timeout en Render)
                     if not ft_en_ventana:
+                        # No hay FT pendientes en la ventana → saltar este equipo (0 API calls)
+                        continue
+
+                    # ★ Si hay FT pendientes en la ventana, procesarlos
+                    for fix_info in ft_en_ventana:
                         try:
-                            resp_last = requests.get(
-                                f"{API_URL}/fixtures",
+                            # Fetch stats del partido específico
+                            stats_partido = obtener_stats_partido(
+                                fixture_id=fix_info['fixture_id'],
+                                team_id=team_id,
+                                team_name=team_name,
                                 headers=headers,
-                                params={
-                                    "team": team_id,
-                                    "season": season_eq,
-                                    "status": "FT",
-                                    "from": f"{hoy.year}-01-01",
-                                    "to": hoy_str,
-                                    "limit": 10
-                                },
-                                timeout=10
+                                API_URL=API_URL
                             )
-                            if resp_last.status_code == 200:
-                                data_last = resp_last.json()
-                                if data_last.get("response"):
-                                    for fix in data_last["response"]:
-                                        f2 = fix.get("fixture", {})
-                                        fix_id = f2.get("id")
-                                        # ★ OPTIMIZACIÓN: saltar FT ya guardados
-                                        if fix_id in fixtures_guardados:
-                                            api_calls_ahorradas += 1
-                                            continue
-                                        teams = fix.get("teams", {})
-                                        score = f2.get("score", {}) or {}
-                                        goals = fix.get("goals", {}) or {}
-                                        fecha_partido = f2.get("date", "")[:10]
-                                        score_local = score.get("fulltime", {}).get("home") if score.get("fulltime") else goals.get("home") or 0
-                                        score_visitante = score.get("fulltime", {}).get("away") if score.get("fulltime") else goals.get("away") or 0
-                                        es_local = teams.get("home", {}).get("id") == team_id
-                                        resultado = "W" if ((es_local and score_local > score_visitante) or (not es_local and score_visitante > score_local)) else ("D" if score_local == score_visitante else "L")
-                                        ft_en_ventana.append({
-                                            "fixture_id": fix_id,
-                                            "fecha": fecha_partido,
-                                            "liga": fix.get("league", {}).get("name", ""),
-                                            "es_local": es_local,
-                                            "resultado": resultado,
-                                            "goles_favor": score_visitante if not es_local else score_local,
-                                            "goles_contra": score_local if not es_local else score_visitante
-                                        })
-                        except Exception as e:
-                            st.warning(f"⚠️ Error buscando FT de {team_name}: {e}")
 
-                    # ★ Si tras todo lo anterior no hay FT pendientes, saltar (0 API calls)
-                    if ft_en_ventana:
-                        for fix_info in ft_en_ventana:
+                            # Crear datos del partido (siempre incluir goles)
+                            partido_data = {
+                                'team_id': team_id,
+                                'equipo': team_name,
+                                'fixture_id': fix_info['fixture_id'],
+                                'fecha': fix_info['fecha'],
+                                'liga': fix_info['liga'],
+                                'es_local': fix_info['es_local'],
+                                'resultado': fix_info['resultado'],
+                                'goles_favor': fix_info['goles_favor'] if fix_info.get('goles_favor') is not None else 0,
+                                'goles_contra': fix_info['goles_contra'] if fix_info.get('goles_contra') is not None else 0,
+                            }
+
+                            # Agregar stats si están disponibles
+                            if stats_partido:
+                                partido_data.update(stats_partido)
+
                             try:
-                                # Fetch stats del partido específico
-                                stats_partido = obtener_stats_partido(
-                                    fixture_id=fix_info['fixture_id'],
-                                    team_id=team_id,
-                                    team_name=team_name,
-                                    headers=headers,
-                                    API_URL=API_URL
-                                )
-
-                                # Crear datos del partido (siempre incluir goles)
-                                partido_data = {
-                                    'team_id': team_id,
-                                    'equipo': team_name,
-                                    'fixture_id': fix_info['fixture_id'],
-                                    'fecha': fix_info['fecha'],
-                                    'liga': fix_info['liga'],
-                                    'es_local': fix_info['es_local'],
-                                    'resultado': fix_info['resultado'],
-                                    'goles_favor': fix_info['goles_favor'] if fix_info.get('goles_favor') is not None else 0,
-                                    'goles_contra': fix_info['goles_contra'] if fix_info.get('goles_contra') is not None else 0,
-                                }
-
-                                # Agregar stats si están disponibles
-                                if stats_partido:
-                                    partido_data.update(stats_partido)
-
-                                try:
-                                    client.table('equipo_partidos_stats').upsert(
-                                        partido_data,
-                                        on_conflict='team_id,fixture_id'
-                                    ).execute()
-                                    stats_ft_nuevos += 1
-                                except Exception as e:
-                                    st.warning(f"⚠️ Error guardando FT {fix_info['fixture_id']} de {team_name}: {e}")
-
+                                client.table('equipo_partidos_stats').upsert(
+                                    partido_data,
+                                    on_conflict='team_id,fixture_id'
+                                ).execute()
+                                stats_ft_nuevos += 1
                             except Exception as e:
-                                st.warning(f"⚠️ Error procesando FT {fix_info.get('fixture_id')} de {team_name}: {e}")
+                                st.warning(f"⚠️ Error guardando FT {fix_info['fixture_id']} de {team_name}: {e}")
+
+                        except Exception as e:
+                            st.warning(f"⚠️ Error procesando FT {fix_info.get('fixture_id')} de {team_name}: {e}")
 
         # Actualizar progreso antes del resumen (70-90%)
         progress_bar.progress(90)
