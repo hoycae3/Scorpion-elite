@@ -734,6 +734,7 @@ def render_public_landing():
 # ══════════════════════════════════════════════════════════
 
 def render_login_form():
+    """Renderiza el formulario de login con solo contraseña"""
     # ===== INICIALIZAR SESSION_STATE =====
     if 'selected_match_data' not in st.session_state:
         st.session_state.selected_match_data = None
@@ -751,8 +752,6 @@ def render_login_form():
         st.session_state.user_data = None
     # ===== FIN INICIALIZACION =====
 
-    """Renderiza el formulario de login con solo contraseña"""
-    
     # Toggle para mostrar/ocultar login
     # Si no está logueado
     if not st.session_state.logged:
