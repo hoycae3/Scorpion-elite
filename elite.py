@@ -1211,31 +1211,31 @@ def sincronizar_partidos():
                                     'goles_contra': score_local
                                 })
 
-                        # Guardar SOLO partidos nuevos en tabla partidos
-                        if es_partido_nuevo:
-                            partido_data = {
-                                'fixture_id': fix_id,
-                                'fecha': fix.get('date', '')[:10],
-                                'hora': fix.get('date', '')[11:16],
-                                'liga': league.get('name', ''),
-                                'liga_id': league.get('id'),
-                                'pais': league.get('country', ''),
-                                'equipo_local': equipo_local,
-                                'equipo_visitante': equipo_visitante,
-                                'team_id_local': team_id_local,
-                                'team_id_visitante': team_id_visitante,
-                                'score_local': score_local,
-                                'score_visitante': score_visitante,
-                                'estado': estado,
-                            }
-                            try:
-                                client.table("partidos").upsert(partido_data, on_conflict="fixture_id").execute()
+                        # ★ Guardar/actualizar partido en tabla partidos
+                        # Siempre hacer upsert para actualizar fecha/estado/score de partidos
+                        # reprogramados (mismo fixture_id, fecha diferente)
+                        partido_data = {
+                            'fixture_id': fix_id,
+                            'fecha': fix.get('date', '')[:10],
+                            'hora': fix.get('date', '')[11:16],
+                            'liga': league.get('name', ''),
+                            'liga_id': league.get('id'),
+                            'pais': league.get('country', ''),
+                            'equipo_local': equipo_local,
+                            'equipo_visitante': equipo_visitante,
+                            'team_id_local': team_id_local,
+                            'team_id_visitante': team_id_visitante,
+                            'score_local': score_local,
+                            'score_visitante': score_visitante,
+                            'estado': estado,
+                        }
+                        try:
+                            client.table("partidos").upsert(partido_data, on_conflict="fixture_id").execute()
+                            if es_partido_nuevo:
                                 partidos_guardados += 1
-                                # Actualizar progreso (10-30%)
-                                progress_bar.progress(int(10 + (partidos_guardados / max(1, len(equipos_unicos)) * 20)))
-                                status_text.info(f"📥 Guardando partidos... ({partidos_guardados} guardados)")
-                            except Exception as e:
-                                st.warning(f"⚠️ Error al guardar partido {fix_id}: {e}")
+                            # Actualizar progreso (10-30%)
+                            progress_bar.progress(int(10 + (partidos_guardados / max(1, len(equipos_unicos)) * 20)))
+                            status_text.info(f"📥 Guardando partidos... ({partidos_guardados} guardados)")
 
                             # 🎯 AUTO-ACTUALIZAR PICKS: Si el partido ya terminó (FT), calcular resultados automáticamente
                             if estado == 'FT' and score_local is not None and score_visitante is not None:
@@ -1314,6 +1314,8 @@ def sincronizar_partidos():
                                                 logger.warning(f"Error actualizando bankroll fixture {fix_id}: {e}")
                                 except Exception as e:
                                     logger.warning(f"Error auto-actualizando picks fixture {fix_id}: {e}")
+                        except Exception as e:
+                            st.warning(f"⚠️ Error al guardar partido {fix_id}: {e}")
                 else:
                     # La API devolvió error (429=cuota agotada, 403=key inválida, 500=error servidor)
                     errores_api += 1
