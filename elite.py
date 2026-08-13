@@ -4291,6 +4291,15 @@ def render_vip_page():
         col1, col2, col3, col4 = st.columns([2.5, 1, 1, 1])
 
         with col1:
+            st.markdown("""
+            <style>
+            div[data-testid="stSelectbox"]:has(> div > div > p:contains("💰 Moneda")) [data-baseweb="select"] > div {
+                font-size: 1.15rem !important;
+                min-height: 3rem !important;
+                padding: 0.5rem 0.75rem !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
             moneda_select = st.selectbox(
                 "💰 Moneda",
                 options=list(MONEDAS.keys()),
