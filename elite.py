@@ -1085,6 +1085,8 @@ def sincronizar_partidos():
         # Contadores
         ligas_procesadas = 0
         partidos_guardados = 0
+        errores_api = 0  # Ligas donde la API devolvió error (429/403/500)
+        primer_error_api = None  # Guardar el primer error para mostrarlo
 
         # Colección de equipos únicos: {team_id: {team_id, team_name, league_id, league_name, season}}
         equipos_unicos = {}
@@ -1295,6 +1297,16 @@ def sincronizar_partidos():
                                                 logger.warning(f"Error actualizando bankroll fixture {fix_id}: {e}")
                                 except Exception as e:
                                     logger.warning(f"Error auto-actualizando picks fixture {fix_id}: {e}")
+                else:
+                    # La API devolvió error (429=cuota agotada, 403=key inválida, 500=error servidor)
+                    errores_api += 1
+                    if primer_error_api is None:
+                        mensaje_error = {
+                            429: "❌ Cuota de API-Football agotada (límite diario alcanzado)",
+                            403: "❌ API key inválida o expirada",
+                            401: "❌ API key no autorizada",
+                        }.get(resp.status_code, f"❌ API devolvió error {resp.status_code}")
+                        primer_error_api = mensaje_error
             except Exception as e:
                 # Si falla una liga, continuar con la siguiente
                 continue
@@ -1543,6 +1555,10 @@ def sincronizar_partidos():
         if picks_actualizados_auto > 0:
             st.success(f"🎯 Se actualizaron {picks_actualizados_auto} picks con los resultados de partidos terminados!")
 
+        # ⚠️ Avisar si la API devolvió errores (cuota agotada, key inválida, etc.)
+        if errores_api > 0:
+            st.error(f"{primer_error_api} — Fallaron {errores_api} de las ligas. Revisa tu API key o cuota diaria de API-Football.")
+
         # RESUMEN FINAL
         st.markdown(f"""
         📥 **RESUMEN FINAL:**
@@ -1559,7 +1575,8 @@ def sincronizar_partidos():
         | 📊 **Stats FT incrementales** | {stats_ft_nuevos} |
         | 💰 **API calls ahorradas** | {api_calls_ahorradas} |
         | 🎯 **Picks actualizados** | {picks_actualizados_auto} |
-        | ⚠️ **Errores** | {errores_equipos} |
+        | ⚠️ **Errores equipos** | {errores_equipos} |
+        | 🚫 **Errores de API** | {errores_api} |
         """)
 
     except Exception as e:
