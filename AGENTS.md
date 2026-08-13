@@ -1,6 +1,6 @@
 # Scorpion Elite - Documentacion del Proyecto
 
-> Ultima actualizacion: 2026-08-11 (post-auditoria completa)
+> Ultima actualizacion: 2026-08-12 (fix sincronizacion no guardaba partidos)
 
 ---
 
@@ -158,10 +158,19 @@ MENU (despues de login):
 ## Sincronizacion
 
 ### Boton "🔄 Sincronizar":
-- Ventana: HOY-3 a HOY+10 (13 dias)
+- Ventana: ayer → ultima_futura + 1 dia (incremental)
 - 55 ligas mundiales
 - Sincronizacion INCREMENTAL (no re-descarga lo existente)
-- Agrega TODOS los equipos de TODOS los fixtures
+- Agrega equipos SOLO de partidos nuevos o FT (no de existentes)
+- Upsert SIEMPRE: actualiza fecha/estado/score de partidos reprogramados
+
+### Metricas de diagnostico en resumen de sync:
+- `📅 Partidos guardados`: partidos nuevos insertados
+- `🔄 Partidos actualizados`: existentes con fecha/estado cambiado (reprogramados)
+- `🔍 Partidos descargados de API`: total de fixtures que devolvio la API
+- `♻️ Partidos ya en DB (duplicados)`: fixtures que ya estaban en DB
+- `📆 Fechas que devolvió la API`: fechas exactas de la respuesta
+- `🚫 Errores de API`: ligas donde la API devolvio error (429/403/500)
 
 ### Boton "📊 Stats Ayer":
 - Actualiza SOLO partidos de ayer (hoy-1)
@@ -265,6 +274,103 @@ curl -X POST "https://api.render.com/v1/services/srv-d9e1thbbc2fs73f30jh0/deploy
 # Verificar app
 curl -s -o /dev/null -w "%{http_code}" https://scorpion-elite.onrender.com/
 ```
+
+---
+
+## Sesion 2026-08-12 - Fix Sincronizacion No Guardaba Partidos
+
+### Problema
+Usuario reporta: "Partidos guardados: 0" al sincronizar. La API devuelve
+partidos pero ninguno se guarda en Supabase.
+
+### Causas Encontradas y Corregidas
+
+#### Causa 1: Equipos fantasmas (142 equipos nuevos innecesarios)
+El codigo agregaba TODOS los equipos de TODOS los fixtures a
+`equipos_unicos`, sin importar si el partido era nuevo o existente.
+Esto causaba:
+- Descarga de stats de 142 equipos innecesariamente
+- Timeout/crash en Render antes de terminar de guardar partidos
+- Metricas infladas: 752 equipos detectados, 142 nuevos
+
+**Fix**: Solo agregar equipos a `equipos_unicos` si:
+- El partido es nuevo (necesita stats para el analizador), O
+- El partido termino FT (necesita procesar resultado para CASO B)
+Linea ~1154: `if es_partido_nuevo or estado == 'FT':`
+
+#### Causa 2: Bug del `if es_partido_nuevo` (partidos reprogramados)
+El codigo original solo hacia upsert dentro de `if fix_id not in
+partidos_existentes:`. Si un partido ya existia (con fecha vieja), no
+se actualizaba la fecha nueva.
+
+**Problema real**: La API reprograma partidos (cambia fecha pero
+mantiene fixture_id). Ej: un partido del 10 de agosto se mueve al 17.
+El codigo lo veia como "ya existe" y no actualizaba la fecha. Resultado:
+partidos del 17 nunca aparecian en DB aunque la API los devolvia.
+
+**Fix**: Hacer upsert SIEMPRE para actualizar fecha/estado/score de
+partidos reprogramados. Solo contar como "guardado" si es nuevo.
+Linea ~1239: `client.table("partidos").upsert(...)` (fuera del if)
+
+#### Causa 3: Deploy de Render no completado
+El fix se subio a GitHub pero Render tarda varios minutos en construir
+y desplegar. Usuario sincronizo con codigo viejo (sin fix) la primera
+vez. Solucion: esperar a que Render termine + hard refresh.
+
+### Resultado Final
+Despues de los 3 fixes + esperar deploy completo:
+```
+Antes: 854 partidos (1 al 16 de agosto), 0 guardados, 142 equipos nuevos
+Ahora: 868 partidos (1 al 18 de agosto), 14 guardados, 5 equipos nuevos
+```
+
+### Diagnosticos Anadidos (metricas en resumen de sync)
+- `🔍 Partidos descargados de API` (fixtures_totales)
+- `♻️ Partidos ya en DB (duplicados)` (fixtures_duplicados)
+- `📆 Fechas que devolvió la API` (fechas_api set)
+- `🔄 Partidos actualizados (fecha/estado)` (partidos_actualizados)
+- `🚫 Errores de API` (errores_api, primer_error_api)
+
+### Variables anadidas
+- `partidos_existentes_fechas`: dict {fixture_id: {fecha, estado}} para
+  detectar partidos reprogramados (cambio de fecha o estado)
+- `fechas_api`: set de fechas que devuelve la API (diagnostico)
+- `fixtures_totales`, `fixtures_duplicados`: contadores de diagnostico
+- `partidos_actualizados`: contador de partidos existentes actualizados
+
+### Otros cambios
+- Corregida traduccion "Fixtures" → "Partidos" en metricas
+  (antes mostraba "Accesorios descargados de API")
+- CASO B: cambiada deteccion de equipos existentes de
+  `equipo_partidos_stats` a `equipos_stats` (tabla correcta)
+- CASO B: `continue` si no hay FT pendientes (evita 575 API calls)
+- Anadido manejo de errores de API (429/403/401/500) con mensaje claro
+
+### Commits de esta sesion
+- `3839574`: fix: no descargar stats de equipos de partidos ya existentes
+- `b8b2c8a`: diag: mostrar fechas exactas que devuelve la API en resumen
+- `867a4d8`: fix: actualizar partidos reprogramados (mismo fixture_id, fecha distinta)
+- `d04457e`: diag: añadir contador de partidos actualizados (reprogramados)
+
+### Logica de ventana de sync (NO CAMBIAR sin confirmar)
+```
+fecha_inicio = ayer (siempre, para resultados del dia anterior)
+fecha_fin = ultima_futura + 1 dia (incremental)
+```
+Usuario confirmo: esta logica es correcta. NO cambiar a +7 dias.
+
+### LIMITACION conocida (no es bug)
+Si el dia siguiente a ultima_futura no tiene partidos, la sync no
+avanza (ultima_futura no cambia). Ej: si ultima_futura=16 y el 17 no
+tiene partidos, cada sync busca el 17 y no encuentra nada nuevo.
+Solucion propuesta (pendiente de aprobacion): buscar hasta hoy+6 en
+vez de ultima_futura+1.
+
+### DB confirmada
+- Tabla `partidos`: fixture_id UNIQUE NOT NULL (no permite duplicados)
+- 868 partidos del 1 al 18 de agosto (55 ligas, ~53 partidos/dia)
+- Viernes/sabado = mas partidos (137 y 117), entre semana = menos (49)
+- Esto es NORMAL, no hay problema
 
 ---
 
