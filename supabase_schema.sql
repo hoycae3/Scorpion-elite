@@ -306,6 +306,34 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'tarjetas_under_prob') THEN
         ALTER TABLE picks ADD COLUMN tarjetas_under_prob DECIMAL(5,2);
     END IF;
+    -- Tiros Arco (añadidos posteriormente, faltaban en migraciones previas)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'prediccion_arco') THEN
+        ALTER TABLE picks ADD COLUMN prediccion_arco VARCHAR(20);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'arco_total_estimado') THEN
+        ALTER TABLE picks ADD COLUMN arco_total_estimado DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'arco_local') THEN
+        ALTER TABLE picks ADD COLUMN arco_local DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'arco_visitante') THEN
+        ALTER TABLE picks ADD COLUMN arco_visitante DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'arco_over_prob') THEN
+        ALTER TABLE picks ADD COLUMN arco_over_prob DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'arco_under_prob') THEN
+        ALTER TABLE picks ADD COLUMN arco_under_prob DECIMAL(5,2);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'resultado_arco') THEN
+        ALTER TABLE picks ADD COLUMN resultado_arco VARCHAR(20);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'acertado_arco') THEN
+        ALTER TABLE picks ADD COLUMN acertado_arco BOOLEAN;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'confianza') THEN
+        ALTER TABLE picks ADD COLUMN confianza INTEGER;
+    END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'picks' AND column_name = 'rango') THEN
         ALTER TABLE picks ADD COLUMN rango VARCHAR(5);
     END IF;

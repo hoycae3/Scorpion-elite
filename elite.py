@@ -251,6 +251,38 @@ def migrate_team_id_column():
     except Exception as e:
         logger.warning(f"Migration error: {e}")
 
+def migrate_picks_columns():
+    """Agrega columnas faltantes (arco, confianza) a la tabla picks si no existen.
+    La tabla picks en producción se creó antes de añadir las predicciones de tiros
+    a arco, por lo que estas columnas faltan y provocan PGRST204 al guardar picks."""
+    try:
+        conn_url = os.getenv('DATABASE_URL', '')
+        if not conn_url and os.getenv('SUPABASE_URL') and os.getenv('SUPABASE_SERVICE_ROLE_KEY'):
+            supabase_host = os.getenv('SUPABASE_URL').replace('https://', '').replace('http://', '')
+            conn_url = f"postgresql://postgres:{os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')}@db.{supabase_host}:5432/postgres"
+
+        if conn_url:
+            conn = psycopg2.connect(conn_url)
+            cur = conn.cursor()
+            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS prediccion_arco VARCHAR(20);')
+            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_total_estimado DECIMAL(5,2);')
+            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_local DECIMAL(5,2);')
+            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_visitante DECIMAL(5,2);')
+            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_over_prob DECIMAL(5,2);')
+            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_under_prob DECIMAL(5,2);')
+            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS resultado_arco VARCHAR(20);')
+            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS acertado_arco BOOLEAN;')
+            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS confianza INTEGER;')
+            # Forzar recarga del caché de esquema de PostgREST (Supabase) para que
+            # reconozca las columnas nuevas inmediatamente, evitando PGRST204.
+            cur.execute("NOTIFY pgrst, 'reload schema'")
+            conn.commit()
+            cur.close()
+            conn.close()
+            logger.info("✅ Migration completada: columnas arco y confianza en picks")
+    except Exception as e:
+        logger.warning(f"Migration picks error: {e}")
+
 # ══════════════════════════════════════════════════════════
 # SISTEMA DE USUARIOS (Supabase) - Solo hash bcrypt
 # (hash_password, verify_password, get_hoy importados de app_helpers)
@@ -337,6 +369,9 @@ def db_eliminar_usuario(user_id):
         return False
 
 def db_actualizar_plan(user_id, plan, dias):
+    client = get_client()
+    if not client:
+        return False
     try:
         client.table('usuarios').update({
             'plan': plan,
@@ -567,6 +602,8 @@ def render_public_landing():
                         else:
                             gf_l = stats_local.get('goles_favor', 0)
                             gc_l = stats_local.get('goles_contra', 0)
+                        gf_l_str = safe_fmt(gf_l)
+                        gc_l_str = safe_fmt(gc_l)
                         st.markdown(f"**GF/GC:** <span style='color:black;font-weight:bold'>{gf_l_str}/{gc_l_str}</span>", unsafe_allow_html=True)
                         lambda_l = promedios_dinamicos_local.get('lambda_ponderado', stats_local.get('lambda_local', 0)) if promedios_dinamicos_local else stats_local.get('lambda_local', 0)
                         st.markdown(f"**Ataque:** <span style='color:black;font-weight:bold'>{lambda_l:.2f}</span> goles/partido", unsafe_allow_html=True)
@@ -586,6 +623,8 @@ def render_public_landing():
                         else:
                             gf_v = stats_visit.get('goles_favor', 0)
                             gc_v = stats_visit.get('goles_contra', 0)
+                        gf_v_str = safe_fmt(gf_v)
+                        gc_v_str = safe_fmt(gc_v)
                         st.markdown(f"**GF/GC:** <span style='color:black;font-weight:bold'>{gf_v_str}/{gc_v_str}</span>", unsafe_allow_html=True)
                         lambda_v = promedios_dinamicos_visitante.get('lambda_ponderado', stats_visit.get('lambda_visitante', 0)) if promedios_dinamicos_visitante else stats_visit.get('lambda_visitante', 0)
                         st.markdown(f"**Ataque:** <span style='color:black;font-weight:bold'>{lambda_v:.2f}</span> goles/partido", unsafe_allow_html=True)
@@ -790,6 +829,11 @@ def render_login_form():
         st.stop()
 
     # Sidebar con información del usuario
+    # Migración de columnas de picks (arco, confianza) - una sola vez por sesión
+    if not st.session_state.get('picks_migrated'):
+        migrate_picks_columns()
+        st.session_state.picks_migrated = True
+
     with st.sidebar:
         st.markdown("## 🦂 Scorpion Elite")
         user_plan = st.session_state.user_data.get('plan', 'vip') if st.session_state.user_data else 'vip'
@@ -948,6 +992,9 @@ def sincronizar_partidos():
         headers = {'x-apisports-key': API_KEY}
         hoy = datetime.now(timezone(timedelta(hours=-5))).date()
         hoy_str = hoy.strftime('%Y-%m-%d')
+
+        # Contador de picks auto-actualizados (inicializado aquí porque se usa en PASO 1)
+        picks_actualizados_auto = 0
 
         # Calcular temporada dinámicamente: Ago-Dic ↩️' season actual, Ene-Jul ↩️' season anterior
         season = hoy.year if hoy.month >= 8 else hoy.year - 1
@@ -1354,7 +1401,6 @@ def sincronizar_partidos():
         stats_ft_nuevos = 0
         errores_equipos = 0
         partidos_iniciales_cargados = 0
-        picks_actualizados_auto = 0  # Contador de picks auto-actualizados
         api_calls_ahorradas = 0  # ★ API calls evitadas por filtrado de FT ya guardados
 
         if equipos_unicos:
