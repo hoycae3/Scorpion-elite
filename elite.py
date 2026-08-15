@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
+import re
 import time
 import requests
 import logging
@@ -1362,7 +1363,7 @@ def sincronizar_partidos():
                                                 update_data['acertado_remates'] = acertado_remates
                                                 update_data['acertado_arco'] = acertado_arco
 
-                                            client.table('picks').update(update_data).eq('id', pick_id).execute()
+                                            _actualizar_pick_resiliente(client, update_data, pick_id)
                                             picks_actualizados_auto += 1
 
                                             # 🎰 AUTO-ACTUALIZAR BANKROLL
@@ -2070,6 +2071,51 @@ def _construir_pick_data(r, home, away, stats_local):
     }
 
 
+def _insertar_pick_resiliente(client, pick_data):
+    """Inserta un pick siendo resiliente a columnas faltantes en la DB.
+
+    Si el insert falla con PGRST204 (columna no encontrada en el caché del
+    esquema de PostgREST), quita la columna problemática y reintenta.
+    Esto permite guardar el pick aunque la tabla picks en producción no tenga
+    todas las columnas nuevas (arco, confianza, etc.) migradas todavía."""
+    data = dict(pick_data)
+    while True:
+        try:
+            client.table('picks').insert(data).execute()
+            return data
+        except Exception as e:
+            col_faltante = _extraer_columna_faltante(str(e))
+            if col_faltante and col_faltante in data:
+                logger.warning(f"Columna '{col_faltante}' no existe en picks, reintentando sin ella")
+                del data[col_faltante]
+                continue
+            raise
+
+
+def _actualizar_pick_resiliente(client, update_data, pick_id):
+    """Actualiza un pick siendo resiliente a columnas faltantes (ver _insertar_pick_resiliente)."""
+    data = dict(update_data)
+    while True:
+        try:
+            client.table('picks').update(data).eq('id', pick_id).execute()
+            return data
+        except Exception as e:
+            col_faltante = _extraer_columna_faltante(str(e))
+            if col_faltante and col_faltante in data:
+                logger.warning(f"Columna '{col_faltante}' no existe en picks, actualizando sin ella")
+                del data[col_faltante]
+                continue
+            raise
+
+
+def _extraer_columna_faltante(msg):
+    """Extrae el nombre de la columna de un mensaje PGRST204 de PostgREST."""
+    if 'PGRST204' in msg or 'no se pudo encontrar la columna' in msg.lower() or 'could not find the column' in msg.lower():
+        match = re.search(r"'([^']+)'", msg)
+        return match.group(1) if match else None
+    return None
+
+
 def render_analizador_page():
     st.markdown("## 🎯 Analizador de Partidos")
 
@@ -2724,8 +2770,12 @@ def render_analizador_page():
             try:
                 client = get_client()
                 pick_data = _construir_pick_data(r, home, away, stats_local)
-                client.table('picks').insert(pick_data).execute()
-                st.success(f"✅ Pick guardado: {home} vs {away}")
+                guardado = _insertar_pick_resiliente(client, pick_data)
+                omitidas = set(pick_data.keys()) - set(guardado.keys())
+                if omitidas:
+                    st.warning(f"⚠️ Pick guardado: {home} vs {away} (sin columnas: {', '.join(sorted(omitidas))}). Ejecuta una sincronización para migrar la base de datos.")
+                else:
+                    st.success(f"✅ Pick guardado: {home} vs {away}")
             except Exception as e:
                 st.error(f"❌ Error al guardar: {str(e)}")
 
