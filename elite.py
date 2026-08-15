@@ -4294,15 +4294,23 @@ def render_vip_page():
             st.markdown("""
             <style>
             /* Selector de moneda mas grande (Streamlit 1.61 usa react-aria, no baseweb).
-               Se apunta por aria-label del input para afectar SOLO a este selectbox. */
+               Se apunta por aria-label del input para afectar SOLO a este selectbox.
+               Hay que tocar el contenedor y el ComboBox, no solo el input, para que crezca. */
+            div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) > div {
+                min-height: 4.5rem !important;
+            }
+            div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) .react-aria-ComboBox {
+                min-height: 4.5rem !important;
+            }
             div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) .react-aria-ComboBox [role="combobox"] {
-                font-size: 1.4rem !important;
-                min-height: 3.5rem !important;
-                padding: 0.6rem 0.9rem !important;
-                border-radius: 8px !important;
+                font-size: 1.6rem !important;
+                min-height: 4rem !important;
+                padding: 0.8rem 1rem !important;
+                line-height: 1.6rem !important;
             }
             div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) .react-aria-ComboBox button[aria-label="Open"] {
-                min-height: 3.5rem !important;
+                min-height: 4rem !important;
+                height: 4rem !important;
                 width: 3rem !important;
             }
             div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) [data-testid="stWidgetLabel"] p {
