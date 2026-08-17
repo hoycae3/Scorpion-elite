@@ -43,7 +43,7 @@ try:
     with open('styles.css', 'r') as f:
         css_content = f.read()
         # Forzar cache bust con version
-        st.markdown(f'<style>/* v20260817d */ {css_content}</style>', unsafe_allow_html=True)
+        st.markdown(f'<style>/* v20260817e */ {css_content}</style>', unsafe_allow_html=True)
 except Exception as e:
     logger.warning(f"Error en linea 43: {e}")
 
@@ -2970,10 +2970,10 @@ def render_analizador_page():
         g1, g2, g3, g4 = st.columns(4)
         # Calcular total de goles estimado para mostrar
         goles_estimado = (r.get('goles_local', 0) or 0) + (r.get('goles_visitante', 0) or 0) if r else 0
-        ou_val = f"{ou_text} 2.5\n{prob_ou:.0f}%" if pick_ou != '?' else '?'
-        ou15_val = f"{'Mas' if pick_ou15=='Over' else 'Menos'} 1.5\n{prob_ou15:.0f}%" if r else '?'
-        ou35_val = f"{'Mas' if pick_ou35=='Over' else 'Menos'} 3.5\n{prob_ou35:.0f}%" if r else '?'
-        btts_val = f"{btts_icon}\n{btts_yes:.0f}%" if pick_btts != '?' else '?'
+        ou_val = f"{ou_text} 2.5  ·  {prob_ou:.0f}%" if pick_ou != '?' else '?'
+        ou15_val = f"{'Mas' if pick_ou15=='Over' else 'Menos'} 1.5  ·  {prob_ou15:.0f}%" if r else '?'
+        ou35_val = f"{'Mas' if pick_ou35=='Over' else 'Menos'} 3.5  ·  {prob_ou35:.0f}%" if r else '?'
+        btts_val = f"{btts_icon}  ·  {btts_yes:.0f}%" if pick_btts != '?' else '?'
         _btn_pred(g1, 'btn_card_ou15', 'OU 1.5', ou15_val, 'OU 1.5' in sel, _toggle('OU 1.5'), accent=C_GOL)
         _btn_pred(g2, 'btn_card_ou', 'OU 2.5', ou_val, 'O/U' in sel, _toggle('O/U'), accent=C_GOL)
         _btn_pred(g3, 'btn_card_ou35', 'OU 3.5', ou35_val, 'OU 3.5' in sel, _toggle('OU 3.5'), accent=C_GOL)
@@ -2982,10 +2982,10 @@ def render_analizador_page():
         # ============================
         # GRUPO 4: GOLES POR EQUIPO
         # ============================
-        _group_title(f'Goles por Equipo  (Total: {goles_estimado:.1f})', '🎯', C_EQ)
+        _group_title(f'Goles por Equipo  ·  Total: {goles_estimado:.1f}', '🎯', C_EQ)
         e1, e2 = st.columns(2)
-        gl_str = f"{gl_val:.1f} esperados\n{'Over 1.5' if gl_over else 'Under 1.5'}" if r else '?'
-        gv_str = f"{gv_val:.1f} esperados\n{'Over 1.5' if gv_over else 'Under 1.5'}" if r else '?'
+        gl_str = f"{gl_val:.1f} goles  ·  {'Over 1.5' if gl_over else 'Under 1.5'}" if r else '?'
+        gv_str = f"{gv_val:.1f} goles  ·  {'Over 1.5' if gv_over else 'Under 1.5'}" if r else '?'
         _btn_pred(e1, 'btn_card_glocal', f'🏠 {home[:14]}', gl_str, 'Goles Local' in sel, _toggle('Goles Local'), gl_over, C_EQ)
         _btn_pred(e2, 'btn_card_gvisit', f'✈️ {away[:14]}', gv_str, 'Goles Visitante' in sel, _toggle('Goles Visitante'), gv_over, C_EQ)
 
@@ -3001,10 +3001,10 @@ def render_analizador_page():
                 prob_ck = float(corners.get('under_95', 50))
             else:
                 prob_ck = float(corners.get('over_95', 50))
-        ck_val = f"{int(total_c)} total\n{pick_corners} {int(prob_ck)}%" if pick_corners != '?' else '?'
-        ti_val = f"{int(remates_modelo)} total\n{ti_icon} {int(prob_tiros)}%" if pick_tiros != '?' else '?'
-        ar_val = f"{int(arco_modelo)} total\n{arco_icon} {int(prob_arco)}%" if pick_arco != '?' else '?'
-        tj_val = f"{int(tarjetas_modelo)} total\n{tar_icon} {int(prob_tarjetas)}%" if pick_tarjetas != '?' else '?'
+        ck_val = f"{int(total_c)} total  ·  {pick_corners} {int(prob_ck)}%" if pick_corners != '?' else '?'
+        ti_val = f"{int(remates_modelo)} total  ·  {ti_icon} {int(prob_tiros)}%" if pick_tiros != '?' else '?'
+        ar_val = f"{int(arco_modelo)} total  ·  {arco_icon} {int(prob_arco)}%" if pick_arco != '?' else '?'
+        tj_val = f"{int(tarjetas_modelo)} total  ·  {tar_icon} {int(prob_tarjetas)}%" if pick_tarjetas != '?' else '?'
         _btn_pred(j1, 'btn_card_ck', '🌽 Córners', ck_val, 'Corners' in sel, _toggle('Corners'), accent=C_JUE)
         _btn_pred(j2, 'btn_card_tiros', '📍 Tiros', ti_val, 'Remates' in sel, _toggle('Remates'), accent=C_JUE)
         _btn_pred(j3, 'btn_card_arco', '🎯 T. Arco', ar_val, 'Tiros Arco' in sel, _toggle('Tiros Arco'), accent=C_JUE)
