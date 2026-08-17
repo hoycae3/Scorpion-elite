@@ -43,7 +43,7 @@ try:
     with open('styles.css', 'r') as f:
         css_content = f.read()
         # Forzar cache bust con version
-        st.markdown(f'<style>/* v20260817b */ {css_content}</style>', unsafe_allow_html=True)
+        st.markdown(f'<style>/* v20260817c */ {css_content}</style>', unsafe_allow_html=True)
 except Exception as e:
     logger.warning(f"Error en linea 43: {e}")
 
@@ -2117,22 +2117,47 @@ def _extraer_columna_faltante(msg):
     return None
 
 
-def _btn_pred(col, key, label, value, active, on_click, highlight=False):
+def _btn_pred(col, key, label, value, active, on_click, highlight=False, accent="#00d4ff"):
     """Boton-tarjeta clickeable: muestra la prediccion y sirve de seleccion."""
     icon = "✅" if active else "◯"
-    border = "#22c55e" if active else ("#fff" if highlight else "rgba(255,255,255,0.15)")
-    bg = "rgba(34,197,94,0.18)" if active else ("rgba(255,255,255,0.08)" if highlight else "rgba(255,255,255,0.04)")
+    if active:
+        border = "#22c55e"
+        bg = "rgba(34,197,94,0.20)"
+    elif highlight:
+        border = accent
+        bg = f"rgba(255,255,255,0.10)"
+    else:
+        border = "rgba(255,255,255,0.20)"
+        bg = "rgba(255,255,255,0.06)"
     help_txt = "Seleccionado" if active else "Clic para seleccionar"
     col.markdown(
         f'<style>button[kind="secondary"][key="{key}"] {{'
-        f'background:{bg} !important;border:1px solid {border} !important;'
-        f'border-radius:10px !important;font-size:0.72rem !important;'
-        f'padding:8px 4px !important;color:#fff !important;'
-        f'text-align:center !important;line-height:1.4 !important;'
-        f'white-space:pre-line !important;}}'
+        f'background:{bg} !important;border:1.5px solid {border} !important;'
+        f'border-radius:12px !important;font-size:0.78rem !important;'
+        f'padding:14px 6px !important;color:#fff !important;'
+        f'text-align:center !important;line-height:1.5 !important;'
+        f'white-space:pre-line !important;'
+        f'box-shadow:0 2px 8px rgba(0,0,0,0.3) !important;'
+        f'transition:all 0.2s !important;}}'
+        f'button[kind="secondary"][key="{key}"]:hover {{'
+        f'border-color:{accent} !important;'
+        f'background:rgba(255,255,255,0.12) !important;}}'
         f'</style>', unsafe_allow_html=True)
     col.button(f"{icon} {label}\n{value}", key=key, use_container_width=True,
                on_click=on_click, help=help_txt)
+
+
+def _group_title(text, emoji, accent="#00d4ff"):
+    """Titulo de grupo para seccionar apuestas."""
+    st.markdown(
+        f'<div style="display:flex;align-items:center;gap:8px;'
+        f'margin:14px 0 6px 0;padding:6px 12px;'
+        f'border-left:3px solid {accent};'
+        f'background:rgba(255,255,255,0.03);border-radius:0 8px 8px 0;">'
+        f'<span style="font-size:1rem;">{emoji}</span>'
+        f'<span style="color:{accent};font-weight:700;font-size:0.8rem;'
+        f'letter-spacing:0.5px;text-transform:uppercase;">{text}</span>'
+        f'</div>', unsafe_allow_html=True)
 
 
 def render_analizador_page():
@@ -2880,7 +2905,6 @@ def render_analizador_page():
                 st.session_state.sel_apuestas = s
             return _cb
         sel = st.session_state.sel_apuestas
-
         # --- Header del field ---
         st.markdown(
             f'<div class="field-header-card">'
@@ -2889,26 +2913,93 @@ def render_analizador_page():
             f'<span class="field-team">{away}</span>'
             f'</div>', unsafe_allow_html=True)
 
-        # --- Fila 1X2: tarjetas clickeables ---
-        c_l, c_e, c_v = st.columns(3)
-        _btn_pred(c_l, 'btn_card_local', 'Local', f"{p1_fmt}%", 'Local' in sel, _toggle('Local'), es_local_max)
-        _btn_pred(c_e, 'btn_card_empate', 'Empate', f"{px_fmt}%", 'Empate' in sel, _toggle('Empate'), es_empate_max)
-        _btn_pred(c_v, 'btn_card_visita', 'Visitante', f"{p2_fmt}%", 'Visitante' in sel, _toggle('Visitante'), es_visita_max)
+        # Colores por grupo
+        C_RES = "#00d4ff"   # Resultado (azul cyan)
+        C_DOB = "#a78bfa"   # Doble Oportunidad (violeta)
+        C_GOL = "#22c55e"   # Goles (verde)
+        C_EQ  = "#fbbf24"   # Goles por equipo (amarillo)
+        C_JUE = "#f472b6"   # Juego (rosa)
 
-        # --- Fila mercados: tarjetas clickeables ---
-        m1, m2, m3, m4, m5, m6 = st.columns(6)
+        # Calcular dobles oportunidades
+        dob_1x = p1 + px
+        dob_x2 = px + p2
+        dob_12 = p1 + p2
+        es_1x_max = dob_1x >= dob_x2 and dob_1x >= dob_12
+        es_x2_max = dob_x2 >= dob_1x and dob_x2 >= dob_12
+        es_12_max = dob_12 >= dob_1x and dob_12 >= dob_x2
+
+        # Over/Under 1.5 y 3.5
+        ou_data = r.get('over_under', {}) if r else {}
+        over_15 = float(ou_data.get('over_15', 0)) if ou_data else 0
+        under_15 = float(ou_data.get('under_15', 0)) if ou_data else 0
+        over_35 = float(ou_data.get('over_35', 0)) if ou_data else 0
+        under_35 = float(ou_data.get('under_35', 0)) if ou_data else 0
+        pick_ou15 = 'Over' if over_15 >= 50 else 'Under'
+        prob_ou15 = over_15 if pick_ou15 == 'Over' else under_15
+        pick_ou35 = 'Over' if over_35 >= 50 else 'Under'
+        prob_ou35 = over_35 if pick_ou35 == 'Over' else under_35
+
+        # Goles por equipo (lambda)
+        gl_val = r.get('goles_local', 0) if r else 0
+        gv_val = r.get('goles_visitante', 0) if r else 0
+        gl_over = gl_val >= 1.0
+        gv_over = gv_val >= 1.0
+
+        # ============================
+        # GRUPO 1: RESULTADO (1X2)
+        # ============================
+        _group_title('Resultado', '🏆', C_RES)
+        c_l, c_e, c_v = st.columns(3)
+        _btn_pred(c_l, 'btn_card_local', 'Local', f"{p1_fmt}%", 'Local' in sel, _toggle('Local'), es_local_max, C_RES)
+        _btn_pred(c_e, 'btn_card_empate', 'Empate', f"{px_fmt}%", 'Empate' in sel, _toggle('Empate'), es_empate_max, C_RES)
+        _btn_pred(c_v, 'btn_card_visita', 'Visitante', f"{p2_fmt}%", 'Visitante' in sel, _toggle('Visitante'), es_visita_max, C_RES)
+
+        # ============================
+        # GRUPO 2: DOBLE OPORTUNIDAD
+        # ============================
+        _group_title('Doble Oportunidad', '🔀', C_DOB)
+        d1, d2, d3 = st.columns(3)
+        _btn_pred(d1, 'btn_card_1x', '1X', f"{dob_1x:.0f}%", '1X' in sel, _toggle('1X'), es_1x_max, C_DOB)
+        _btn_pred(d2, 'btn_card_x2', 'X2', f"{dob_x2:.0f}%", 'X2' in sel, _toggle('X2'), es_x2_max, C_DOB)
+        _btn_pred(d3, 'btn_card_12', '12', f"{dob_12:.0f}%", '12' in sel, _toggle('12'), es_12_max, C_DOB)
+
+        # ============================
+        # GRUPO 3: GOLES TOTALES
+        # ============================
+        _group_title('Goles Totales', '⚽', C_GOL)
+        g1, g2, g3, g4 = st.columns(4)
         ou_val = f"{ou_text} {prob_ou:.0f}%" if pick_ou != '?' else '?'
+        ou15_val = f"{'Mas' if pick_ou15=='Over' else 'Menos'} {prob_ou15:.0f}%" if r else '?'
+        ou35_val = f"{'Mas' if pick_ou35=='Over' else 'Menos'} {prob_ou35:.0f}%" if r else '?'
         btts_val = f"{btts_icon} {btts_yes:.0f}%" if pick_btts != '?' else '?'
+        _btn_pred(g1, 'btn_card_ou15', 'OU 1.5', ou15_val, 'OU 1.5' in sel, _toggle('OU 1.5'), accent=C_GOL)
+        _btn_pred(g2, 'btn_card_ou', 'OU 2.5', ou_val, 'O/U' in sel, _toggle('O/U'), accent=C_GOL)
+        _btn_pred(g3, 'btn_card_ou35', 'OU 3.5', ou35_val, 'OU 3.5' in sel, _toggle('OU 3.5'), accent=C_GOL)
+        _btn_pred(g4, 'btn_card_btts', 'BTTS', btts_val, 'BTTS' in sel, _toggle('BTTS'), accent=C_GOL)
+
+        # ============================
+        # GRUPO 4: GOLES POR EQUIPO
+        # ============================
+        _group_title('Goles por Equipo', '🎯', C_EQ)
+        e1, e2 = st.columns(2)
+        gl_str = f"{'Over 1.5' if gl_over else 'Under 1.5'} {gl_val:.1f}" if r else '?'
+        gv_str = f"{'Over 1.5' if gv_over else 'Under 1.5'} {gv_val:.1f}" if r else '?'
+        _btn_pred(e1, 'btn_card_glocal', f'🏠 {home[:14]}', gl_str, 'Goles Local' in sel, _toggle('Goles Local'), gl_over, C_EQ)
+        _btn_pred(e2, 'btn_card_gvisit', f'✈️ {away[:14]}', gv_str, 'Goles Visitante' in sel, _toggle('Goles Visitante'), gv_over, C_EQ)
+
+        # ============================
+        # GRUPO 5: JUEGO (STATS)
+        # ============================
+        _group_title('Estadísticas de Juego', '🎮', C_JUE)
+        j1, j2, j3, j4 = st.columns(4)
         ck_val = f"{int(total_c)} Under" if pick_corners != '?' else '?'
         ti_val = f"{ti_icon} {int(prob_tiros)}%" if pick_tiros != '?' else '?'
         ar_val = f"{arco_icon} {int(prob_arco)}%" if pick_arco != '?' else '?'
         tj_val = f"{tar_icon} {int(prob_tarjetas)}%" if pick_tarjetas != '?' else '?'
-        _btn_pred(m1, 'btn_card_ou', '📊 OU', ou_val, 'O/U' in sel, _toggle('O/U'))
-        _btn_pred(m2, 'btn_card_btts', '⚽ BTTS', btts_val, 'BTTS' in sel, _toggle('BTTS'))
-        _btn_pred(m3, 'btn_card_ck', '🌽 CK', ck_val, 'Corners' in sel, _toggle('Corners'))
-        _btn_pred(m4, 'btn_card_tiros', '📍 Tiros', ti_val, 'Remates' in sel, _toggle('Remates'))
-        _btn_pred(m5, 'btn_card_arco', '🎯 TArco', ar_val, 'Tiros Arco' in sel, _toggle('Tiros Arco'))
-        _btn_pred(m6, 'btn_card_tarj', '🟨 TARJ', tj_val, 'Tarjetas' in sel, _toggle('Tarjetas'))
+        _btn_pred(j1, 'btn_card_ck', '🌽 Córners', ck_val, 'Corners' in sel, _toggle('Corners'), accent=C_JUE)
+        _btn_pred(j2, 'btn_card_tiros', '📍 Tiros', ti_val, 'Remates' in sel, _toggle('Remates'), accent=C_JUE)
+        _btn_pred(j3, 'btn_card_arco', '🎯 T. Arco', ar_val, 'Tiros Arco' in sel, _toggle('Tiros Arco'), accent=C_JUE)
+        _btn_pred(j4, 'btn_card_tarj', '🟨 Tarjetas', tj_val, 'Tarjetas' in sel, _toggle('Tarjetas'), accent=C_JUE)
 
         # --- Score ---
         st.markdown(
