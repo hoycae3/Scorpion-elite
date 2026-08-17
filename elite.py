@@ -43,7 +43,7 @@ try:
     with open('styles.css', 'r') as f:
         css_content = f.read()
         # Forzar cache bust con version
-        st.markdown(f'<style>/* v20260817c */ {css_content}</style>', unsafe_allow_html=True)
+        st.markdown(f'<style>/* v20260817d */ {css_content}</style>', unsafe_allow_html=True)
 except Exception as e:
     logger.warning(f"Error en linea 43: {e}")
 
@@ -2134,11 +2134,11 @@ def _btn_pred(col, key, label, value, active, on_click, highlight=False, accent=
         f'<style>button[kind="secondary"][key="{key}"] {{'
         f'background:{bg} !important;border:1.5px solid {border} !important;'
         f'border-radius:12px !important;font-size:0.78rem !important;'
-        f'padding:14px 6px !important;color:#fff !important;'
-        f'text-align:center !important;line-height:1.5 !important;'
+        f'padding:16px 8px !important;color:#fff !important;'
+        f'text-align:center !important;line-height:1.6 !important;'
         f'white-space:pre-line !important;'
         f'box-shadow:0 2px 8px rgba(0,0,0,0.3) !important;'
-        f'transition:all 0.2s !important;}}'
+        f'transition:all 0.2s !important;margin-bottom:6px !important;}}'
         f'button[kind="secondary"][key="{key}"]:hover {{'
         f'border-color:{accent} !important;'
         f'background:rgba(255,255,255,0.12) !important;}}'
@@ -2151,11 +2151,11 @@ def _group_title(text, emoji, accent="#00d4ff"):
     """Titulo de grupo para seccionar apuestas."""
     st.markdown(
         f'<div style="display:flex;align-items:center;gap:8px;'
-        f'margin:14px 0 6px 0;padding:6px 12px;'
+        f'margin:22px 0 10px 0;padding:8px 12px;'
         f'border-left:3px solid {accent};'
         f'background:rgba(255,255,255,0.03);border-radius:0 8px 8px 0;">'
-        f'<span style="font-size:1rem;">{emoji}</span>'
-        f'<span style="color:{accent};font-weight:700;font-size:0.8rem;'
+        f'<span style="font-size:1.1rem;">{emoji}</span>'
+        f'<span style="color:{accent};font-weight:700;font-size:0.85rem;'
         f'letter-spacing:0.5px;text-transform:uppercase;">{text}</span>'
         f'</div>', unsafe_allow_html=True)
 
@@ -2968,10 +2968,12 @@ def render_analizador_page():
         # ============================
         _group_title('Goles Totales', '⚽', C_GOL)
         g1, g2, g3, g4 = st.columns(4)
-        ou_val = f"{ou_text} {prob_ou:.0f}%" if pick_ou != '?' else '?'
-        ou15_val = f"{'Mas' if pick_ou15=='Over' else 'Menos'} {prob_ou15:.0f}%" if r else '?'
-        ou35_val = f"{'Mas' if pick_ou35=='Over' else 'Menos'} {prob_ou35:.0f}%" if r else '?'
-        btts_val = f"{btts_icon} {btts_yes:.0f}%" if pick_btts != '?' else '?'
+        # Calcular total de goles estimado para mostrar
+        goles_estimado = (r.get('goles_local', 0) or 0) + (r.get('goles_visitante', 0) or 0) if r else 0
+        ou_val = f"{ou_text} 2.5\n{prob_ou:.0f}%" if pick_ou != '?' else '?'
+        ou15_val = f"{'Mas' if pick_ou15=='Over' else 'Menos'} 1.5\n{prob_ou15:.0f}%" if r else '?'
+        ou35_val = f"{'Mas' if pick_ou35=='Over' else 'Menos'} 3.5\n{prob_ou35:.0f}%" if r else '?'
+        btts_val = f"{btts_icon}\n{btts_yes:.0f}%" if pick_btts != '?' else '?'
         _btn_pred(g1, 'btn_card_ou15', 'OU 1.5', ou15_val, 'OU 1.5' in sel, _toggle('OU 1.5'), accent=C_GOL)
         _btn_pred(g2, 'btn_card_ou', 'OU 2.5', ou_val, 'O/U' in sel, _toggle('O/U'), accent=C_GOL)
         _btn_pred(g3, 'btn_card_ou35', 'OU 3.5', ou35_val, 'OU 3.5' in sel, _toggle('OU 3.5'), accent=C_GOL)
@@ -2980,10 +2982,10 @@ def render_analizador_page():
         # ============================
         # GRUPO 4: GOLES POR EQUIPO
         # ============================
-        _group_title('Goles por Equipo', '🎯', C_EQ)
+        _group_title(f'Goles por Equipo  (Total: {goles_estimado:.1f})', '🎯', C_EQ)
         e1, e2 = st.columns(2)
-        gl_str = f"{'Over 1.5' if gl_over else 'Under 1.5'} {gl_val:.1f}" if r else '?'
-        gv_str = f"{'Over 1.5' if gv_over else 'Under 1.5'} {gv_val:.1f}" if r else '?'
+        gl_str = f"{gl_val:.1f} esperados\n{'Over 1.5' if gl_over else 'Under 1.5'}" if r else '?'
+        gv_str = f"{gv_val:.1f} esperados\n{'Over 1.5' if gv_over else 'Under 1.5'}" if r else '?'
         _btn_pred(e1, 'btn_card_glocal', f'🏠 {home[:14]}', gl_str, 'Goles Local' in sel, _toggle('Goles Local'), gl_over, C_EQ)
         _btn_pred(e2, 'btn_card_gvisit', f'✈️ {away[:14]}', gv_str, 'Goles Visitante' in sel, _toggle('Goles Visitante'), gv_over, C_EQ)
 
@@ -2992,20 +2994,28 @@ def render_analizador_page():
         # ============================
         _group_title('Estadísticas de Juego', '🎮', C_JUE)
         j1, j2, j3, j4 = st.columns(4)
-        ck_val = f"{int(total_c)} Under" if pick_corners != '?' else '?'
-        ti_val = f"{ti_icon} {int(prob_tiros)}%" if pick_tiros != '?' else '?'
-        ar_val = f"{arco_icon} {int(prob_arco)}%" if pick_arco != '?' else '?'
-        tj_val = f"{tar_icon} {int(prob_tarjetas)}%" if pick_tarjetas != '?' else '?'
+        # Probabilidad de corners: usar over_95/under_95 del modelo
+        prob_ck = 50
+        if r and isinstance(corners, dict):
+            if 'Under' in str(pick_corners):
+                prob_ck = float(corners.get('under_95', 50))
+            else:
+                prob_ck = float(corners.get('over_95', 50))
+        ck_val = f"{int(total_c)} total\n{pick_corners} {int(prob_ck)}%" if pick_corners != '?' else '?'
+        ti_val = f"{int(remates_modelo)} total\n{ti_icon} {int(prob_tiros)}%" if pick_tiros != '?' else '?'
+        ar_val = f"{int(arco_modelo)} total\n{arco_icon} {int(prob_arco)}%" if pick_arco != '?' else '?'
+        tj_val = f"{int(tarjetas_modelo)} total\n{tar_icon} {int(prob_tarjetas)}%" if pick_tarjetas != '?' else '?'
         _btn_pred(j1, 'btn_card_ck', '🌽 Córners', ck_val, 'Corners' in sel, _toggle('Corners'), accent=C_JUE)
         _btn_pred(j2, 'btn_card_tiros', '📍 Tiros', ti_val, 'Remates' in sel, _toggle('Remates'), accent=C_JUE)
         _btn_pred(j3, 'btn_card_arco', '🎯 T. Arco', ar_val, 'Tiros Arco' in sel, _toggle('Tiros Arco'), accent=C_JUE)
         _btn_pred(j4, 'btn_card_tarj', '🟨 Tarjetas', tj_val, 'Tarjetas' in sel, _toggle('Tarjetas'), accent=C_JUE)
 
-        # --- Score ---
+        # --- Score + Goles estimados ---
         st.markdown(
             f'<div class="field-score-card">'
-            f'<span style="color:rgba(255,255,255,0.6);font-size:0.75rem;">Score más probable</span><br>'
-            f'<span style="color:#fff;font-weight:800;font-size:1.2rem;font-family:monospace;">{score_mas_probable}</span>'
+            f'<span style="color:rgba(255,255,255,0.6);font-size:0.75rem;">Marcador más probable</span><br>'
+            f'<span style="color:#fff;font-weight:800;font-size:1.3rem;font-family:monospace;">{score_mas_probable}</span>'
+            f'<br><span style="color:rgba(255,255,255,0.5);font-size:0.7rem;">Goles: {goles_estimado:.1f} esperados</span>'
             f'</div>', unsafe_allow_html=True)
 
         # --- Boton guardar ---
@@ -3051,22 +3061,8 @@ def render_analizador_page():
             """, unsafe_allow_html=True)
 
         # ========================
-        # ⚽ GOLES ESTIMADOS POR EQUIPO
+        # ⚽ GOLES ESTIMADOS - integrados en botones de arriba (sin duplicar)
         # ========================
-        st.markdown("---")
-        st.markdown("### ⚽ Goles Estimados")
-        goles_local = float(lambda_local_final) if lambda_local_final else 0
-        goles_visit = float(lambda_visit_final) if lambda_visit_final else 0
-        goles_total = goles_local + goles_visit
-        col_gl, col_gv, col_gt, col_gs = st.columns(4)
-        with col_gl:
-            st.metric(f"🏠 {home[:12]}", f"{goles_local:.2f}", help="Goles esperados del local (λ final)")
-        with col_gv:
-            st.metric(f"✈️ {away[:12]}", f"{goles_visit:.2f}", help="Goles esperados del visitante (λ final)")
-        with col_gt:
-            st.metric("📊 Total", f"{goles_total:.2f}", help="Goles totales esperados en el partido")
-        with col_gs:
-            st.metric("🎯 Score", str(score_mas_probable), help="Marcador más probable (Poisson)")
 
         render_cuotas_mercado(r)
 # Página: Estadísticas
