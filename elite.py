@@ -43,7 +43,7 @@ try:
     with open('styles.css', 'r') as f:
         css_content = f.read()
         # Forzar cache bust con version
-        st.markdown(f'<style>/* v20260817a */ {css_content}</style>', unsafe_allow_html=True)
+        st.markdown(f'<style>/* v20260817b */ {css_content}</style>', unsafe_allow_html=True)
 except Exception as e:
     logger.warning(f"Error en linea 43: {e}")
 
@@ -2117,6 +2117,24 @@ def _extraer_columna_faltante(msg):
     return None
 
 
+def _btn_pred(col, key, label, value, active, on_click, highlight=False):
+    """Boton-tarjeta clickeable: muestra la prediccion y sirve de seleccion."""
+    icon = "✅" if active else "◯"
+    border = "#22c55e" if active else ("#fff" if highlight else "rgba(255,255,255,0.15)")
+    bg = "rgba(34,197,94,0.18)" if active else ("rgba(255,255,255,0.08)" if highlight else "rgba(255,255,255,0.04)")
+    help_txt = "Seleccionado" if active else "Clic para seleccionar"
+    col.markdown(
+        f'<style>button[kind="secondary"][key="{key}"] {{'
+        f'background:{bg} !important;border:1px solid {border} !important;'
+        f'border-radius:10px !important;font-size:0.72rem !important;'
+        f'padding:8px 4px !important;color:#fff !important;'
+        f'text-align:center !important;line-height:1.4 !important;'
+        f'white-space:pre-line !important;}}'
+        f'</style>', unsafe_allow_html=True)
+    col.button(f"{icon} {label}\n{value}", key=key, use_container_width=True,
+               on_click=on_click, help=help_txt)
+
+
 def render_analizador_page():
     st.markdown("## 🎯 Analizador de Partidos")
 
@@ -2755,57 +2773,43 @@ def render_analizador_page():
         confianza = r.get('confianza', 0)
         rango = r.get('rango', 'D')
 
-        # DISEÑO FOOTBALL FIELD            # DISEÑO FOOTBALL FIELD            # DISEÑO FOOTBALL FIELD - PREDICCIONES
+        # ========================
+        # 🏟️ FOOTBALL FIELD + SELECCIONAR APUESTAS (botones-tarjeta clickeables)
         # ========================
         p1 = r.get('p1', 0)
         px = r.get('px', 0)
         p2 = r.get('p2', 0)
-
         es_local_max = p1 > px and p1 > p2
         es_empate_max = px > p1 and px > p2
         es_visita_max = p2 > p1 and p2 > px
-
         p1_fmt = int(p1)
         px_fmt = int(px)
         p2_fmt = int(p2)
 
-        # Verificar si hay datos reales para predicciones adicionales
+        # Predicciones adicionales (stats dinamicas)
         promedios_dinamicos_local = st.session_state.get('promedios_dinamicos_local')
         promedios_dinamicos_visitante = st.session_state.get('promedios_dinamicos_visitante')
-
         tiene_datos_local = promedios_dinamicos_local and promedios_dinamicos_local.get('partidos_total', 0) > 0
         tiene_datos_visitante = promedios_dinamicos_visitante and promedios_dinamicos_visitante.get('partidos_total', 0) > 0
-
         if not (tiene_datos_local or tiene_datos_visitante):
             st.warning("⚠️ **Sin datos históricos** - Sincroniza equipos para ver predicciones adicionales.")
-
-        # Obtener datos
         datos_local = promedios_dinamicos_local or {}
         datos_visitante = promedios_dinamicos_visitante or {}
-
         ta_local = datos_local.get('promedio_amarillas', 0) if tiene_datos_local else 0
         ta_visitante = datos_visitante.get('promedio_amarillas', 0) if tiene_datos_visitante else 0
         tarjetas_total = ta_local + ta_visitante
-
         ti_local = datos_local.get('promedio_tiros', 0) if tiene_datos_local else 0
         ti_visitante = datos_visitante.get('promedio_tiros', 0) if tiene_datos_visitante else 0
         remates_total = ti_local + ti_visitante
-
         arco_local = datos_local.get('promedio_tiros_arco', 0) if tiene_datos_local else 0
         arco_visitante = datos_visitante.get('promedio_tiros_arco', 0) if tiene_datos_visitante else 0
         arco_total = arco_local + arco_visitante
-
-        # PREDICCIONES: Calcular basándose en datos disponibles
         tiene_stats_basicos = bool(stats_local and stats_visitante)
 
         if r:
-            # Análisis completo del modelo
-
             pred_tiros = r.get('tiros', {})
             pred_tarjetas = r.get('tarjetas', {})
             pred_arco = r.get('tiros_arco', {})
-            pred_corners = r.get('corners', {})
-
             pick_tiros = r.get('pick_tiros') or 'Over 24'
             prob_tiros = float(r.get('prob_tiros') or 50)
             remates_modelo = float(pred_tiros.get('total_estimado') or remates_total or 0)
@@ -2815,41 +2819,27 @@ def render_analizador_page():
             pick_arco = r.get('pick_tiros_arco') or 'Over 8'
             prob_arco = float(r.get('prob_tiros_arco') or 50)
             arco_modelo = float(pred_arco.get('total_estimado') or arco_total or 0)
-            modelos = r.get('modelos') or {}
-            mc = modelos.get('monte_carlo') or {}
             top_scores = r.get('top_scores') or {}
             score_mas_probable = list(top_scores.keys())[0] if top_scores else "?"
             pick_ou = r.get('pick_over_under', 'Over 2.5')
             prob_ou = r.get('prob_over_under', 50)
-            ou_class = "up" if "Over" in pick_ou else "down"
             ou_text = "Mas" if "Over" in pick_ou else "Menos"
             pick_btts = r.get('pick_btts', 'No')
             btts_yes = r.get('btts_yes', 50)
             btts_icon = "Si" if pick_btts == "Si" else "No"
-            btts_class = "up" if pick_btts == "Si" else "down"
             corners = r.get('corners', {})
             total_c = corners.get('total_estimado', 10)
             pick_corners = r.get('pick_corners', '+')
-            ti_class = "up" if "Over" in pick_tiros else "down"
             ti_icon = "Mas" if "Over" in pick_tiros else "Menos"
-            arco_class = "up" if "Over" in pick_arco else "down"
             arco_icon = "Mas" if "Over" in pick_arco else "Menos"
-            tar_class = "up" if "Over" in pick_tarjetas else "down"
             tar_icon = "Mas" if "Over" in pick_tarjetas else "Menos"
         elif tiene_stats_basicos:
-            # Hay stats pero no hay análisis del modelo - calcular predicciones básicas
-            pred_tiros = {}
-            pred_tarjetas = {}
-            pred_arco = {}
-            # Calcular lambda basado en stats
             pj_l = stats_local.get('partidos_jugados', 1) or 1
             pj_v = stats_visitante.get('partidos_jugados', 1) or 1
             gf_l = float(stats_local.get('goles_favor', 0) or 0)
             gf_v = float(stats_visitante.get('goles_favor', 0) or 0)
             lambda_l = gf_l / pj_l if pj_l > 0 else 1.3
             lambda_v = gf_v / pj_v if pj_v > 0 else 1.1
-
-            # Calcular score más probable con Poisson simple
             scores = {}
             for gl in range(5):
                 for gv in range(5):
@@ -2858,218 +2848,94 @@ def render_analizador_page():
                         scores[f"{gl}-{gv}"] = p
             top_scores_calc = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:3]
             score_mas_probable = top_scores_calc[0][0] if top_scores_calc else "?"
-
-            # Calcular Over/Under
             ou_prob = sum(p for (k), p in scores.items() if sum(map(int, k.split('-'))) > 2.5)
             pick_ou = "Over 2.5" if ou_prob > 0.5 else "Under 2.5"
             prob_ou = ou_prob * 100
-            ou_class = "up" if "Over" in pick_ou else "down"
             ou_text = "Mas" if "Over" in pick_ou else "Menos"
-
-            # BTTS
             btts_yes = (1 - pp(lambda_l, 0)) * (1 - pp(lambda_v, 0)) * 100
             pick_btts = "Si" if btts_yes > 50 else "No"
             btts_icon = pick_btts
-            btts_class = "up" if pick_btts == "Si" else "down"
-
-            # Otros valores por defecto
-            pick_tiros = "?"
-            prob_tiros = 0
-            remates_modelo = 0
-            pick_tarjetas = "?"
-            prob_tarjetas = 0
-            tarjetas_modelo = 0
-            pick_arco = "?"
-            prob_arco = 0
-            arco_modelo = 0
-            corners = {}
-            total_c = 0
-            pick_corners = "?"
-            ti_class = ""
-            ti_icon = "?"
-            arco_class = ""
-            arco_icon = "?"
-            tar_class = ""
-            tar_icon = "?"
+            pick_tiros = "?"; prob_tiros = 0; remates_modelo = 0
+            pick_tarjetas = "?"; prob_tarjetas = 0; tarjetas_modelo = 0
+            pick_arco = "?"; prob_arco = 0; arco_modelo = 0
+            corners = {}; total_c = 0; pick_corners = "?"
+            ti_icon = "?"; arco_icon = "?"; tar_icon = "?"
         else:
-            # Sin datos - mostrar "?"
-            pred_tiros = {}
-            pred_tarjetas = {}
-            pred_arco = {}
-            pick_tiros = '?'
-            prob_tiros = 0
-            remates_modelo = 0
-            pick_tarjetas = '?'
-            prob_tarjetas = 0
-            tarjetas_modelo = 0
-            pick_arco = '?'
-            prob_arco = 0
-            arco_modelo = 0
+            pick_tiros = '?'; prob_tiros = 0; remates_modelo = 0
+            pick_tarjetas = '?'; prob_tarjetas = 0; tarjetas_modelo = 0
+            pick_arco = '?'; prob_arco = 0; arco_modelo = 0
             score_mas_probable = "?"
-            pick_ou = '?'
-            prob_ou = 0
-            ou_class = ""
-            ou_text = "?"
-            pick_btts = '?'
-            btts_yes = 0
-            btts_icon = "?"
-            btts_class = ""
-            corners = {}
-            total_c = 0
-            pick_corners = '?'
-            ti_class = ""
-            ti_icon = "?"
-            arco_class = ""
-            arco_icon = "?"
-            tar_class = ""
-            tar_icon = "?"
-        # Variables comunes
-        ou_symbol = "+" if "Over" in pick_ou else "-"
-        pick_corner_symbol = "+" if pick_corners == "+" else "-"
-        tar_class = "up" if "Over" in pick_tarjetas else "down"
-        tar_icon = "Mas" if "Over" in pick_tarjetas else "Menos"
+            pick_ou = '?'; prob_ou = 0; ou_text = "?"
+            pick_btts = '?'; btts_yes = 0; btts_icon = "?"
+            corners = {}; total_c = 0; pick_corners = '?'
+            ti_icon = "?"; arco_icon = "?"; tar_icon = "?"
 
-                    # Generar HTML del diseño Football Field
-        winner_local = "winner" if es_local_max else ""
-        winner_empate = "winner" if es_empate_max else ""
-        winner_visita = "winner" if es_visita_max else ""
+        # --- Estado de seleccion ---
+        if 'sel_apuestas' not in st.session_state:
+            st.session_state.sel_apuestas = set()
+        def _toggle(key):
+            def _cb():
+                s = st.session_state.sel_apuestas
+                s.discard(key) if key in s else s.add(key)
+                st.session_state.sel_apuestas = s
+            return _cb
+        sel = st.session_state.sel_apuestas
 
-        field_html = f"""
-        <div class="field-container" translate="no">
-            <div class="field-center-circle"></div>
+        # --- Header del field ---
+        st.markdown(
+            f'<div class="field-header-card">'
+            f'<span class="field-team">{home}</span>'
+            f' <span class="field-vs">VS</span> '
+            f'<span class="field-team">{away}</span>'
+            f'</div>', unsafe_allow_html=True)
 
-            <div class="field-header">
-                <div class="field-teams">
-                    <span class="field-team" translate="no">{home}</span>
-                    <span class="field-vs">VS</span>
-                    <span class="field-team" translate="no">{away}</span>
-                </div>
-            </div>
+        # --- Fila 1X2: tarjetas clickeables ---
+        c_l, c_e, c_v = st.columns(3)
+        _btn_pred(c_l, 'btn_card_local', 'Local', f"{p1_fmt}%", 'Local' in sel, _toggle('Local'), es_local_max)
+        _btn_pred(c_e, 'btn_card_empate', 'Empate', f"{px_fmt}%", 'Empate' in sel, _toggle('Empate'), es_empate_max)
+        _btn_pred(c_v, 'btn_card_visita', 'Visitante', f"{p2_fmt}%", 'Visitante' in sel, _toggle('Visitante'), es_visita_max)
 
-            <div class="field-1x2">
-                <div class="field-odds {winner_local}">
-                    <div class="field-odds-label" translate="no">L</div>
-                    <div class="field-odds-value">{p1_fmt}%</div>
-                </div>
-                <div class="field-odds {winner_empate}">
-                    <div class="field-odds-label" translate="no">E</div>
-                    <div class="field-odds-value">{px_fmt}%</div>
-                </div>
-                <div class="field-odds {winner_visita}">
-                    <div class="field-odds-label" translate="no">V</div>
-                    <div class="field-odds-value">{p2_fmt}%</div>
-                </div>
-            </div>
+        # --- Fila mercados: tarjetas clickeables ---
+        m1, m2, m3, m4, m5, m6 = st.columns(6)
+        ou_val = f"{ou_text} {prob_ou:.0f}%" if pick_ou != '?' else '?'
+        btts_val = f"{btts_icon} {btts_yes:.0f}%" if pick_btts != '?' else '?'
+        ck_val = f"{int(total_c)} Under" if pick_corners != '?' else '?'
+        ti_val = f"{ti_icon} {int(prob_tiros)}%" if pick_tiros != '?' else '?'
+        ar_val = f"{arco_icon} {int(prob_arco)}%" if pick_arco != '?' else '?'
+        tj_val = f"{tar_icon} {int(prob_tarjetas)}%" if pick_tarjetas != '?' else '?'
+        _btn_pred(m1, 'btn_card_ou', '📊 OU', ou_val, 'O/U' in sel, _toggle('O/U'))
+        _btn_pred(m2, 'btn_card_btts', '⚽ BTTS', btts_val, 'BTTS' in sel, _toggle('BTTS'))
+        _btn_pred(m3, 'btn_card_ck', '🌽 CK', ck_val, 'Corners' in sel, _toggle('Corners'))
+        _btn_pred(m4, 'btn_card_tiros', '📍 Tiros', ti_val, 'Remates' in sel, _toggle('Remates'))
+        _btn_pred(m5, 'btn_card_arco', '🎯 TArco', ar_val, 'Tiros Arco' in sel, _toggle('Tiros Arco'))
+        _btn_pred(m6, 'btn_card_tarj', '🟨 TARJ', tj_val, 'Tarjetas' in sel, _toggle('Tarjetas'))
 
-            <div class="field-preds">
-                <div class="field-pred">
-                    <div class="field-pred-icon">📊</div>
-                    <div class="field-pred-label" translate="no">OU 2.5</div>
-                    <div class="field-pred-value">2.5</div>
-                    <span class="field-pred-pick {ou_class}" translate="no">{ou_text} {prob_ou:.0f}%</span>
-                </div>
-                <div class="field-pred">
-                    <div class="field-pred-icon">⚽</div>
-                    <div class="field-pred-label" translate="no">BTTS</div>
-                    <div class="field-pred-value" translate="no">{btts_icon}</div>
-                    <span class="field-pred-pick {btts_class}">{btts_yes:.0f}%</span>
-                </div>
-                <div class="field-pred">
-                    <div class="field-pred-icon">🌽</div>
-                    <div class="field-pred-label" translate="no">CK</div>
-                    <div class="field-pred-value">{total_c:.0f}</div>
-                    <span class="field-pred-pick down" translate="no">Under</span>
-                </div>
-                <div class="field-pred">
-                    <div class="field-pred-icon">📍</div>
-                    <div class="field-pred-label" translate="no">Tiros</div>
-                    <div class="field-pred-value">{int(remates_modelo)}</div>
-                    <span class="field-pred-pick {ti_class}" translate="no">{ti_icon} {int(prob_tiros)}%</span>
-                </div>
-                <div class="field-pred">
-                    <div class="field-pred-icon">🎯</div>
-                    <div class="field-pred-label" translate="no">TArco</div>
-                    <div class="field-pred-value">{int(arco_modelo)}</div>
-                    <span class="field-pred-pick {arco_class}" translate="no">{arco_icon} {int(prob_arco)}%</span>
-                </div>
-                <div class="field-pred">
-                    <div class="field-pred-icon">🟨</div>
-                    <div class="field-pred-label" translate="no">TARJ</div>
-                    <div class="field-pred-value">{tarjetas_modelo:.1f}</div>
-                    <span class="field-pred-pick {tar_class}" translate="no">{tar_icon} {int(prob_tarjetas)}%</span>
-                </div>
-            </div>
+        # --- Score ---
+        st.markdown(
+            f'<div class="field-score-card">'
+            f'<span style="color:rgba(255,255,255,0.6);font-size:0.75rem;">Score más probable</span><br>'
+            f'<span style="color:#fff;font-weight:800;font-size:1.2rem;font-family:monospace;">{score_mas_probable}</span>'
+            f'</div>', unsafe_allow_html=True)
 
-            <div class="field-score">
-                <div class="field-score-label" translate="no">Score</div>
-                <div class="field-score-value">{score_mas_probable}</div>
-            </div>
-        </div>
-        """
-        st.html(field_html)
-
-        # ========================
-        # SELECCIONAR APUESTAS — botones toggle alineados con el field
-        # ========================
-        if r:
-            if 'sel_apuestas' not in st.session_state:
+        # --- Boton guardar ---
+        n_sel = len(sel)
+        if st.button(f"💾 Guardar y ➡️ Capital  ({n_sel})", type="primary", use_container_width=True):
+            mercados_seleccionados = list(sel)
+            try:
+                client = get_client()
+                pick_data = _construir_pick_data(r, home, away, stats_local)
+                guardado = _insertar_pick_resiliente(client, pick_data)
+                if mercados_seleccionados:
+                    pick_id = guardado.get('id') if isinstance(guardado, dict) else None
+                    pendientes = st.session_state.get('apuestas_pendientes_analizador', {})
+                    pendientes[pick_id] = set(mercados_seleccionados)
+                    st.session_state.apuestas_pendientes_analizador = pendientes
+                    st.success(f"✅ {len(mercados_seleccionados)} apuesta(s) enviada(s) a Capital")
+                else:
+                    st.success(f"✅ Pick guardado: {home} vs {away}")
                 st.session_state.sel_apuestas = set()
-
-            def _toggle(key):
-                def _cb():
-                    s = st.session_state.sel_apuestas
-                    s.discard(key) if key in s else s.add(key)
-                    st.session_state.sel_apuestas = s
-                return _cb
-
-            st.markdown('<div class="sel-apuestas-title">SELECCIONA TUS APUESTAS</div>', unsafe_allow_html=True)
-
-            # Fila 1X2 — 3 columnas alineadas con el field
-            sel = st.session_state.sel_apuestas
-            m1, m2, m3 = st.columns(3)
-            m1.button(f"{'✅' if 'Local' in sel else '◯'} Local {p1_fmt}%", use_container_width=True,
-                      key="btn_sel_local", on_click=_toggle('Local'))
-            m2.button(f"{'✅' if 'Empate' in sel else '◯'} Empate {px_fmt}%", use_container_width=True,
-                      key="btn_sel_empate", on_click=_toggle('Empate'))
-            m3.button(f"{'✅' if 'Visitante' in sel else '◯'} Visitante {p2_fmt}%", use_container_width=True,
-                      key="btn_sel_visita", on_click=_toggle('Visitante'))
-
-            # Fila mercados — 6 columnas alineadas con el field
-            m4, m5, m6, m7, m8, m9 = st.columns(6)
-            m4.button(f"{'✅' if 'O/U' in sel else '◯'} OU", use_container_width=True,
-                      key="btn_sel_ou", on_click=_toggle('O/U'))
-            m5.button(f"{'✅' if 'BTTS' in sel else '◯'} BTTS", use_container_width=True,
-                      key="btn_sel_btts", on_click=_toggle('BTTS'))
-            m6.button(f"{'✅' if 'Corners' in sel else '◯'} CK", use_container_width=True,
-                      key="btn_sel_ck", on_click=_toggle('Corners'))
-            m7.button(f"{'✅' if 'Remates' in sel else '◯'} Tiros", use_container_width=True,
-                      key="btn_sel_tiros", on_click=_toggle('Remates'))
-            m8.button(f"{'✅' if 'Tiros Arco' in sel else '◯'} TArco", use_container_width=True,
-                      key="btn_sel_arco", on_click=_toggle('Tiros Arco'))
-            m9.button(f"{'✅' if 'Tarjetas' in sel else '◯'} TARJ", use_container_width=True,
-                      key="btn_sel_tarj", on_click=_toggle('Tarjetas'))
-
-            # Boton guardar
-            n_sel = len(sel)
-            if st.button(f"💾 Guardar y ➡️ Capital  ({n_sel})", type="primary", use_container_width=True):
-                mercados_seleccionados = list(sel)
-                try:
-                    client = get_client()
-                    pick_data = _construir_pick_data(r, home, away, stats_local)
-                    guardado = _insertar_pick_resiliente(client, pick_data)
-                    if mercados_seleccionados:
-                        pick_id = guardado.get('id') if isinstance(guardado, dict) else None
-                        pendientes = st.session_state.get('apuestas_pendientes_analizador', {})
-                        pendientes[pick_id] = set(mercados_seleccionados)
-                        st.session_state.apuestas_pendientes_analizador = pendientes
-                        st.success(f"✅ {len(mercados_seleccionados)} apuesta(s) enviada(s) a Capital")
-                    else:
-                        st.success(f"✅ Pick guardado: {home} vs {away}")
-                    st.session_state.sel_apuestas = set()
-                except Exception as e:
-                    st.error(f"❌ Error: {e}")
-
-        # ========================
+            except Exception as e:
+                st.error(f"❌ Error: {e}")
         # ========================
         # FORMA RECIENTE DE EQUIPOS
         st.markdown("---")
