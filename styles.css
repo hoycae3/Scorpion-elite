@@ -909,6 +909,37 @@ div[data-testid="stSelectbox"] div {
     color: #000000 !important;
 }
 
+/* ============================================
+   SELECCIONAR APUESTAS — botones toggle
+   ============================================ */
+.sel-apuestas-title {
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.5);
+    margin: 12px 0 6px 0;
+    text-transform: uppercase;
+}
+
+/* Botones toggle de apuestas */
+div[data-testid="stButton"] button[kind="secondary"][key*="btn_sel_"] {
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    border-radius: 8px !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    padding: 6px 4px !important;
+    color: rgba(255,255,255,0.7) !important;
+    transition: all 0.2s ease !important;
+}
+
+div[data-testid="stButton"] button[kind="secondary"][key*="btn_sel_"]:hover {
+    background: rgba(255,255,255,0.1) !important;
+    border-color: rgba(255,255,255,0.3) !important;
+    color: #fff !important;
+}
+
 /* Number input */
 div[data-testid="stNumberInput"] {
     background: #ffffff !important;

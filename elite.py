@@ -43,7 +43,7 @@ try:
     with open('styles.css', 'r') as f:
         css_content = f.read()
         # Forzar cache bust con version
-        st.markdown(f'<style>/* v20260813c */ {css_content}</style>', unsafe_allow_html=True)
+        st.markdown(f'<style>/* v20260817a */ {css_content}</style>', unsafe_allow_html=True)
 except Exception as e:
     logger.warning(f"Error en linea 43: {e}")
 
@@ -3008,34 +3008,51 @@ def render_analizador_page():
         """
         st.html(field_html)
 
-        # Checkboxes debajo de cada tarjeta de prediccion (OU, BTTS, CK, Tiros, TArco, TARJ)
+        # ========================
+        # SELECCIONAR APUESTAS — botones toggle alineados con el field
+        # ========================
         if r:
-            # 1X2: Local, Empate, Visitante
-            c_l, c_e, c_v = st.columns(3)
-            sel_local = c_l.checkbox("Local", key="sel_local_field")
-            sel_empate = c_e.checkbox("Empate", key="sel_empate_field")
-            sel_visita = c_v.checkbox("Visitante", key="sel_visita_field")
+            if 'sel_apuestas' not in st.session_state:
+                st.session_state.sel_apuestas = set()
 
-            # Mercados: OU, BTTS, CK, Tiros, TArco, TARJ
-            c1, c2, c3, c4, c5, c6 = st.columns(6)
-            sel_ou = c1.checkbox("+", key="sel_ou_field")
-            sel_btts = c2.checkbox("+", key="sel_btts_field")
-            sel_ck = c3.checkbox("+", key="sel_ck_field")
-            sel_tiros = c4.checkbox("+", key="sel_tiros_field")
-            sel_arco = c5.checkbox("+", key="sel_arco_field")
-            sel_tarj = c6.checkbox("+", key="sel_tarj_field")
+            def _toggle(key):
+                def _cb():
+                    s = st.session_state.sel_apuestas
+                    s.discard(key) if key in s else s.add(key)
+                    st.session_state.sel_apuestas = s
+                return _cb
 
-            if st.button("💾 Guardar y ➡️ Capital", type="primary", use_container_width=True):
-                mercados_seleccionados = []
-                if sel_local: mercados_seleccionados.append('Local')
-                if sel_empate: mercados_seleccionados.append('Empate')
-                if sel_visita: mercados_seleccionados.append('Visitante')
-                if sel_ou: mercados_seleccionados.append('O/U')
-                if sel_btts: mercados_seleccionados.append('BTTS')
-                if sel_ck: mercados_seleccionados.append('Corners')
-                if sel_tiros: mercados_seleccionados.append('Remates')
-                if sel_arco: mercados_seleccionados.append('Tiros Arco')
-                if sel_tarj: mercados_seleccionados.append('Tarjetas')
+            st.markdown('<div class="sel-apuestas-title">SELECCIONA TUS APUESTAS</div>', unsafe_allow_html=True)
+
+            # Fila 1X2 — 3 columnas alineadas con el field
+            sel = st.session_state.sel_apuestas
+            m1, m2, m3 = st.columns(3)
+            m1.button(f"{'✅' if 'Local' in sel else '◯'} Local {p1_fmt}%", use_container_width=True,
+                      key="btn_sel_local", on_click=_toggle('Local'))
+            m2.button(f"{'✅' if 'Empate' in sel else '◯'} Empate {px_fmt}%", use_container_width=True,
+                      key="btn_sel_empate", on_click=_toggle('Empate'))
+            m3.button(f"{'✅' if 'Visitante' in sel else '◯'} Visitante {p2_fmt}%", use_container_width=True,
+                      key="btn_sel_visita", on_click=_toggle('Visitante'))
+
+            # Fila mercados — 6 columnas alineadas con el field
+            m4, m5, m6, m7, m8, m9 = st.columns(6)
+            m4.button(f"{'✅' if 'O/U' in sel else '◯'} OU", use_container_width=True,
+                      key="btn_sel_ou", on_click=_toggle('O/U'))
+            m5.button(f"{'✅' if 'BTTS' in sel else '◯'} BTTS", use_container_width=True,
+                      key="btn_sel_btts", on_click=_toggle('BTTS'))
+            m6.button(f"{'✅' if 'Corners' in sel else '◯'} CK", use_container_width=True,
+                      key="btn_sel_ck", on_click=_toggle('Corners'))
+            m7.button(f"{'✅' if 'Remates' in sel else '◯'} Tiros", use_container_width=True,
+                      key="btn_sel_tiros", on_click=_toggle('Remates'))
+            m8.button(f"{'✅' if 'Tiros Arco' in sel else '◯'} TArco", use_container_width=True,
+                      key="btn_sel_arco", on_click=_toggle('Tiros Arco'))
+            m9.button(f"{'✅' if 'Tarjetas' in sel else '◯'} TARJ", use_container_width=True,
+                      key="btn_sel_tarj", on_click=_toggle('Tarjetas'))
+
+            # Boton guardar
+            n_sel = len(sel)
+            if st.button(f"💾 Guardar y ➡️ Capital  ({n_sel})", type="primary", use_container_width=True):
+                mercados_seleccionados = list(sel)
                 try:
                     client = get_client()
                     pick_data = _construir_pick_data(r, home, away, stats_local)
@@ -3048,6 +3065,7 @@ def render_analizador_page():
                         st.success(f"✅ {len(mercados_seleccionados)} apuesta(s) enviada(s) a Capital")
                     else:
                         st.success(f"✅ Pick guardado: {home} vs {away}")
+                    st.session_state.sel_apuestas = set()
                 except Exception as e:
                     st.error(f"❌ Error: {e}")
 
