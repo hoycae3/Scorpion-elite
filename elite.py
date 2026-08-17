@@ -1234,8 +1234,8 @@ def sincronizar_partidos():
                         # ★ NUEVO: Rastrear partidos FT (terminados) para sincronización incremental
                         if estado == 'FT' and fix_id:
                             fecha_partido = fix.get('date', '')[:10]
-                            resultado_local = 'W' if (score_local > score_visitante) else ('D' if score_local == score_visitante else 'L')
-                            resultado_visitante = 'W' if (score_visitante > score_local) else ('D' if score_local == score_visitante else 'L')
+                            resultado_local = 'G' if (score_local > score_visitante) else ('E' if score_local == score_visitante else 'P')
+                            resultado_visitante = 'G' if (score_visitante > score_local) else ('E' if score_local == score_visitante else 'P')
 
                             # Agregar a fixtures FT del equipo local
                             if team_id_local:

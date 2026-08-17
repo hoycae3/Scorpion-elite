@@ -118,7 +118,7 @@ def crear_badges(lista):
     for c in lista:
         if c in ['G', 'W']:
             badges += f"🟢{c} "
-        elif c == 'D':
+        elif c in ['E', 'D']:
             badges += f"🟡{c} "
         else:
             badges += f"🔴{c} "

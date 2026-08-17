@@ -275,6 +275,7 @@ def analizar_forma_reciente(ultimos_5: List[Dict]) -> Dict:
     
     for match in ultimos_5[:5]:  # Solo últimos 5
         resultado = match.get('resultado', 'P')
+        resultado = 'G' if resultado in ('G', 'W') else ('E' if resultado in ('E', 'D') else 'P')
         forma_letras.append(resultado)
         
         gf += match.get('goles_favor', 0)
