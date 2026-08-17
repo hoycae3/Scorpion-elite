@@ -3010,16 +3010,26 @@ def render_analizador_page():
 
         # Checkboxes debajo de cada tarjeta de prediccion (OU, BTTS, CK, Tiros, TArco, TARJ)
         if r:
+            # 1X2: Local, Empate, Visitante
+            c_l, c_e, c_v = st.columns(3)
+            sel_local = c_l.checkbox("Local", key="sel_local_field")
+            sel_empate = c_e.checkbox("Empate", key="sel_empate_field")
+            sel_visita = c_v.checkbox("Visitante", key="sel_visita_field")
+
+            # Mercados: OU, BTTS, CK, Tiros, TArco, TARJ
             c1, c2, c3, c4, c5, c6 = st.columns(6)
-            sel_ou = c1.checkbox("Apuestar", key="sel_ou_field")
-            sel_btts = c2.checkbox("Apuestar", key="sel_btts_field")
-            sel_ck = c3.checkbox("Apuestar", key="sel_ck_field")
-            sel_tiros = c4.checkbox("Apuestar", key="sel_tiros_field")
-            sel_arco = c5.checkbox("Apuestar", key="sel_arco_field")
-            sel_tarj = c6.checkbox("Apuestar", key="sel_tarj_field")
+            sel_ou = c1.checkbox("+", key="sel_ou_field")
+            sel_btts = c2.checkbox("+", key="sel_btts_field")
+            sel_ck = c3.checkbox("+", key="sel_ck_field")
+            sel_tiros = c4.checkbox("+", key="sel_tiros_field")
+            sel_arco = c5.checkbox("+", key="sel_arco_field")
+            sel_tarj = c6.checkbox("+", key="sel_tarj_field")
 
             if st.button("💾 Guardar y ➡️ Capital", type="primary", use_container_width=True):
                 mercados_seleccionados = []
+                if sel_local: mercados_seleccionados.append('Local')
+                if sel_empate: mercados_seleccionados.append('Empate')
+                if sel_visita: mercados_seleccionados.append('Visitante')
                 if sel_ou: mercados_seleccionados.append('O/U')
                 if sel_btts: mercados_seleccionados.append('BTTS')
                 if sel_ck: mercados_seleccionados.append('Corners')
