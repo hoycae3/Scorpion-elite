@@ -2755,75 +2755,6 @@ def render_analizador_page():
         confianza = r.get('confianza', 0)
         rango = r.get('rango', 'D')
 
-        # ========================
-        # 🎰 SELECCIONAR APUESTAS + GUARDAR / ENVIAR A CAPITAL
-        # ========================
-        st.markdown("---")
-        st.markdown("### 🎰 Selecciona tus Apuestas")
-
-        # Leer datos del análisis actual
-        r = st.session_state.get('analysis_result', {})
-        home = local_nombre if local_nombre else 'Equipo Local'
-        away = visitante_nombre if visitante_nombre else 'Equipo Visitante'
-
-        # Construir lista de mercados disponibles con su predicción
-        mercados_disp = []
-        if r.get('pick_1x2'):
-            mercados_disp.append(('1X2', f"1X2: {r.get('pick_1x2')}", r.get('prob_1x2', 50)))
-        if r.get('pick_over_under'):
-            mercados_disp.append(('O/U', f"Over/Under: {r.get('pick_over_under')}", r.get('prob_over_under', 50)))
-        if r.get('pick_btts'):
-            mercados_disp.append(('BTTS', f"BTTS: {r.get('pick_btts')}", r.get('btts_yes', 50)))
-        if r.get('pick_corners'):
-            mercados_disp.append(('Corners', f"Corners: {r.get('pick_corners')}", r.get('prob_corners', 50)))
-        if r.get('pick_tiros'):
-            mercados_disp.append(('Remates', f"Remates: {r.get('pick_tiros')}", r.get('prob_tiros', 50)))
-        if r.get('pick_tarjetas'):
-            mercados_disp.append(('Tarjetas', f"Tarjetas: {r.get('pick_tarjetas')}", r.get('prob_tarjetas', 50)))
-        if r.get('pick_tiros_arco'):
-            mercados_disp.append(('Tiros Arco', f"Tiros Arco: {r.get('pick_tiros_arco')}", r.get('prob_tiros_arco', 50)))
-
-        mercados_seleccionados = []
-        if mercados_disp:
-            cols_m = st.columns(len(mercados_disp))
-            for idx, (tipo, label, prob) in enumerate(mercados_disp):
-                with cols_m[idx]:
-                    if st.checkbox(f"{label}\n({prob:.0f}%)", key=f"sel_mercado_{idx}"):
-                        mercados_seleccionados.append(tipo)
-        else:
-            st.info("Analiza un partido para ver las apuestas disponibles.")
-
-        col_btn1, col_btn2 = st.columns(2)
-        with col_btn1:
-            guardar_simple = st.button("💾 Solo Guardar", use_container_width=True, help="Guarda el pick en la base de datos")
-        with col_btn2:
-            enviar_capital = st.button("💾 Guardar y ➡️ Capital", type="primary", use_container_width=True,
-                                       help="Guarda el pick y envía las apuestas seleccionadas a VIP → Bankroll → Agregar")
-
-        if guardar_simple or enviar_capital:
-            try:
-                client = get_client()
-                pick_data = _construir_pick_data(r, home, away, stats_local)
-                guardado = _insertar_pick_resiliente(client, pick_data)
-                omitidas = set(pick_data.keys()) - set(guardado.keys())
-                if omitidas:
-                    st.warning(f"⚠️ Pick guardado: {home} vs {away} (sin columnas: {', '.join(sorted(omitidas))}).")
-                else:
-                    st.success(f"✅ Pick guardado: {home} vs {away}")
-
-                if enviar_capital:
-                    if not mercados_seleccionados:
-                        st.info("ℹ️ No seleccionaste ningún mercado. Pick guardado, pero nada enviado a Capital.")
-                    else:
-                        pick_id = guardado.get('id') if isinstance(guardado, dict) else None
-                        pendientes = st.session_state.get('apuestas_pendientes_analizador', {})
-                        pendientes[pick_id] = set(mercados_seleccionados)
-                        st.session_state.apuestas_pendientes_analizador = pendientes
-                        st.success(f"✅ {len(mercados_seleccionados)} apuesta(s) enviada(s) a VIP → Bankroll → Agregar")
-                        st.info("👉 Ve a **VIP → Bankroll → Agregar** para confirmar cuotas y cantidades.")
-            except Exception as e:
-                st.error(f"❌ Error al guardar: {str(e)}")
-
         # DISEÑO FOOTBALL FIELD            # DISEÑO FOOTBALL FIELD            # DISEÑO FOOTBALL FIELD - PREDICCIONES
         # ========================
         p1 = r.get('p1', 0)
@@ -3076,6 +3007,70 @@ def render_analizador_page():
         </div>
         """
         st.html(field_html)
+
+        # ========================
+        # 🎰 SELECCIONAR APUESTAS + GUARDAR / ENVIAR A CAPITAL
+        # ========================
+        st.markdown("---")
+        st.markdown("### 🎰 Selecciona tus Apuestas")
+
+        # Construir lista de mercados disponibles con su predicción (variables ya calculadas arriba)
+        mercados_disp = []
+        if r.get('pick_1x2'):
+            mercados_disp.append(('1X2', f"1X2: {r.get('pick_1x2')}", r.get('prob_1x2', 50)))
+        if pick_ou and pick_ou != '?':
+            mercados_disp.append(('O/U', f"O/U: {pick_ou}", prob_ou))
+        if pick_btts and pick_btts != '?':
+            mercados_disp.append(('BTTS', f"BTTS: {pick_btts}", btts_yes))
+        if r.get('pick_corners'):
+            mercados_disp.append(('Corners', f"Corners: {r.get('pick_corners')}", r.get('prob_corners', 50)))
+        if pick_tiros and pick_tiros != '?':
+            mercados_disp.append(('Remates', f"Remates: {pick_tiros}", prob_tiros))
+        if pick_arco and pick_arco != '?':
+            mercados_disp.append(('Tiros Arco', f"T.Arco: {pick_arco}", prob_arco))
+        if pick_tarjetas and pick_tarjetas != '?':
+            mercados_disp.append(('Tarjetas', f"Tarjetas: {pick_tarjetas}", prob_tarjetas))
+
+        mercados_seleccionados = []
+        if mercados_disp:
+            cols_m = st.columns(len(mercados_disp))
+            for idx, (tipo, label, prob) in enumerate(mercados_disp):
+                with cols_m[idx]:
+                    if st.checkbox(f"{label}\n({prob:.0f}%)", key=f"sel_mercado_{idx}"):
+                        mercados_seleccionados.append(tipo)
+        else:
+            st.info("Analiza un partido para ver las apuestas disponibles.")
+
+        col_btn1, col_btn2 = st.columns(2)
+        with col_btn1:
+            guardar_simple = st.button("💾 Solo Guardar", use_container_width=True, help="Guarda el pick en la base de datos")
+        with col_btn2:
+            enviar_capital = st.button("💾 Guardar y ➡️ Capital", type="primary", use_container_width=True,
+                                       help="Guarda el pick y envía las apuestas seleccionadas a VIP → Bankroll → Agregar")
+
+        if guardar_simple or enviar_capital:
+            try:
+                client = get_client()
+                pick_data = _construir_pick_data(r, home, away, stats_local)
+                guardado = _insertar_pick_resiliente(client, pick_data)
+                omitidas = set(pick_data.keys()) - set(guardado.keys())
+                if omitidas:
+                    st.warning(f"⚠️ Pick guardado: {home} vs {away} (sin columnas: {', '.join(sorted(omitidas))}).")
+                else:
+                    st.success(f"✅ Pick guardado: {home} vs {away}")
+
+                if enviar_capital:
+                    if not mercados_seleccionados:
+                        st.info("ℹ️ No seleccionaste ningún mercado. Pick guardado, pero nada enviado a Capital.")
+                    else:
+                        pick_id = guardado.get('id') if isinstance(guardado, dict) else None
+                        pendientes = st.session_state.get('apuestas_pendientes_analizador', {})
+                        pendientes[pick_id] = set(mercados_seleccionados)
+                        st.session_state.apuestas_pendientes_analizador = pendientes
+                        st.success(f"✅ {len(mercados_seleccionados)} apuesta(s) enviada(s) a VIP → Bankroll → Agregar")
+                        st.info("👉 Ve a **VIP → Bankroll → Agregar** para confirmar cuotas y cantidades.")
+            except Exception as e:
+                st.error(f"❌ Error al guardar: {str(e)}")
 
         # ========================
         # ========================
