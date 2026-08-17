@@ -3012,7 +3012,6 @@ def render_analizador_page():
         # 🎰 SELECCIONAR APUESTAS + GUARDAR / ENVIAR A CAPITAL
         # ========================
         st.markdown("---")
-        st.markdown("### 🎰 Selecciona tus Apuestas")
 
         # Construir lista de mercados disponibles con su predicción (variables ya calculadas arriba)
         mercados_disp = []
