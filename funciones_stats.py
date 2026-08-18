@@ -433,10 +433,16 @@ def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitant
             return -1, status_code, f"API errors: {err_msg}"
 
         if not response_arr:
-            return 0, status_code, "Sin odds para este fixture"
+            # Mostrar estructura cruda para diagnóstico
+            raw_keys = list(data.keys())
+            results = data.get('results', 'N/A')
+            return 0, status_code, f"Response vacio. Keys={raw_keys}, results={results}, get={data.get('get','?')}"
 
         cuotas_guardadas = 0
         registros = []
+        total_bets_encontrados = 0
+        total_bookmakers = 0
+        bets_match_winner = 0
 
         # Mapeo de nombres de mercado de la API a tipo_apuesta de la BD
         def mapear_tipo(nombre_bet):
@@ -453,11 +459,15 @@ def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitant
             bookmaker_data = entrada.get('bookmaker', {})
             bookmaker_name = bookmaker_data.get('name', 'Unknown')
             bets = bookmaker_data.get('bets', [])
+            total_bookmakers += 1
+            total_bets_encontrados += len(bets)
 
             for bet in bets:
                 tipo_apuesta = mapear_tipo(bet.get('name', ''))
                 if not tipo_apuesta:
                     continue
+                if tipo_apuesta == 'Match Winner':
+                    bets_match_winner += 1
 
                 for val in bet.get('values', []):
                     opcion = val.get('value', '')
@@ -492,6 +502,10 @@ def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitant
             except Exception as e:
                 logger.error(f"Error guardando cuotas fixture {fixture_id}: {e}")
                 return -1, status_code, f"Error BD: {e}"
+
+        # Diagnóstico si no se guardaron registros pero sí había datos
+        if cuotas_guardadas == 0:
+            return 0, status_code, f"Datos OK pero 0 cuotas. Bookmakers={total_bookmakers}, bets={total_bets_encontrados}, match_winner={bets_match_winner}"
 
         return cuotas_guardadas, status_code, ""
 
