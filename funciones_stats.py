@@ -494,8 +494,6 @@ def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitant
                             'fixture_id': fixture_id,
                             'fecha': fecha,
                             'liga': liga,
-                            'equipo_local': equipo_local,
-                            'equipo_visitante': equipo_visitante,
                             'tipo_apuesta': tipo_apuesta,
                             'opcion': opcion,
                             'cuota': cuota_val,

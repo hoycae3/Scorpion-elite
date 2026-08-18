@@ -716,18 +716,13 @@ CREATE TABLE IF NOT EXISTS cuotas (
     fixture_id BIGINT NOT NULL,
     fecha DATE NOT NULL,
     liga VARCHAR(255),
-    equipo_local VARCHAR(255),
-    equipo_visitante VARCHAR(255),
     -- Tipo de apuesta
     tipo_apuesta VARCHAR(100) NOT NULL,  -- 'Match Winner', 'Over/Under', 'Both Teams To Score'
     -- Opciones y cuotas
-    opcion VARCHAR(50) NOT NULL,  -- '1', 'X', '2', 'Yes', 'No', 'Over 2.5', 'Under 2.5', etc.
+    opcion VARCHAR(50) NOT NULL,  -- 'Home', 'Draw', 'Away', 'Yes', 'No', 'Over 2.5', 'Under 2.5', etc.
     cuota DECIMAL(6,2),
     -- Casa de apuestas
     bookmaker VARCHAR(100),
-    -- Metadatos
-    creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    actualizado_en DATE,
     -- Unique constraint para evitar duplicados
     UNIQUE(fixture_id, bookmaker, tipo_apuesta, opcion)
 );
