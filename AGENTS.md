@@ -452,3 +452,53 @@ Quitada seccion insignias grandes del analizador (ya en tabla arriba).
 ### Commits
 - 3df3019: fix cuotas no aparecian en analizador
 - a2ed45e: feat cargar cuotas + quitar forma reciente duplicada
+
+---
+
+## Sesion 2026-08-18 - Cuotas + Zona Horaria + DB Sync
+
+### Resumen
+Se arreglaron 9 bugs encadenados para que las cuotas del mercado y value bets aparecieran en el analizador. Tambien se sincronizo la DB con el codigo y se arreglo un bug de zona horaria.
+
+### Bug 1: fixture_id no llegaba al analizador (3df3019)
+render_cuotas_mercado(r) busca r.get(fixture_id) pero nunca se copiaba al result. Fix: copiar selected_fixture_id a result[fixture_id] en ambas rutas.
+
+### Bug 2: Forma reciente duplicada (a2ed45e)
+Quitada seccion insignias grandes del analizador (ya esta en tabla comparativa arriba).
+
+### Bug 3: Zona horaria - fecha incorrecta (27ccba8)
+API devuelve date en UTC. El codigo guardaba fecha UTC sin convertir. Un partido 19:00 Mexico (00:00 UTC dia siguiente) se guardaba con fecha del dia siguiente. Fix: convertir fecha-hora a Colombia (UTC-5) antes de guardar. Display actualizado para no re-convertir.
+
+### Bug 4: DB desincronizada (0fb20a5)
+- calibracion_equipos/historico: codigo las usa pero NO existian. Creadas via migracion_db_2026_08_18.sql.
+- dias_procesados, historial_predicciones, pesos_modelos: existian pero codigo no las usa. Borradas.
+- Bug schema: calibracion_equipos tenia dos PRIMARY KEY. Corregido.
+Despues: 15 tablas, todas en uso activo.
+
+### Bug 5: Parsing bookmakers plural (f965cbf)
+Codigo buscaba response[].bookmaker (singular). API devuelve response[].bookmakers (plural, array). Estructura real: response[].bookmakers[].bets[].values[] con {value, odd}
+
+### Bug 6: Columna actualizado_en no existe (4ccc2f3)
+Tabla cuotas real no tiene actualizado_en. Error PGRST204. Fix: quitar del insert.
+
+### Bug 7: Columnas equipo_local/visitante no existen (abf9c08)
+Tabla cuotas real tiene 8 columnas: id, fixture_id, fecha, liga, tipo_apuesta, opcion, cuota, bookmaker. NO tiene equipo_local, equipo_visitante, creado_en, actualizado_en. Schema desactualizado. Fix: quitar del insert + actualizar schema.
+
+### Bug 8: RLS sin politica en cuotas (fix en DB)
+Tabla cuotas tenia RLS sin policy. Error 42501. Fix: crear policy cuotas_all en Supabase.
+
+### Bug 9: Duplicados en upsert (77c0430)
+API devuelve mismo bookmaker/market varias veces. Error 21000 ON CONFLICT. Fix: deduplicar por (fixture_id, bookmaker, tipo_apuesta, opcion).
+
+### Tabla cuotas REAL (8 columnas)
+id, fixture_id, fecha, liga, tipo_apuesta, opcion, cuota, bookmaker
+
+### Botones pagina Partidos (5 botones)
+1. Limpiar: borra TODOS los partidos y cuotas. Peligroso.
+2. Sincronizar: descarga partidos de 55 ligas (incremental).
+3. Limpiar Equipos: borra equipos_stats y equipo_partidos_stats.
+4. Recalcular Lambdas: recalcula lambda_local/visitante desde historial.
+5. Cargar Cuotas: descarga odds de partidos proximos (7 dias, no FT).
+
+### Commits
+3df3019, a2ed45e, 27ccba8, 0fb20a5, f965cbf, 4ccc2f3, abf9c08, 77c0430
