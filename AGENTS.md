@@ -421,3 +421,34 @@ Si el error persiste despues del deploy, hacer hard refresh:
 3. Con 575 equipos, una llamada API por equipo = timeout garantizado en Render free tier
 4. El codigo que agrega equipos a `equipos_unicos` debe incluir TODOS los equipos (no solo de partidos nuevos) para que el CASO B funcione
 
+
+---
+
+## Sesion 2026-08-18 - Cargar Cuotas + Fixes Analizador
+
+### Feature: Cargar Cuotas de API-Football (commit a2ed45e)
+Antes la tabla `cuotas` estaba vacia porque NADA la poblaba. Solo habia
+select/delete, ningun insert/upsert. La seccion "Cuotas del Mercado +
+Value Bets" del analizador nunca aparecia.
+
+**Nueva funcion** `cargar_cuotas_fixture()` en funciones_stats.py:
+- Llama GET /odds de API-Football v3 con fixture_id
+- Parsea response[] -> bookmaker{bets[]} -> values[]
+- Mapea nombres de mercado de la API a tipo_apuesta de la BD
+- Upsert en tabla cuotas con on_conflict
+- Retorna: n cuotas guardadas (-1 error API, 0 sin datos)
+
+**Boton "Cargar Cuotas"** en pagina Partidos:
+- Carga cuotas de partidos proximos (hoy -> +7 dias, estado != FT)
+- Incremental: no recarga partidos que ya tienen cuotas
+- Barra de progreso + metricas
+
+### Fix 1: fixture_id no llegaba a render_cuotas_mercado (commit 3df3019)
+Fix: copiar selected_fixture_id a result[fixture_id] en ambas rutas.
+
+### Fix 2: Forma reciente duplicada (commit a2ed45e)
+Quitada seccion insignias grandes del analizador (ya en tabla arriba).
+
+### Commits
+- 3df3019: fix cuotas no aparecian en analizador
+- a2ed45e: feat cargar cuotas + quitar forma reciente duplicada
