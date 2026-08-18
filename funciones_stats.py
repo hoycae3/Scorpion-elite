@@ -500,7 +500,6 @@ def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitant
                             'opcion': opcion,
                             'cuota': cuota_val,
                             'bookmaker': bookmaker_name,
-                            'actualizado_en': time.strftime('%Y-%m-%d'),
                         })
 
         if registros:
