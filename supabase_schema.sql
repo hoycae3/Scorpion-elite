@@ -788,7 +788,7 @@ CREATE POLICY "cuotas_all" ON cuotas FOR ALL USING (true) WITH CHECK (true);
 -- Guarda factores de corrección por equipo
 CREATE TABLE IF NOT EXISTS calibracion_equipos (
     id BIGSERIAL PRIMARY KEY,
-    equipo_norm TEXT PRIMARY KEY,  -- nombre normalizado (lowercase, sin acentos)
+    equipo_norm TEXT UNIQUE NOT NULL,  -- nombre normalizado (lowercase, sin acentos)
     nombre_original TEXT,
     factor_local NUMERIC DEFAULT 1.0,
     factor_visitante NUMERIC DEFAULT 1.0,
