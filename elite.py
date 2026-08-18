@@ -52,7 +52,7 @@ except Exception as e:
 load_dotenv()
 
 from analysis_models import calcular, pp
-from funciones_stats import obtener_ultimos_partidos_equipo, guardar_stats_equipo, calcular_promedios_equipo, obtener_stats_partido, obtener_stats_totales_partido
+from funciones_stats import obtener_ultimos_partidos_equipo, guardar_stats_equipo, calcular_promedios_equipo, obtener_stats_partido, obtener_stats_totales_partido, cargar_cuotas_fixture
 from calibration import (
     get_lambda_ajustada,
     registrar_resultado,
@@ -1677,7 +1677,7 @@ def render_partidos_page():
     # ═══════════════════════════════════════════════════════════════
     # BOTONES BUSCAR Y LIMPIAR
     # ═══════════════════════════════════════════════════════════════
-    col_btn1, col_btn2, col_btn3, col_btn4, col_info = st.columns([1, 1, 1, 1, 2])
+    col_btn1, col_btn2, col_btn3, col_btn4, col_btn5, col_info = st.columns([1, 1, 1, 1, 1, 2])
 
     with col_btn1:
         if st.button("🗑️ Limpiar", type="secondary", use_container_width=True):
@@ -1739,6 +1739,88 @@ def render_partidos_page():
                     st.info(f"ℹ️ {mensaje}")
                     if actualizados > 0:
                         st.success(f"✅ {actualizados} equipos actualizados correctamente")
+
+    # ═══════════════════════════════════════════════════════════════
+    # CARGAR CUOTAS: Descarga odds de API-Football para partidos próximos
+    # ═══════════════════════════════════════════════════════════════
+    with col_btn5:
+        if st.button("💰 Cargar Cuotas", type="secondary", use_container_width=True):
+            client = get_client()
+            if client:
+                API_URL = "https://v3.football.api-sports.io"
+                API_KEY = os.getenv("API_FOOTBALL_KEY", "")
+                headers = {'x-apisports-key': API_KEY}
+                hoy = datetime.now(timezone(timedelta(hours=-5))).date()
+                fecha_limite = (hoy + timedelta(days=7)).strftime('%Y-%m-%d')
+                hoy_str = hoy.strftime('%Y-%m-%d')
+
+                try:
+                    # Partidos próximos (no terminados) en los próximos 7 días
+                    resp_part = client.table('partidos').select(
+                        'fixture_id, fecha, liga, equipo_local, equipo_visitante, estado'
+                    ).gte('fecha', hoy_str).lte('fecha', fecha_limite).neq('estado', 'FT').execute()
+
+                    partidos = resp_part.data or []
+
+                    if not partidos:
+                        st.info("ℹ️ No hay partidos próximos (7 días) para cargar cuotas. Sincroniza primero.")
+                    else:
+                        # Ver cuotas ya existentes para no recargar
+                        fix_ids = [p['fixture_id'] for p in partidos if p.get('fixture_id')]
+                        resp_cuotas = client.table('cuotas').select('fixture_id').in_('fixture_id', fix_ids).execute()
+                        fix_con_cuotas = {c['fixture_id'] for c in (resp_cuotas.data or [])}
+                        a_cargar = [p for p in partidos if p.get('fixture_id') not in fix_con_cuotas]
+
+                        total = len(a_cargar)
+                        if total == 0:
+                            st.success(f"✅ Todos los {len(partidos)} partidos próximos ya tienen cuotas")
+                        else:
+                            st.info(f"💰 Cargando cuotas para {total} partidos (de {len(partidos)} próximos)...")
+                            progress_bar = st.progress(0)
+                            status_text = st.empty()
+                            cuotas_total = 0
+                            errores = 0
+                            sin_cuotas = 0
+
+                            for i, p in enumerate(a_cargar):
+                                fix_id = p.get('fixture_id')
+                                status_text.info(
+                                    f"💰 Cargando cuotas... ({i+1}/{total}) | "
+                                    f"{p.get('equipo_local','')} vs {p.get('equipo_visitante','')} | "
+                                    f"✅ {cuotas_total} cuotas"
+                                )
+                                n = cargar_cuotas_fixture(
+                                    fixture_id=fix_id,
+                                    fecha=p.get('fecha'),
+                                    liga=p.get('liga', ''),
+                                    equipo_local=p.get('equipo_local', ''),
+                                    equipo_visitante=p.get('equipo_visitante', ''),
+                                    headers=headers,
+                                    API_URL=API_URL,
+                                    client=client,
+                                )
+                                if n > 0:
+                                    cuotas_total += n
+                                elif n == 0:
+                                    sin_cuotas += 1
+                                else:
+                                    errores += 1
+                                st.session_state.api_requests_today = st.session_state.get('api_requests_today', 0) + 1
+                                progress_bar.progress(int((i + 1) / total * 100))
+
+                            status_text.empty()
+                            resumen = f"✅ **CARGA DE CUOTAS COMPLETADA**\n\n"
+                            resumen += f"💰 {cuotas_total} cuotas guardadas de {total} partidos\n"
+                            if sin_cuotas > 0:
+                                resumen += f"📋 {sin_cuotas} partidos sin cuotas disponibles\n"
+                            if errores > 0:
+                                resumen += f"⚠️ {errores} partidos con error de API\n"
+                            resumen += f"📊 {st.session_state.api_requests_today}/999 requests usados hoy"
+                            st.success(resumen)
+                            time.sleep(3)
+                except Exception as e:
+                    st.error(f"❌ Error cargando cuotas: {e}")
+                    logger.warning(f"Error en cargar cuotas: {e}")
 
     # ═══════════════════════════════════════════════════════════════
     # LIMPIEZA: Eliminar partidos de más de 1 año SOLO si hay partidos nuevos
@@ -2032,9 +2114,11 @@ def render_cuotas_mercado(r):
                 else:
                     st.info("🔽 Sin value bets en este momento")
             else:
-                st.info("🔻 Sin cuotas guardadas para este partido. Actualiza los partidos desde Carga.")
+                st.info("🔻 Sin cuotas guardadas para este partido. Ve a Partidos → 💰 Cargar Cuotas.")
         except Exception as e:
             logger.warning(f"Error consultando cuotas: {e}")
+    else:
+        st.info("🔻 Sin cuotas para este partido. Ve a Partidos → 💰 Cargar Cuotas para descargar odds.")
 
 
 def _construir_pick_data(r, home, away, stats_local):
@@ -3050,34 +3134,6 @@ def render_analizador_page():
                 st.session_state.sel_apuestas = set()
             except Exception as e:
                 st.error(f"❌ Error: {e}")
-        # ========================
-        # FORMA RECIENTE DE EQUIPOS
-        st.markdown("---")
-        # Recalcular badges desde analysis_result (badges_local fue reseteado arriba)
-        forma_l_data = r.get('forma_local', {})
-        forma_v_data = r.get('forma_visitante', {})
-        badges_local = crear_badges(forma_l_data.get('forma_letras', []))
-        badges_visitante = crear_badges(forma_v_data.get('forma_letras', []))
-        forma_local_html = badges_local if badges_local else "?"
-        forma_visit_html = badges_visitante if badges_visitante else "?"
-
-        col_f1, col_f2 = st.columns(2)
-        with col_f1:
-            st.markdown(f"""
-            <div style="background: #111111; border-radius: 12px; padding: 15px; text-align: center; border: 1px solid #333;">
-                <h5 style="color: #00d4ff; margin: 0 0 10px 0;">📊 {html.escape(str(home))}</h5>
-                <div style="font-size: 24px; letter-spacing: 5px;">{forma_local_html}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with col_f2:
-            st.markdown(f"""
-            <div style="background: #111111; border-radius: 12px; padding: 15px; text-align: center; border: 1px solid #333;">
-                <h5 style="color: #00d4ff; margin: 0 0 10px 0;">📊 {html.escape(str(away))}</h5>
-                <div style="font-size: 24px; letter-spacing: 5px;">{forma_visit_html}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
         # ========================
         # ⚽ GOLES ESTIMADOS - integrados en botones de arriba (sin duplicar)
         # ========================

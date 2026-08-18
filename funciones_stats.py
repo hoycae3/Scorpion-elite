@@ -6,6 +6,9 @@ Funciones para obtener y procesar estadísticas de partidos
 
 import requests
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def obtener_stats_partido(fixture_id, team_id, team_name, headers, API_URL):
@@ -387,6 +390,91 @@ def calcular_promedios_equipo(client, team_id, max_partidos=None):
             # Datos de partidos para análisis
             'partidos': partidos[:5],  # Últimos 5 para display
         }
-    
+
     except Exception as e:
         return None
+
+
+def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitante, headers, API_URL, client):
+    """
+    Descarga las cuotas (odds) de un partido desde API-Football y las guarda en la tabla cuotas.
+    Retorna el número de cuotas guardadas, o -1 si la API falla.
+    """
+    try:
+        resp = requests.get(
+            f"{API_URL}/odds",
+            headers=headers,
+            params={'fixture': fixture_id},
+            timeout=15
+        )
+
+        if resp.status_code != 200:
+            return -1
+
+        data = resp.json().get('response', [])
+        if not data:
+            return 0
+
+        cuotas_guardadas = 0
+        registros = []
+
+        # Mapeo de nombres de mercado de la API a tipo_apuesta de la BD
+        def mapear_tipo(nombre_bet):
+            nombre = nombre_bet.lower()
+            if 'match winner' in nombre or nombre in ('1x2', 'fulltime result', 'full time result', 'result'):
+                return 'Match Winner'
+            if 'both teams to score' in nombre or nombre == 'btts' or 'btts' in nombre:
+                return 'Both Teams To Score'
+            if 'over/under' in nombre or 'over under' in nombre or 'totals' in nombre:
+                return 'Over/Under'
+            return None
+
+        for entrada in data:
+            bookmaker_data = entrada.get('bookmaker', {})
+            bookmaker_name = bookmaker_data.get('name', 'Unknown')
+            bets = bookmaker_data.get('bets', [])
+
+            for bet in bets:
+                tipo_apuesta = mapear_tipo(bet.get('name', ''))
+                if not tipo_apuesta:
+                    continue
+
+                for val in bet.get('values', []):
+                    opcion = val.get('value', '')
+                    odd_str = val.get('odd', '0')
+                    try:
+                        cuota_val = float(odd_str)
+                    except (ValueError, TypeError):
+                        continue
+                    if cuota_val <= 1.0:
+                        continue
+
+                    registros.append({
+                        'fixture_id': fixture_id,
+                        'fecha': fecha,
+                        'liga': liga,
+                        'equipo_local': equipo_local,
+                        'equipo_visitante': equipo_visitante,
+                        'tipo_apuesta': tipo_apuesta,
+                        'opcion': opcion,
+                        'cuota': cuota_val,
+                        'bookmaker': bookmaker_name,
+                        'actualizado_en': time.strftime('%Y-%m-%d'),
+                    })
+
+        if registros:
+            try:
+                client.table('cuotas').upsert(
+                    registros,
+                    on_conflict='fixture_id,bookmaker,tipo_apuesta,opcion'
+                ).execute()
+                cuotas_guardadas = len(registros)
+            except Exception as e:
+                logger.error(f"Error guardando cuotas fixture {fixture_id}: {e}")
+                return -1
+
+        return cuotas_guardadas
+
+    except Exception as e:
+        logger.error(f"Error cargando cuotas fixture {fixture_id}: {e}")
+        return -1
