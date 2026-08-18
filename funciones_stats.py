@@ -465,41 +465,43 @@ def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitant
             return None
 
         for entrada in response_arr:
-            bookmaker_data = entrada.get('bookmaker', {})
-            bookmaker_name = bookmaker_data.get('name', 'Unknown')
-            bets = bookmaker_data.get('bets', [])
-            total_bookmakers += 1
-            total_bets_encontrados += len(bets)
+            # La API devuelve "bookmakers" (array plural), NO "bookmaker" (objeto singular)
+            bookmakers_list = entrada.get('bookmakers', [])
+            for bookmaker_data in bookmakers_list:
+                bookmaker_name = bookmaker_data.get('name', 'Unknown')
+                bets = bookmaker_data.get('bets', [])
+                total_bookmakers += 1
+                total_bets_encontrados += len(bets)
 
-            for bet in bets:
-                tipo_apuesta = mapear_tipo(bet.get('name', ''))
-                if not tipo_apuesta:
-                    continue
-                if tipo_apuesta == 'Match Winner':
-                    bets_match_winner += 1
-
-                for val in bet.get('values', []):
-                    opcion = val.get('value', '')
-                    odd_str = val.get('odd', '0')
-                    try:
-                        cuota_val = float(odd_str)
-                    except (ValueError, TypeError):
+                for bet in bets:
+                    tipo_apuesta = mapear_tipo(bet.get('name', ''))
+                    if not tipo_apuesta:
                         continue
-                    if cuota_val <= 1.0:
-                        continue
+                    if tipo_apuesta == 'Match Winner':
+                        bets_match_winner += 1
 
-                    registros.append({
-                        'fixture_id': fixture_id,
-                        'fecha': fecha,
-                        'liga': liga,
-                        'equipo_local': equipo_local,
-                        'equipo_visitante': equipo_visitante,
-                        'tipo_apuesta': tipo_apuesta,
-                        'opcion': opcion,
-                        'cuota': cuota_val,
-                        'bookmaker': bookmaker_name,
-                        'actualizado_en': time.strftime('%Y-%m-%d'),
-                    })
+                    for val in bet.get('values', []):
+                        opcion = val.get('value', '')
+                        odd_str = val.get('odd', '0')
+                        try:
+                            cuota_val = float(odd_str)
+                        except (ValueError, TypeError):
+                            continue
+                        if cuota_val <= 1.0:
+                            continue
+
+                        registros.append({
+                            'fixture_id': fixture_id,
+                            'fecha': fecha,
+                            'liga': liga,
+                            'equipo_local': equipo_local,
+                            'equipo_visitante': equipo_visitante,
+                            'tipo_apuesta': tipo_apuesta,
+                            'opcion': opcion,
+                            'cuota': cuota_val,
+                            'bookmaker': bookmaker_name,
+                            'actualizado_en': time.strftime('%Y-%m-%d'),
+                        })
 
         if registros:
             try:
