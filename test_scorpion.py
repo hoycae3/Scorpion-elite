@@ -1,0 +1,353 @@
+"""
+Scorpion Elite - Tests automatizados
+=====================================
+Cobertura:
+1. Modelos matematicos (analysis_models.py)
+2. Helpers (app_helpers.py)
+3. Parsing de cuotas (funciones_stats.py)
+4. Calibracion (calibration.py)
+
+Ejecutar: python3 -m pytest test_scorpion.py -v
+O sin pytest: python3 test_scorpion.py
+"""
+
+import sys
+import os
+from datetime import datetime, timezone, timedelta
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# ============================================================================
+# TESTS: analysis_models.py
+# ============================================================================
+
+def test_calcular_retorna_todas_las_claves():
+    """calcular() debe retornar todas las claves esperadas."""
+    from analysis_models import calcular
+    r = calcular(1.5, 1.2)
+    claves_esperadas = [
+        'p1', 'px', 'p2', 'pick_1x2', 'prob_1x2',
+        'over_under', 'pick_over_under', 'prob_over_under',
+        'btts_yes', 'btts_no', 'pick_btts',
+        'corners', 'pick_corners',
+        'tiros', 'pick_tiros', 'prob_tiros',
+        'tarjetas', 'pick_tarjetas', 'prob_tarjetas',
+        'tiros_arco', 'pick_tiros_arco', 'prob_tiros_arco',
+        'confianza', 'rango', 'modelos',
+    ]
+    for clave in claves_esperadas:
+        assert clave in r, f"Falta clave '{clave}' en resultado de calcular()"
+
+
+def test_calcular_probabilidades_suman_100():
+    """p1 + px + p2 debe sumar aproximadamente 100."""
+    from analysis_models import calcular
+    r = calcular(1.5, 1.2)
+    total = r['p1'] + r['px'] + r['p2']
+    assert 99 <= total <= 101, f"1X2 no suma 100: {total} (p1={r['p1']}, px={r['px']}, p2={r['p2']})"
+
+
+def test_calcular_btts_suman_100():
+    """btts_yes + btts_no debe sumar 100."""
+    from analysis_models import calcular
+    r = calcular(1.5, 1.2)
+    total = r['btts_yes'] + r['btts_no']
+    assert 99 <= total <= 101, f"BTTS no suma 100: {total}"
+
+
+def test_calcular_over_under_suman_100():
+    """over_25 + under_25 debe sumar 100."""
+    from analysis_models import calcular
+    r = calcular(1.5, 1.2)
+    ou = r['over_under']
+    total = ou['over_25'] + ou['under_25']
+    assert 99 <= total <= 101, f"Over/Under 2.5 no suma 100: {total}"
+
+
+def test_calcular_pick_consistente():
+    """El pick de 1X2 debe ser el de mayor probabilidad."""
+    from analysis_models import calcular
+    r = calcular(1.5, 1.2)
+    probs = {'1': r['p1'], 'X': r['px'], '2': r['p2']}
+    max_key = max(probs, key=probs.get)
+    assert r['pick_1x2'] == max_key, f"Pick {r['pick_1x2']} != esperado {max_key}"
+
+
+def test_calcular_lambda_alto_favor_local():
+    """Con lambda_local muy alto, p1 debe ser la mayor probabilidad."""
+    from analysis_models import calcular
+    r = calcular(3.0, 0.5)
+    assert r['p1'] > r['p2'], f"Local favorito deberia tener p1 > p2 (p1={r['p1']}, p2={r['p2']})"
+
+
+def test_calcular_lambda_alto_favor_visitante():
+    """Con lambda_visitante muy alto, p2 debe ser la mayor probabilidad."""
+    from analysis_models import calcular
+    r = calcular(0.5, 3.0)
+    assert r['p2'] > r['p1'], f"Visitante favorito deberia tener p2 > p1 (p1={r['p1']}, p2={r['p2']})"
+
+
+def test_calcular_determinista_con_seed():
+    """Monte Carlo con misma seed debe dar mismo resultado."""
+    from analysis_models import calcular
+    r1 = calcular(1.5, 1.2)
+    r2 = calcular(1.5, 1.2)
+    # Poisson y Dixon-Coles son deterministas; el ensemble deberia ser estable
+    assert abs(r1['p1'] - r2['p1']) < 1, "calcular() no es determinista"
+
+
+def test_pp_poisson_valido():
+    """pp(lambda, 0) debe dar probabilidad valida entre 0 y 1."""
+    from analysis_models import pp
+    p = pp(1.5, 0)
+    assert 0 < p < 1, f"pp(1.5, 0) fuera de rango: {p}"
+
+
+def test_pp_poisson_k_mayor_lambda():
+    """pp(lambda, k) con k > lambda*3 debe ser muy pequeno."""
+    from analysis_models import pp
+    p = pp(1.0, 5)
+    assert p < 0.01, f"pp(1.0, 5) deberia ser <0.01: {p}"
+
+
+def test_normal_cdf_rangos():
+    """normal_cdf debe retornar valores entre 0 y 1."""
+    from analysis_models import normal_cdf
+    assert 0 <= normal_cdf(-3) <= 1
+    assert 0 <= normal_cdf(0) <= 1
+    assert 0 <= normal_cdf(3) <= 1
+    assert normal_cdf(0) > 0.49 and normal_cdf(0) < 0.51  # ≈ 0.5
+
+
+# ============================================================================
+# TESTS: app_helpers.py
+# ============================================================================
+
+def test_get_pais_emoji_conocido():
+    """get_pais_emoji debe retornar emoji para paises conocidos."""
+    from app_helpers import get_pais_emoji
+    assert '🇨🇴' in get_pais_emoji('Colombia')
+    assert '🇦🇷' in get_pais_emoji('Argentina')
+    assert '🇧🇷' in get_pais_emoji('Brasil')
+
+
+def test_get_pais_emoji_desconocido():
+    """get_pais_emoji debe retornar algo para paises desconocidos."""
+    from app_helpers import get_pais_emoji
+    result = get_pais_emoji('PaisInventado')
+    assert isinstance(result, str)
+
+
+def test_get_hoy_formato_fecha():
+    """get_hoy debe retornar string en formato YYYY-MM-DD."""
+    from app_helpers import get_hoy
+    hoy = get_hoy()
+    assert len(hoy) == 10, f"Fecha debe tener 10 chars: {hoy}"
+    parts = hoy.split('-')
+    assert len(parts) == 3, f"Fecha debe tener 3 partes: {hoy}"
+    assert len(parts[0]) == 4, f"Año debe tener 4 digitos: {hoy}"
+
+
+def test_hash_password_y_verify():
+    """hash_password + verify_password debe funcionar correctamente."""
+    from app_helpers import hash_password, verify_password
+    password = 'miPassword123'
+    h = hash_password(password)
+    assert h != password, "Hash no debe ser igual al password"
+    assert verify_password(password, h), "verify_password debe retornar True para password correcto"
+    assert not verify_password('otraPassword', h), "verify_password debe retornar False para password incorrecto"
+
+
+def test_format_money():
+    """format_money debe formatear montos correctamente."""
+    from app_helpers import format_money
+    result = format_money(1000.50, '$')
+    assert '1,000' in result or '1000' in result, f"format_money falla: {result}"
+
+
+def test_utc_to_colombia_conversion():
+    """utc_to_colombia debe convertir UTC a Colombia (UTC-5)."""
+    from app_helpers import utc_to_colombia
+    # 00:30 UTC → 19:30 Colombia (dia anterior)
+    hora = utc_to_colombia('2026-08-18T00:30:00Z')
+    assert hora == '19:30', f"UTC 00:30 → Colombia deberia ser 19:30, no {hora}"
+
+
+def test_utc_to_colombia_vacio():
+    """utc_to_colombia con string vacio debe retornar string vacio."""
+    from app_helpers import utc_to_colombia
+    assert utc_to_colombia('') == ''
+    assert utc_to_colombia(None) == ''
+
+
+def test_calcular_value():
+    """calcular_value debe calcular el value bet correctamente."""
+    from app_helpers import calcular_value
+    # prob=60%, cuota=2.0 → prob_implicita=50%, value=10%
+    value, prob_implicita = calcular_value(60, 2.0)
+    assert abs(value - 10) < 1, f"calcular_value(60, 2.0) value deberia ser ~10, no {value}"
+    assert abs(prob_implicita - 50) < 1, f"prob_implicita deberia ser ~50, no {prob_implicita}"
+
+
+# ============================================================================
+# TESTS: funciones_stats.py (parsing de cuotas)
+# ============================================================================
+
+def test_parse_cuotas_estructura_bookmakers():
+    """El parser de cuotas debe manejar bookmakers[] (plural, array)."""
+    from funciones_stats import parse_cuotas_response
+    # Estructura real de API-Football /odds
+    mock_response = {
+        'response': [
+            {
+                'fixture': {'id': 12345},
+                'bookmakers': [
+                    {
+                        'name': 'Bet365',
+                        'bets': [
+                            {
+                                'name': 'Match Winner',
+                                'values': [
+                                    {'value': 'Home', 'odd': '1.50'},
+                                    {'value': 'Draw', 'odd': '3.20'},
+                                    {'value': 'Away', 'odd': '5.00'},
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+    cuotas = parse_cuotas_response(mock_response, fixture_id=12345)
+    assert len(cuotas) > 0, "Parser no extrajo cuotas"
+    c = cuotas[0]
+    assert c['fixture_id'] == 12345
+    assert c['bookmaker'] == 'Bet365'
+    assert c['cuota'] == 1.50
+    assert c['opcion'] == 'Home'
+
+
+def test_parse_cuotas_vacio():
+    """El parser debe manejar respuesta vacia sin crashear."""
+    from funciones_stats import parse_cuotas_response
+    cuotas = parse_cuotas_response({'response': []}, fixture_id=1)
+    assert cuotas == [], "Parser deberia retornar lista vacia"
+
+
+def test_parse_cuotas_sin_bookmakers():
+    """El parser debe manejar fixture sin bookmakers (plural)."""
+    from funciones_stats import parse_cuotas_response
+    mock = {
+        'response': [
+            {'fixture': {'id': 1}, 'bookmaker': {'name': 'Old'}}
+        ]
+    }
+    cuotas = parse_cuotas_response(mock, fixture_id=1)
+    # El parser moderno usa bookmakers (plural); si viene singular, no extrae nada
+    assert isinstance(cuotas, list)
+    assert len(cuotas) == 0  # 'bookmaker' singular no se procesa
+
+
+def test_dedup_cuotas():
+    """Las cuotas duplicadas deben eliminarse antes del upsert."""
+    from funciones_stats import dedup_cuotas_lista
+    # 2 con misma clave (dup), 1 con cuota distinta pero MISMA clave → se colapsa a 1
+    # para testear dedup real, usamos claves diferentes
+    cuotas = [
+        {'fixture_id': 1, 'bookmaker': 'Bet365', 'tipo_apuesta': 'Match Winner', 'opcion': 'Home', 'cuota': 1.5},
+        {'fixture_id': 1, 'bookmaker': 'Bet365', 'tipo_apuesta': 'Match Winner', 'opcion': 'Home', 'cuota': 1.5},
+        {'fixture_id': 1, 'bookmaker': 'Bet365', 'tipo_apuesta': 'Match Winner', 'opcion': 'Draw', 'cuota': 3.2},
+        {'fixture_id': 2, 'bookmaker': 'Bet365', 'tipo_apuesta': 'Match Winner', 'opcion': 'Home', 'cuota': 2.0},
+    ]
+    deduped = dedup_cuotas_lista(cuotas)
+    assert len(deduped) == 3, f"Deberia tener 3 cuotas unicas, no {len(deduped)}"
+
+
+# ============================================================================
+# TESTS: calibration.py (logica pura)
+# ============================================================================
+
+def test_normalizar_equipo_acentos():
+    """normalizar_equipo debe quitar acentos y lowercase."""
+    from calibration import normalizar_equipo
+    assert normalizar_equipo('Atlético') == 'atletico'
+    assert normalizar_equipo('  CA Colón  ') == 'ca colon'
+    assert normalizar_equipo('Boca Juniors') == 'boca juniors'
+
+
+def test_ajustar_lambda():
+    """ajustar_lambda multiplica correctamente."""
+    from calibration import ajustar_lambda
+    assert ajustar_lambda(1.5, 1.0) == 1.5
+    assert abs(ajustar_lambda(1.5, 1.2) - 1.8) < 0.001
+    assert ajustar_lambda(2.0, 0.5) == 1.0
+
+
+def test_normalizar_equipo_vacio():
+    """normalizar_equipo con None/vacio no debe crashear."""
+    from calibration import normalizar_equipo
+    assert normalizar_equipo('') == ''
+    assert normalizar_equipo(None) == ''
+
+
+# ============================================================================
+# RUNNER (para ejecutar sin pytest)
+# ============================================================================
+
+if __name__ == '__main__':
+    tests = [
+        # analysis_models
+        test_calcular_retorna_todas_las_claves,
+        test_calcular_probabilidades_suman_100,
+        test_calcular_btts_suman_100,
+        test_calcular_over_under_suman_100,
+        test_calcular_pick_consistente,
+        test_calcular_lambda_alto_favor_local,
+        test_calcular_lambda_alto_favor_visitante,
+        test_calcular_determinista_con_seed,
+        test_pp_poisson_valido,
+        test_pp_poisson_k_mayor_lambda,
+        test_normal_cdf_rangos,
+        # app_helpers
+        test_get_pais_emoji_conocido,
+        test_get_pais_emoji_desconocido,
+        test_get_hoy_formato_fecha,
+        test_hash_password_y_verify,
+        test_format_money,
+        test_utc_to_colombia_conversion,
+        test_utc_to_colombia_vacio,
+        test_calcular_value,
+        # funciones_stats
+        test_parse_cuotas_estructura_bookmakers,
+        test_parse_cuotas_vacio,
+        test_parse_cuotas_sin_bookmakers,
+        test_dedup_cuotas,
+        # calibration
+        test_normalizar_equipo_acentos,
+        test_ajustar_lambda,
+        test_normalizar_equipo_vacio,
+    ]
+
+    passed = 0
+    failed = 0
+    errors = []
+
+    for test in tests:
+        try:
+            test()
+            print(f'  ✔ {test.__name__}')
+            passed += 1
+        except Exception as e:
+            print(f'  ✗ {test.__name__}: {e}')
+            failed += 1
+            errors.append((test.__name__, str(e)))
+
+    print(f'\n{"="*60}')
+    print(f'Resultado: {passed} pasaron, {failed} fallaron, {len(tests)} total')
+    if errors:
+        print('\nFallos:')
+        for name, err in errors:
+            print(f'  ✗ {name}: {err}')
+    print(f'{"="*60}')
+    sys.exit(0 if failed == 0 else 1)

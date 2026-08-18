@@ -76,8 +76,22 @@ def obtener_factor_correccion(equipo: str, como_local: bool) -> float:
     return 1.0
 
 
-def _actualizar_factor_equipo(equipo: str, error: float, es_local: bool, nombre_original: str = None):
-    """Actualiza el factor de corrección para un equipo en Supabase."""
+def _actualizar_factor_equipo(
+    equipo: str,
+    error: float,
+    es_local: bool,
+    nombre_original: str = None,
+    error_over: Optional[float] = None,
+    error_btts: Optional[float] = None,
+):
+    """Actualiza los factores de corrección para un equipo en Supabase.
+
+    Args:
+        error: diferencia goles_reales - lambda_predicha (para factor_local/visitante).
+        es_local: si el equipo jugó como local.
+        error_over: error en prediccion Over/Under 2.5 (1 si acertó Over pero fue Under, -1 viceversa). None = no calibrar.
+        error_btts: error en prediccion BTTS (1 o -1, None = no calibrar).
+    """
     try:
         client = _get_client()
         equipo_norm = normalizar_equipo(equipo)
@@ -91,6 +105,8 @@ def _actualizar_factor_equipo(equipo: str, error: float, es_local: bool, nombre_
             errores_visitante = equipo_data.get('errores_visitante', [])
             factor_local = float(equipo_data.get('factor_local', 1.0))
             factor_visitante = float(equipo_data.get('factor_visitante', 1.0))
+            factor_over = float(equipo_data.get('factor_over', 1.0))
+            factor_btts = float(equipo_data.get('factor_btts', 1.0))
             partidos_local = int(equipo_data.get('partidos_local', 0))
             partidos_visitante = int(equipo_data.get('partidos_visitante', 0))
         else:
@@ -99,10 +115,12 @@ def _actualizar_factor_equipo(equipo: str, error: float, es_local: bool, nombre_
             errores_visitante = []
             factor_local = 1.0
             factor_visitante = 1.0
+            factor_over = 1.0
+            factor_btts = 1.0
             partidos_local = 0
             partidos_visitante = 0
         
-        # Actualizar errores y factores
+        # Actualizar errores y factores (1X2 / lambda)
         if es_local:
             errores_local.append(error)
             if len(errores_local) > 10:
@@ -118,7 +136,7 @@ def _actualizar_factor_equipo(equipo: str, error: float, es_local: bool, nombre_
             errores = errores_visitante
             factor = factor_visitante
         
-        # Calcular error ponderado
+        # Calcular error ponderado (decay exponencial, partidos recientes pesan más)
         peso = 1.0
         error_ponderado = 0
         suma_pesos = 0
@@ -133,14 +151,24 @@ def _actualizar_factor_equipo(equipo: str, error: float, es_local: bool, nombre_
         nuevo_factor = factor + ajuste
         nuevo_factor = max(0.7, min(1.5, nuevo_factor))
         
+        # Calibrar factor_over (error_over: positivo = predijimos Under pero fue Over)
+        if error_over is not None:
+            ajuste_over = max(-cambio_max, min(cambio_max, error_over * 0.3))
+            factor_over = max(0.7, min(1.5, factor_over + ajuste_over))
+        
+        # Calibrar factor_btts (error_btts: positivo = predijimos No pero fue Yes)
+        if error_btts is not None:
+            ajuste_btts = max(-cambio_max, min(cambio_max, error_btts * 0.3))
+            factor_btts = max(0.7, min(1.5, factor_btts + ajuste_btts))
+        
         # Guardar
         data = {
             'equipo_norm': equipo_norm,
             'nombre_original': nombre_original or equipo,
             'factor_local': nuevo_factor if es_local else factor_local,
             'factor_visitante': nuevo_factor if not es_local else factor_visitante,
-            'factor_over': 1.0,
-            'factor_btts': 1.0,
+            'factor_over': factor_over,
+            'factor_btts': factor_btts,
             'partidos_local': partidos_local,
             'partidos_visitante': partidos_visitante,
             'errores_local': errores_local,
@@ -249,9 +277,36 @@ def registrar_resultado(
         }
         client.table('calibracion_historico').insert(historico_data).execute()
         
-        # Actualizar factores de equipos
-        _actualizar_factor_equipo(equipo_local, error_local, es_local=True, nombre_original=equipo_local)
-        _actualizar_factor_equipo(equipo_visitante, error_visitante, es_local=False, nombre_original=equipo_visitante)
+        # Calcular errores de Over/Under y BTTS para calibracion
+        # error_over: +1 si predijimos Under pero fue Over (modelo subestima goles)
+        #             -1 si predijimos Over pero fue Under (modelo sobreestima goles)
+        pick_ou = predicciones.get('over_under', {}).get('pick', '')
+        fue_over = total_goles > 2.5
+        if 'Under' in pick_ou and fue_over:
+            error_over_ambos = 1
+        elif 'Over' in pick_ou and not fue_over:
+            error_over_ambos = -1
+        else:
+            error_over_ambos = 0  # acertó o sin prediccion
+
+        # error_btts: +1 si predijimos No pero fue Yes, -1 viceversa
+        pick_btts = predicciones.get('btts', {}).get('pick', '')
+        if 'No' in pick_btts and ambos_marcan:
+            error_btts_ambos = 1
+        elif 'Si' in pick_btts and not ambos_marcan:
+            error_btts_ambos = -1
+        else:
+            error_btts_ambos = 0
+
+        # Actualizar factores de equipos (ahora calibra 1X2 + Over/Under + BTTS)
+        _actualizar_factor_equipo(
+            equipo_local, error_local, es_local=True, nombre_original=equipo_local,
+            error_over=error_over_ambos, error_btts=error_btts_ambos,
+        )
+        _actualizar_factor_equipo(
+            equipo_visitante, error_visitante, es_local=False, nombre_original=equipo_visitante,
+            error_over=error_over_ambos, error_btts=error_btts_ambos,
+        )
         
         return {
             "error_local": error_local,
@@ -269,6 +324,28 @@ def registrar_resultado(
 
 def ajustar_lambda(lambda_original: float, factor: float) -> float:
     return lambda_original * factor
+
+
+def obtener_factores_completos(equipo: str, como_local: bool) -> Dict:
+    """Obtiene todos los factores de corrección de un equipo.
+
+    Returns dict con factor (1X2), factor_over, factor_btts.
+    """
+    try:
+        client = _get_client()
+        equipo_norm = normalizar_equipo(equipo)
+        resp = client.table('calibracion_equipos').select('*').eq('equipo_norm', equipo_norm).execute()
+        if resp.data and len(resp.data) > 0:
+            d = resp.data[0]
+            factor = float(d.get("factor_local", 1.0)) if como_local else float(d.get("factor_visitante", 1.0))
+            return {
+                "factor": factor,
+                "factor_over": float(d.get("factor_over", 1.0)),
+                "factor_btts": float(d.get("factor_btts", 1.0)),
+            }
+    except Exception as e:
+        logger.warning(f"Error obteniendo factores completos: {e}")
+    return {"factor": 1.0, "factor_over": 1.0, "factor_btts": 1.0}
 
 
 def get_lambda_ajustada(equipo: str, lambda_original: float, como_local: bool) -> Dict:

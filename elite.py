@@ -55,6 +55,7 @@ from analysis_models import calcular, pp
 from funciones_stats import obtener_ultimos_partidos_equipo, guardar_stats_equipo, calcular_promedios_equipo, obtener_stats_partido, obtener_stats_totales_partido, cargar_cuotas_fixture
 from calibration import (
     get_lambda_ajustada,
+    obtener_factores_completos,
     registrar_resultado,
 )
 
@@ -2396,6 +2397,12 @@ def render_analizador_page():
             lambda_local_cal = lambda_local_adj['lambda_ajustada']
             lambda_visitante_cal = lambda_visitante_adj['lambda_ajustada']
 
+            # Factores de calibración para Over/Under y BTTS (promedio de ambos equipos)
+            factores_local = obtener_factores_completos(local_nombre, como_local=True)
+            factores_visitante = obtener_factores_completos(visitante_nombre, como_local=False)
+            factor_over_prom = (factores_local['factor_over'] + factores_visitante['factor_over']) / 2
+            factor_btts_prom = (factores_local['factor_btts'] + factores_visitante['factor_btts']) / 2
+
             # ★ OBTENER ÚLTIMOS 5 PARTIDOS de promedios_dinamicos
             ultimos_5_local = []
             ultimos_5_visitante = []
@@ -2423,6 +2430,31 @@ def render_analizador_page():
                 # Guardar promedios_dinamicos en session_state
                 st.session_state.promedios_dinamicos_local = promedios_dinamicos_local
                 st.session_state.promedios_dinamicos_visitante = promedios_dinamicos_visitante
+
+                # Aplicar calibración de Over/Under y BTTS a las probabilidades
+                # factor_over > 1: el modelo subestima los goles → subir Over, bajar Under
+                # factor_btts > 1: el modelo subestima BTTS → subir Yes, bajar No
+                ou = result.get('over_under', {})
+                if ou and factor_over_prom != 1.0:
+                    nuevas = {}
+                    for k, v in ou.items():
+                        if 'over' in k:
+                            nuevas[k] = round(min(99.9, v * factor_over_prom), 1)
+                        else:
+                            nuevas[k] = round(max(0.1, v * (2 - factor_over_prom)), 1)
+                    result['over_under'] = nuevas
+                    # Recalcular pick y prob
+                    if nuevas.get('over_25', 0) >= nuevas.get('under_25', 0):
+                        result['pick_over_under'] = 'Over 2.5'
+                        result['prob_over_under'] = nuevas.get('over_25', 50)
+                    else:
+                        result['pick_over_under'] = 'Under 2.5'
+                        result['prob_over_under'] = nuevas.get('under_25', 50)
+
+                if factor_btts_prom != 1.0:
+                    result['btts_yes'] = round(min(99.9, result.get('btts_yes', 50) * factor_btts_prom), 1)
+                    result['btts_no'] = round(max(0.1, 100 - result['btts_yes']), 1)
+                    result['pick_btts'] = 'Sí' if result['btts_yes'] >= 50 else 'No'
 
                 # Guardar fixture_id en result para render_cuotas_mercado
                 result['fixture_id'] = st.session_state.get('selected_fixture_id')
@@ -3226,9 +3258,8 @@ def render_claves_page():
     with tab_gestionar:
         st.markdown("#### 📋 Contraseñas Creadas")
 
-        # Botón recargar
-        if st.button("🔄 Recargar Lista"):
-            st.rerun()
+        # Botón recargar (el clic del botón ya causa rerun automático en Streamlit)
+        st.button("🔄 Recargar Lista")
         usuarios = db_todos()
 
         if not usuarios:

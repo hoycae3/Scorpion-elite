@@ -395,6 +395,73 @@ def calcular_promedios_equipo(client, team_id, max_partidos=None):
         return None
 
 
+def parse_cuotas_response(data, fixture_id, fecha=None, liga=None):
+    """
+    Parsea la respuesta JSON de API-Football /odds y devuelve lista de registros.
+    Maneja 'bookmakers' (array plural), NO 'bookmaker' (objeto singular).
+    """
+    registros = []
+    response_arr = data.get('response', [])
+    if not response_arr:
+        return registros
+
+    def mapear_tipo(nombre_bet):
+        nombre = nombre_bet.lower()
+        if 'match winner' in nombre or nombre in ('1x2', 'fulltime result', 'full time result', 'result'):
+            return 'Match Winner'
+        if 'both teams to score' in nombre or nombre == 'btts' or 'btts' in nombre:
+            return 'Both Teams To Score'
+        if 'over/under' in nombre or 'over under' in nombre or 'totals' in nombre:
+            return 'Over/Under'
+        return None
+
+    for entrada in response_arr:
+        bookmakers_list = entrada.get('bookmakers', [])
+        for bookmaker_data in bookmakers_list:
+            bookmaker_name = bookmaker_data.get('name', 'Unknown')
+            bets = bookmaker_data.get('bets', [])
+
+            for bet in bets:
+                tipo_apuesta = mapear_tipo(bet.get('name', ''))
+                if not tipo_apuesta:
+                    continue
+
+                for val in bet.get('values', []):
+                    opcion = val.get('value', '')
+                    odd_str = val.get('odd', '0')
+                    try:
+                        cuota_val = float(odd_str)
+                    except (ValueError, TypeError):
+                        continue
+                    if cuota_val <= 1.0:
+                        continue
+
+                    registros.append({
+                        'fixture_id': fixture_id,
+                        'fecha': fecha,
+                        'liga': liga,
+                        'tipo_apuesta': tipo_apuesta,
+                        'opcion': opcion,
+                        'cuota': cuota_val,
+                        'bookmaker': bookmaker_name,
+                    })
+
+    return registros
+
+
+def dedup_cuotas_lista(registros):
+    """
+    Deduplica cuotas por la clave unica (fixture_id, bookmaker, tipo_apuesta, opcion).
+    Previene error "ON CONFLICT DO UPDATE command cannot affect row a second time".
+    """
+    vistos = {}
+    for reg in registros:
+        clave = (reg['fixture_id'], reg['bookmaker'], reg['tipo_apuesta'], reg['opcion'])
+        if clave not in vistos:
+            vistos[clave] = reg
+    return list(vistos.values())
+
+
 def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitante, headers, API_URL, client):
     """
     Descarga las cuotas (odds) de un partido desde API-Football y las guarda en la tabla cuotas.
@@ -424,7 +491,6 @@ def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitant
             return -1, status_code, f"API error {status_code}"
 
         data = resp.json()
-        response_arr = data.get('response', [])
 
         # Mensajes de error dentro del JSON
         errors = data.get('errors', [])
@@ -432,85 +498,35 @@ def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitant
             err_msg = str(errors)[:200]
             return -1, status_code, f"API errors: {err_msg}"
 
+        response_arr = data.get('response', [])
         if not response_arr:
-            # Mostrar estructura cruda para diagnóstico
             raw_keys = list(data.keys())
             results = data.get('results', 'N/A')
             return 0, status_code, f"Response vacio. Keys={raw_keys}, results={results}, get={data.get('get','?')}"
 
         # Dump crudo del primer elemento para diagnóstico
-        primer_elemento = response_arr[0]
-        # Serializar de forma compacta, truncar a 500 chars
         import json as _json
         try:
-            raw_dump = _json.dumps(primer_elemento, ensure_ascii=False)[:500]
+            raw_dump = _json.dumps(response_arr[0], ensure_ascii=False)[:500]
         except Exception:
-            raw_dump = str(primer_elemento)[:500]
+            raw_dump = str(response_arr[0])[:500]
 
-        cuotas_guardadas = 0
-        registros = []
-        total_bets_encontrados = 0
-        total_bookmakers = 0
-        bets_match_winner = 0
-
-        # Mapeo de nombres de mercado de la API a tipo_apuesta de la BD
-        def mapear_tipo(nombre_bet):
-            nombre = nombre_bet.lower()
-            if 'match winner' in nombre or nombre in ('1x2', 'fulltime result', 'full time result', 'result'):
-                return 'Match Winner'
-            if 'both teams to score' in nombre or nombre == 'btts' or 'btts' in nombre:
-                return 'Both Teams To Score'
-            if 'over/under' in nombre or 'over under' in nombre or 'totals' in nombre:
-                return 'Over/Under'
-            return None
-
-        for entrada in response_arr:
-            # La API devuelve "bookmakers" (array plural), NO "bookmaker" (objeto singular)
-            bookmakers_list = entrada.get('bookmakers', [])
-            for bookmaker_data in bookmakers_list:
-                bookmaker_name = bookmaker_data.get('name', 'Unknown')
-                bets = bookmaker_data.get('bets', [])
-                total_bookmakers += 1
-                total_bets_encontrados += len(bets)
-
-                for bet in bets:
-                    tipo_apuesta = mapear_tipo(bet.get('name', ''))
-                    if not tipo_apuesta:
-                        continue
-                    if tipo_apuesta == 'Match Winner':
-                        bets_match_winner += 1
-
-                    for val in bet.get('values', []):
-                        opcion = val.get('value', '')
-                        odd_str = val.get('odd', '0')
-                        try:
-                            cuota_val = float(odd_str)
-                        except (ValueError, TypeError):
-                            continue
-                        if cuota_val <= 1.0:
-                            continue
-
-                        registros.append({
-                            'fixture_id': fixture_id,
-                            'fecha': fecha,
-                            'liga': liga,
-                            'tipo_apuesta': tipo_apuesta,
-                            'opcion': opcion,
-                            'cuota': cuota_val,
-                            'bookmaker': bookmaker_name,
-                        })
+        # Parsear y deduplicar usando funciones extraidas
+        registros = parse_cuotas_response(data, fixture_id, fecha, liga)
+        total_bookmakers = sum(
+            len(e.get('bookmakers', [])) for e in response_arr
+        )
+        total_bets_encontrados = sum(
+            len(b.get('bets', []))
+            for e in response_arr
+            for b in e.get('bookmakers', [])
+        )
+        bets_match_winner = sum(
+            1 for r in registros if r['tipo_apuesta'] == 'Match Winner'
+        )
 
         if registros:
-            # Deduplicar por la clave unica (fixture_id, bookmaker, tipo_apuesta, opcion)
-            # La API puede devolver el mismo bookmaker/market varias veces, lo que causa
-            # error "ON CONFLICT DO UPDATE command cannot affect row a second time"
-            vistos = {}
-            for reg in registros:
-                clave = (reg['fixture_id'], reg['bookmaker'], reg['tipo_apuesta'], reg['opcion'])
-                if clave not in vistos:
-                    vistos[clave] = reg
-            registros_unicos = list(vistos.values())
-
+            registros_unicos = dedup_cuotas_lista(registros)
             try:
                 client.table('cuotas').upsert(
                     registros_unicos,
@@ -520,6 +536,8 @@ def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitant
             except Exception as e:
                 logger.error(f"Error guardando cuotas fixture {fixture_id}: {e}")
                 return -1, status_code, f"Error BD: {e}"
+        else:
+            cuotas_guardadas = 0
 
         # Diagnóstico si no se guardaron registros pero sí había datos
         if cuotas_guardadas == 0:

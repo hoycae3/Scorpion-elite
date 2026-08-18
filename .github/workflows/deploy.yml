@@ -19,9 +19,15 @@ jobs:
       - name: Verify Python syntax
         run: |
           set -e
-          for f in elite.py analysis_models.py funciones_stats.py calibration.py; do
+          for f in elite.py analysis_models.py funciones_stats.py calibration.py app_helpers.py; do
             python -c "import ast; ast.parse(open('$f').read()); print('✔ $f OK')"
           done
+
+      - name: Install test dependencies
+        run: pip install requests bcrypt
+
+      - name: Run tests
+        run: python test_scorpion.py
 
       - name: Trigger Render Deploy
         run: |
