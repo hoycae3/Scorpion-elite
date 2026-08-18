@@ -656,8 +656,16 @@ def calcular(
     p1_mc, px_mc, p2_mc = mc["p1"], mc["px"], mc["p2"]
     
     # ANÁLISIS DE FORMA RECIENTE - se usa en el ensamble
-    forma_local = analizar_forma_reciente(ultimos_5_local) if ultimos_5_local else {'forma_puntos': 50}
-    forma_visitante = analizar_forma_reciente(ultimos_5_visitante) if ultimos_5_visitante else {'forma_puntos': 50}
+    forma_local = analizar_forma_reciente(ultimos_5_local) if ultimos_5_local else {
+        'forma_puntos': 50, 'forma_letras': '-----', 'victorias': 0,
+        'empates': 0, 'derrotas': 0, 'goles_favor_5': 0,
+        'goles_contra_5': 0, 'corners_promedio_5': 0
+    }
+    forma_visitante = analizar_forma_reciente(ultimos_5_visitante) if ultimos_5_visitante else {
+        'forma_puntos': 50, 'forma_letras': '-----', 'victorias': 0,
+        'empates': 0, 'derrotas': 0, 'goles_favor_5': 0,
+        'goles_contra_5': 0, 'corners_promedio_5': 0
+    }
     
     # Forma como porcentaje para el ensamble (15% del peso total)
     forma_local_pct = forma_local['forma_puntos']

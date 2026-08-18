@@ -112,7 +112,7 @@ def get_pais_emoji(pais):
 
 
 def crear_badges(lista):
-    if not lista:
+    if not lista or lista == '-----' or lista == 'Sin datos':
         return "Sin datos"
     badges = ""
     for c in lista:
@@ -120,9 +120,11 @@ def crear_badges(lista):
             badges += f"🟢{c} "
         elif c in ['E', 'D']:
             badges += f"🟡{c} "
-        else:
+        elif c in ['P', 'L']:
             badges += f"🔴{c} "
-    return badges.strip()
+        else:
+            badges += f"⚫{c} "
+    return badges.strip() if badges else "Sin datos"
 
 
 def fila_dato(valor_l, indicador, valor_v, color_val='white', bg_par=False):

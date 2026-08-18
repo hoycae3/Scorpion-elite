@@ -2285,6 +2285,14 @@ def render_analizador_page():
             lambda_local_cal = lambda_local_adj['lambda_ajustada']
             lambda_visitante_cal = lambda_visitante_adj['lambda_ajustada']
 
+            # ★ OBTENER ÚLTIMOS 5 PARTIDOS de promedios_dinamicos
+            ultimos_5_local = []
+            ultimos_5_visitante = []
+            if promedios_dinamicos_local:
+                ultimos_5_local = promedios_dinamicos_local.get('partidos', [])[:5]
+            if promedios_dinamicos_visitante:
+                ultimos_5_visitante = promedios_dinamicos_visitante.get('partidos', [])[:5]
+
             with st.spinner("Analizando..."):
                 result = calcular(
                     lambda_local=lambda_local_cal,
@@ -2297,8 +2305,8 @@ def render_analizador_page():
                     tiros_visitante=float(tiros_v),
                     tiros_arco_local=float(tiros_arco_l),
                     tiros_arco_visitante=float(tiros_arco_v),
-                    ultimos_5_local=[],
-                    ultimos_5_visitante=[],
+                    ultimos_5_local=ultimos_5_local,
+                    ultimos_5_visitante=ultimos_5_visitante,
                 )
 
                 # Guardar promedios_dinamicos en session_state
