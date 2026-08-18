@@ -501,12 +501,22 @@ def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitant
                         })
 
         if registros:
+            # Deduplicar por la clave unica (fixture_id, bookmaker, tipo_apuesta, opcion)
+            # La API puede devolver el mismo bookmaker/market varias veces, lo que causa
+            # error "ON CONFLICT DO UPDATE command cannot affect row a second time"
+            vistos = {}
+            for reg in registros:
+                clave = (reg['fixture_id'], reg['bookmaker'], reg['tipo_apuesta'], reg['opcion'])
+                if clave not in vistos:
+                    vistos[clave] = reg
+            registros_unicos = list(vistos.values())
+
             try:
                 client.table('cuotas').upsert(
-                    registros,
+                    registros_unicos,
                     on_conflict='fixture_id,bookmaker,tipo_apuesta,opcion'
                 ).execute()
-                cuotas_guardadas = len(registros)
+                cuotas_guardadas = len(registros_unicos)
             except Exception as e:
                 logger.error(f"Error guardando cuotas fixture {fixture_id}: {e}")
                 return -1, status_code, f"Error BD: {e}"
