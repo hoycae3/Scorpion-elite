@@ -438,6 +438,15 @@ def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitant
             results = data.get('results', 'N/A')
             return 0, status_code, f"Response vacio. Keys={raw_keys}, results={results}, get={data.get('get','?')}"
 
+        # Dump crudo del primer elemento para diagnóstico
+        primer_elemento = response_arr[0]
+        # Serializar de forma compacta, truncar a 500 chars
+        import json as _json
+        try:
+            raw_dump = _json.dumps(primer_elemento, ensure_ascii=False)[:500]
+        except Exception:
+            raw_dump = str(primer_elemento)[:500]
+
         cuotas_guardadas = 0
         registros = []
         total_bets_encontrados = 0
@@ -505,7 +514,7 @@ def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitant
 
         # Diagnóstico si no se guardaron registros pero sí había datos
         if cuotas_guardadas == 0:
-            return 0, status_code, f"Datos OK pero 0 cuotas. Bookmakers={total_bookmakers}, bets={total_bets_encontrados}, match_winner={bets_match_winner}"
+            return 0, status_code, f"Datos OK pero 0 cuotas. Casas={total_bookmakers}, apuestas={total_bets_encontrados}, ganador_partido={bets_match_winner}. RAW: {raw_dump}"
 
         return cuotas_guardadas, status_code, ""
 

@@ -1835,10 +1835,12 @@ def render_partidos_page():
                             resumen += f"📊 {st.session_state.api_requests_today}/999 requests usados hoy"
                             # Mostrar diagnóstico si el primer partido falló
                             if cuotas_total == 0 and primer_mensaje:
-                                resumen += f"\n\n🔍 **DIAGNÓSTICO** (primer partido): {primer_mensaje}"
-                                if "Plan gratuito" in primer_mensaje or "403" in primer_mensaje or "426" in primer_mensaje:
-                                    resumen += "\n\n💡 El endpoint /odds requiere un plan **pago** de API-Football. El plan gratuito (999 req/día) NO incluye odds."
+                                resumen += f"\n\n🔍 **DIAGNÓSTICO** (primer partido):"
                             st.success(resumen)
+                            # Mostrar el dump crudo en un code block separado para que sea legible
+                            if cuotas_total == 0 and primer_mensaje:
+                                st.warning("⚠️ Estructura cruda de la API (primer partido):")
+                                st.code(primer_mensaje, language='text')
                             time.sleep(3)
                 except Exception as e:
                     st.error(f"❌ Error cargando cuotas: {e}")
