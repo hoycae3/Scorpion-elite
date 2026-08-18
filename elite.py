@@ -1794,6 +1794,7 @@ def render_partidos_page():
                             cuotas_total = 0
                             errores = 0
                             sin_cuotas = 0
+                            primer_mensaje = ""  # Diagnóstico del primer partido
 
                             for i, p in enumerate(a_cargar):
                                 fix_id = p.get('fixture_id')
@@ -1802,7 +1803,7 @@ def render_partidos_page():
                                     f"{p.get('equipo_local','')} vs {p.get('equipo_visitante','')} | "
                                     f"✅ {cuotas_total} cuotas"
                                 )
-                                n = cargar_cuotas_fixture(
+                                n, sc, msg = cargar_cuotas_fixture(
                                     fixture_id=fix_id,
                                     fecha=p.get('fecha'),
                                     liga=p.get('liga', ''),
@@ -1812,6 +1813,9 @@ def render_partidos_page():
                                     API_URL=API_URL,
                                     client=client,
                                 )
+                                # Guardar diagnóstico del primer partido
+                                if i == 0 and msg:
+                                    primer_mensaje = msg
                                 if n > 0:
                                     cuotas_total += n
                                 elif n == 0:
@@ -1829,6 +1833,11 @@ def render_partidos_page():
                             if errores > 0:
                                 resumen += f"⚠️ {errores} partidos con error de API\n"
                             resumen += f"📊 {st.session_state.api_requests_today}/999 requests usados hoy"
+                            # Mostrar diagnóstico si el primer partido falló
+                            if cuotas_total == 0 and primer_mensaje:
+                                resumen += f"\n\n🔍 **DIAGNÓSTICO** (primer partido): {primer_mensaje}"
+                                if "Plan gratuito" in primer_mensaje or "403" in primer_mensaje or "426" in primer_mensaje:
+                                    resumen += "\n\n💡 El endpoint /odds requiere un plan **pago** de API-Football. El plan gratuito (999 req/día) NO incluye odds."
                             st.success(resumen)
                             time.sleep(3)
                 except Exception as e:

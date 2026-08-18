@@ -398,7 +398,10 @@ def calcular_promedios_equipo(client, team_id, max_partidos=None):
 def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitante, headers, API_URL, client):
     """
     Descarga las cuotas (odds) de un partido desde API-Football y las guarda en la tabla cuotas.
-    Retorna el número de cuotas guardadas, o -1 si la API falla.
+    Retorna: (n_cuotas, status_code, mensaje_diagnostico)
+      - n_cuotas: número guardadas (-1 si error API, 0 si sin datos)
+      - status_code: código HTTP de la API
+      - mensaje: string para diagnóstico (errores, mensajes de plan, etc.)
     """
     try:
         resp = requests.get(
@@ -408,12 +411,29 @@ def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitant
             timeout=15
         )
 
-        if resp.status_code != 200:
-            return -1
+        status_code = resp.status_code
 
-        data = resp.json().get('response', [])
-        if not data:
-            return 0
+        # Errores de API (plan, rate limit, etc.)
+        if status_code == 426:
+            return -1, status_code, "Plan gratuito no incluye odds (426 Upgrade Required)"
+        if status_code == 403:
+            return -1, status_code, "Acceso denegado al endpoint /odds (403)"
+        if status_code == 429:
+            return -1, status_code, "Rate limit exceeded (429)"
+        if status_code != 200:
+            return -1, status_code, f"API error {status_code}"
+
+        data = resp.json()
+        response_arr = data.get('response', [])
+
+        # Mensajes de error dentro del JSON
+        errors = data.get('errors', [])
+        if errors:
+            err_msg = str(errors)[:200]
+            return -1, status_code, f"API errors: {err_msg}"
+
+        if not response_arr:
+            return 0, status_code, "Sin odds para este fixture"
 
         cuotas_guardadas = 0
         registros = []
@@ -429,7 +449,7 @@ def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitant
                 return 'Over/Under'
             return None
 
-        for entrada in data:
+        for entrada in response_arr:
             bookmaker_data = entrada.get('bookmaker', {})
             bookmaker_name = bookmaker_data.get('name', 'Unknown')
             bets = bookmaker_data.get('bets', [])
@@ -471,10 +491,10 @@ def cargar_cuotas_fixture(fixture_id, fecha, liga, equipo_local, equipo_visitant
                 cuotas_guardadas = len(registros)
             except Exception as e:
                 logger.error(f"Error guardando cuotas fixture {fixture_id}: {e}")
-                return -1
+                return -1, status_code, f"Error BD: {e}"
 
-        return cuotas_guardadas
+        return cuotas_guardadas, status_code, ""
 
     except Exception as e:
         logger.error(f"Error cargando cuotas fixture {fixture_id}: {e}")
-        return -1
+        return -1, 0, f"Excepcion: {e}"
