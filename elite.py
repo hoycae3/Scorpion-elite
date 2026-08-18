@@ -2313,6 +2313,9 @@ def render_analizador_page():
                 st.session_state.promedios_dinamicos_local = promedios_dinamicos_local
                 st.session_state.promedios_dinamicos_visitante = promedios_dinamicos_visitante
 
+                # Guardar fixture_id en result para render_cuotas_mercado
+                result['fixture_id'] = st.session_state.get('selected_fixture_id')
+
                 st.session_state.analysis_result = result
                 st.session_state.home = local_nombre
                 st.session_state.away = visitante_nombre
@@ -2502,6 +2505,8 @@ def render_analizador_page():
                     # Guardar info de partidos dinámicos en result
                     result['partidos_acumulados_local'] = partidos_total_l
                     result['partidos_acumulados_visitante'] = partidos_total_v
+                    # Guardar fixture_id en result para render_cuotas_mercado
+                    result['fixture_id'] = st.session_state.get('selected_fixture_id')
 
                     st.session_state.analysis_result = result
                     st.session_state.home = home_team
