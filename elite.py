@@ -669,13 +669,12 @@ def render_public_landing():
     else:
         # MOSTRAR SOLO 4 PARTIDOS ALEATORIOS EN LANDING
         if partidos:
-            # Convertir hora a colombiana
+            # La hora ya viene en zona horaria de Colombia (UTC-5) desde la sync
             partidos_procesados = []
             for p in partidos:
                 fecha = p.get('fecha', '')
-                hora_original = p.get('hora', '')
-                hora_colombia = utc_to_colombia(f"{fecha}T{hora_original}:00Z") if fecha and hora_original else ""
-                
+                hora_colombia = p.get('hora', '')[:5]
+
                 partidos_procesados.append({
                     **p,
                     'hora_colombia': hora_colombia,
@@ -1204,6 +1203,20 @@ def sincronizar_partidos():
                         score_local = score.get('fulltime', {}).get('home') if score.get('fulltime') else goals.get('home') or 0
                         score_visitante = score.get('fulltime', {}).get('away') if score.get('fulltime') else goals.get('away') or 0
 
+                        # Convertir fecha-hora UTC a zona horaria de Colombia (UTC-5)
+                        # La API devuelve date en UTC; sin esto, un partido a las 19:00 de México
+                        # (00:00 UTC del día siguiente) se guarda con fecha del día siguiente.
+                        fecha_utc_str = fix.get('date', '')
+                        colombia_tz = timezone(timedelta(hours=-5))
+                        try:
+                            utc_dt = datetime.fromisoformat(fecha_utc_str.replace('Z', '+00:00'))
+                            col_dt = utc_dt.astimezone(colombia_tz)
+                            fecha_col = col_dt.strftime('%Y-%m-%d')
+                            hora_col = col_dt.strftime('%H:%M')
+                        except (ValueError, TypeError):
+                            fecha_col = fecha_utc_str[:10]
+                            hora_col = fecha_utc_str[11:16]
+
                         es_partido_nuevo = fix_id not in partidos_existentes
                         if not es_partido_nuevo:
                             fixtures_duplicados += 1  # ★ Diagnóstico
@@ -1233,7 +1246,7 @@ def sincronizar_partidos():
 
                         # ★ NUEVO: Rastrear partidos FT (terminados) para sincronización incremental
                         if estado == 'FT' and fix_id:
-                            fecha_partido = fix.get('date', '')[:10]
+                            fecha_partido = fecha_col
                             resultado_local = 'G' if (score_local > score_visitante) else ('E' if score_local == score_visitante else 'P')
                             resultado_visitante = 'G' if (score_visitante > score_local) else ('E' if score_local == score_visitante else 'P')
 
@@ -1270,8 +1283,8 @@ def sincronizar_partidos():
                         # reprogramados (mismo fixture_id, fecha diferente)
                         partido_data = {
                             'fixture_id': fix_id,
-                            'fecha': fix.get('date', '')[:10],
-                            'hora': fix.get('date', '')[11:16],
+                            'fecha': fecha_col,
+                            'hora': hora_col,
                             'liga': league.get('name', ''),
                             'liga_id': league.get('id'),
                             'pais': league.get('country', ''),
@@ -1290,7 +1303,7 @@ def sincronizar_partidos():
                             else:
                                 # ★ Detectar si la fecha o estado cambiaron (partido reprogramado)
                                 existente = partidos_existentes_fechas.get(fix_id, {})
-                                if existente.get('fecha', '') != fix.get('date', '')[:10] or existente.get('estado', '') != estado:
+                                if existente.get('fecha', '') != fecha_col or existente.get('estado', '') != estado:
                                     partidos_actualizados += 1
                             # Actualizar progreso (10-30%)
                             progress_bar.progress(int(10 + (partidos_guardados / max(1, len(equipos_unicos)) * 20)))
@@ -1869,12 +1882,11 @@ def render_partidos_page():
         fecha_str = fecha_seleccionada.strftime('%Y-%m-%d')
         partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] == fecha_str]
 
-    # Procesar partidos con hora colombiana
+    # Procesar partidos (la hora ya viene en zona horaria de Colombia desde la sync)
     partidos_procesados = []
     for p in partidos:
         fecha = p.get('fecha', '')
-        hora_original = p.get('hora', '')
-        hora_colombia = utc_to_colombia(f"{fecha}T{hora_original}:00Z") if fecha and hora_original else hora_original[:5]
+        hora_colombia = p.get('hora', '')[:5]
 
         partidos_procesados.append({
             **p,
