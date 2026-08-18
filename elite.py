@@ -129,6 +129,42 @@ def get_client():
     return get_supabase_client()
 
 
+def recalcular_lambda_equipo(client, team_id):
+    """
+    Recalcula lambda_local y lambda_visitante de UN solo equipo desde su historial.
+    Usar después de guardar un FT para mantener el lambda actualizado.
+    """
+    try:
+        partidos = client.table('equipo_partidos_stats').select(
+            'goles_favor, es_local'
+        ).eq('team_id', team_id).execute()
+
+        if not partidos.data:
+            return
+
+        partidos_local = [p for p in partidos.data if p.get('es_local') == True]
+        partidos_visit = [p for p in partidos.data if p.get('es_local') == False]
+
+        if partidos_local:
+            gf_local = sum(p.get('goles_favor', 0) or 0 for p in partidos_local)
+            lambda_local = round(gf_local / len(partidos_local), 2)
+        else:
+            lambda_local = 1.3
+
+        if partidos_visit:
+            gf_visit = sum(p.get('goles_favor', 0) or 0 for p in partidos_visit)
+            lambda_visit = round(gf_visit / len(partidos_visit), 2)
+        else:
+            lambda_visit = 1.1
+
+        client.table('equipos_stats').update({
+            'lambda_local': lambda_local,
+            'lambda_visitante': lambda_visit
+        }).eq('team_id', team_id).execute()
+    except Exception as e:
+        logger.warning(f"Error recalculando lambda de equipo {team_id}: {e}")
+
+
 def recalcular_lambdas_desde_historial(client):
     """
     Recalcula lambda_local y lambda_visitante desde equipo_partidos_stats.
@@ -155,42 +191,8 @@ def recalcular_lambdas_desde_historial(client):
                 continue
             
             try:
-                # Obtener partidos de este equipo desde el historial
-                partidos = client.table('equipo_partidos_stats').select(
-                    'goles_favor, es_local'
-                ).eq('team_id', team_id).execute()
-                
-                if not partidos.data:
-                    continue
-                
-                # Separar por local/visitante
-                partidos_local = [p for p in partidos.data if p.get('es_local') == True]
-                partidos_visit = [p for p in partidos.data if p.get('es_local') == False]
-                
-                # Calcular lambda_local
-                if partidos_local:
-                    gf_local = sum(p.get('goles_favor', 0) or 0 for p in partidos_local)
-                    pj_local = len(partidos_local)
-                    lambda_local = round(gf_local / pj_local, 2)
-                else:
-                    lambda_local = 1.3
-                
-                # Calcular lambda_visitante
-                if partidos_visit:
-                    gf_visit = sum(p.get('goles_favor', 0) or 0 for p in partidos_visit)
-                    pj_visit = len(partidos_visit)
-                    lambda_visit = round(gf_visit / pj_visit, 2)
-                else:
-                    lambda_visit = 1.1
-                
-                # Actualizar en equipos_stats
-                client.table('equipos_stats').update({
-                    'lambda_local': lambda_local,
-                    'lambda_visitante': lambda_visit
-                }).eq('team_id', team_id).execute()
-                
+                recalcular_lambda_equipo(client, team_id)
                 actualizados += 1
-                
             except Exception as e:
                 errores += 1
         
@@ -1584,6 +1586,8 @@ def sincronizar_partidos():
                                     on_conflict='team_id,fixture_id'
                                 ).execute()
                                 stats_ft_nuevos += 1
+                                # Recalcular lambda del equipo con el nuevo resultado
+                                recalcular_lambda_equipo(client, team_id)
                             except Exception as e:
                                 st.warning(f"⚠️ Error guardando FT {fix_info['fixture_id']} de {team_name}: {e}")
 
