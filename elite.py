@@ -2078,15 +2078,16 @@ def render_cuotas_mercado(r):
                 continue
             if valor <= 1.0:
                 continue
-            # Solo mostrar Over/Under 2.5 (la línea principal del modelo)
-            if '2.5' not in opcion:
+            # Solo Over/Under 2.5 exacto (la línea principal del modelo).
+            # Filtra líneas asiáticas como "Over 2.5, 3.0" que tienen cuotas
+            # absurdas y no son comparables con el modelo.
+            opcion_norm = opcion.strip()
+            if opcion_norm not in ('Over 2.5', 'Under 2.5'):
                 continue
-            if 'Over' in opcion:
+            if opcion_norm == 'Over 2.5':
                 key, label, prob = 'Over', "🔺 Más de 2.5", prob_ou
-            elif 'Under' in opcion:
-                key, label, prob = 'Under', "🔻 Menos de 2.5", 100 - prob_ou
             else:
-                continue
+                key, label, prob = 'Under', "🔻 Menos de 2.5", 100 - prob_ou
             if key not in vistos_ou or valor > vistos_ou[key]['valor']:
                 vistos_ou[key] = {'valor': valor, 'label': label, 'prob': prob,
                                   'bookie': cuota.get('bookmaker', '')}
@@ -2129,7 +2130,10 @@ def render_cuotas_mercado(r):
         elif tipo == 'Both Teams To Score':
             prob = prob_btts if 'Yes' in opcion else (100 - prob_btts)
         elif tipo == 'Over/Under':
-            prob = prob_ou if 'Over' in opcion else (100 - prob_ou)
+            # Solo Over/Under 2.5 exacto (filtra líneas asiáticas raras)
+            if opcion.strip() not in ('Over 2.5', 'Under 2.5'):
+                continue
+            prob = prob_ou if opcion.strip() == 'Over 2.5' else (100 - prob_ou)
         else:
             continue
 
