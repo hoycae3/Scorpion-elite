@@ -984,3 +984,132 @@ div[data-testid="stNumberInputField"] input {
     color: #000000 !important;
     background: #ffffff !important;
 }
+
+/* ════════════════════════════════════════════
+   CUOTAS DEL MERCADO - tarjetas de value bets
+   ════════════════════════════════════════════ */
+.cuota-header {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: #00d4aa;
+    margin: 18px 0 10px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #2a2a35;
+}
+.cuota-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.cuota-card {
+    background: #1a1a24;
+    border-radius: 10px;
+    padding: 12px 14px;
+    border-left: 4px solid #444;
+    transition: transform 0.15s;
+}
+.cuota-card:hover {
+    transform: translateY(-2px);
+}
+.cuota-card.high-value {
+    border-left-color: #ef4444;
+    background: linear-gradient(135deg, #1a1a24 0%, #2d1517 100%);
+}
+.cuota-card.mid-value {
+    border-left-color: #f97316;
+    background: linear-gradient(135deg, #1a1a24 0%, #2d2015 100%);
+}
+.cuota-card.no-value {
+    border-left-color: #4b5563;
+    opacity: 0.72;
+}
+.cuota-label {
+    font-size: 0.82em;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+.cuota-odd {
+    font-size: 1.6em;
+    font-weight: 700;
+    color: #f9fafb;
+    line-height: 1.1;
+}
+.cuota-odd .at {
+    color: #6b7280;
+    font-size: 0.65em;
+    font-weight: 400;
+}
+.cuota-value-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 0.85em;
+}
+.cuota-value-badge {
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.85em;
+}
+.cuota-value-badge.high {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+.cuota-value-badge.mid {
+    background: rgba(249, 115, 22, 0.2);
+    color: #fb923c;
+}
+.cuota-value-badge.low {
+    background: rgba(75, 85, 99, 0.2);
+    color: #9ca3af;
+}
+.cuota-compare {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: 0.78em;
+    color: #9ca3af;
+}
+.cuota-compare span strong {
+    color: #e5e7eb;
+}
+.cuota-bookie {
+    font-size: 0.72em;
+    color: #6b7280;
+    margin-top: 4px;
+}
+.value-summary-card {
+    background: linear-gradient(135deg, #14201a 0%, #1a2d22 100%);
+    border: 1px solid #22c55e33;
+    border-radius: 10px;
+    padding: 14px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.value-summary-card .vsc-value {
+    font-size: 1.8em;
+    font-weight: 800;
+    color: #22c55e;
+    min-width: 70px;
+    text-align: center;
+}
+.value-summary-card .vsc-info {
+    flex: 1;
+}
+.value-summary-card .vsc-opcion {
+    font-size: 1.05em;
+    font-weight: 600;
+    color: #f9fafb;
+}
+.value-summary-card .vsc-meta {
+    font-size: 0.8em;
+    color: #9ca3af;
+    margin-top: 2px;
+}

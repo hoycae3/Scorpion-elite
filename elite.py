@@ -50,7 +50,7 @@ try:
     with open('styles.css', 'r') as f:
         css_content = f.read()
         # Forzar cache bust con version
-        st.markdown(f'<style>/* v20260817e */ {css_content}</style>', unsafe_allow_html=True)
+        st.markdown(f'<style>/* v20260818a */ {css_content}</style>', unsafe_allow_html=True)
 except Exception as e:
     logger.warning(f"Error en linea 43: {e}")
 
@@ -1920,172 +1920,242 @@ def render_partidos_page():
 
 # Página: Analizador
 
+def _claificar_value(value):
+    """Retorna (clase_css, etiqueta, emoji) segun el valor del value bet."""
+    if value > 5:
+        return "high-value", "high", "🔥"
+    elif value > 0:
+        return "mid-value", "mid", "⚡"
+    else:
+        return "no-value", "low", "—"
+
+
+def _html_cuota_card(label, opcion, valor, prob_modelo, prob_imp, value, bookie):
+    """Genera el HTML de una tarjeta de cuota individual."""
+    css_class, val_class, emoji = _claificar_value(value)
+    value_sign = "+" if value > 0 else ""
+    return f"""
+    <div class="cuota-card {css_class}">
+        <div class="cuota-label">{label}</div>
+        <div class="cuota-odd"><span class="at">@</span> {valor:.2f}</div>
+        <div class="cuota-value-bar">
+            <span class="cuota-value-badge {val_class}">{emoji} {value_sign}{value:.1f}%</span>
+        </div>
+        <div class="cuota-compare">
+            <span>Modelo: <strong>{prob_modelo:.0f}%</strong></span>
+            <span>Casa: <strong>{prob_imp:.0f}%</strong></span>
+        </div>
+        <div class="cuota-bookie">{bookie}</div>
+    </div>"""
+
+
 def render_cuotas_mercado(r):
     """Muestra cuotas del mercado y value bets para un partido."""
     fixture_id_partido = r.get('fixture_id')
-    if fixture_id_partido:
-        try:
-            client = get_client()
-            cuotas_resp = client.table('cuotas').select('*').eq('fixture_id', fixture_id_partido).execute()
+    if not fixture_id_partido:
+        st.info("🔻 Sin cuotas para este partido. Ve a **Partidos → 💰 Cargar Cuotas** para descargar odds.")
+        return
 
-            if cuotas_resp.data:
-                st.markdown("##### 🏆 Cuotas del Mercado")
+    try:
+        client = get_client()
+        cuotas_resp = client.table('cuotas').select('*').eq('fixture_id', fixture_id_partido).execute()
+    except Exception as e:
+        logger.warning(f"Error consultando cuotas: {e}")
+        st.warning("⚠️ No se pudieron cargar las cuotas. Intenta de nuevo.")
+        return
 
-                # Obtener probabilidades del modelo
-                prob_1 = r.get('p1', 0)
-                prob_x = r.get('px', 0)
-                prob_2 = r.get('p2', 0)
-                prob_ou = r.get('prob_over_under', 50)
-                prob_btts = r.get('btts_yes', 50)
+    if not cuotas_resp.data:
+        st.info("🔻 Sin cuotas guardadas para este partido. Ve a **Partidos → 💰 Cargar Cuotas**.")
+        return
 
-                # Agrupar por tipo de apuesta
-                cuotas_1x2 = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Match Winner']
-                cuotas_btts = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Both Teams To Score']
-                cuotas_ou = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Over/Under']
+    # ── Header con explicación ──
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #1a1a24, #16222e); border-radius: 10px; padding: 14px 18px; margin: 12px 0;">
+        <div style="font-size: 1.2em; font-weight: 700; color: #00d4aa; margin-bottom: 6px;">
+            🏆 Cuotas del Mercado vs Tu Modelo
+        </div>
+        <div style="font-size: 0.82em; color: #9ca3af; line-height: 1.5;">
+            Comparamos lo que <strong style="color:#e5e7eb;">tu modelo predice</strong> con lo que
+            <strong style="color:#e5e7eb;">las casas de apuestas cobran</strong>.<br>
+            <span style="color:#f87171;">🔥 +5%</span> = la casa se equivoca, apuesta valiosa &nbsp;|&nbsp;
+            <span style="color:#fb923c;">⚡ 0 a +5</span> = leve ventaja &nbsp;|&nbsp;
+            <span style="color:#9ca3af;">— negativo</span> = la casa cobra de más, no apuestes
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-                # Función para calcular VALUE
-                # Mostrar 1X2 con VALUE
-                if cuotas_1x2:
-                    st.markdown("**🎯 1X2**")
-                    col_c1, col_c2, col_c3 = st.columns(3)
+    # Probabilidades del modelo
+    prob_1 = r.get('p1', 0)
+    prob_x = r.get('px', 0)
+    prob_2 = r.get('p2', 0)
+    prob_ou = r.get('prob_over_under', 50)
+    prob_btts = r.get('btts_yes', 50)
 
-                    for i, cuota in enumerate(cuotas_1x2[:3]):
-                        opcion = cuota.get('opcion', '')
-                        valor = cuota.get('cuota', 0)
-                        bookie = cuota.get('bookmaker', '')
-                        col = [col_c1, col_c2, col_c3][i] if i < 3 else None
+    # Agrupar por tipo de apuesta
+    cuotas_1x2 = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Match Winner']
+    cuotas_btts = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Both Teams To Score']
+    cuotas_ou = [c for c in cuotas_resp.data if c.get('tipo_apuesta') == 'Over/Under']
 
-                        if col:
-                            with col:
-                                if 'Home' in opcion or '1' in opcion:
-                                    value, prob_imp = calcular_value(prob_1, valor)
-                                elif 'Draw' in opcion or 'X' in opcion:
-                                    value, prob_imp = calcular_value(prob_x, valor)
-                                elif 'Away' in opcion or '2' in opcion:
-                                    value, prob_imp = calcular_value(prob_2, valor)
-                                else:
-                                    value, prob_imp = calcular_value(33, valor)
-
-                                # Color según VALUE
-                                if value > 5:
-                                    value_color = "🔴"
-                                    value_text = f"+{value:.1f}%"
-                                elif value > 0:
-                                    value_color = "🟠"
-                                    value_text = f"+{value:.1f}%"
-                                else:
-                                    value_color = "🔽"
-                                    value_text = f"{value:.1f}%"
-
-                                label = f"{'📊 Local' if 'Home' in opcion or '1' in opcion else ('⚖️ Empate' if 'Draw' in opcion or 'X' in opcion else '✈️ Visita')}"
-                                st.metric(f"{label}", f"@ {valor:.2f}", f"{value_color} {value_text} VALUE")
-
-                # Mostrar BTTS con VALUE
-                if cuotas_btts:
-                    st.markdown("**⚽ Ambos Marcan (BTTS)**")
-                    for cuota in cuotas_btts[:4]:
-                        opcion = cuota.get('opcion', '')
-                        valor = cuota.get('cuota', 0)
-                        bookie = cuota.get('bookmaker', '')
-
-                        # Probabilidad del modelo para BTTS
-                        prob_modelo_btts = prob_btts if 'Yes' in opcion else (100 - prob_btts)
-                        value, prob_imp = calcular_value(prob_modelo_btts, valor)
-
-                        if value > 5:
-                            value_color = "🔴"
-                        elif value > 0:
-                            value_color = "🟠"
-                        else:
-                            value_color = "🔽"
-
-                        st.write(f"{opcion}: **@ {valor:.2f}** | {value_color} VALUE: {value:+.1f}% | Modelo: {prob_modelo_btts:.0f}% | Implicita: {prob_imp:.0f}% ({bookie})")
-
-                # Mostrar Over/Under con VALUE
-                if cuotas_ou:
-                    st.markdown("**📲 Over/Under**")
-                    for cuota in cuotas_ou[:6]:
-                        opcion = cuota.get('opcion', '')
-                        valor = cuota.get('cuota', 0)
-                        bookie = cuota.get('bookmaker', '')
-
-                        # Extraer línea (ej: "Over 2.5" -> 2.5)
-                        if 'Over' in opcion:
-                            prob_modelo_ou = prob_ou
-                        else:
-                            prob_modelo_ou = 100 - prob_ou
-
-                        value, prob_imp = calcular_value(prob_modelo_ou, valor)
-
-                        if value > 5:
-                            value_color = "🔴"
-                        elif value > 0:
-                            value_color = "🟠"
-                        else:
-                            value_color = "🔽"
-
-                        st.write(f"{opcion}: **@ {valor:.2f}** | {value_color} VALUE: {value:+.1f}% | Modelo: {prob_modelo_ou:.0f}% | Implicita: {prob_imp:.0f}% ({bookie})")
-
-                # Resumen de VALUE bets
-                st.markdown("---")
-                st.markdown("**📥 Resumen de Value Bets:**")
-
-                value_bets = []
-                for cuota in cuotas_resp.data:
-                    if not isinstance(cuota, dict):
-                        continue
-
-                    tipo = cuota.get('tipo_apuesta', '')
-                    opcion = cuota.get('opcion', '')
-                    valor_raw = cuota.get('cuota', 0)
-
-                    # Convertir a float si es string
-                    try:
-                        valor = float(valor_raw) if valor_raw else 0
-                    except (ValueError, TypeError):
-                        continue
-
-                    bookie = cuota.get('bookmaker', '')
-
-                    if tipo == 'Match Winner':
-                        if 'Home' in opcion or '1' in opcion:
-                            prob = prob_1
-                        elif 'Draw' in opcion or 'X' in opcion:
-                            prob = prob_x
-                        else:
-                            prob = prob_2
-                    elif tipo == 'Both Teams To Score':
-                        prob = prob_btts if 'Yes' in opcion else (100 - prob_btts)
-                    elif tipo == 'Over/Under':
-                        prob = prob_ou if 'Over' in opcion else (100 - prob_ou)
-                    else:
-                        continue
-
-                    value, _ = calcular_value(prob, valor)
-                    if value > 0:
-                        value_bets.append({
-                            'tipo': tipo,
-                            'opcion': opcion,
-                            'cuota': valor,
-                            'value': value,
-                            'bookie': bookie,
-                            'prob_modelo': prob
-                        })
-
-                if value_bets:
-                    # Ordenar por VALUE
-                    value_bets.sort(key=lambda x: x['value'], reverse=True)
-
-                    for vb in value_bets[:5]:
-                        st.success(f"✅ **{vb['opcion']}** @ {vb['cuota']:.2f} | VALUE: +{vb['value']:.1f}% | {vb['bookie']}")
-                else:
-                    st.info("🔽 Sin value bets en este momento")
+    # ── 1X2 ──
+    if cuotas_1x2:
+        st.markdown('<div class="cuota-header">🎯 ¿Quién gana? (1X2)</div>', unsafe_allow_html=True)
+        cards_html = '<div class="cuota-grid">'
+        # Tomar la mejor cuota por opción (Home/Draw/Away) para no repetir bookies
+        vistos_1x2 = {}
+        for cuota in cuotas_1x2:
+            opcion = cuota.get('opcion', '')
+            valor = cuota.get('cuota', 0)
+            try:
+                valor = float(valor) if valor else 0
+            except (ValueError, TypeError):
+                continue
+            if valor <= 1.0:
+                continue
+            if 'Home' in opcion or opcion == '1':
+                key, label, prob = '1', "📊 Local", prob_1
+            elif 'Draw' in opcion or opcion == 'X':
+                key, label, prob = 'X', "⚖️ Empate", prob_x
+            elif 'Away' in opcion or opcion == '2':
+                key, label, prob = '2', "✈️ Visita", prob_2
             else:
-                st.info("🔻 Sin cuotas guardadas para este partido. Ve a Partidos → 💰 Cargar Cuotas.")
-        except Exception as e:
-            logger.warning(f"Error consultando cuotas: {e}")
+                continue
+            # Quedarse con la cuota más alta por opción
+            if key not in vistos_1x2 or valor > vistos_1x2[key]['valor']:
+                vistos_1x2[key] = {'valor': valor, 'label': label, 'prob': prob,
+                                   'bookie': cuota.get('bookmaker', '')}
+        for key in ['1', 'X', '2']:
+            if key in vistos_1x2:
+                d = vistos_1x2[key]
+                value, prob_imp = calcular_value(d['prob'], d['valor'])
+                cards_html += _html_cuota_card(d['label'], key, d['valor'],
+                                               d['prob'], prob_imp, value, d['bookie'])
+        cards_html += '</div>'
+        st.markdown(cards_html, unsafe_allow_html=True)
+
+    # ── BTTS ──
+    if cuotas_btts:
+        st.markdown('<div class="cuota-header">⚽ ¿Ambos marcan? (BTTS)</div>', unsafe_allow_html=True)
+        cards_html = '<div class="cuota-grid">'
+        vistos_btts = {}
+        for cuota in cuotas_btts:
+            opcion = cuota.get('opcion', '')
+            valor = cuota.get('cuota', 0)
+            try:
+                valor = float(valor) if valor else 0
+            except (ValueError, TypeError):
+                continue
+            if valor <= 1.0:
+                continue
+            if 'Yes' in opcion:
+                key, label, prob = 'Yes', "✅ Sí marcan", prob_btts
+            elif 'No' in opcion:
+                key, label, prob = 'No', "❌ No marcan", 100 - prob_btts
+            else:
+                continue
+            if key not in vistos_btts or valor > vistos_btts[key]['valor']:
+                vistos_btts[key] = {'valor': valor, 'label': label, 'prob': prob,
+                                    'bookie': cuota.get('bookmaker', '')}
+        for key in ['Yes', 'No']:
+            if key in vistos_btts:
+                d = vistos_btts[key]
+                value, prob_imp = calcular_value(d['prob'], d['valor'])
+                cards_html += _html_cuota_card(d['label'], key, d['valor'],
+                                               d['prob'], prob_imp, value, d['bookie'])
+        cards_html += '</div>'
+        st.markdown(cards_html, unsafe_allow_html=True)
+
+    # ── Over/Under ──
+    if cuotas_ou:
+        st.markdown('<div class="cuota-header">📲 Más o menos goles (Over/Under)</div>', unsafe_allow_html=True)
+        cards_html = '<div class="cuota-grid">'
+        vistos_ou = {}
+        for cuota in cuotas_ou:
+            opcion = cuota.get('opcion', '')
+            valor = cuota.get('cuota', 0)
+            try:
+                valor = float(valor) if valor else 0
+            except (ValueError, TypeError):
+                continue
+            if valor <= 1.0:
+                continue
+            # Solo mostrar Over/Under 2.5 (la línea principal del modelo)
+            if '2.5' not in opcion:
+                continue
+            if 'Over' in opcion:
+                key, label, prob = 'Over', "🔺 Más de 2.5", prob_ou
+            elif 'Under' in opcion:
+                key, label, prob = 'Under', "🔻 Menos de 2.5", 100 - prob_ou
+            else:
+                continue
+            if key not in vistos_ou or valor > vistos_ou[key]['valor']:
+                vistos_ou[key] = {'valor': valor, 'label': label, 'prob': prob,
+                                  'bookie': cuota.get('bookmaker', '')}
+        for key in ['Over', 'Under']:
+            if key in vistos_ou:
+                d = vistos_ou[key]
+                value, prob_imp = calcular_value(d['prob'], d['valor'])
+                cards_html += _html_cuota_card(d['label'], key, d['valor'],
+                                               d['prob'], prob_imp, value, d['bookie'])
+        cards_html += '</div>'
+        st.markdown(cards_html, unsafe_allow_html=True)
+
+    # ── Resumen de Value Bets (solo los positivos, ordenados) ──
+    st.markdown('<div class="cuota-header">📥 Mejores oportunidades (Value Bets)</div>', unsafe_allow_html=True)
+
+    value_bets = []
+    for cuota in cuotas_resp.data:
+        if not isinstance(cuota, dict):
+            continue
+        tipo = cuota.get('tipo_apuesta', '')
+        opcion = cuota.get('opcion', '')
+        valor_raw = cuota.get('cuota', 0)
+        try:
+            valor = float(valor_raw) if valor_raw else 0
+        except (ValueError, TypeError):
+            continue
+        if valor <= 1.0:
+            continue
+        bookie = cuota.get('bookmaker', '')
+
+        if tipo == 'Match Winner':
+            if 'Home' in opcion or opcion == '1':
+                prob = prob_1
+            elif 'Draw' in opcion or opcion == 'X':
+                prob = prob_x
+            elif 'Away' in opcion or opcion == '2':
+                prob = prob_2
+            else:
+                continue
+        elif tipo == 'Both Teams To Score':
+            prob = prob_btts if 'Yes' in opcion else (100 - prob_btts)
+        elif tipo == 'Over/Under':
+            prob = prob_ou if 'Over' in opcion else (100 - prob_ou)
+        else:
+            continue
+
+        value, _ = calcular_value(prob, valor)
+        if value > 0:
+            value_bets.append({
+                'tipo': tipo, 'opcion': opcion, 'cuota': valor,
+                'value': value, 'bookie': bookie, 'prob_modelo': prob,
+            })
+
+    if value_bets:
+        value_bets.sort(key=lambda x: x['value'], reverse=True)
+        for vb in value_bets[:5]:
+            tipo_label = {'Match Winner': '1X2', 'Both Teams To Score': 'BTTS',
+                          'Over/Under': 'O/U'}.get(vb['tipo'], vb['tipo'])
+            st.markdown(f"""
+            <div class="value-summary-card">
+                <div class="vsc-value">+{vb['value']:.1f}%</div>
+                <div class="vsc-info">
+                    <div class="vsc-opcion">{vb['opcion']} <span style="color:#6b7280;font-size:0.8em;">({tipo_label})</span></div>
+                    <div class="vsc-meta">Cuota <strong>@{vb['cuota']:.2f}</strong> &nbsp;•&nbsp; Modelo: <strong>{vb['prob_modelo']:.0f}%</strong> &nbsp;•&nbsp; {vb['bookie']}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
     else:
-        st.info("🔻 Sin cuotas para este partido. Ve a Partidos → 💰 Cargar Cuotas para descargar odds.")
+        st.info("🔽 Sin value bets en este momento — las casas cobran lo justo o de más.")
 
 
 def _construir_pick_data(r, home, away, stats_local):
