@@ -3048,6 +3048,11 @@ def render_analizador_page():
         # ========================
         # FORMA RECIENTE DE EQUIPOS
         st.markdown("---")
+        # Recalcular badges desde analysis_result (badges_local fue reseteado arriba)
+        forma_l_data = r.get('forma_local', {})
+        forma_v_data = r.get('forma_visitante', {})
+        badges_local = crear_badges(forma_l_data.get('forma_letras', []))
+        badges_visitante = crear_badges(forma_v_data.get('forma_letras', []))
         forma_local_html = badges_local if badges_local else "?"
         forma_visit_html = badges_visitante if badges_visitante else "?"
 
