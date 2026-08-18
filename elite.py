@@ -32,6 +32,13 @@ from app_helpers import (
     safe_fmt_int,
     calcular_value,
     format_money,
+    sanitizar_input,
+)
+from bet_logic import (
+    calcular_resultados_partido,
+    apuesta_ganada,
+    evaluar_over_under,
+    actualizar_bankroll_apuestas,
 )
 
 # Configurar logging (antes del try que usa logger)
@@ -203,87 +210,83 @@ def recalcular_lambdas_desde_historial(client):
         return 0, f"Error general: {str(e)}"
 
 
+def _get_db_conn_url():
+    """Construye el connection string de Supabase desde variables de entorno.
+    Usa DATABASE_URL (Render) o construye desde SUPABASE_URL + SERVICE_ROLE_KEY.
+    """
+    conn_url = os.getenv('DATABASE_URL', '')
+    if not conn_url and os.getenv('SUPABASE_URL') and os.getenv('SUPABASE_SERVICE_ROLE_KEY'):
+        supabase_host = os.getenv('SUPABASE_URL').replace('https://', '').replace('http://', '')
+        conn_url = f"postgresql://postgres:{os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')}@db.{supabase_host}:5432/postgres"
+    return conn_url
+
+
 def migrate_team_id_column():
-    """Migra la columna team_id a la tabla equipos_stats si no existe"""
+    """Migra la columna team_id a la tabla equipos_stats si no existe.
+    Idempotente (IF NOT EXISTS). Usa context manager para auto-cerrar conexion."""
+    conn_url = _get_db_conn_url()
+    if not conn_url:
+        return
     try:
-        # Obtener connection string de las variables de entorno de Render
-        conn_url = os.getenv('DATABASE_URL', '')
-        if not conn_url and os.getenv('SUPABASE_URL') and os.getenv('SUPABASE_SERVICE_ROLE_KEY'):
-            supabase_host = os.getenv('SUPABASE_URL').replace('https://', '').replace('http://', '')
-            conn_url = f"postgresql://postgres:{os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')}@db.{supabase_host}:5432/postgres"
-        
-        if conn_url:
-            conn = psycopg2.connect(conn_url)
-            cur = conn.cursor()
-            # Agregar columnas a equipos_stats
-            cur.execute('ALTER TABLE equipos_stats ADD COLUMN IF NOT EXISTS team_id BIGINT;')
-            # Agregar columnas a partidos si no existen
-            cur.execute('ALTER TABLE partidos ADD COLUMN IF NOT EXISTS liga_id BIGINT;')
-            cur.execute('ALTER TABLE partidos ADD COLUMN IF NOT EXISTS team_id_local BIGINT;')
-            cur.execute('ALTER TABLE partidos ADD COLUMN IF NOT EXISTS team_id_visitante BIGINT;')
-            
-            # Crear tabla equipo_partidos_stats si no existe
-            cur.execute('''CREATE TABLE IF NOT EXISTS equipo_partidos_stats (
-                id BIGSERIAL PRIMARY KEY,
-                team_id BIGINT NOT NULL,
-                equipo VARCHAR(255),
-                fixture_id BIGINT NOT NULL,
-                fecha DATE,
-                liga VARCHAR(255),
-                es_local BOOLEAN DEFAULT false,
-                resultado CHAR(1) DEFAULT '-',
-                goles_favor INTEGER DEFAULT 0,
-                goles_contra INTEGER DEFAULT 0,
-                tiros_totales INTEGER DEFAULT 0,
-                tiros_arco INTEGER DEFAULT 0,
-                tiros_fuera INTEGER DEFAULT 0,
-                corners INTEGER DEFAULT 0,
-                amarillas INTEGER DEFAULT 0,
-                rojas INTEGER DEFAULT 0,
-                posesion INTEGER DEFAULT 0,
-                faltas INTEGER DEFAULT 0,
-                actualizado_en TIMESTAMPTZ DEFAULT NOW(),
-                UNIQUE(team_id, fixture_id)
-            )''')
-            cur.execute('CREATE INDEX IF NOT EXISTS idx_equipo_partidos_team ON equipo_partidos_stats(team_id);')
-            cur.execute('CREATE INDEX IF NOT EXISTS idx_equipo_partidos_fixture ON equipo_partidos_stats(fixture_id);')
-            
+        with psycopg2.connect(conn_url) as conn:
+            with conn.cursor() as cur:
+                cur.execute('ALTER TABLE equipos_stats ADD COLUMN IF NOT EXISTS team_id BIGINT;')
+                cur.execute('ALTER TABLE partidos ADD COLUMN IF NOT EXISTS liga_id BIGINT;')
+                cur.execute('ALTER TABLE partidos ADD COLUMN IF NOT EXISTS team_id_local BIGINT;')
+                cur.execute('ALTER TABLE partidos ADD COLUMN IF NOT EXISTS team_id_visitante BIGINT;')
+                cur.execute('''CREATE TABLE IF NOT EXISTS equipo_partidos_stats (
+                    id BIGSERIAL PRIMARY KEY,
+                    team_id BIGINT NOT NULL,
+                    equipo VARCHAR(255),
+                    fixture_id BIGINT NOT NULL,
+                    fecha DATE,
+                    liga VARCHAR(255),
+                    es_local BOOLEAN DEFAULT false,
+                    resultado CHAR(1) DEFAULT '-',
+                    goles_favor INTEGER DEFAULT 0,
+                    goles_contra INTEGER DEFAULT 0,
+                    tiros_totales INTEGER DEFAULT 0,
+                    tiros_arco INTEGER DEFAULT 0,
+                    tiros_fuera INTEGER DEFAULT 0,
+                    corners INTEGER DEFAULT 0,
+                    amarillas INTEGER DEFAULT 0,
+                    rojas INTEGER DEFAULT 0,
+                    posesion INTEGER DEFAULT 0,
+                    faltas INTEGER DEFAULT 0,
+                    actualizado_en TIMESTAMPTZ DEFAULT NOW(),
+                    UNIQUE(team_id, fixture_id)
+                )''')
+                cur.execute('CREATE INDEX IF NOT EXISTS idx_equipo_partidos_team ON equipo_partidos_stats(team_id);')
+                cur.execute('CREATE INDEX IF NOT EXISTS idx_equipo_partidos_fixture ON equipo_partidos_stats(fixture_id);')
             conn.commit()
-            cur.close()
-            conn.close()
-            logger.info("✅ Migration completada: team_id, liga_id, team_id_local, team_id_visitante, equipo_partidos_stats")
+        logger.info("✅ Migration completada: team_id, liga_id, equipo_partidos_stats")
     except Exception as e:
         logger.warning(f"Migration error: {e}")
 
+
 def migrate_picks_columns():
     """Agrega columnas faltantes (arco, confianza) a la tabla picks si no existen.
-    La tabla picks en producción se creó antes de añadir las predicciones de tiros
-    a arco, por lo que estas columnas faltan y provocan PGRST204 al guardar picks."""
+    Idempotente (IF NOT EXISTS). Usa context manager para auto-cerrar conexion."""
+    conn_url = _get_db_conn_url()
+    if not conn_url:
+        return
     try:
-        conn_url = os.getenv('DATABASE_URL', '')
-        if not conn_url and os.getenv('SUPABASE_URL') and os.getenv('SUPABASE_SERVICE_ROLE_KEY'):
-            supabase_host = os.getenv('SUPABASE_URL').replace('https://', '').replace('http://', '')
-            conn_url = f"postgresql://postgres:{os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')}@db.{supabase_host}:5432/postgres"
-
-        if conn_url:
-            conn = psycopg2.connect(conn_url)
-            cur = conn.cursor()
-            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS prediccion_arco VARCHAR(20);')
-            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_total_estimado DECIMAL(5,2);')
-            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_local DECIMAL(5,2);')
-            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_visitante DECIMAL(5,2);')
-            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_over_prob DECIMAL(5,2);')
-            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_under_prob DECIMAL(5,2);')
-            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS resultado_arco VARCHAR(20);')
-            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS acertado_arco BOOLEAN;')
-            cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS confianza INTEGER;')
-            # Forzar recarga del caché de esquema de PostgREST (Supabase) para que
-            # reconozca las columnas nuevas inmediatamente, evitando PGRST204.
-            cur.execute("NOTIFY pgrst, 'reload schema'")
+        with psycopg2.connect(conn_url) as conn:
+            with conn.cursor() as cur:
+                cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS prediccion_arco VARCHAR(20);')
+                cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_total_estimado DECIMAL(5,2);')
+                cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_local DECIMAL(5,2);')
+                cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_visitante DECIMAL(5,2);')
+                cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_over_prob DECIMAL(5,2);')
+                cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS arco_under_prob DECIMAL(5,2);')
+                cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS resultado_arco VARCHAR(20);')
+                cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS acertado_arco BOOLEAN;')
+                cur.execute('ALTER TABLE picks ADD COLUMN IF NOT EXISTS confianza INTEGER;')
+                # Forzar recarga del cache de esquema de PostgREST para que
+                # reconozca las columnas nuevas inmediatamente (evita PGRST204).
+                cur.execute("NOTIFY pgrst, 'reload schema'")
             conn.commit()
-            cur.close()
-            conn.close()
-            logger.info("✅ Migration completada: columnas arco y confianza en picks")
+        logger.info("✅ Migration completada: columnas arco y confianza en picks")
     except Exception as e:
         logger.warning(f"Migration picks error: {e}")
 
@@ -294,9 +297,19 @@ def migrate_picks_columns():
 
 # ══════════════════════════════════════════════════════════
 # 🔧 FUNCIONES HELPER (módulo-level, no se redefinen en cada rerun)
+# ══════════════════════════════════════════════════════════
+
+def _toggle_apuesta(key):
+    """Callback para toggle de seleccion de apuestas en el analizador.
+    Alterna la presencia de `key` en st.session_state.sel_apuestas.
+    """
+    def _cb():
+        s = st.session_state.sel_apuestas
+        s.discard(key) if key in s else s.add(key)
+        st.session_state.sel_apuestas = s
+    return _cb
 # (get_pais_emoji, crear_badges, fila_dato, safe_fmt, safe_fmt_int,
 #  calcular_value, format_money, utc_to_colombia importados de app_helpers)
-# ══════════════════════════════════════════════════════════
 
 def obtener_promedios_dinamicos(client, equipo_nombre, team_id=None):
     if team_id:
@@ -807,7 +820,7 @@ def render_login_form():
         st.markdown("---")
         st.markdown("### 🔑 Iniciar Sesión")
 
-        password = st.text_input("Contraseña", type="password", placeholder="Ingresa tu contraseña", key="login_password")
+        password = sanitizar_input(st.text_input("Contraseña", type="password", placeholder="Ingresa tu contraseña", key="login_password"), max_len=64, permitir_espacios=False)
 
         col_login, col_cancel = st.columns([1, 1])
         with col_login:
@@ -896,80 +909,6 @@ def render_login_form():
         render_claves_page()
     elif st.session_state.page == "VIP":
         render_vip_page()
-
-
-def calcular_resultados_partido(score_local, score_visitante):
-    """Calcula los resultados reales (1X2, O/U, BTTS) de un partido finalizado."""
-    total_goles = score_local + score_visitante
-    if score_local > score_visitante:
-        resultado_real = "1"
-    elif score_local < score_visitante:
-        resultado_real = "2"
-    else:
-        resultado_real = "X"
-    resultado_ou_real = "Over 2.5" if total_goles > 2.5 else "Under 2.5"
-    btts_real = "Si" if (score_local > 0 and score_visitante > 0) else "No"
-    return resultado_real, resultado_ou_real, btts_real
-
-
-def apuesta_ganada(apuesta, pick, resultado_real, resultado_ou_real, btts_real, stats_reales=None):
-    """Determina si una apuesta del bankroll fue ganada según el mercado apostado."""
-    mercado = apuesta.get('mercado', '')
-    if mercado == '1X2':
-        return pick.get('prediccion_1x2') == resultado_real
-    prediccion_ou = pick.get('prediccion_ou', '')
-    if 'Over' in prediccion_ou or 'Under' in prediccion_ou:
-        return prediccion_ou == resultado_ou_real
-    prediccion_btts = pick.get('prediccion_btts', '')
-    if 'Si' in prediccion_btts or 'No' in prediccion_btts:
-        return prediccion_btts == btts_real
-    if stats_reales:
-        if mercado == 'Corners':
-            pred = pick.get('prediccion_corners', '')
-            real = stats_reales.get('corners_total', 0)
-            return _evaluar_over_under(pred, real, 9.5)
-        if mercado == 'Tarjetas':
-            pred = pick.get('prediccion_tarjetas', '')
-            real = stats_reales.get('tarjetas_total', 0)
-            return _evaluar_over_under(pred, real, 6)
-        if mercado == 'Remates':
-            pred = pick.get('prediccion_remates', '')
-            real = stats_reales.get('remates_total', 0)
-            return _evaluar_over_under(pred, real, 24)
-        if mercado == 'Tiros Arco':
-            pred = pick.get('prediccion_arco', '')
-            real = stats_reales.get('tiros_arco_total', 0)
-            return _evaluar_over_under(pred, real, 8)
-    return False
-
-
-def _evaluar_over_under(prediccion, real, linea_default):
-    """Evalua si un pick Over/Under acerto comparando con el valor real."""
-    if not prediccion or real is None:
-        return False
-    pred_lower = str(prediccion).lower()
-    if 'over' in pred_lower:
-        return real > linea_default
-    if 'under' in pred_lower:
-        return real < linea_default
-    return False
-
-
-def actualizar_bankroll_apuestas(client, fix_id, pick, resultado_real, resultado_ou_real, btts_real, stats_reales=None):
-    """Marca apuestas del bankroll como ganadas/perdidas para un fixture."""
-    apuestas = client.table('bankroll_apuestas').select('*').eq('fixture_id', fix_id).execute()
-    if not apuestas.data:
-        return
-    for apuesta in apuestas.data:
-        apuesta_id = apuesta.get('id')
-        cantidad = apuesta.get('cantidad', 0)
-        cuota = apuesta.get('cuota', 2.0)
-        gano = apuesta_ganada(apuesta, pick, resultado_real, resultado_ou_real, btts_real, stats_reales)
-        ganancia = cantidad * (cuota - 1) if gano else -cantidad
-        client.table('bankroll_apuestas').update({
-            'resultado': gano,
-            'ganancia': ganancia
-        }).eq('id', apuesta_id).execute()
 
 
 def sincronizar_partidos():
@@ -1350,22 +1289,22 @@ def sincronizar_partidos():
                                             }
 
                                             if stats_reales:
-                                                acertado_corners = _evaluar_over_under(
+                                                acertado_corners = evaluar_over_under(
                                                     pick.get('prediccion_corners', ''),
                                                     stats_reales.get('corners_total'),
                                                     9.5
                                                 )
-                                                acertado_tarjetas = _evaluar_over_under(
+                                                acertado_tarjetas = evaluar_over_under(
                                                     pick.get('prediccion_tarjetas', ''),
                                                     stats_reales.get('tarjetas_total'),
                                                     6
                                                 )
-                                                acertado_remates = _evaluar_over_under(
+                                                acertado_remates = evaluar_over_under(
                                                     pick.get('prediccion_remates', ''),
                                                     stats_reales.get('remates_total'),
                                                     24
                                                 )
-                                                acertado_arco = _evaluar_over_under(
+                                                acertado_arco = evaluar_over_under(
                                                     pick.get('prediccion_arco', ''),
                                                     stats_reales.get('tiros_arco_total'),
                                                     8
@@ -3054,12 +2993,6 @@ def render_analizador_page():
         # --- Estado de seleccion ---
         if 'sel_apuestas' not in st.session_state:
             st.session_state.sel_apuestas = set()
-        def _toggle(key):
-            def _cb():
-                s = st.session_state.sel_apuestas
-                s.discard(key) if key in s else s.add(key)
-                st.session_state.sel_apuestas = s
-            return _cb
         sel = st.session_state.sel_apuestas
         # --- Header del field ---
         st.markdown(
@@ -3106,18 +3039,18 @@ def render_analizador_page():
         # ============================
         _group_title('Resultado', '🏆', C_RES)
         c_l, c_e, c_v = st.columns(3)
-        _btn_pred(c_l, 'btn_card_local', 'Local', f"{p1_fmt}%", 'Local' in sel, _toggle('Local'), es_local_max, C_RES)
-        _btn_pred(c_e, 'btn_card_empate', 'Empate', f"{px_fmt}%", 'Empate' in sel, _toggle('Empate'), es_empate_max, C_RES)
-        _btn_pred(c_v, 'btn_card_visita', 'Visitante', f"{p2_fmt}%", 'Visitante' in sel, _toggle('Visitante'), es_visita_max, C_RES)
+        _btn_pred(c_l, 'btn_card_local', 'Local', f"{p1_fmt}%", 'Local' in sel, _toggle_apuesta('Local'), es_local_max, C_RES)
+        _btn_pred(c_e, 'btn_card_empate', 'Empate', f"{px_fmt}%", 'Empate' in sel, _toggle_apuesta('Empate'), es_empate_max, C_RES)
+        _btn_pred(c_v, 'btn_card_visita', 'Visitante', f"{p2_fmt}%", 'Visitante' in sel, _toggle_apuesta('Visitante'), es_visita_max, C_RES)
 
         # ============================
         # GRUPO 2: DOBLE OPORTUNIDAD
         # ============================
         _group_title('Doble Oportunidad', '🔀', C_DOB)
         d1, d2, d3 = st.columns(3)
-        _btn_pred(d1, 'btn_card_1x', '1X', f"{dob_1x:.0f}%", '1X' in sel, _toggle('1X'), es_1x_max, C_DOB)
-        _btn_pred(d2, 'btn_card_x2', 'X2', f"{dob_x2:.0f}%", 'X2' in sel, _toggle('X2'), es_x2_max, C_DOB)
-        _btn_pred(d3, 'btn_card_12', '12', f"{dob_12:.0f}%", '12' in sel, _toggle('12'), es_12_max, C_DOB)
+        _btn_pred(d1, 'btn_card_1x', '1X', f"{dob_1x:.0f}%", '1X' in sel, _toggle_apuesta('1X'), es_1x_max, C_DOB)
+        _btn_pred(d2, 'btn_card_x2', 'X2', f"{dob_x2:.0f}%", 'X2' in sel, _toggle_apuesta('X2'), es_x2_max, C_DOB)
+        _btn_pred(d3, 'btn_card_12', '12', f"{dob_12:.0f}%", '12' in sel, _toggle_apuesta('12'), es_12_max, C_DOB)
 
         # ============================
         # GRUPO 3: GOLES TOTALES
@@ -3130,10 +3063,10 @@ def render_analizador_page():
         ou15_val = f"{'Mas' if pick_ou15=='Over' else 'Menos'} 1.5  ·  {prob_ou15:.0f}%" if r else '?'
         ou35_val = f"{'Mas' if pick_ou35=='Over' else 'Menos'} 3.5  ·  {prob_ou35:.0f}%" if r else '?'
         btts_val = f"{btts_icon}  ·  {btts_yes:.0f}%" if pick_btts != '?' else '?'
-        _btn_pred(g1, 'btn_card_ou15', 'OU 1.5', ou15_val, 'OU 1.5' in sel, _toggle('OU 1.5'), accent=C_GOL)
-        _btn_pred(g2, 'btn_card_ou', 'OU 2.5', ou_val, 'O/U' in sel, _toggle('O/U'), accent=C_GOL)
-        _btn_pred(g3, 'btn_card_ou35', 'OU 3.5', ou35_val, 'OU 3.5' in sel, _toggle('OU 3.5'), accent=C_GOL)
-        _btn_pred(g4, 'btn_card_btts', 'BTTS', btts_val, 'BTTS' in sel, _toggle('BTTS'), accent=C_GOL)
+        _btn_pred(g1, 'btn_card_ou15', 'OU 1.5', ou15_val, 'OU 1.5' in sel, _toggle_apuesta('OU 1.5'), accent=C_GOL)
+        _btn_pred(g2, 'btn_card_ou', 'OU 2.5', ou_val, 'O/U' in sel, _toggle_apuesta('O/U'), accent=C_GOL)
+        _btn_pred(g3, 'btn_card_ou35', 'OU 3.5', ou35_val, 'OU 3.5' in sel, _toggle_apuesta('OU 3.5'), accent=C_GOL)
+        _btn_pred(g4, 'btn_card_btts', 'BTTS', btts_val, 'BTTS' in sel, _toggle_apuesta('BTTS'), accent=C_GOL)
 
         # ============================
         # GRUPO 4: GOLES POR EQUIPO
@@ -3142,8 +3075,8 @@ def render_analizador_page():
         e1, e2 = st.columns(2)
         gl_str = f"{gl_val:.1f} goles  ·  {'Over 1.5' if gl_over else 'Under 1.5'}" if r else '?'
         gv_str = f"{gv_val:.1f} goles  ·  {'Over 1.5' if gv_over else 'Under 1.5'}" if r else '?'
-        _btn_pred(e1, 'btn_card_glocal', f'🏠 {home[:14]}', gl_str, 'Goles Local' in sel, _toggle('Goles Local'), gl_over, C_EQ)
-        _btn_pred(e2, 'btn_card_gvisit', f'✈️ {away[:14]}', gv_str, 'Goles Visitante' in sel, _toggle('Goles Visitante'), gv_over, C_EQ)
+        _btn_pred(e1, 'btn_card_glocal', f'🏠 {home[:14]}', gl_str, 'Goles Local' in sel, _toggle_apuesta('Goles Local'), gl_over, C_EQ)
+        _btn_pred(e2, 'btn_card_gvisit', f'✈️ {away[:14]}', gv_str, 'Goles Visitante' in sel, _toggle_apuesta('Goles Visitante'), gv_over, C_EQ)
 
         # ============================
         # GRUPO 5: JUEGO (STATS)
@@ -3161,10 +3094,10 @@ def render_analizador_page():
         ti_val = f"{int(remates_modelo)} total  ·  {ti_icon} {int(prob_tiros)}%" if pick_tiros != '?' else '?'
         ar_val = f"{int(arco_modelo)} total  ·  {arco_icon} {int(prob_arco)}%" if pick_arco != '?' else '?'
         tj_val = f"{int(tarjetas_modelo)} total  ·  {tar_icon} {int(prob_tarjetas)}%" if pick_tarjetas != '?' else '?'
-        _btn_pred(j1, 'btn_card_ck', '🌽 Córners', ck_val, 'Corners' in sel, _toggle('Corners'), accent=C_JUE)
-        _btn_pred(j2, 'btn_card_tiros', '📍 Tiros', ti_val, 'Remates' in sel, _toggle('Remates'), accent=C_JUE)
-        _btn_pred(j3, 'btn_card_arco', '🎯 T. Arco', ar_val, 'Tiros Arco' in sel, _toggle('Tiros Arco'), accent=C_JUE)
-        _btn_pred(j4, 'btn_card_tarj', '🟨 Tarjetas', tj_val, 'Tarjetas' in sel, _toggle('Tarjetas'), accent=C_JUE)
+        _btn_pred(j1, 'btn_card_ck', '🌽 Córners', ck_val, 'Corners' in sel, _toggle_apuesta('Corners'), accent=C_JUE)
+        _btn_pred(j2, 'btn_card_tiros', '📍 Tiros', ti_val, 'Remates' in sel, _toggle_apuesta('Remates'), accent=C_JUE)
+        _btn_pred(j3, 'btn_card_arco', '🎯 T. Arco', ar_val, 'Tiros Arco' in sel, _toggle_apuesta('Tiros Arco'), accent=C_JUE)
+        _btn_pred(j4, 'btn_card_tarj', '🟨 Tarjetas', tj_val, 'Tarjetas' in sel, _toggle_apuesta('Tarjetas'), accent=C_JUE)
 
         # --- Score + Goles estimados ---
         st.markdown(
@@ -3213,11 +3146,11 @@ def render_claves_page():
         with st.form("form_crear_clave", clear_on_submit=True):
             col_nom, col_plan = st.columns(2)
             with col_nom:
-                nombre = st.text_input("Nombre / Cliente", placeholder="Ej: Juan, Carlos VIP").strip()
+                nombre = sanitizar_input(st.text_input("Nombre / Cliente", placeholder="Ej: Juan, Carlos VIP"), max_len=50)
             with col_plan:
                 plan = st.selectbox("🦂 Plan", ["semana", "mes", "elite", "vip"])
 
-            nueva_clave = st.text_input("🔑 Nueva Contraseña", placeholder="Escribe la contraseña única").strip()
+            nueva_clave = sanitizar_input(st.text_input("🔑 Nueva Contraseña", placeholder="Escribe la contraseña única"), max_len=64, permitir_espacios=False)
 
             dias_opciones = {"semana": 7, "mes": 30, "elite": 90, "vip": 90}
             dias = dias_opciones.get(plan, 30)
@@ -3309,7 +3242,7 @@ def render_claves_page():
                         if not es_admin:
                             col_a, col_b, col_c = st.columns(3)
                             with col_a:
-                                nueva_pass = st.text_input("Nueva contraseña", placeholder="Nueva...", key=f"pass_{clave_id}", type="password")
+                                nueva_pass = sanitizar_input(st.text_input("Nueva contraseña", placeholder="Nueva...", key=f"pass_{clave_id}", type="password"), max_len=64, permitir_espacios=False)
                                 if st.button("🔑 Cambiar", key=f"btn_pass_{clave_id}"):
                                     if nueva_pass and len(nueva_pass) >= 4:
                                         if db_cambiar_password(clave_id, nueva_pass):
@@ -3422,8 +3355,8 @@ def render_vip_alertas(client, usuario_id):
     with col_al3:
         st.write("")
 
-    titulo = st.text_input("Título de la Alerta")
-    mensaje = st.text_area("Mensaje")
+    titulo = sanitizar_input(st.text_input("Título de la Alerta"), max_len=80)
+    mensaje = sanitizar_input(st.text_area("Mensaje"), max_len=500)
 
     if st.button("🔔 Crear Alerta", type="primary"):
         try:

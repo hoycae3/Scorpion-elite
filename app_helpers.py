@@ -167,3 +167,28 @@ def calcular_value(prob_modelo, cuota):
 
 def format_money(valor, simbolo):
     return f"{simbolo}{valor:,.2f}"
+
+
+# ══════════════════════════════════════════════════════════
+# 🛡️ VALIDACIÓN DE INPUT
+# ══════════════════════════════════════════════════════════
+def sanitizar_input(texto, max_len=100, permitir_espacios=True):
+    """Sanitiza texto de entrada: recorta, quita caracteres peligrosos.
+
+    - Recorta espacios al inicio/final
+    - Limita longitud (default 100 chars)
+    - Quita caracteres usados en inyección SQL/HTML: ; ' " < > \\ -- /*
+    - Si permitir_espacios=False, quita todos los espacios internos
+    """
+    if not texto or not isinstance(texto, str):
+        return ""
+    texto = texto.strip()
+    if not permitir_espacios:
+        texto = texto.replace(" ", "")
+    # Quitar caracteres peligrosos para SQL/HTML
+    for char in [';', "'", '"', '<', '>', '\\', '--', '/*', '*/']:
+        texto = texto.replace(char, "")
+    # Limitar longitud
+    if len(texto) > max_len:
+        texto = texto[:max_len]
+    return texto.strip()

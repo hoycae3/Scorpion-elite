@@ -292,6 +292,141 @@ def test_normalizar_equipo_vacio():
 
 
 # ============================================================================
+# TESTS: app_helpers.py (validación de input)
+# ============================================================================
+
+def test_sanitizar_input_basico():
+    """sanitizar_input recorta espacios y respeta texto normal."""
+    from app_helpers import sanitizar_input
+    assert sanitizar_input('  Hola  ') == 'Hola'
+    assert sanitizar_input('Juan Pérez') == 'Juan Pérez'
+
+
+def test_sanitizar_input_quita_peligroso():
+    """sanitizar_input quita caracteres de inyección SQL/HTML."""
+    from app_helpers import sanitizar_input
+    # ; ' " < > \ -- /* */ se eliminan, el resto se mantiene
+    assert "'" not in sanitizar_input("'; DROP TABLE--")
+    assert "--" not in sanitizar_input("'; DROP TABLE--")
+    assert ";" not in sanitizar_input("'; DROP TABLE--")
+    assert "<" not in sanitizar_input("<script>alert('xss')</script>")
+    assert ">" not in sanitizar_input("<script>alert('xss')</script>")
+    assert '"' not in sanitizar_input('" OR 1=1')
+
+
+def test_sanitizar_input_longitud():
+    """sanitizar_input limita la longitud."""
+    from app_helpers import sanitizar_input
+    largo = 'A' * 200
+    assert len(sanitizar_input(largo, max_len=50)) == 50
+    assert len(sanitizar_input(largo, max_len=10)) == 10
+
+
+def test_sanitizar_input_vacio():
+    """sanitizar_input con None/vacio retorna string vacio."""
+    from app_helpers import sanitizar_input
+    assert sanitizar_input('') == ''
+    assert sanitizar_input(None) == ''
+
+
+def test_sanitizar_input_no_espacios():
+    """sanitizar_input con permitir_espacios=False quita espacios internos."""
+    from app_helpers import sanitizar_input
+    assert sanitizar_input('mi password 123', permitir_espacios=False) == 'mipassword123'
+
+
+# ============================================================================
+# TESTS: bet_logic.py (resultados y evaluación de apuestas)
+# ============================================================================
+
+def test_calcular_resultados_gana_local():
+    """calcular_resultados_partido con 2-0 → 1, Under, No."""
+    from bet_logic import calcular_resultados_partido
+    r, ou, btts = calcular_resultados_partido(2, 0)
+    assert r == "1"
+    assert ou == "Under 2.5"
+    assert btts == "No"
+
+
+def test_calcular_resultados_empate():
+    """calcular_resultados_partido con 1-1 → X, Under, Si."""
+    from bet_logic import calcular_resultados_partido
+    r, ou, btts = calcular_resultados_partido(1, 1)
+    assert r == "X"
+    assert ou == "Under 2.5"
+    assert btts == "Si"
+
+
+def test_calcular_resultados_gana_visitante_over():
+    """calcular_resultados_partido con 1-3 → 2, Over, Si."""
+    from bet_logic import calcular_resultados_partido
+    r, ou, btts = calcular_resultados_partido(1, 3)
+    assert r == "2"
+    assert ou == "Over 2.5"
+    assert btts == "Si"
+
+
+def test_calcular_resultados_over_exacto():
+    """calcular_resultados_partido con 2-1 (3 goles) → Over 2.5."""
+    from bet_logic import calcular_resultados_partido
+    _, ou, _ = calcular_resultados_partido(2, 1)
+    assert ou == "Over 2.5"
+
+
+def test_evaluar_over_under_acierto():
+    """evaluar_over_under: Over con real>linea → True."""
+    from bet_logic import evaluar_over_under
+    assert evaluar_over_under("Over 2.5", 3, 2.5) is True
+    assert evaluar_over_under("Under 2.5", 2, 2.5) is True
+
+
+def test_evaluar_over_under_fallo():
+    """evaluar_over_under: Over con real<linea → False."""
+    from bet_logic import evaluar_over_under
+    assert evaluar_over_under("Over 2.5", 2, 2.5) is False
+    assert evaluar_over_under("Under 2.5", 3, 2.5) is False
+
+
+def test_evaluar_over_under_vacio():
+    """evaluar_over_under con prediccion None → False."""
+    from bet_logic import evaluar_over_under
+    assert evaluar_over_under(None, 3, 2.5) is False
+    assert evaluar_over_under("", 3, 2.5) is False
+
+
+def test_apuesta_ganada_1x2_acierto():
+    """apuesta_ganada: 1X2 correcto → True."""
+    from bet_logic import apuesta_ganada
+    apuesta = {'mercado': '1X2'}
+    pick = {'prediccion_1x2': '1'}
+    assert apuesta_ganada(apuesta, pick, '1', 'Under 2.5', 'No') is True
+
+
+def test_apuesta_ganada_1x2_fallo():
+    """apuesta_ganada: 1X2 incorrecto → False."""
+    from bet_logic import apuesta_ganada
+    apuesta = {'mercado': '1X2'}
+    pick = {'prediccion_1x2': '1'}
+    assert apuesta_ganada(apuesta, pick, '2', 'Over 2.5', 'Si') is False
+
+
+def test_apuesta_ganada_ou_acierto():
+    """apuesta_ganada: Over acertado → True."""
+    from bet_logic import apuesta_ganada
+    apuesta = {'mercado': 'Over/Under'}
+    pick = {'prediccion_ou': 'Over 2.5'}
+    assert apuesta_ganada(apuesta, pick, '1', 'Over 2.5', 'Si') is True
+
+
+def test_apuesta_ganada_btts_acierto():
+    """apuesta_ganada: BTTS Si correcto → True."""
+    from bet_logic import apuesta_ganada
+    apuesta = {'mercado': 'BTTS'}
+    pick = {'prediccion_btts': 'Si'}
+    assert apuesta_ganada(apuesta, pick, '1', 'Over 2.5', 'Si') is True
+
+
+# ============================================================================
 # RUNNER (para ejecutar sin pytest)
 # ============================================================================
 
@@ -327,6 +462,24 @@ if __name__ == '__main__':
         test_normalizar_equipo_acentos,
         test_ajustar_lambda,
         test_normalizar_equipo_vacio,
+        # input validation
+        test_sanitizar_input_basico,
+        test_sanitizar_input_quita_peligroso,
+        test_sanitizar_input_longitud,
+        test_sanitizar_input_vacio,
+        test_sanitizar_input_no_espacios,
+        # bet_logic
+        test_calcular_resultados_gana_local,
+        test_calcular_resultados_empate,
+        test_calcular_resultados_gana_visitante_over,
+        test_calcular_resultados_over_exacto,
+        test_evaluar_over_under_acierto,
+        test_evaluar_over_under_fallo,
+        test_evaluar_over_under_vacio,
+        test_apuesta_ganada_1x2_acierto,
+        test_apuesta_ganada_1x2_fallo,
+        test_apuesta_ganada_ou_acierto,
+        test_apuesta_ganada_btts_acierto,
     ]
 
     passed = 0

@@ -19,7 +19,7 @@ jobs:
       - name: Verify Python syntax
         run: |
           set -e
-          for f in elite.py analysis_models.py funciones_stats.py calibration.py app_helpers.py; do
+          for f in elite.py analysis_models.py funciones_stats.py calibration.py app_helpers.py bet_logic.py; do
             python -c "import ast; ast.parse(open('$f').read()); print('✔ $f OK')"
           done
 
