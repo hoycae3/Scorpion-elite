@@ -125,9 +125,13 @@ def obtener_stats_totales_partido(fixture_id, headers, API_URL):
         return None
 
 
-def obtener_ultimos_partidos_equipo(team_id, team_name, league_id, season, headers, API_URL, max_partidos=50):
+def obtener_ultimos_partidos_equipo(team_id, team_name, league_id, season, headers, API_URL, max_partidos=50, excluir_fixture_ids=None):
     """
     Obtiene los últimos N partidos jugados de un equipo con sus estadísticas.
+
+    excluir_fixture_ids: set opcional de fixture_ids ya guardados en DB. Los
+    partidos excluidos no se procesan ni se descargan sus stats (ahorro de
+    llamadas API) ni se sobreescriben sus stats existentes.
     """
     partidos_stats = []
     
@@ -156,7 +160,13 @@ def obtener_ultimos_partidos_equipo(team_id, team_name, league_id, season, heade
         
         # Tomar solo los últimos N partidos
         fixtures = fixtures[:max_partidos]
-        
+
+        # ★ Saltar partidos ya guardados en DB: no se procesan ni se descargan
+        # sus stats (ahorro de llamadas) y no se sobreescriben con ceros.
+        if excluir_fixture_ids:
+            fixtures = [f for f in fixtures
+                        if f.get('fixture', {}).get('id') not in excluir_fixture_ids]
+
         for f in fixtures:
             fix = f.get('fixture', {})
             teams = f.get('teams', {})

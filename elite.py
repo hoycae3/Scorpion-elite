@@ -1492,48 +1492,32 @@ def sincronizar_partidos():
                         # No hay FT pendientes en la ventana → saltar este equipo (0 API calls)
                         continue
 
-                    # ★ Si hay FT pendientes en la ventana, procesarlos
-                    for fix_info in ft_en_ventana:
-                        try:
-                            # Fetch stats del partido específico
-                            stats_partido = obtener_stats_partido(
-                                fixture_id=fix_info['fixture_id'],
-                                team_id=team_id,
-                                team_name=team_name,
-                                headers=headers,
-                                API_URL=API_URL
+                    # ★ ACUMULACIÓN: para equipos CON FT pendiente, traer sus últimos 10
+                    # FT desde la API y guardar TODOS los faltantes (recupera días
+                    # perdidos). excluir_fixture_ids evita re-descargar stats de los
+                    # ya guardados y evita sobreescribirlos con ceros.
+                    try:
+                        partidos_recientes = obtener_ultimos_partidos_equipo(
+                            team_id=team_id,
+                            team_name=team_name,
+                            league_id=equipo['league_id'],
+                            season=equipo['season'],
+                            headers=headers,
+                            API_URL=API_URL,
+                            max_partidos=10,
+                            excluir_fixture_ids=fixtures_guardados
+                        )
+
+                        if partidos_recientes:
+                            success, msg, count = guardar_stats_equipo(
+                                client, team_id, team_name, partidos_recientes
                             )
-
-                            # Crear datos del partido (siempre incluir goles)
-                            partido_data = {
-                                'team_id': team_id,
-                                'equipo': team_name,
-                                'fixture_id': fix_info['fixture_id'],
-                                'fecha': fix_info['fecha'],
-                                'liga': fix_info['liga'],
-                                'es_local': fix_info['es_local'],
-                                'resultado': fix_info['resultado'],
-                                'goles_favor': fix_info['goles_favor'] if fix_info.get('goles_favor') is not None else 0,
-                                'goles_contra': fix_info['goles_contra'] if fix_info.get('goles_contra') is not None else 0,
-                            }
-
-                            # Agregar stats si están disponibles
-                            if stats_partido:
-                                partido_data.update(stats_partido)
-
-                            try:
-                                client.table('equipo_partidos_stats').upsert(
-                                    partido_data,
-                                    on_conflict='team_id,fixture_id'
-                                ).execute()
-                                stats_ft_nuevos += 1
-                                # Recalcular lambda del equipo con el nuevo resultado
-                                recalcular_lambda_equipo(client, team_id)
-                            except Exception as e:
-                                st.warning(f"⚠️ Error guardando FT {fix_info['fixture_id']} de {team_name}: {e}")
-
-                        except Exception as e:
-                            st.warning(f"⚠️ Error procesando FT {fix_info.get('fixture_id')} de {team_name}: {e}")
+                            if success and count > 0:
+                                stats_ft_nuevos += count
+                            # Recalcular lambda con el historial actualizado
+                            recalcular_lambda_equipo(client, team_id)
+                    except Exception as e:
+                        st.warning(f"⚠️ Error acumulando partidos de {team_name}: {e}")
 
         # Actualizar progreso antes del resumen (70-90%)
         progress_bar.progress(90)
