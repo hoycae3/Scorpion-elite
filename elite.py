@@ -33,6 +33,7 @@ from app_helpers import (
     calcular_value,
     format_money,
     sanitizar_input,
+    normalizar_mercados_para_capital,
 )
 from bet_logic import (
     calcular_resultados_partido,
@@ -3181,22 +3182,38 @@ def render_analizador_page():
             f'<br><span style="color:rgba(255,255,255,0.5);font-size:0.7rem;">Goles: {goles_estimado:.1f} esperados</span>'
             f'</div>', unsafe_allow_html=True)
 
-        # --- Boton guardar ---
+        # --- Botones guardar ---
         n_sel = len(sel)
-        if st.button(f"💾 Guardar y ➡️ Capital  ({n_sel})", type="primary", use_container_width=True):
-            mercados_seleccionados = list(sel)
+        col_b1, col_b2 = st.columns(2)
+        with col_b1:
+            btn_pick = st.button(f"💾 Guardar Pick(s)  ({n_sel})", type="primary", use_container_width=True)
+        with col_b2:
+            btn_todo = st.button("📋 Guardar Todo", use_container_width=True)
+
+        if btn_pick or btn_todo:
             try:
                 client = get_client()
                 pick_data = _construir_pick_data(r, home, away, stats_local)
                 guardado = _insertar_pick_resiliente(client, pick_data)
-                if mercados_seleccionados:
-                    pick_id = guardado.get('id') if isinstance(guardado, dict) else None
+                pick_id = guardado.get('id') if isinstance(guardado, dict) else None
+
+                if btn_todo:
+                    # Guardar TODO: enviar a Capital los 7 mercados principales del modelo
+                    todos_mercados = {'1X2', 'O/U', 'BTTS', 'Corners', 'Tarjetas', 'Remates', 'Tiros Arco'}
                     pendientes = st.session_state.get('apuestas_pendientes_analizador', {})
-                    pendientes[pick_id] = set(mercados_seleccionados)
+                    pendientes[pick_id] = todos_mercados
                     st.session_state.apuestas_pendientes_analizador = pendientes
-                    st.success(f"✅ {len(mercados_seleccionados)} apuesta(s) enviada(s) a Capital")
+                    st.success(f"✅ Análisis completo guardado: {home} vs {away} — 7 mercados enviados a Capital")
                 else:
-                    st.success(f"✅ Pick guardado: {home} vs {away}")
+                    # Guardar Pick(s): solo los mercados marcados por el usuario
+                    mercados_norm = normalizar_mercados_para_capital(sel)
+                    if mercados_norm:
+                        pendientes = st.session_state.get('apuestas_pendientes_analizador', {})
+                        pendientes[pick_id] = mercados_norm
+                        st.session_state.apuestas_pendientes_analizador = pendientes
+                        st.success(f"✅ {len(mercados_norm)} pick(s) guardado(s): {home} vs {away} — enviado a Capital")
+                    else:
+                        st.success(f"✅ Pick guardado: {home} vs {away} (sin mercados para Capital)")
                 st.session_state.sel_apuestas = set()
             except Exception as e:
                 st.error(f"❌ Error: {e}")

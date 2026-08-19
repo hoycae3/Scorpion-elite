@@ -427,6 +427,44 @@ def test_apuesta_ganada_btts_acierto():
 
 
 # ============================================================================
+# TESTS: app_helpers.py (normalización de mercados)
+# ============================================================================
+
+def test_normalizar_mercados_local_empate_visitante():
+    """Local, Empate y Visitante se mapean todos a '1X2'."""
+    from app_helpers import normalizar_mercados_para_capital
+    result = normalizar_mercados_para_capital({'Local', 'Empate', 'Visitante'})
+    assert result == {'1X2'}
+
+
+def test_normalizar_mercados_directos():
+    """Los mercados con el mismo nombre se mantienen."""
+    from app_helpers import normalizar_mercados_para_capital
+    result = normalizar_mercados_para_capital({'O/U', 'BTTS', 'Corners', 'Remates', 'Tiros Arco', 'Tarjetas'})
+    assert result == {'O/U', 'BTTS', 'Corners', 'Remates', 'Tiros Arco', 'Tarjetas'}
+
+
+def test_normalizar_mercados_ignora_no_soportados():
+    """Los mercados no soportados por Capital se omiten."""
+    from app_helpers import normalizar_mercados_para_capital
+    result = normalizar_mercados_para_capital({'1X', 'X2', '12', 'OU 1.5', 'OU 3.5', 'Goles Local', 'Goles Visitante'})
+    assert result == set()
+
+
+def test_normalizar_mercados_mixto():
+    """Mezcla de soportados y no soportados: solo quedan los soportados."""
+    from app_helpers import normalizar_mercados_para_capital
+    result = normalizar_mercados_para_capital({'Local', 'O/U', '1X', 'Corners', 'OU 1.5'})
+    assert result == {'1X2', 'O/U', 'Corners'}
+
+
+def test_normalizar_mercados_vacio():
+    """Set vacío retorna set vacío."""
+    from app_helpers import normalizar_mercados_para_capital
+    assert normalizar_mercados_para_capital(set()) == set()
+
+
+# ============================================================================
 # RUNNER (para ejecutar sin pytest)
 # ============================================================================
 
@@ -480,6 +518,12 @@ if __name__ == '__main__':
         test_apuesta_ganada_1x2_fallo,
         test_apuesta_ganada_ou_acierto,
         test_apuesta_ganada_btts_acierto,
+        # normalizacion mercados
+        test_normalizar_mercados_local_empate_visitante,
+        test_normalizar_mercados_directos,
+        test_normalizar_mercados_ignora_no_soportados,
+        test_normalizar_mercados_mixto,
+        test_normalizar_mercados_vacio,
     ]
 
     passed = 0

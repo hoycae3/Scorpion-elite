@@ -192,3 +192,17 @@ def sanitizar_input(texto, max_len=100, permitir_espacios=True):
     if len(texto) > max_len:
         texto = texto[:max_len]
     return texto.strip()
+
+
+def normalizar_mercados_para_capital(sel):
+    """Mapea los nombres de mercados del Analizador a los tipos que espera Capital.
+    El Analizador usa 'Local'/'Empate'/'Visitante', pero Capital usa '1X2'.
+    Los mercados no soportados por Capital (1X, X2, 12, OU 1.5, OU 3.5,
+    Goles Local, Goles Visitante) se omiten.
+    Retorna un set de strings."""
+    mapeo = {
+        'Local': '1X2', 'Empate': '1X2', 'Visitante': '1X2',
+        'O/U': 'O/U', 'BTTS': 'BTTS', 'Corners': 'Corners',
+        'Remates': 'Remates', 'Tiros Arco': 'Tiros Arco', 'Tarjetas': 'Tarjetas',
+    }
+    return {mapeo[s] for s in sel if s in mapeo}
