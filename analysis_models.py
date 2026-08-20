@@ -190,11 +190,23 @@ def poisson_over_under(xl: float, xv: float) -> Dict:
 
 
 def dc_1x2(xl: float, xv: float, rho: float = -0.1) -> tuple:
-    """Modelo Dixon-Coles"""
+    """Modelo Dixon-Coles con tau canónica (Dixon & Coles, 1997).
+
+    Ajusta solo las 4 celdas de goles bajos; el resto tau = 1.
+    """
     m = {}
     for i in range(9):
         for j in range(9):
-            tau = 1 - rho * (i + j) / 16 if i > 1 or j > 1 else (1 + rho if i == 0 and j == 0 else 1)
+            if i == 0 and j == 0:
+                tau = 1 - xl * xv * rho
+            elif i == 0 and j == 1:
+                tau = 1 + xl * rho
+            elif i == 1 and j == 0:
+                tau = 1 + xv * rho
+            elif i == 1 and j == 1:
+                tau = 1 - rho
+            else:
+                tau = 1
             p = pp(xl, i) * pp(xv, j) * tau
             m[(i, j)] = max(0, p)
     
@@ -314,19 +326,20 @@ def analizar_estilo_juego(
 ) -> Dict:
     """
     Analiza el estilo de juego del equipo.
+
+    Umbrales basados en promedios reales de ligas europeas
+    (stats oficiales ~10 corners, ~3.5 amarillas, ~25 tiros, ~9 arco).
     """
-    # Clasificar según promedios típicos
-    # Promedios típicos: corners=10, tarjetas=3.5, tiros=12, tiros_arco=4
     
     estilo_ofensivo = 50  # Base neutra
     estilo_defensivo = 50
     estilo_physical = 50
     
-    # Corner tendency (>10 = ofensivo, <10 = defensivo)
-    if corners > 12:
+    # Corner tendency (promedio liga ~9-11 total por equipo)
+    if corners > 11:
         estilo_ofensivo += 15
         estilo_defensivo -= 10
-    elif corners < 8:
+    elif corners < 9:
         estilo_ofensivo -= 10
         estilo_defensivo += 15
     
@@ -336,10 +349,10 @@ def analizar_estilo_juego(
     elif tarjetas < 2:
         estilo_physical -= 15
     
-    # Tiros al arco (>5 = dominante, <3 = dependent)
-    if tiros_arco > 5:
+    # Tiros al arco (promedio liga ~8-10 por equipo)
+    if tiros_arco > 9:
         estilo_ofensivo += 10
-    elif tiros_arco < 3:
+    elif tiros_arco < 6:
         estilo_ofensivo -= 10
     
     return {
@@ -396,8 +409,9 @@ def predecir_corners(
         "corners_visitante_estimado": round(corners_visitante_estimado, 1),
         "over_105": over_105,
         "under_105": under_105,
-        "over_95": min(90, max(10, 50 + (total_estimado - 9.5) * 15)),
-        "under_95": min(90, max(10, 50 - (total_estimado - 9.5) * 15)),
+        # Aproximación normal (como tiros/tarjetas/arco): media = total, varianza = media
+        "over_95": round(_over_prob_normal(total_estimado, 9.5), 1),
+        "under_95": round(100 - _over_prob_normal(total_estimado, 9.5), 1),
     }
 
 
@@ -427,6 +441,13 @@ def normal_cdf(z: float) -> float:
     y = 1.0 - poly * math.exp(-z * z / 2) / math.sqrt(2 * math.pi)
    
     return y if z_original >= 0 else 1 - y
+
+
+def _over_prob_normal(media: float, linea: float) -> float:
+    """Probabilidad Over usando aproximación normal (varianza = media)."""
+    sigma = math.sqrt(media) if media > 0 else 1.0
+    z = (linea + 0.5 - media) / sigma
+    return min(95, max(5, (1 - normal_cdf(z)) * 100))
 
 
 def predecir_tiros(
@@ -746,9 +767,14 @@ def calcular(
         estilo_local, estilo_visitante
     )
     
-    # CONFIANZA - basada en la diferencia entre probabilidades y el sesgo del favorito
-    diff = abs(p1_ajustado - p2_ajustado)
-    conf = round(max(0, min(100, diff * 1.5)))
+    # CONFIANZA - combina separación 1X2, fuerza del pick Over/Under y datos
+    # disponibles (penaliza si los equipos no tienen historial real).
+    diff_1x2 = abs(p1_ajustado - p2_ajustado) / 100.0
+    conf_ou = abs(ou["over_25"] - 50) / 50.0
+    datos_l = 1.0 if (ultimos_5_local and len(ultimos_5_local) > 0) else 0.7
+    datos_v = 1.0 if (ultimos_5_visitante and len(ultimos_5_visitante) > 0) else 0.7
+    factor_datos = (datos_l + datos_v) / 2
+    conf = round(max(0, min(100, (diff_1x2 * 0.6 + conf_ou * 0.4) * 100 * factor_datos)))
     
     # RANGO
     if conf >= 80:

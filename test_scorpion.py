@@ -181,11 +181,11 @@ def test_utc_to_colombia_vacio():
 
 
 def test_calcular_value():
-    """calcular_value debe calcular el value bet correctamente."""
+    """calcular_value: EV% = prob × cuota − 100."""
     from app_helpers import calcular_value
-    # prob=60%, cuota=2.0 → prob_implicita=50%, value=10%
+    # prob=60%, cuota=2.0 → EV = 60×2.0−100 = +20%
     value, prob_implicita = calcular_value(60, 2.0)
-    assert abs(value - 10) < 1, f"calcular_value(60, 2.0) value deberia ser ~10, no {value}"
+    assert abs(value - 20) < 1, f"calcular_value(60, 2.0) value deberia ser ~20, no {value}"
     assert abs(prob_implicita - 50) < 1, f"prob_implicita deberia ser ~50, no {prob_implicita}"
 
 
@@ -478,6 +478,60 @@ def test_normal_cdf_precision():
         assert abs(normal_cdf(z) - esperado) < 0.001, f"cdf({z})={normal_cdf(z)}"
 
 
+def test_dixon_coles_canonico():
+    """dc_1x2 con rho=0 debe igualar Poisson (tau=1 en todas las celdas)."""
+    from analysis_models import dc_1x2, poisson_1x2
+    p1_dc, px_dc, p2_dc = dc_1x2(1.5, 1.2, rho=0)
+    p1_po, px_po, p2_po = poisson_1x2(1.5, 1.2)
+    # Deben coincidir dentro del redondeo (DC usa grid 9x9 vs 15x15, ±0.5%)
+    assert abs(p1_dc - p1_po) < 1.0
+    assert abs(px_dc - px_po) < 1.0
+    assert abs(p2_dc - p2_po) < 1.0
+
+
+def test_over_prob_normal_simetria():
+    """_over_prob_normal en la media debe dar ~50% (linea = media)."""
+    from analysis_models import _over_prob_normal
+    prob = _over_prob_normal(media=10, linea=9.5)
+    assert 45 < prob < 55
+
+
+def test_calcular_value_ev():
+    """calcular_value: EV% = prob × cuota − 100. Value>0 solo si EV>0."""
+    from app_helpers import calcular_value
+    v, pi = calcular_value(55, 2.0)   # 55% × 2.0 − 100 = +10 EV
+    assert abs(v - 10.0) < 0.01
+    v2, _ = calcular_value(45, 2.0)   # 45% × 2.0 − 100 = −10 EV
+    assert abs(v2 + 10.0) < 0.01
+    v3, _ = calcular_value(50, 0)     # cuota inválida → 0
+    assert v3 == 0
+
+
+def test_estilo_umbrales():
+    """analizar_estilo_juego: equipo con muchos corners/tiros → Ofensivo."""
+    from analysis_models import analizar_estilo_juego
+    ofensivo = analizar_estilo_juego(corners=13, tarjetas=2.0, tiros=15, tiros_arco=11)
+    assert ofensivo['tipo'] == 'Ofensivo'
+    # Equipo con pocos corners y tiros → puntaje ofensivo bajo
+    defensivo = analizar_estilo_juego(corners=5, tarjetas=2.0, tiros=8, tiros_arco=4)
+    assert defensivo['estilo_ofensivo'] < 40
+    assert defensivo['tipo'] != 'Ofensivo'
+
+
+def test_confianza_sin_datos():
+    """calcular sin últimos-5 debe reducir confianza vs con datos."""
+    from analysis_models import calcular
+    base = dict(corners_local=5.5, corners_visitante=4.5, tarjetas_local=2.5,
+                tarjetas_visitante=2.8, tiros_local=13, tiros_visitante=11,
+                tiros_arco_local=4.5, tiros_arco_visitante=3.8)
+    sin_datos = calcular(1.8, 0.9, **base)
+    con_datos = calcular(1.8, 0.9,
+                         ultimos_5_local=[{'resultado': 'W', 'goles_favor': 2, 'goles_contra': 1} for _ in range(5)],
+                         ultimos_5_visitante=[{'resultado': 'L', 'goles_favor': 0, 'goles_contra': 2} for _ in range(5)],
+                         **base)
+    assert con_datos['confianza'] >= sin_datos['confianza']
+
+
 # ============================================================================
 # TESTS: app_helpers.py (normalización de mercados)
 # ============================================================================
@@ -575,6 +629,11 @@ if __name__ == '__main__':
         test_apuesta_ganada_tarjetas_arco_regresion,
         test_apuesta_ganada_ou_sin_prediccion,
         test_normal_cdf_precision,
+        test_dixon_coles_canonico,
+        test_over_prob_normal_simetria,
+        test_calcular_value_ev,
+        test_estilo_umbrales,
+        test_confianza_sin_datos,
         # normalizacion mercados
         test_normalizar_mercados_local_empate_visitante,
         test_normalizar_mercados_directos,

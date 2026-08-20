@@ -158,10 +158,18 @@ def safe_fmt_int(val):
 # 💰 APUESTAS
 # ══════════════════════════════════════════════════════════
 def calcular_value(prob_modelo, cuota):
+    """Calcula value de una apuesta.
+
+    prob_modelo: probabilidad estimada por el modelo (%)
+    cuota: cuota decimal (ej: 2.10)
+    Retorna (value, prob_implicita).
+    value = EV% = prob_modelo × cuota − 100 (valor esperado en %).
+    Positivo = apuesta con valor (el modelo ve más prob. que la casa).
+    """
     if cuota <= 0:
         return 0, 0
     prob_implicita = (1 / cuota) * 100
-    value = prob_modelo - prob_implicita
+    value = prob_modelo * cuota - 100
     return value, prob_implicita
 
 
