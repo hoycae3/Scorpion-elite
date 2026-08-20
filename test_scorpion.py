@@ -470,6 +470,14 @@ def test_apuesta_ganada_ou_sin_prediccion():
     assert apuesta_ganada(apuesta, pick, '1', 'Over 2.5', 'Si') is False
 
 
+def test_normal_cdf_precision():
+    """normal_cdf debe coincidir con Φ de la normal estándar (regresión bug A&S)."""
+    from analysis_models import normal_cdf
+    casos = {0: 0.5, 1: 0.8413, -1: 0.1587, 2: 0.9772, -2: 0.0228, 1.5: 0.9332}
+    for z, esperado in casos.items():
+        assert abs(normal_cdf(z) - esperado) < 0.001, f"cdf({z})={normal_cdf(z)}"
+
+
 # ============================================================================
 # TESTS: app_helpers.py (normalización de mercados)
 # ============================================================================
@@ -566,6 +574,7 @@ if __name__ == '__main__':
         test_apuesta_ganada_remates_regresion,
         test_apuesta_ganada_tarjetas_arco_regresion,
         test_apuesta_ganada_ou_sin_prediccion,
+        test_normal_cdf_precision,
         # normalizacion mercados
         test_normalizar_mercados_local_empate_visitante,
         test_normalizar_mercados_directos,

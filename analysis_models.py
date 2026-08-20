@@ -404,25 +404,29 @@ def predecir_corners(
 def normal_cdf(z: float) -> float:
     """
     Función de distribución acumulativa normal estándar.
-    Implementación manual usando aproximación de Abramowitz y Stegun.
+    Aproximación de Abramowitz y Stegun (26.2.17, constantes canónicas).
+
+    La versión anterior tenía dos bugs: composición 0.5*(1+sign*y)
+    incorrecta y no dividía por √(2π), sesgando todas las
+    probabilidades de tiros/tarjetas/arco.
     """
-    # Constantes para la aproximación
-    a1 = 0.254829592
-    a2 = -0.284496736
-    a3 = 1.421413741
-    a4 = -1.453152027
-    a5 = 1.061405429
-    p = 0.3275911
-    
+    b1 = 0.319381530
+    b2 = -0.356563782
+    b3 = 1.781477937
+    b4 = -1.821255978
+    b5 = 1.330274429
+    p = 0.2316419
+
     # Signo de z
-    sign = 1 if z >= 0 else -1
+    z_original = z
+   
     z = abs(z)
-    
-    # Aproximación de serie de Taylor
+   
     t = 1.0 / (1.0 + p * z)
-    y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * math.exp(-z * z / 2)
-    
-    return 0.5 * (1.0 + sign * y)
+    poly = b1 * t + b2 * t**2 + b3 * t**3 + b4 * t**4 + b5 * t**5
+    y = 1.0 - poly * math.exp(-z * z / 2) / math.sqrt(2 * math.pi)
+   
+    return y if z_original >= 0 else 1 - y
 
 
 def predecir_tiros(
