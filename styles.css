@@ -1009,7 +1009,7 @@ div[data-testid="stButton"] button[kind="secondary"][key*="btn_sel_"]:hover {
 
 /* Number input */
 div[data-testid="stNumberInput"] {
-    background: #ffffff !important;
+    background: #1e293b !important;
     border: 2px solid #22c55e !important;
     border-radius: 8px !important;
 }
@@ -1019,8 +1019,9 @@ div[data-testid="stNumberInput"] *,
 div[data-testid="stNumberInput"] input,
 div[data-testid="stNumberInputField"],
 div[data-testid="stNumberInputField"] input {
-    color: #000000 !important;
-    background: #ffffff !important;
+    color: #ffffff !important;
+    background: #1e293b !important;
+    -webkit-text-fill-color: #ffffff !important;
 }
 
 /* ════════════════════════════════════════════
