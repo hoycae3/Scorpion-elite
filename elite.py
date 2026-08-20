@@ -2147,11 +2147,28 @@ def render_cuotas_mercado(r):
         st.info("🔽 Sin value bets en este momento — las casas cobran lo justo o de más.")
 
 
-def _construir_pick_data(r, home, away, stats_local):
-    """Construye el dict de datos del pick a partir del resultado del análisis."""
+# Mercado -> campos de prediccion en picks. Usado para que "Guardar Pick(s)"
+# solo guarde los mercados marcados y "Guardar Todo" guarde todos.
+_MERCADO_CAMPOS = {
+    '1X2': ['pick', 'prediccion_1x2', 'prob_1x2', 'p1', 'px', 'p2'],
+    'O/U': ['prediccion_ou', 'prob_ou'],
+    'BTTS': ['prediccion_btts', 'btts_yes'],
+    'Corners': ['prediccion_corners', 'corners_total_estimado'],
+    'Remates': ['prediccion_remates', 'remates_total_estimado'],
+    'Tarjetas': ['prediccion_tarjetas', 'tarjetas_total_estimado'],
+    'Tiros Arco': ['prediccion_arco', 'arco_total_estimado'],
+}
+
+
+def _construir_pick_data(r, home, away, stats_local, mercados_seleccionados=None):
+    """Construye el dict de datos del pick a partir del resultado del análisis.
+
+    mercados_seleccionados: set opcional. Si se pasa, los campos de los
+    mercados no incluidos se omiten (quedan NULL en DB) para guardar solo
+    los mercados marcados por el usuario."""
     usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
     fixture_id = st.session_state.get('selected_fixture_id', 0)
-    return {
+    pick_data_base = {
         'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
         'usuario': usuario_id,
         'fixture_id': fixture_id,
@@ -2179,6 +2196,17 @@ def _construir_pick_data(r, home, away, stats_local):
         'confianza': int(r.get('confianza', 50)),
         'rango': r.get('rango', 'C'),
     }
+
+    pick_data = pick_data_base
+    if mercados_seleccionados is not None:
+        campos_a_quitar = [
+            campo for mercado, campos in _MERCADO_CAMPOS.items()
+            if mercado not in mercados_seleccionados
+            for campo in campos
+        ]
+        pick_data = {k: v for k, v in pick_data_base.items()
+                     if k not in campos_a_quitar}
+    return pick_data
 
 
 def _insertar_pick_resiliente(client, pick_data):
@@ -3177,7 +3205,11 @@ def render_analizador_page():
         if btn_pick or btn_todo:
             try:
                 client = get_client()
-                pick_data = _construir_pick_data(r, home, away, stats_local)
+                # Guardar Pick(s): solo mercados marcados; Guardar Todo: todos (None)
+                pick_data = _construir_pick_data(
+                    r, home, away, stats_local,
+                    mercados_seleccionados=sel if btn_pick else None
+                )
                 guardado = _insertar_pick_resiliente(client, pick_data)
                 pick_id = guardado.get('id') if isinstance(guardado, dict) else None
 
