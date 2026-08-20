@@ -1,6 +1,6 @@
 # Scorpion Elite - Documentacion del Proyecto
 
-> Ultima actualizacion: 2026-08-12 (fix sincronizacion no guardaba partidos)
+> Ultima actualizacion: 2026-08-19/20 (5 fixes: sync acumulacion, boton landing, guardar pick, liquidacion, documentacion)
 
 ---
 
@@ -502,3 +502,94 @@ id, fixture_id, fecha, liga, tipo_apuesta, opcion, cuota, bookmaker
 
 ### Commits
 3df3019, a2ed45e, 27ccba8, 0fb20a5, f965cbf, 4ccc2f3, abf9c08, 77c0430
+
+## Sesión 2026-08-19/20 - Cinco Fixes + Revision Completa
+
+### 1. Fix acumulación FT en sync (commit 78692de)
+
+**Problema:** los equipos no acumulaban historial (se quedaban en 5 partidos).
+Se perdia cualquier FT fuera de la ventana [ayer → ultima_futura+1].
+
+**Fix:** el CASO B (equipos existentes) ya no guarda solo el FT de la ventana.
+Para equipos CON FT pendiente trae sus últimos 10 FT y guarda TODOS los
+faltantes (recupera gaps hasta 10 partidos). Compromísense entre el viejo
+timeout (llamada por equipo) y el fix del 12-ago (solo ventana).
+
+**Optimización `excluir_fixture_ids`** en
+`obtener_ultimos_partidos_equipo` (funciones_stats.py): los partidos ya
+guardados en DB no se reprocesan → 0 llamadas de stats para ellos y no se
+sobreescriben con ceros. CASO A intacto (equipos nuevos siguen bajando 5).
+
+**Recuperación progresiva elegida (Opción A):** equipos estancados se
+recuperan cuando jueguen su próximo FT. El backfill total de todos los
+equipos quedó descartado (miles de llamadas API + riesgo timeout).
+
+### 2. Fix botón de landing (commit f772cb5)
+
+**Problema:** clic en partido de landing no hacía nada (solo re-sorteaba
+los 4 aleatorios). El handler escribía 3 claves muertas
+(`partido_seleccionado`, `show_analizador`, `query_params['page']`) que
+ningún router leía; y el flujo de preview gratis (`preview_partido`)
+nunca se activaba. Reproducido en producción con navegador.
+
+**Fix:** el botón ahora setea `st.session_state.preview_partido` + rerun →
+activa el preview gratis ya construido (lambdas, Over/Under, BTTS + CTA
+de registro).
+
+**Comportamiento esperado de landing:** muestra 4 partidos ALEATORIOS
+(random.sample) sin filtro de fecha — explica reportes de "ayer aparecía,
+hoy no".
+
+### 3. Guardar Pick(s) solo con mercados marcados (commit 1f917cd)
+
+**Problema:** "Guardar Pick(s)" insertaba siempre las 7 predicciones en
+`picks` (verificado por el usuario). La selección solo filtraba Capital.
+
+**Fix:** `_construir_pick_data(..., mercados_seleccionados)` con mapa
+`_MERCADO_CAMPOS`. Los campos de mercado no marcados se omiten (NULL en
+DB). Las vistas VIP ya saltaban campos NULL → solo aparece lo marcado.
+"Guardar Todo" mantiene las 7. Schema verificado: solo `fecha` es NOT NULL.
+
+### 4. Bug CRÍTICO liquidación bankroll (commit 95bda0a)
+
+**Problema (caro):** `apuesta_ganada()` evaluaba secuencialmente y si el
+pick tenía cualquier Over/Under, TODOS los mercados (incluso Corners,
+Tarjetas, Remates, Tiros Arco) se liquidaban por GOLES en vez de su stat
+real. Afectaba ROI de Capital directamente.
+
+**Fix:** evaluación explícita por mercado: 1X2=marcador, O/U=goles,
+BTTS=ambos marcan, y los 4 especiales solo con `stats_reales` propio.
+No evaluable → False (perdida) sin fallback cruzado.
+
+**Tests:** 5 nuevos tests de regresión (corners no goles, remates
+regresión, tarjetas/arco por stat, O/U sin predicción) → 51/51 total.
+
+### 5. Diagnóstico error removeChild (sin fix de código)
+
+El error `NotFoundError removeChild` reapareció tras el deploy. Causas:
+caché viejo del navegador post-deploy (JS viejo + DOM nuevo) — hard
+refresh (Ctrl+Shift+R). Patrón típico en Streamlit con st.rerun() +
+unsafe_allow_html. No hubo HTML desbalanceado (escaneo automatizado).
+Si persiste tras refresh, sospechoso: re-render de landing cada 30s.
+
+### Flujos documentados (preguntas del usuario)
+
+- **Clic "📊 Partidos":** 4 queries de estado + 5 botones + filtro
+  calendario + práctica N+1 (2 queries por partido para el badge,
+  pendiente de optimizar).
+- **Seleccionar partido (Partidos):** guarda state + rerun → Analizador
+  automático (tabla comparativa, picks clicables, marcador, cuotas,
+  consenso, botones guardar).
+- **Después de guardar pick:** DB `picks` + session
+  `apuestas_pendientes_analizador` → Capital → ➕ Agregar (preselección
+  es comodidad; manual siempre funciona) → APOSTAR → `bankroll_apuestas`
+  → liquidación en próxima sync FT → Resultados/ROI/Historial.
+
+### Pendientes conocidos (aprobado: no tocar sin confirmación)
+
+- Optimización N+1 de badges en Partidos (2 queries por partido)
+- 7 imports sin usar en elite.py (limpieza cosmética)
+- ~22 silent excepts que convendría loguear
+
+### Tests
+- 51/51 antes del cierre de sesión (eran 47 + 5 regresión este fix)
