@@ -906,7 +906,22 @@ div[data-testid="stSelectbox"] input,
 div[data-testid="stSelectbox"] span,
 div[data-testid="stSelectbox"] p,
 div[data-testid="stSelectbox"] div {
-    color: #000000 !important;
+    color: #ffffff !important;
+}
+
+/* Dropdown de BaseWeb (lista abierta): fondo oscuro, texto blanco */
+div[data-baseweb="popover"],
+div[data-baseweb="popover"] * {
+    color: #ffffff !important;
+}
+div[data-baseweb="popover"] ul,
+div[data-baseweb="popover"] li {
+    background: #1e293b !important;
+    color: #ffffff !important;
+}
+div[data-baseweb="popover"] li:hover,
+div[data-baseweb="popover"] [aria-selected="true"] {
+    background: #334155 !important;
 }
 
 /* ============================================
