@@ -3850,6 +3850,28 @@ def render_vip_page():
     .stTextInput label {
         color: #e2e8f0 !important;
     }
+
+    /* Selectbox (BaseWeb): texto visible en campo y en dropdown */
+    .stSelectbox [data-baseweb="select"] {
+        background: #1e293b !important;
+    }
+    .stSelectbox [data-baseweb="select"] *,
+    .stSelectbox [data-baseweb="select"] input,
+    .stSelectbox [data-baseweb="select"] div {
+        color: #f8fafc !important;
+    }
+    .stSelectbox label {
+        color: #e2e8f0 !important;
+    }
+    /* Lista desplegable abierta */
+    div[data-baseweb="popover"] ul,
+    div[data-baseweb="popover"] li {
+        background: #1e293b !important;
+        color: #f8fafc !important;
+    }
+    div[data-baseweb="popover"] li:hover {
+        background: #334155 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
