@@ -718,9 +718,9 @@ def render_public_landing():
                 
                 with cols[i % 2]:
                     if st.button(f"⚽ {local} vs {visitante}", key=f"landing_{fixture_id}_{i}", use_container_width=True):
-                        st.session_state['partido_seleccionado'] = partido
-                        st.session_state['show_analizador'] = True
-                        st.query_params["page"] = "analizador"
+                        # Mostrar preview gratuito del análisis (flujo sin login)
+                        st.session_state.preview_partido = partido
+                        st.rerun()
                     
                     st.caption(f"⚽ {hora_col} | {liga}")
         else:
