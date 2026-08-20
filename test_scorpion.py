@@ -411,9 +411,9 @@ def test_apuesta_ganada_1x2_fallo():
 
 
 def test_apuesta_ganada_ou_acierto():
-    """apuesta_ganada: Over acertado → True."""
+    """apuesta_ganada: Over acertado → True (mercado canónico 'O/U')."""
     from bet_logic import apuesta_ganada
-    apuesta = {'mercado': 'Over/Under'}
+    apuesta = {'mercado': 'O/U'}
     pick = {'prediccion_ou': 'Over 2.5'}
     assert apuesta_ganada(apuesta, pick, '1', 'Over 2.5', 'Si') is True
 
@@ -424,6 +424,50 @@ def test_apuesta_ganada_btts_acierto():
     apuesta = {'mercado': 'BTTS'}
     pick = {'prediccion_btts': 'Si'}
     assert apuesta_ganada(apuesta, pick, '1', 'Over 2.5', 'Si') is True
+
+
+def test_apuesta_ganada_corners_no_goles():
+    """Regresión: apuesta Corners debe usar corners reales, NO goles."""
+    from bet_logic import apuesta_ganada
+    apuesta = {'mercado': 'Corners'}
+    pick = {'prediccion_ou': 'Over 2.5', 'prediccion_corners': 'Over'}
+    stats = {'corners_total': 12}
+    # Si usara goles (resultado Over 2.5) diría True con goles; con corners 12>9.5 también True
+    # pero contra corners bajos debe perder aunque el pick de goles aciertte:
+    apuesta2 = {'mercado': 'Corners'}
+    pick2 = {'prediccion_ou': 'Over 2.5', 'prediccion_corners': 'Over'}
+    stats2 = {'corners_total': 8}
+    assert apuesta_ganada(apuesta, pick, '2', 'Over 2.5', 'Si', stats) is True
+    assert apuesta_ganada(apuesta2, pick2, '2', 'Over 2.5', 'Si', stats2) is False
+
+
+def test_apuesta_ganada_remates_regresion():
+    """Regresión: Remates evalúa tiros reales, ignorando prediccion_ou del pick."""
+    from bet_logic import apuesta_ganada
+    apuesta = {'mercado': 'Remates'}
+    pick = {'prediccion_ou': 'Under 2.5', 'prediccion_remates': 'Under'}
+    stats = {'remates_total': 28}
+    # Goles Under acertaría → pero remates 28 > 24 → la apuesta es perdida
+    assert apuesta_ganada(apuesta, pick, '1', 'Under 2.5', 'No', stats) is False
+
+
+def test_apuesta_ganada_tarjetas_arco_regresion():
+    """Regresión: Tarjetas/TirosArco evalúan su propio stat."""
+    from bet_logic import apuesta_ganada
+    assert apuesta_ganada({'mercado': 'Tarjetas'},
+                          {'prediccion_ou': 'Over 2.5', 'prediccion_tarjetas': 'Over'},
+                          '1', 'Over 2.5', 'Si', {'tarjetas_total': 3}) is False
+    assert apuesta_ganada({'mercado': 'Tiros Arco'},
+                          {'prediccion_ou': 'Over 2.5', 'prediccion_arco': 'Over'},
+                          '1', 'Over 2.5', 'Si', {'tiros_arco_total': 10}) is True
+
+
+def test_apuesta_ganada_ou_sin_prediccion():
+    """O/U sin prediccion_ou en el pick → False (no hace fallback a otros mercados)."""
+    from bet_logic import apuesta_ganada
+    apuesta = {'mercado': 'O/U'}
+    pick = {'prediccion_btts': 'Si'}
+    assert apuesta_ganada(apuesta, pick, '1', 'Over 2.5', 'Si') is False
 
 
 # ============================================================================
@@ -518,6 +562,10 @@ if __name__ == '__main__':
         test_apuesta_ganada_1x2_fallo,
         test_apuesta_ganada_ou_acierto,
         test_apuesta_ganada_btts_acierto,
+        test_apuesta_ganada_corners_no_goles,
+        test_apuesta_ganada_remates_regresion,
+        test_apuesta_ganada_tarjetas_arco_regresion,
+        test_apuesta_ganada_ou_sin_prediccion,
         # normalizacion mercados
         test_normalizar_mercados_local_empate_visitante,
         test_normalizar_mercados_directos,
