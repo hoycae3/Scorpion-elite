@@ -201,6 +201,8 @@ CREATE TABLE IF NOT EXISTS picks (
     -- Confianza
     confianza INTEGER,
     rango VARCHAR(5),
+    lambda_local_predicha DECIMAL(5,3),
+    lambda_visitante_predicha DECIMAL(5,3),
     
     -- Resultados (para evaluar después)
     resultado_1x2 VARCHAR(10),

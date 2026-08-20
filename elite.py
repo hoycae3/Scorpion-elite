@@ -1322,6 +1322,33 @@ def sincronizar_partidos():
                                             _actualizar_pick_resiliente(client, update_data, pick_id)
                                             picks_actualizados_auto += 1
 
+                                            # 🧠 CALIBRACIÓN AUTOMÁTICA: registrar resultado para que
+                                            # los factores del equipo se vayan ajustando solos
+                                            try:
+                                                lambda_l = pick.get('lambda_local_predicha')
+                                                lambda_v = pick.get('lambda_visitante_predicha')
+                                                if lambda_l and lambda_v:
+                                                    predicciones = {
+                                                        '1x2': {'pick': pick.get('prediccion_1x2', '')},
+                                                        'over_under': {'pick': pick.get('prediccion_ou', '')},
+                                                        'btts': {'pick': pick.get('prediccion_btts', '')},
+                                                        'corners': {'pick': pick.get('prediccion_corners', '')},
+                                                    }
+                                                    registrar_resultado(
+                                                        pick.get('equipo_local', ''),
+                                                        pick.get('equipo_visitante', ''),
+                                                        float(lambda_l),
+                                                        float(lambda_v),
+                                                        score_local, score_visitante,
+                                                        predicciones,
+                                                        resultado_real=resultado_real,
+                                                        marcador=f"{score_local}-{score_visitante}",
+                                                        confianza=int(pick.get('confianza', 0) or 0),
+                                                        rango=pick.get('rango', 'D') or 'D',
+                                                    )
+                                            except Exception as e:
+                                                logger.warning(f"Error en calibración fixture {fix_id}: {e}")
+
                                             # 🎰 AUTO-ACTUALIZAR BANKROLL
                                             try:
                                                 actualizar_bankroll_apuestas(client, fix_id, pick, resultado_real, resultado_ou_real, btts_real, stats_reales)
@@ -2195,6 +2222,9 @@ def _construir_pick_data(r, home, away, stats_local, mercados_seleccionados=None
         'arco_total_estimado': float(r.get('tiros_arco', {}).get('total_estimado', 8)),
         'confianza': int(r.get('confianza', 50)),
         'rango': r.get('rango', 'C'),
+        # Lambdas predichos: alimentan la calibración automática (registrar_resultado)
+        'lambda_local_predicha': float(r.get('lambda_local', 0)),
+        'lambda_visitante_predicha': float(r.get('lambda_visitante', 0)),
     }
 
     pick_data = pick_data_base
