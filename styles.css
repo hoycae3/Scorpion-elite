@@ -893,13 +893,8 @@ div[data-testid="stCheckbox"] label {
     font-size: 15px !important;
 }
 
-/* Selectbox: fondo oscuro + texto blanco (consistente con el tema) */
-div[data-testid="stSelectbox"] {
-    background: #1e293b !important;
-    border: 2px solid #22c55e !important;
-    border-radius: 8px !important;
-}
-
+/* Selectbox: fondo oscuro + texto blanco (tema consistente) */
+div[data-testid="stSelectbox"],
 div[data-testid="stSelectbox"] [data-baseweb="select"],
 div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
 div[data-testid="stSelectbox"] [data-baseweb="base-input"],
@@ -910,6 +905,7 @@ div[data-testid="stSelectbox"] [data-baseweb="base-input"] > div {
 div[data-testid="stSelectbox"],
 div[data-testid="stSelectbox"] *,
 div[data-testid="stSelectbox"] input,
+div[data-testid="stSelectbox"] textarea,
 div[data-testid="stSelectbox"] span,
 div[data-testid="stSelectbox"] p,
 div[data-testid="stSelectbox"] div,
@@ -919,21 +915,35 @@ div[data-testid="stSelectbox"] label {
     caret-color: #ffffff !important;
 }
 
-/* Dropdown de BaseWeb (lista abierta): fondo oscuro, texto blanco */
+/* Dropdown de BaseWeb: popover, menu, combobox, listbox, tooltip */
 div[data-baseweb="popover"],
-div[data-baseweb="popover"] * {
+div[data-baseweb="popover"] *,
+div[data-baseweb="menu"],
+div[data-baseweb="menu"] *,
+div[data-baseweb="combobox"],
+div[data-baseweb="combobox"] *,
+div[role="listbox"],
+div[role="listbox"] *,
+div[role="option"],
+div[role="option"] * {
     color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
 }
+div[data-baseweb="popover"],
+div[data-baseweb="menu"],
+div[data-baseweb="combobox"],
+div[role="listbox"],
+div[role="option"],
 div[data-baseweb="popover"] ul,
 div[data-baseweb="popover"] li,
-div[data-baseweb="menu"],
+div[data-baseweb="menu"] ul,
 div[data-baseweb="menu"] li {
     background: #1e293b !important;
-    color: #ffffff !important;
 }
 div[data-baseweb="popover"] li:hover,
 div[data-baseweb="popover"] [aria-selected="true"],
-div[data-baseweb="menu"] li:hover {
+div[data-baseweb="menu"] li:hover,
+div[role="option"]:hover {
     background: #334155 !important;
 }
 
