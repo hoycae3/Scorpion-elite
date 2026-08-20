@@ -894,27 +894,30 @@ div[data-testid="stCheckbox"] label {
 }
 
 /* Selectbox: campo blanco + texto negro (máximo contraste) */
-div[data-testid="stSelectbox"],
 div[data-testid="stSelectbox"] [data-baseweb="select"],
 div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
 div[data-testid="stSelectbox"] [data-baseweb="base-input"],
 div[data-testid="stSelectbox"] [data-baseweb="base-input"] > div {
     background: #ffffff !important;
+    border: 2px solid #22c55e !important;
+    border-radius: 8px !important;
 }
 
+/* Todo el texto del selectbox: NEGRO sobre blanco */
 div[data-testid="stSelectbox"],
 div[data-testid="stSelectbox"] *,
 div[data-testid="stSelectbox"] input,
 div[data-testid="stSelectbox"] textarea,
 div[data-testid="stSelectbox"] span,
 div[data-testid="stSelectbox"] p,
-div[data-testid="stSelectbox"] div {
+div[data-testid="stSelectbox"] div,
+div[data-testid="stSelectbox"] label {
     color: #000000 !important;
     -webkit-text-fill-color: #000000 !important;
     caret-color: #000000 !important;
 }
 
-/* Dropdown de BaseWeb: lista blanca, texto negro, hover gris */
+/* Dropdown: lista blanca, texto negro, hover gris */
 div[data-baseweb="popover"],
 div[data-baseweb="popover"] *,
 div[data-baseweb="menu"],
@@ -943,7 +946,7 @@ div[data-baseweb="popover"] li:hover,
 div[data-baseweb="popover"] [aria-selected="true"],
 div[data-baseweb="menu"] li:hover,
 div[role="option"]:hover {
-    background: #e5e7eb !important;
+    background: #dbeafe !important;
 }
 
 /* ============================================
