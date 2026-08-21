@@ -2174,10 +2174,10 @@ def render_cuotas_mercado(r):
         st.info("🔽 Sin value bets en este momento — las casas cobran lo justo o de más.")
 
 
-# Mercado -> campos de prediccion en picks. Usado para que "Guardar Pick(s)"
-# solo guarde los mercados marcados y "Guardar Todo" guarde todos.
+# Mercado -> campos de prediccion en picks. 'pick' (legado) NO se filtra:
+# tiene NOT NULL en la DB de produccion, omitirlo viola 23502.
 _MERCADO_CAMPOS = {
-    '1X2': ['pick', 'prediccion_1x2', 'prob_1x2', 'p1', 'px', 'p2'],
+    '1X2': ['prediccion_1x2', 'prob_1x2', 'p1', 'px', 'p2'],
     'O/U': ['prediccion_ou', 'prob_ou'],
     'BTTS': ['prediccion_btts', 'btts_yes'],
     'Corners': ['prediccion_corners', 'corners_total_estimado'],
