@@ -2331,6 +2331,42 @@ def _group_title(text, emoji, accent="#00d4ff"):
 def render_analizador_page():
     st.markdown("## 🎯 Analizador de Partidos")
 
+    # CSS para los botones-tarjeta de selección (una sola inyección, evita
+    # removeChild de React - no depender de _btn_pred que inyectaba por boton)
+    st.markdown("""
+<style>
+button[kind="secondary"].sel-pred {
+    background: rgba(255,255,255,0.06) !important;
+    border: 1.5px solid rgba(255,255,255,0.20) !important;
+    border-radius: 12px !important;
+    font-size: 0.78rem !important;
+    padding: 16px 8px !important;
+    color: #fff !important;
+    text-align: center !important;
+    line-height: 1.6 !important;
+    white-space: pre-line !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+    transition: all 0.2s !important;
+    margin-bottom: 6px !important;
+    width: 100%;
+}
+button[kind="secondary"].sel-pred:hover {
+    background: rgba(255,255,255,0.12) !important;
+    border-color: #22c55e !important;
+}
+button[kind="secondary"].sel-pred.active {
+    background: rgba(34,197,94,0.20) !important;
+    border-color: #22c55e !important;
+}
+button[kind="secondary"].sel-pred.highlight {
+    background: rgba(255,255,255,0.10) !important;
+    border-color: #00d4ff !important;
+}
+button[kind="secondary"].sel-pred.active:hover {
+    background: rgba(34,197,94,0.30) !important;
+}
+</style>""", unsafe_allow_html=True)
+
     client = get_client()
 
     # Verificar si viene de Partidos con equipos seleccionados
