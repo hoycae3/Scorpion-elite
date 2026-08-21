@@ -229,7 +229,9 @@ def monte_carlo(xl: float, xv: float, n: int = 3000, seed: Optional[int] = None)
     
     if seed is not None:
         random.seed(seed)
-    
+    else:
+        random.seed(42)
+
     for _ in range(n):
         # Usar transformada inversa correcta para muestreo de Poisson
         gl = _sample_poisson(xl)
