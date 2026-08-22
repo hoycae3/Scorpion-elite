@@ -2286,33 +2286,17 @@ def _extraer_columna_faltante(msg):
 
 
 def _btn_pred(col, key, label, value, active, on_click, highlight=False, accent="#00d4ff"):
-    """Boton-tarjeta clickeable: muestra la prediccion y sirve de seleccion."""
+    """Boton-tarjeta clickeable: muestra la prediccion y sirve de seleccion.
+
+    NO inyecta <style> por boton (era la causa del error removeChild de React).
+    Las clases sel-pred/active/highlight estan pre-cargadas en styles.css."""
     icon = "✅" if active else "◯"
-    if active:
-        border = "#22c55e"
-        bg = "rgba(34,197,94,0.20)"
-    elif highlight:
-        border = accent
-        bg = f"rgba(255,255,255,0.10)"
-    else:
-        border = "rgba(255,255,255,0.20)"
-        bg = "rgba(255,255,255,0.06)"
     help_txt = "Seleccionado" if active else "Clic para seleccionar"
-    col.markdown(
-        f'<style>button[kind="secondary"][key="{key}"] {{'
-        f'background:{bg} !important;border:1.5px solid {border} !important;'
-        f'border-radius:12px !important;font-size:0.78rem !important;'
-        f'padding:16px 8px !important;color:#fff !important;'
-        f'text-align:center !important;line-height:1.6 !important;'
-        f'white-space:pre-line !important;'
-        f'box-shadow:0 2px 8px rgba(0,0,0,0.3) !important;'
-        f'transition:all 0.2s !important;margin-bottom:6px !important;}}'
-        f'button[kind="secondary"][key="{key}"]:hover {{'
-        f'border-color:{accent} !important;'
-        f'background:rgba(255,255,255,0.12) !important;}}'
-        f'</style>', unsafe_allow_html=True)
-    col.button(f"{icon} {label}\n{value}", key=key, use_container_width=True,
-               on_click=on_click, help=help_txt)
+    clase_css = 'sel-pred active' if active else ('sel-pred highlight' if highlight else 'sel-pred')
+    # Streamlit no permite class en button, pero la key unica permite
+    # target en styles.css con [key="..."] si fuera necesario.
+    return col.button(f"{icon} {label}\n{value}", key=key, use_container_width=True,
+                      on_click=on_click, help=help_txt)
 
 
 def _group_title(text, emoji, accent="#00d4ff"):
