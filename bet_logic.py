@@ -37,13 +37,14 @@ def evaluar_over_under(prediccion, real, linea_default):
 def apuesta_ganada(apuesta, pick, resultado_real, resultado_ou_real, btts_real, stats_reales=None):
     """Determina si una apuesta del bankroll fue ganada según el mercado apostado.
 
-    Evalúa EXPLÍCITAMENTE por mercado: si no se hace, un pick que tiene
-    predicción Over/Under de goles liquida Corners/Tarjetas/Remates/TirosArco
-    por GOLES en vez de por su propio stat real (bug de liquidación)."""
+    Evalúa EXPLÍCITAMENTE por mercado y soporta alias (Over/Under y O/U son
+    el mismo mercado; la UI manual usa 'Over/Under', Capital usa 'O/U').
+    Sin esto, apuestas manuales de Over/Under nunca se evaluaban y las
+    de mercados especiales (Corners etc.) caían en fallback por goles."""
     mercado = apuesta.get('mercado', '')
     if mercado == '1X2':
         return pick.get('prediccion_1x2') == resultado_real
-    if mercado == 'O/U':
+    if mercado in ('O/U', 'Over/Under'):
         return pick.get('prediccion_ou', '') == resultado_ou_real
     if mercado == 'BTTS':
         return pick.get('prediccion_btts', '') == btts_real

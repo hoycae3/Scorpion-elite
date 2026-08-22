@@ -1273,9 +1273,14 @@ def sincronizar_partidos():
                                             (equipo_local.lower().strip() == pick_local and
                                              equipo_visitante.lower().strip() == pick_visit)):
                                             pick_id = pick.get('id')
-                                            acertado_1x2 = pick.get('prediccion_1x2') == resultado_real
-                                            acertado_ou = pick.get('prediccion_ou') == resultado_ou_real
-                                            acertado_btts = pick.get('prediccion_btts') == btts_real
+                                            # Solo evaluar mercados que tienen prediccion (picks
+                                            # guardados con seleccion → campos NULL se ignoran)
+                                            pred_1x2 = pick.get('prediccion_1x2')
+                                            acertado_1x2 = (pred_1x2 == resultado_real) if pred_1x2 else None
+                                            pred_ou = pick.get('prediccion_ou')
+                                            acertado_ou = (pred_ou == resultado_ou_real) if pred_ou else None
+                                            pred_btts = pick.get('prediccion_btts')
+                                            acertado_btts = (pred_btts == btts_real) if pred_btts else None
 
                                             # Evaluar aciertos de córners, tarjetas, remates
                                             update_data = {
@@ -4511,24 +4516,32 @@ def render_vip_page():
 
                             if st.button("➕ APOSTAR", type="primary", use_container_width=True):
                                 fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
+                                exitosos = 0
+                                errores = []
                                 try:
                                     for i in seleccionados:
                                         opt = opciones[i]
-                                        client.table('bankroll_apuestas').insert({
-                                            'usuario': usuario_id,
-                                            'fecha': fecha_hoy,
-                                            'fixture_id': opt['pick'].get('fixture_id', 0),  # Para auto-actualizar
-                                            'equipo': f"{opt['pick'].get('equipo_local', '')} vs {opt['pick'].get('equipo_visitante', '')}",
-                                            'cuota': float(cantidades_dict.get(i, opt['cuota'])),
-                                            'cantidad': float(cantidades[i]),
-                                            'mercado': opt['tipo'],
-                                            'pick_id': opt['pick'].get('id'),
-                                            'ganancia': 0,
-                                            'resultado': None
-                                        }).execute()
-                                    st.success(f"✅ {len(seleccionados)} apuesta(s) creada(s)")
+                                        try:
+                                            client.table('bankroll_apuestas').insert({
+                                                'usuario': usuario_id,
+                                                'fecha': fecha_hoy,
+                                                'fixture_id': opt['pick'].get('fixture_id', 0),  # Para auto-actualizar
+                                                'equipo': f"{opt['pick'].get('equipo_local', '')} vs {opt['pick'].get('equipo_visitante', '')}",
+                                                'cuota': float(cantidades_dict.get(i, opt['cuota'])),
+                                                'cantidad': float(cantidades[i]),
+                                                'mercado': opt['tipo'],
+                                                'pick_id': opt['pick'].get('id'),
+                                                'ganancia': 0,
+                                                'resultado': None
+                                            }).execute()
+                                            exitosos += 1
+                                        except Exception as e:
+                                            errores.append(f"{opt['pick'].get('equipo_local','?')} ({opt['tipo']}): {e}")
+                                    if exitosos > 0:
+                                        st.success(f"✅ {exitosos} apuesta(s) creada(s)")
+                                    if errores:
+                                        st.error(f"⚠️ {len(errores)} fallaron: " + " | ".join(errores[:3]))
                                     st.session_state.pop('apuestas_pendientes_analizador', None)
-                                    st.rerun()
                                 except Exception as e:
                                     st.error(f"Error: {e}")
                 else:

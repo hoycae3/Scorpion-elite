@@ -418,6 +418,15 @@ def test_apuesta_ganada_ou_acierto():
     assert apuesta_ganada(apuesta, pick, '1', 'Over 2.5', 'Si') is True
 
 
+def test_apuesta_ganada_ou_alias():
+    """Over/Under (alias de O/U) debe evaluarse igual — fix bug de apuestas manuales."""
+    from bet_logic import apuesta_ganada
+    apuesta = {'mercado': 'Over/Under'}
+    pick = {'prediccion_ou': 'Over 2.5'}
+    assert apuesta_ganada(apuesta, pick, '1', 'Over 2.5', 'Si') is True
+    assert apuesta_ganada(apuesta, pick, '1', 'Under 2.5', 'No') is False
+
+
 def test_apuesta_ganada_btts_acierto():
     """apuesta_ganada: BTTS Si correcto → True."""
     from bet_logic import apuesta_ganada
@@ -623,6 +632,7 @@ if __name__ == '__main__':
         test_apuesta_ganada_1x2_acierto,
         test_apuesta_ganada_1x2_fallo,
         test_apuesta_ganada_ou_acierto,
+        test_apuesta_ganada_ou_alias,
         test_apuesta_ganada_btts_acierto,
         test_apuesta_ganada_corners_no_goles,
         test_apuesta_ganada_remates_regresion,
