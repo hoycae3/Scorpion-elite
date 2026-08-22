@@ -4060,11 +4060,27 @@ def render_vip_page():
         picks_con_resultado = [p for p in picks_res if p.get('resultado_1x2') is not None]
         picks_pendientes = [p for p in picks_res if p.get('resultado_1x2') is None]
 
-        col_r1, col_r2 = st.columns(2)
+        # Obtener apuestas del bankroll
+        try:
+            response_ap = client.table('bankroll_apuestas').select('*').eq('usuario', usuario_id).execute()
+            apuestas_res = response_ap.data if response_ap.data else []
+        except Exception as e:
+            logger.warning(f"carga de apuestas falló: {e}")
+            apuestas_res = []
+
+        apuestas_ganadas = [a for a in apuestas_res if a.get('resultado') == True]
+        apuestas_perdidas = [a for a in apuestas_res if a.get('resultado') == False]
+        apuestas_pendientes = [a for a in apuestas_res if a.get('resultado') is None]
+
+        col_r1, col_r2, col_r3, col_r4 = st.columns(4)
         with col_r1:
-            st.metric("✅ Resueltos", len(picks_con_resultado))
+            st.metric("✅ Picks resueltos", len(picks_con_resultado))
         with col_r2:
-            st.metric("⏳ Pendientes", len(picks_pendientes))
+            st.metric("⏳ Picks pendientes", len(picks_pendientes))
+        with col_r3:
+            st.metric("🎰 Apuestas ganadas/perdidas", f"{len(apuestas_ganadas)}/{len(apuestas_perdidas)}")
+        with col_r4:
+            st.metric("⏳ Apuestas pendientes", len(apuestas_pendientes))
 
         if picks_pendientes:
             with st.expander(f"📋 {len(picks_pendientes)} picks esperando resultados"):
