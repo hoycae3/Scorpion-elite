@@ -4436,7 +4436,7 @@ def render_vip_page():
                     with cols[1]:
                         st.markdown(f"**{opt['display']}** <span style='color:#94a3b8;font-size:0.8rem'> | {opt['tipo']} | {(opt.get('prob') or 0):.0f}%</span>", unsafe_allow_html=True)
                     with cols[2]:
-                        cantidad_input = st.number_input("Cuota", value=float(opt['cuota']), min_value=1.01, max_value=100.0, step=0.05, key=f"cuota_{i}", label_visibility="collapsed")
+                        cantidad_input = st.number_input("💰 Cuota", value=float(opt['cuota']), min_value=1.01, max_value=100.0, step=0.05, key=f"cuota_{i}")
                         cantidades_dict[i] = cantidad_input
 
                 st.markdown("---")
