@@ -4258,7 +4258,8 @@ def render_vip_page():
             logger.error(f"Error obteniendo picks: {e}")
             picks_disponibles = []
 
-        # Obtener apuestas
+        # Obtener apuestas (inicializar para evitar NameError si el try falla)
+        apuestas = []
         try:
             response_apuestas = client.table('bankroll_apuestas').select('*').eq('usuario', usuario_id).order('fecha', desc=True).execute()
             apuestas = response_apuestas.data if response_apuestas.data else []
