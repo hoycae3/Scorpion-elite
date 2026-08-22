@@ -1044,21 +1044,29 @@ div[data-testid="stButton"] button[kind="secondary"][key*="btn_sel_"]:hover {
     color: #fff !important;
 }
 
-/* Number input */
+/* Number input: fondo blanco + texto negro para máxima visibilidad */
 div[data-testid="stNumberInput"] {
-    background: #1e293b !important;
+    background: #ffffff !important;
     border: 2px solid #22c55e !important;
     border-radius: 8px !important;
 }
 
-div[data-testid="stNumberInput"],
 div[data-testid="stNumberInput"] *,
 div[data-testid="stNumberInput"] input,
 div[data-testid="stNumberInputField"],
-div[data-testid="stNumberInputField"] input {
-    color: #ffffff !important;
-    background: #1e293b !important;
-    -webkit-text-fill-color: #ffffff !important;
+div[data-testid="stNumberInputField"] input,
+div[data-testid="stNumberInput"] label {
+    color: #000000 !important;
+    background: #ffffff !important;
+    -webkit-text-fill-color: #000000 !important;
+}
+
+/* Estilo del input interno */
+div[data-testid="stNumberInput"] input {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    caret-color: #000000 !important;
 }
 
 /* ════════════════════════════════════════════
