@@ -3883,8 +3883,8 @@ def render_vip_page():
     usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
 
     # ==================== TABS VIP ====================
-    tab_roi, tab_resultados, tab_bankroll, tab_value, tab_alertas, tab_ranking, tab_export = st.tabs([
-        "📥 ROI", "📊 Resultados", "🏆 Bankroll", "🎯 Value Bets", "🔔 Alertas", "🏆 Ranking", "🔄 Exportar"
+    tab_roi, tab_bankroll, tab_value, tab_alertas, tab_ranking, tab_export = st.tabs([
+        "📥 ROI", "🏆 Bankroll", "🎯 Value Bets", "🔔 Alertas", "🏆 Ranking", "🔄 Exportar"
     ])
 
     # ========== TAB 1: ROI POR MODELO ==========
@@ -4044,68 +4044,8 @@ def render_vip_page():
         else:
             st.info("⚽ No hay picks guardados aún. Ve al Analizador para crear picks.")
 
-    # ========== TAB 2: RESULTADOS (AUTO) ==========
-    with tab_resultados:
-        st.markdown("### 📊 Resultados Automáticos")
-        st.info("🤖 Los resultados se actualizan automáticamente cuando sincronizas partidos desde la página 📊 Partidos. No necesitas ingresar nada manualmente.")
-
-        # Obtener picks con resultado
-        try:
-            response = client.table('picks').select('*').order('fecha', desc=True).execute()
-            picks_res = response.data if response.data else []
-        except Exception as e:
-            logger.warning(f"carga de picks falló: {e}")
-            picks_res = []
-
-        picks_con_resultado = [p for p in picks_res if p.get('resultado_1x2') is not None]
-        picks_pendientes = [p for p in picks_res if p.get('resultado_1x2') is None]
-
-        # Obtener apuestas del bankroll
-        try:
-            response_ap = client.table('bankroll_apuestas').select('*').eq('usuario', usuario_id).execute()
-            apuestas_res = response_ap.data if response_ap.data else []
-        except Exception as e:
-            logger.warning(f"carga de apuestas falló: {e}")
-            apuestas_res = []
-
-        apuestas_ganadas = [a for a in apuestas_res if a.get('resultado') == True]
-        apuestas_perdidas = [a for a in apuestas_res if a.get('resultado') == False]
-        apuestas_pendientes = [a for a in apuestas_res if a.get('resultado') is None]
-
-        col_r1, col_r2, col_r3, col_r4 = st.columns(4)
-        with col_r1:
-            st.metric("✅ Picks resueltos", len(picks_con_resultado))
-        with col_r2:
-            st.metric("⏳ Picks pendientes", len(picks_pendientes))
-        with col_r3:
-            st.metric("🎰 Apuestas ganadas/perdidas", f"{len(apuestas_ganadas)}/{len(apuestas_perdidas)}")
-        with col_r4:
-            st.metric("⏳ Apuestas pendientes", len(apuestas_pendientes))
-
-        if picks_pendientes:
-            with st.expander(f"📋 {len(picks_pendientes)} picks esperando resultados"):
-                for p in picks_pendientes[:10]:
-                    st.write(f"⚽ **{p.get('equipo_local', '?')} vs {p.get('equipo_visitante', '?')}** ({p.get('fecha', '')[:10]})")
-
-        if picks_con_resultado:
-            with st.expander(f"✅ {len(picks_con_resultado)} picks ya resueltos"):
-                for p in picks_con_resultado[:10]:
-                    acertado = p.get('acertado_1x2')
-                    icon = "✅" if acertado else "❌"
-                    st.write(f"{icon} **{p.get('equipo_local', '?')} vs {p.get('equipo_visitante', '?')}** → Real: {p.get('resultado_1x2', '?')} | Marcador: {p.get('marcador', '?')}")
-
-        st.markdown("---")
-        st.markdown("#### 🔄 Cómo funciona")
-        st.markdown("""
-        1. **Analiza** un partido en el Analizador y guarda el pick
-        2. **Aposta** desde el Bankroll
-        3. Cuando el partido termine, ve a **📊 Partidos → 🔄 Sincronizar**
-        4. El sistema obtiene resultados reales y actualiza TODO automáticamente:
-           - ✅ Resultados 1X2, O/U, BTTS
-           - ✅ Córners, Tarjetas, Remates, Tiros Arco
-           - ✅ Bankroll (ganancias/pérdidas)
-           - ✅ Calibración de lambdas
-        """)
+    # ========== TAB 2: RESULTADOS → ahora dentro de 🏆 Bankroll como sub-tab "📊 Resultados" (único, sin duplicados)
+    # El contenido de Resultados (picks y apuestas) se encuentra en sub_tab3 de Bankroll
 
     # ========== TAB 3: BANKROLL ==========
     with tab_bankroll:
@@ -4285,7 +4225,7 @@ def render_vip_page():
 
         # ==================== SUBTABS ====================
 
-        sub_tab1, sub_tab2, sub_tab3, sub_tab4 = st.tabs(["📥 Dashboard", "➕ Agregar", "📋 Historial", "⚙️ Config"])
+        sub_tab1, sub_tab2, sub_tab3, sub_tab4 = st.tabs(["📥 Dashboard", "➕ Agregar", "📊 Resultados", "⚙️ Config"])
 
         # ========== SUBTAB 1: DASHBOARD ==========
         with sub_tab1:
