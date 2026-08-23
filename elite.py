@@ -4312,7 +4312,23 @@ def render_vip_page():
 
         # ========== SUBTAB 2: AGREGAR ==========
         with sub_tab2:
-            picks_sin = [p for p in picks_disponibles if p.get('acertado_1x2') is None]
+            # Pendiente = sin resultado registrado (mismo criterio que la
+            # sync: resultado_1x2 IS NULL). No usar acertado_1x2: los picks
+            # guardados sin mercado 1X2 quedan con acertado_1x2 NULL incluso
+            # después de resueltos y reaparecían aquí para siempre.
+            picks_sin = [p for p in picks_disponibles if p.get('resultado_1x2') is None]
+
+            # Ocultar picks de partidos ya finalizados aunque la sync no los
+            # haya resuelto (FT fuera de la ventana de sincronización)
+            if picks_sin:
+                try:
+                    fixture_ids = list({p.get('fixture_id') for p in picks_sin if p.get('fixture_id')})
+                    if fixture_ids:
+                        resp_ft = client.table('partidos').select('fixture_id').eq('estado', 'FT').in_('fixture_id', fixture_ids).execute()
+                        ft_ids = {row['fixture_id'] for row in (resp_ft.data or [])}
+                        picks_sin = [p for p in picks_sin if p.get('fixture_id') not in ft_ids]
+                except Exception as e:
+                    logger.error(f"Error filtrando picks de partidos finalizados: {e}")
 
             # Apuestas pendientes enviadas desde el Analizador
             pendientes_analizador = st.session_state.get('apuestas_pendientes_analizador', {})
