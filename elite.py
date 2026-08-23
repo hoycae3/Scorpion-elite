@@ -3883,8 +3883,8 @@ def render_vip_page():
     usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
 
     # ==================== TABS VIP ====================
-    tab_roi, tab_bankroll, tab_value, tab_alertas, tab_ranking, tab_export = st.tabs([
-        "📥 ROI", "🏆 Bankroll", "🎯 Value Bets", "🔔 Alertas", "🏆 Ranking", "🔄 Exportar"
+    tab_roi, tab_bankroll, tab_value, tab_alertas, tab_export = st.tabs([
+        "📥 ROI", "🏆 Bankroll", "🎯 Value Bets", "🔔 Alertas", "🔄 Exportar"
     ])
 
     # ========== TAB 1: ROI POR MODELO ==========
@@ -4724,11 +4724,7 @@ def render_vip_page():
     with tab_alertas:
         render_vip_alertas(client, usuario_id)
 
-    # ========== TAB 6: RANKING ==========
-    with tab_ranking:
-        render_vip_ranking(client, usuario_id, picks)
-
-    # ========== TAB 7: EXPORTAR ==========
+    # ========== TAB 5: EXPORTAR ==========
     with tab_export:
         render_vip_export(client, usuario_id, picks)
 
