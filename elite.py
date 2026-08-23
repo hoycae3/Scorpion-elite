@@ -1524,10 +1524,11 @@ def sincronizar_partidos():
                         # No hay FT pendientes en la ventana → saltar este equipo (0 API calls)
                         continue
 
-                    # ★ ACUMULACIÓN: para equipos CON FT pendiente, traer sus últimos 10
+                    # ★ ACUMULACIÓN: para equipos CON FT pendiente, traer sus últimos 5
                     # FT desde la API y guardar TODOS los faltantes (recupera días
                     # perdidos). excluir_fixture_ids evita re-descargar stats de los
-                    # ya guardados y evita sobreescribirlos con ceros.
+                    # ya guardados. max_partidos=5 (era 10) para evitar timeout de Render
+                    # (~10s por stats × 5 = ~50s por equipo máximo).
                     try:
                         partidos_recientes = obtener_ultimos_partidos_equipo(
                             team_id=team_id,
@@ -1536,7 +1537,7 @@ def sincronizar_partidos():
                             season=equipo['season'],
                             headers=headers,
                             API_URL=API_URL,
-                            max_partidos=10,
+                            max_partidos=5,
                             excluir_fixture_ids=fixtures_guardados
                         )
 
