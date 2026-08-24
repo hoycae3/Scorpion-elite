@@ -4387,6 +4387,20 @@ def render_vip_page():
                 with col_m4:
                     st.metric("🏆 Ganancia", format_money(ganancia_efectiva, simbolo))
 
+                # Desglose: cuanto ganado vs cuanto perdido (solo resueltas)
+                resueltas = [a for a in apuestas if a.get('resultado') is not None]
+                if resueltas:
+                    total_ganado = sum(a.get('ganancia', 0) for a in resueltas if a.get('ganancia', 0) > 0)
+                    total_perdido = sum(a.get('ganancia', 0) for a in resueltas if a.get('ganancia', 0) < 0)
+                    col_g1, col_g2, col_g3 = st.columns(3)
+                    with col_g1:
+                        st.metric("✅ Ganado (apuestas ganadas)", format_money(total_ganado, simbolo))
+                    with col_g2:
+                        st.metric("❌ Perdido (apuestas perdidas)", format_money(total_perdido, simbolo))
+                    with col_g3:
+                        net = total_ganado + total_perdido  # total_perdido es negativo
+                        st.metric("📊 Neto (resueltas)", f"{'+' if net >= 0 else ''}{format_money(net, simbolo)}")
+
                 # Banner de estado
                 if bankroll_actual == 0:
                     st.error(f"💀 Bancarrota: perdiste tu bankroll de {format_money(bankroll_guardado, simbolo)}. Deposita en ⚙️ Config para seguir.")
