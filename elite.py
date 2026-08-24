@@ -4253,24 +4253,29 @@ def render_vip_page():
             # Info de bankroll (moneda por defecto)
             simbolo = "$"
             st.markdown(f"""
-            📊 **Bankroll Inicial:** {format_money(bankroll_guardado, simbolo)} 
-            | 💸 **Total Retirado:** {format_money(total_retirado_guardado, simbolo)}
+            💵 **Depositado:** {format_money(bankroll_guardado, simbolo)} 
+            | 💸 **Retirado:** {format_money(total_retirado_guardado, simbolo)}
+            | 📊 **Actual:** {format_money(bankroll_actual if apuestas else max(0.0, bankroll_guardado - total_retirado_guardado), simbolo)}
             """)
-            st.markdown("_💡 Para cambiar moneda o hacer retiros, ve a **⚙️ Config**_")
+            st.markdown("_💡 Para depositar, cambiar moneda o hacer retiros, ve a **⚙️ Config**_")
 
             if apuestas:
                 total_apostado = sum(a.get('cantidad', 0) for a in apuestas)
                 ganancias = sum(a.get('ganancia', 0) for a in apuestas)
                 # Bankroll real = Inicial + Ganancias - Retirado
-                # Nunca negativo: no se puede perder mas de lo depositado
+                # Nunca negativo: no se puede perder mas de lo depositado.
+                # ganancia_efectiva = la ganancia vista desde el bolsillo del
+                # usuario (tope de perdida = lo que deposito), usada para
+                # mostrar. 'ganancias' cruda se conserva para el ROI real.
                 bankroll_actual = max(0.0, bankroll_guardado + ganancias - total_retirado_guardado)
+                ganancia_efectiva = bankroll_actual - bankroll_guardado
                 roi = ((bankroll_actual - bankroll_guardado) / bankroll_guardado * 100) if bankroll_guardado > 0 else 0
                 apuestas_ganadas = len([a for a in apuestas if a.get('ganancia', 0) > 0])
                 total_apuestas = len(apuestas)
                 tasa_acierto = (apuestas_ganadas / total_apuestas * 100) if total_apuestas > 0 else 0
 
                 # Bankroll grande
-                color_ganancia = "#4ade80" if ganancias >= 0 else "#f87171"
+                color_ganancia = "#4ade80" if ganancia_efectiva >= 0 else "#f87171"
                 color_label = "#cbd5e1"
                 st.markdown(f"""
                 <div style="background: linear-gradient(135deg, #1a3a2a 0%, #0f2518 100%); 
@@ -4279,7 +4284,7 @@ def render_vip_page():
                             box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
                     <div style="color: {color_label}; font-size: 0.9rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Bankroll Actual</div>
                     <div style="font-size: 3rem; font-weight: 800; color: {color_ganancia}; margin: 10px 0; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">{format_money(bankroll_actual, simbolo)}</div>
-                    <div style="color: {color_ganancia}; font-size: 1.2rem; font-weight: 600;">{'+' if ganancias >= 0 else ''}{format_money(ganancias, simbolo)} ({'+' if roi >= 0 else ''}{roi:.1f}%)</div>
+                    <div style="color: {color_ganancia}; font-size: 1.2rem; font-weight: 600;">{'+' if ganancia_efectiva >= 0 else ''}{format_money(ganancia_efectiva, simbolo)} ({'+' if roi >= 0 else ''}{roi:.1f}%)</div>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -4291,9 +4296,12 @@ def render_vip_page():
                 with col_m3:
                     st.metric("💰 Apostado", format_money(total_apostado, simbolo))
                 with col_m4:
-                    st.metric("🏆 Ganancia", format_money(ganancias, simbolo))
+                    st.metric("🏆 Ganancia", format_money(ganancia_efectiva, simbolo))
 
-                if bankroll_actual >= bankroll_guardado * 1.1:
+                # Banner de estado
+                if bankroll_actual == 0:
+                    st.error(f"💀 Bancarrota: perdiste tu bankroll de {format_money(bankroll_guardado, simbolo)}. Deposita en ⚙️ Config para seguir.")
+                elif bankroll_actual >= bankroll_guardado * 1.1:
                     st.success(f"✅ Excelente: +{((bankroll_actual/bankroll_guardado)-1)*100:.1f}%")
                 elif bankroll_actual >= bankroll_guardado:
                     st.info(f"📊 Estable")
@@ -4304,7 +4312,7 @@ def render_vip_page():
                     evolucion = []
                     b = bankroll_guardado
                     for a in sorted(apuestas, key=lambda x: x.get('fecha', '')):
-                        b += a.get('ganancia', 0)
+                        b = max(0.0, b + (a.get('ganancia', 0) or 0))
                         evolucion.append({'Fecha': str(a.get('fecha', ''))[:10], 'Bankroll': b})
                     st.markdown("#### 📈 Evolución")
                     st.line_chart(pd.DataFrame(evolucion).set_index('Fecha'))
@@ -4338,6 +4346,9 @@ def render_vip_page():
             en_juego = sum(a.get('cantidad', 0) or 0 for a in apuestas if a.get('resultado') is None)
             disponible = max(0.0, bankroll_total - en_juego)
             st.markdown(f"💰 **Bankroll:** {format_money(bankroll_total, simbolo)}  |  ⏳ **En juego:** {format_money(en_juego, simbolo)}  |  ✅ **Disponible:** {format_money(disponible, simbolo)}")
+
+            if disponible <= 0:
+                st.error(f"💀 Sin saldo disponible ({format_money(disponible, simbolo)}). Deposita en ⚙️ Config para seguir apostando.")
 
             # Apuestas pendientes enviadas desde el Analizador
             pendientes_analizador = st.session_state.get('apuestas_pendientes_analizador', {})
