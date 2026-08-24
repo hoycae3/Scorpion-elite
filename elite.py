@@ -1604,16 +1604,28 @@ def render_partidos_page():
     st.markdown("### 📊 Partidos de los Próximos 7 Días")
 
     # ========== ESTADO DE SINCRONIZACION ==========
+    def _exact_count(resp):
+        """Supabase pagina con max 1000 por query; cuando el usuario
+        tiene >1000 filas, len(resp.data) reporta 1000 en vez del total.
+        Usar resp.count que es el COUNT(*) real exacto."""
+        try:
+            c = getattr(resp, 'count', None)
+            if isinstance(c, int) and c > 0:
+                return c
+        except Exception:
+            pass
+        return len(resp.data) if resp.data else 0
+
     try:
         client = get_client()
         if client:
-            # Partidos
+            # Partidos (usa count exacto para no quedar en 1000 por paginacion)
             resp_part = client.table('partidos').select('fixture_id', count='exact').execute()
-            num_partidos = len(resp_part.data) if resp_part.data else 0
+            num_partidos = _exact_count(resp_part)
 
             # Equipos unicos
             resp_eq = client.table('equipos_stats').select('team_id', count='exact').execute()
-            num_equipos = len(resp_eq.data) if resp_eq.data else 0
+            num_equipos = _exact_count(resp_eq)
 
             # Fecha ultimo partido
             resp_fechas = client.table('partidos').select('fecha').order('fecha', desc=True).limit(1).execute()
@@ -1621,7 +1633,7 @@ def render_partidos_page():
 
             # Equipos con stats reales (lambda_local no nulo)
             resp_stats = client.table('equipos_stats').select('team_id', count='exact').not_.is_('lambda_local', 'null').execute()
-            num_stats = len(resp_stats.data) if resp_stats.data else 0
+            num_stats = _exact_count(resp_stats)
 
             # Mostrar estado
             col_s1, col_s2, col_s3, col_s4 = st.columns(4)
@@ -1637,7 +1649,7 @@ def render_partidos_page():
             if num_partidos == 0:
                 st.info("Sincroniza para descargar partidos")
     except Exception as e:
-        logger.warning(f"Error en linea 941: {e}")
+        logger.warning(f"Error en estado de sincronizacion: {e}")
 
     # API-Football config
     API_KEY = os.getenv("API_FOOTBALL_KEY", "")
@@ -1658,9 +1670,9 @@ def render_partidos_page():
         if st.button("🗑️ Limpiar", type="secondary", use_container_width=True):
             client = get_client()
             try:
-                # Contar antes de borrar (optimizado)
-                num_p = len(client.table('partidos').select('fixture_id').execute().data or [])
-                num_c = len(client.table('cuotas').select('fixture_id').execute().data or [])
+                # Contar antes de borrar (usa count exacto; no paginacion)
+                num_p = _exact_count(client.table('partidos').select('fixture_id', count='exact').execute())
+                num_c = _exact_count(client.table('cuotas').select('fixture_id', count='exact').execute())
 
                 # Borrar todos (usar filtro dummy que siempre es verdadero)
                 if num_p > 0:
@@ -1682,11 +1694,8 @@ def render_partidos_page():
         if st.button("🧹 Limpiar Equipos", type="secondary", use_container_width=True):
             client = get_client()
             try:
-                resp_eq = client.table('equipos_stats').select('equipo', count='exact').execute()
-                num_eq = len(resp_eq.data) if resp_eq.data else 0
-
-                resp_ep = client.table('equipo_partidos_stats').select('equipo', count='exact').execute()
-                num_ep = len(resp_ep.data) if resp_ep.data else 0
+                num_eq = _exact_count(client.table('equipos_stats').select('equipo', count='exact').execute())
+                num_ep = _exact_count(client.table('equipo_partidos_stats').select('equipo', count='exact').execute())
 
                 if num_eq > 0 or num_ep > 0:
                     client.table('equipos_stats').delete().neq('equipo', '').execute()
