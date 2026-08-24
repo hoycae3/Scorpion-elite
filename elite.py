@@ -4445,9 +4445,18 @@ def render_vip_page():
             # Saldo disponible = bankroll - lo ya comprometido en apuestas
             # pendientes. Regla: nunca se puede apostar mas de lo que hay.
             # bankroll_total ya viene calculado del Dashboard (piso en 0).
+            # Se usa get(..., 0) or 0 porque las pendientes pueden tener
+            # ganancia NULL en DB.
             en_juego = sum(a.get('cantidad', 0) or 0 for a in apuestas if a.get('resultado') is None)
             disponible = max(0.0, bankroll_total - en_juego)
-            st.markdown(f"💰 **Bankroll:** {format_money(bankroll_total, simbolo)}  |  ⏳ **En juego:** {format_money(en_juego, simbolo)}  |  ✅ **Disponible:** {format_money(disponible, simbolo)}")
+            # Tres chips claros: saldo real, en juego, disponible
+            col_b, col_j, col_d = st.columns(3)
+            with col_b:
+                st.markdown(f"<div style='background:rgba(147,197,253,0.08);border:1px solid #93c5fd;border-radius:8px;padding:8px 12px;color:#93c5fd;font-size:0.85rem;'>💰 Bankroll<br><span style='font-size:1.1rem;font-weight:700;'>{format_money(bankroll_total, simbolo)}</span></div>", unsafe_allow_html=True)
+            with col_j:
+                st.markdown(f"<div style='background:rgba(251,146,60,0.08);border:1px solid #fb923c;border-radius:8px;padding:8px 12px;color:#fb923c;font-size:0.85rem;'>⏳ En juego<br><span style='font-size:1.1rem;font-weight:700;'>{format_money(en_juego, simbolo)}</span></div>", unsafe_allow_html=True)
+            with col_d:
+                st.markdown(f"<div style='background:rgba(74,222,128,0.08);border:1px solid #4ade80;border-radius:8px;padding:8px 12px;color:#4ade80;font-size:0.85rem;'>✅ Disponible<br><span style='font-size:1.1rem;font-weight:700;'>{format_money(disponible, simbolo)}</span></div>", unsafe_allow_html=True)
 
             if disponible <= 0:
                 st.error(f"💀 Sin saldo disponible ({format_money(disponible, simbolo)}). Deposita en ⚙️ Config para seguir apostando.")
