@@ -4074,62 +4074,21 @@ def render_vip_page():
             font-weight: 500 !important;
         }
 
-        /* Inputs de número (cuota) */
-        div[data-testid="stNumberInput"] {
-            max-width: 80px !important;
-            min-height: 32px !important;
-        }
-
+        /* Inputs de número: legibles, no mini */
         div[data-testid="stNumberInput"] label {
             color: #e2e8f0 !important;
-            font-size: 11px !important;
-            font-weight: 600 !important;
-            margin-bottom: 0 !important;
-            padding-bottom: 0 !important;
         }
-
         div[data-testid="stNumberInput"] input {
             color: #000000 !important;
-            font-size: 14px !important;
             font-weight: bold !important;
             background: #ffffff !important;
-            padding: 2px 6px !important;
-            min-height: 32px !important;
         }
 
-        /* Selectbox - IGUAL a los number inputs */
-        div[data-testid="stSelectbox"] {
-            max-width: 80px !important;
-            min-height: 32px !important;
-            background: #ffffff !important;
-            border: 2px solid #22c55e !important;
-            border-radius: 8px !important;
-        }
-
+        /* Selectbox neutral: se ve completo (el estilo mini global anterior
+           de 80px + borde verde cortaba TODOS los dropdowns de la app:
+           Moneda, Accion, filtros se veian diminutos e ilegibles) */
         div[data-testid="stSelectbox"] label {
             color: #e2e8f0 !important;
-            font-size: 11px !important;
-            font-weight: 600 !important;
-            margin-bottom: 0 !important;
-            padding-bottom: 0 !important;
-        }
-
-        div[data-testid="stSelectbox"],
-        div[data-testid="stSelectbox"] *,
-        div[data-testid="stSelectbox"] input,
-        div[data-testid="stSelectbox"] span,
-        div[data-testid="stSelectbox"] p,
-        div[data-testid="stSelectbox"] div {
-            color: #000000 !important;
-            font-size: 14px !important;
-            font-weight: bold !important;
-            background: #ffffff !important;
-        }
-        div[data-testid="stSelectbox"] [data-baseweb="select"] > div {
-            background: #ffffff !important;
-            border: none !important;
-            min-height: 32px !important;
-            padding: 2px 6px !important;
         }
 
         /* Filas de selección de picks - COMPACTAS */
