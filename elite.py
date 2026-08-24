@@ -4621,34 +4621,32 @@ def render_vip_page():
         except Exception as e:
             bankroll_actual_db = 1000.0
 
-        # TODO en una sola línea compacta (solo Moneda; antes habia Inicial+Retiro)
-        col1 = st.container()
-        with col1:
+        # Moneda: ancho de ~50% (antes ocupaba toda la fila)
+        col_mon, _ = st.columns([1, 1])
+        with col_mon:
             st.markdown("""
             <style>
-            /* Selector de moneda mas grande (Streamlit 1.61 usa react-aria, no baseweb).
-               Se apunta por aria-label del input para afectar SOLO a este selectbox.
-               Hay que tocar el contenedor y el ComboBox, no solo el input, para que crezca. */
+            /* Selector de moneda más compacto (antes ~4.5rem de alto) */
             div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) > div {
-                min-height: 4.5rem !important;
+                min-height: 2.5rem !important;
             }
             div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) .react-aria-ComboBox {
-                min-height: 4.5rem !important;
+                min-height: 2.5rem !important;
             }
             div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) .react-aria-ComboBox [role="combobox"] {
-                font-size: 1.6rem !important;
-                min-height: 4rem !important;
-                padding: 0.8rem 1rem !important;
-                line-height: 1.6rem !important;
+                font-size: 1.1rem !important;
+                min-height: 2.2rem !important;
+                padding: 0.3rem 0.8rem !important;
+                line-height: 1.2rem !important;
             }
             div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) .react-aria-ComboBox button[aria-label="Open"] {
-                min-height: 4rem !important;
-                height: 4rem !important;
-                width: 3rem !important;
+                min-height: 2.2rem !important;
+                height: 2.2rem !important;
+                width: 2rem !important;
             }
             div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) [data-testid="stWidgetLabel"] p {
-                font-size: 1.05rem !important;
-                font-weight: 700 !important;
+                font-size: 0.95rem !important;
+                font-weight: 600 !important;
             }
             </style>
             """, unsafe_allow_html=True)
