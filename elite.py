@@ -3572,45 +3572,22 @@ def render_claves_page():
 # ══════════════════════════════════════════════════════════
 
 def render_vip_value_bets(client, usuario_id):
-    """Tab Value Bets: detector de apuestas con value."""
-    st.markdown("### 🎯 Detector de Value Bets")
-    st.markdown("_Encuentra apuestas donde la probabilidad del modelo es MAYOR que la cuota del mercado_")
+    """Tab Value Bets: lista las oportunidades detectadas automaticamente
+    durante '💰 Cargar Cuotas' (umbral >=30%, mercado mas acertado del usuario)."""
+    st.markdown("### 🎯 Value Bets Detectados")
+    st.markdown("_Detectados automáticamente al cargar cuotas. Solo muestra apuestas con ≥30% de value en tu mercado más acertado._")
 
-    col_v1, col_v2, col_v3 = st.columns(3)
-    with col_v1:
-        prob_modelo = st.slider("📥 Probabilidad del Modelo (%)", 10, 99, 60)
-    with col_v2:
-        cuota_mercado = st.number_input("🏆 Cuota del Mercado", value=2.0, min_value=1.01, max_value=20.0, step=0.05)
-    with col_v3:
-        tipo_apuesta = st.selectbox("📋 Tipo de Apuesta", ["1X2", "Over/Under", "BTTS", "Corners", "Tarjetas"])
-
-    prob_implicita = (1 / cuota_mercado) * 100
-    value = prob_modelo - prob_implicita
-
-    col_calc1, col_calc2, col_calc3 = st.columns(3)
-    with col_calc1:
-        st.metric("📥 Prob. Modelo", f"{prob_modelo:.1f}%")
-    with col_calc2:
-        st.metric("🔽 Prob. Implícita", f"{prob_implicita:.1f}%")
-    with col_calc3:
-        if value > 5:
-            st.metric("🎯 VALUE", f"+{value:.1f}%", delta="📘📘 ALTO VALUE")
-        elif value > 0:
-            st.metric("🎯 VALUE", f"+{value:.1f}%", delta="✅ Value positivo")
-        else:
-            st.metric("🎯 VALUE", f"{value:.1f}%", delta="❌ Sin value")
-
-    if value >= 10:
-        st.success("📘📘 **APUESTA FUERTE** - Value muy alto, alta confianza")
-    elif value >= 5:
-        st.success("✅ **APUESTA** - Value positivo, buena oportunidad")
-    elif value >= 0:
-        st.info("📥 **CAUTELA** - Value marginal, depende de otros factores")
-    else:
-        st.error("❌ **EVITAR** - La cuota está por encima de lo que el modelo sugiere")
-
-    st.markdown("---")
-    st.markdown("#### 📋 Value Bets Registrados")
+    # Limpiar value bets de partidos ya finalizados para no acumular basura
+    try:
+        resp = client.table('value_bets').select('fixture_id').eq('usuario_id', usuario_id).execute()
+        fix_ids = [r['fixture_id'] for r in (resp.data or []) if r.get('fixture_id')]
+        if fix_ids:
+            partidos = client.table('partidos').select('fixture_id').in_('fixture_id', fix_ids).eq('estado', 'FT').execute()
+            finalizados = [p['fixture_id'] for p in (partidos.data or [])]
+            if finalizados:
+                client.table('value_bets').delete().eq('usuario_id', usuario_id).in_('fixture_id', finalizados).execute()
+    except Exception as e:
+        logger.warning(f"render_vip_value_bets: limpieza FT fallo: {e}")
 
     try:
         vb_response = client.table('value_bets').select('*').eq('usuario_id', usuario_id).order('value', desc=True).limit(20).execute()
@@ -3622,16 +3599,16 @@ def render_vip_value_bets(client, usuario_id):
                     "Fecha": vb.get('fecha', ''),
                     "Partido": f"{vb.get('equipo_local', '')} vs {vb.get('equipo_visitante', '')}",
                     "Tipo": vb.get('tipo', ''),
+                    "Apuesta": vb.get('detalle', ''),
                     "Prob Modelo": f"{vb.get('prob_modelo', 0):.1f}%",
-                    "Cuota": vb.get('cuota_mercado', 0),
-                    "Value": f"{vb.get('value', 0):.1f}%",
-                    "Resultado": vb.get('resultado', 'pendiente'),
+                    "Cuota": f"{vb.get('cuota_mercado', 0):.2f}",
+                    "Value": f"+{vb.get('value', 0):.1f}%",
                 }
                 for vb in value_bets
             ])
-            st.dataframe(df_vb, use_container_width=True)
+            st.dataframe(df_vb, use_container_width=True, hide_index=True)
         else:
-            st.info("⚽ No hay value bets registrados.")
+            st.info("⚽ Sin value bets detectados. Usa **💰 Cargar Cuotas** en la pestaña Partidos para buscar oportunidades.")
     except Exception as e:
         logger.warning(f"render_vip_value_bets falló: {e}")
         st.info("⚽ Conecta a Supabase para ver value bets guardados.")
