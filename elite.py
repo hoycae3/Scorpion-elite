@@ -4621,108 +4621,81 @@ def render_vip_page():
         except Exception as e:
             bankroll_actual_db = 1000.0
 
-        # Moneda: ancho ~15% (usuario lo pidio explicito)
-        col_mon, _ = st.columns([0.15, 0.85])
-        with col_mon:
-            st.markdown("""
-            <style>
-            /* Selector de moneda muy compacto */
-            div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) > div {
-                min-height: 2rem !important;
-            }
-            div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) .react-aria-ComboBox {
-                min-height: 2rem !important;
-            }
-            div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) .react-aria-ComboBox [role="combobox"] {
-                font-size: 0.95rem !important;
-                min-height: 1.8rem !important;
-                padding: 0.15rem 0.6rem !important;
-                line-height: 1.1rem !important;
-            }
-            div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) .react-aria-ComboBox button[aria-label="Open"] {
-                min-height: 1.8rem !important;
-                height: 1.8rem !important;
-                width: 1.6rem !important;
-            }
-            div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) [data-testid="stWidgetLabel"] p {
-                font-size: 0.85rem !important;
-                font-weight: 600 !important;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-            moneda_select = st.selectbox(
-                "💰 Moneda",
-                options=list(MONEDAS.keys()),
-                format_func=lambda x: f"{MONEDAS[x]['simbolo']} {x}",
-                index=0,
-                key="moneda_config"
-            )
-            simbolo = MONEDAS[moneda_select]["simbolo"]
-
-        # Una sola accion: Deposito (suma) o Retiro (resta). El campo
-        # 'Inicial' que fijaba un valor fue reemplazado: confundia y
-        # permitia sobrescribir depositos acumulados por accidente.
-        # En DB se guarda en 'bankroll_inicial' (misma columna de siempre).
+        # Todo en una fila: Moneda + Accion + Monto + Ejecutar (pedido por
+        # el usuario para ahorrar espacio vertical). 'Inicial' ya no existe:
+        # solo se suma (Depositar) o resta (Retirar) con validacion.
         st.markdown("""
         <style>
-        /* Agrandar labels del formulario Deposito/Retiro para evitar que
-           se corten por su corto texto */
+        /* Labels del form legibles (no diminutos) */
         div[data-testid="stForm"] label p {
-            font-size: 1rem !important;
+            font-size: 0.95rem !important;
             font-weight: 600 !important;
         }
         </style>
         """, unsafe_allow_html=True)
-        with st.form("form_cash", clear_on_submit=True):
-            col_c1, col_c2, col_c3 = st.columns([2, 2, 1])
-            with col_c1:
-                accion = st.selectbox("Acción (Depositar o Retirar)", ["💵 Depositar", "💸 Retirar"])
-            with col_c2:
-                monto = st.number_input("Monto a mover", min_value=0.0, step=10.0)
-            with col_c3:
-                st.markdown("&nbsp;")
-                ejecutar = st.form_submit_button("💾 Ejecutar", use_container_width=True)
 
-            if ejecutar:
-                if monto <= 0:
-                    st.warning("Ingresa un monto mayor a 0")
-                elif accion == "💵 Depositar":
+        accion = "💵 Depositar"  # valor por defecto (form lo sobreescribe)
+        monto = 0.0
+        ejecutar = False
+        with st.form("form_cash", clear_on_submit=True):
+            col_mon, col_acc, col_monto, col_btn = st.columns([1.5, 2, 2, 1.2])
+            with col_mon:
+                moneda_select = st.selectbox(
+                    "💰 Moneda",
+                    options=list(MONEDAS.keys()),
+                    format_func=lambda x: f"{MONEDAS[x]['simbolo']} {x}",
+                    index=0,
+                    key="moneda_config"
+                )
+            with col_acc:
+                accion = st.selectbox("Acción", ["💵 Depositar", "💸 Retirar"], key="accion_cash")
+            with col_monto:
+                monto = st.number_input("Monto", min_value=0.0, step=10.0, key="monto_cash")
+            with col_btn:
+                st.markdown("<div style='margin-top:1.6rem'></div>", unsafe_allow_html=True)
+                ejecutar = st.form_submit_button("💾 Ejecutar", use_container_width=True)
+            simbolo = MONEDAS[moneda_select]["simbolo"]
+
+        if ejecutar:
+            if monto <= 0:
+                st.warning("Ingresa un monto mayor a 0")
+            elif accion == "💵 Depositar":
+                try:
+                    resp_dep = client.table('user_stats').select('bankroll_inicial').eq('usuario', usuario_id).execute()
+                    actual_dep = float(resp_dep.data[0].get('bankroll_inicial', 1000.0)) if resp_dep.data else 1000.0
+                    nuevo_total = actual_dep + float(monto)
+                    client.table('user_stats').upsert({
+                        'usuario': usuario_id,
+                        'bankroll_inicial': nuevo_total,
+                    }, on_conflict='usuario').execute()
+                    st.success(f"✅ Depósito de {format_money(monto, simbolo)} → Total depositado: {format_money(nuevo_total, simbolo)}")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Error: {e}")
+            else:  # Retirar
+                # No se puede retirar mas del bankroll actual
+                # (misma regla que las apuestas: nunca negativo)
+                banco_temp = max(0.0, bankroll_actual_db + sum(a.get('ganancia', 0) or 0 for a in apuestas) - total_retirado_guardado)
+                if monto > banco_temp:
+                    st.error(f"⚠️ No puedes retirar más de tu bankroll actual ({format_money(banco_temp, simbolo)})")
+                else:
                     try:
-                        resp_dep = client.table('user_stats').select('bankroll_inicial').eq('usuario', usuario_id).execute()
-                        actual_dep = float(resp_dep.data[0].get('bankroll_inicial', 1000.0)) if resp_dep.data else 1000.0
-                        nuevo_total = actual_dep + float(monto)
-                        client.table('user_stats').upsert({
+                        fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
+                        client.table('bankroll_retiros').insert({
                             'usuario': usuario_id,
-                            'bankroll_inicial': nuevo_total,
-                        }, on_conflict='usuario').execute()
-                        st.success(f"✅ Depósito de {format_money(monto, simbolo)} → Total depositado: {format_money(nuevo_total, simbolo)}")
+                            'fecha': fecha_hoy,
+                            'cantidad': float(monto),
+                            'nota': 'Retiro'
+                        }).execute()
+                        resp_upd = client.table('user_stats').select('total_retirado').eq('usuario', usuario_id).execute()
+                        total_act = (resp_upd.data[0].get('total_retirado', 0) or 0) if resp_upd.data else 0
+                        client.table('user_stats').update({
+                            'total_retirado': float(total_act) + float(monto)
+                        }).eq('usuario', usuario_id).execute()
+                        st.success(f"✅ Retiro de {format_money(monto, simbolo)}")
                         st.rerun()
                     except Exception as e:
                         st.error(f"❌ Error: {e}")
-                else:  # Retirar
-                    # No se puede retirar mas del bankroll actual
-                    # (misma regla que las apuestas: nunca negativo)
-                    banco_temp = max(0.0, bankroll_actual_db + sum(a.get('ganancia', 0) or 0 for a in apuestas) - total_retirado_guardado)
-                    if monto > banco_temp:
-                        st.error(f"⚠️ No puedes retirar más de tu bankroll actual ({format_money(banco_temp, simbolo)})")
-                    else:
-                        try:
-                            fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
-                            client.table('bankroll_retiros').insert({
-                                'usuario': usuario_id,
-                                'fecha': fecha_hoy,
-                                'cantidad': float(monto),
-                                'nota': 'Retiro'
-                            }).execute()
-                            resp_upd = client.table('user_stats').select('total_retirado').eq('usuario', usuario_id).execute()
-                            total_act = (resp_upd.data[0].get('total_retirado', 0) or 0) if resp_upd.data else 0
-                            client.table('user_stats').update({
-                                'total_retirado': float(total_act) + float(monto)
-                            }).eq('usuario', usuario_id).execute()
-                            st.success(f"✅ Retiro de {format_money(monto, simbolo)}")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"❌ Error: {e}")
 
         st.markdown("---")
 
