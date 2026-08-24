@@ -4262,7 +4262,8 @@ def render_vip_page():
                 total_apostado = sum(a.get('cantidad', 0) for a in apuestas)
                 ganancias = sum(a.get('ganancia', 0) for a in apuestas)
                 # Bankroll real = Inicial + Ganancias - Retirado
-                bankroll_actual = bankroll_guardado + ganancias - total_retirado_guardado
+                # Nunca negativo: no se puede perder mas de lo depositado
+                bankroll_actual = max(0.0, bankroll_guardado + ganancias - total_retirado_guardado)
                 roi = ((bankroll_actual - bankroll_guardado) / bankroll_guardado * 100) if bankroll_guardado > 0 else 0
                 apuestas_ganadas = len([a for a in apuestas if a.get('ganancia', 0) > 0])
                 total_apuestas = len(apuestas)
@@ -4329,6 +4330,14 @@ def render_vip_page():
                         picks_sin = [p for p in picks_sin if p.get('fixture_id') not in ft_ids]
                 except Exception as e:
                     logger.error(f"Error filtrando picks de partidos finalizados: {e}")
+
+            # Saldo disponible = bankroll - lo ya comprometido en apuestas
+            # pendientes. Regla: nunca se puede apostar mas de lo que hay.
+            ganancias_tot = sum(a.get('ganancia', 0) or 0 for a in apuestas)
+            bankroll_total = max(0.0, bankroll_guardado + ganancias_tot - total_retirado_guardado)
+            en_juego = sum(a.get('cantidad', 0) or 0 for a in apuestas if a.get('resultado') is None)
+            disponible = max(0.0, bankroll_total - en_juego)
+            st.markdown(f"💰 **Bankroll:** {format_money(bankroll_total, simbolo)}  |  ⏳ **En juego:** {format_money(en_juego, simbolo)}  |  ✅ **Disponible:** {format_money(disponible, simbolo)}")
 
             # Apuestas pendientes enviadas desde el Analizador
             pendientes_analizador = st.session_state.get('apuestas_pendientes_analizador', {})
@@ -4454,24 +4463,27 @@ def render_vip_page():
                                 st.metric("📊 Cuota", f"@{cuota_total:.2f}")
 
                             if st.button("🔥 CREAR COMBINADA", type="primary", use_container_width=True):
-                                fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
-                                equipos = " + ".join([f"{opciones[i]['pick'].get('equipo_local', '')} vs {opciones[i]['pick'].get('equipo_visitante', '')}" for i in seleccionados])
-                                try:
-                                    client.table('bankroll_apuestas').insert({
-                                        'usuario': usuario_id,
-                                        'fecha': fecha_hoy,
-                                        'equipo': f"[COMB] {equipos}",
-                                        'cuota': float(cuota_total),
-                                        'cantidad': float(cantidad),
-                                        'mercado': f"Combinada_{len(seleccionados)}",
-                                        'ganancia': 0,
-                                        'resultado': None
-                                    }).execute()
-                                    st.success(f"✅ Combinada creada: {len(seleccionados)} legs @ {cuota_total:.2f}")
-                                    st.session_state.pop('apuestas_pendientes_analizador', None)
-                                    st.rerun()
-                                except Exception as e:
-                                    st.error(f"Error: {e}")
+                                if cantidad > disponible:
+                                    st.error(f"⚠️ Saldo insuficiente: disponible {format_money(disponible, simbolo)}")
+                                else:
+                                    fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
+                                    equipos = " + ".join([f"{opciones[i]['pick'].get('equipo_local', '')} vs {opciones[i]['pick'].get('equipo_visitante', '')}" for i in seleccionados])
+                                    try:
+                                        client.table('bankroll_apuestas').insert({
+                                            'usuario': usuario_id,
+                                            'fecha': fecha_hoy,
+                                            'equipo': f"[COMB] {equipos}",
+                                            'cuota': float(cuota_total),
+                                            'cantidad': float(cantidad),
+                                            'mercado': f"Combinada_{len(seleccionados)}",
+                                            'ganancia': 0,
+                                            'resultado': None
+                                        }).execute()
+                                        st.success(f"✅ Combinada creada: {len(seleccionados)} legs @ {cuota_total:.2f}")
+                                        st.session_state.pop('apuestas_pendientes_analizador', None)
+                                        st.rerun()
+                                    except Exception as e:
+                                        st.error(f"Error: {e}")
                         else:
                             cantidades = {}
                             for i in seleccionados:
@@ -4489,35 +4501,38 @@ def render_vip_page():
                             st.markdown(f"**Total: {format_money(total_ap, simbolo)}**")
 
                             if st.button("➕ APOSTAR", type="primary", use_container_width=True):
-                                fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
-                                exitosos = 0
-                                errores = []
-                                try:
-                                    for i in seleccionados:
-                                        opt = opciones[i]
-                                        try:
-                                            client.table('bankroll_apuestas').insert({
-                                                'usuario': usuario_id,
-                                                'fecha': fecha_hoy,
-                                                'fixture_id': opt['pick'].get('fixture_id', 0),  # Para auto-actualizar
-                                                'equipo': f"{opt['pick'].get('equipo_local', '')} vs {opt['pick'].get('equipo_visitante', '')}",
-                                                'cuota': float(cantidades_dict.get(i, opt['cuota'])),
-                                                'cantidad': float(cantidades[i]),
-                                                'mercado': opt['tipo'],
-                                                'pick_id': opt['pick'].get('id'),
-                                                'ganancia': 0,
-                                                'resultado': None
-                                            }).execute()
-                                            exitosos += 1
-                                        except Exception as e:
-                                            errores.append(f"{opt['pick'].get('equipo_local','?')} ({opt['tipo']}): {e}")
-                                    if exitosos > 0:
-                                        st.success(f"✅ {exitosos} apuesta(s) creada(s)")
-                                    if errores:
-                                        st.error(f"⚠️ {len(errores)} fallaron: " + " | ".join(errores[:3]))
-                                    st.session_state.pop('apuestas_pendientes_analizador', None)
-                                except Exception as e:
-                                    st.error(f"Error: {e}")
+                                if total_ap > disponible:
+                                    st.error(f"⚠️ Saldo insuficiente: quieres apostar {format_money(total_ap, simbolo)} pero solo tienes {format_money(disponible, simbolo)} disponibles")
+                                else:
+                                    fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
+                                    exitosos = 0
+                                    errores = []
+                                    try:
+                                        for i in seleccionados:
+                                            opt = opciones[i]
+                                            try:
+                                                client.table('bankroll_apuestas').insert({
+                                                    'usuario': usuario_id,
+                                                    'fecha': fecha_hoy,
+                                                    'fixture_id': opt['pick'].get('fixture_id', 0),  # Para auto-actualizar
+                                                    'equipo': f"{opt['pick'].get('equipo_local', '')} vs {opt['pick'].get('equipo_visitante', '')}",
+                                                    'cuota': float(cantidades_dict.get(i, opt['cuota'])),
+                                                    'cantidad': float(cantidades[i]),
+                                                    'mercado': opt['tipo'],
+                                                    'pick_id': opt['pick'].get('id'),
+                                                    'ganancia': 0,
+                                                    'resultado': None
+                                                }).execute()
+                                                exitosos += 1
+                                            except Exception as e:
+                                                errores.append(f"{opt['pick'].get('equipo_local','?')} ({opt['tipo']}): {e}")
+                                        if exitosos > 0:
+                                            st.success(f"✅ {exitosos} apuesta(s) creada(s)")
+                                        if errores:
+                                            st.error(f"⚠️ {len(errores)} fallaron: " + " | ".join(errores[:3]))
+                                        st.session_state.pop('apuestas_pendientes_analizador', None)
+                                    except Exception as e:
+                                        st.error(f"Error: {e}")
                 else:
                     st.info("👆 Selecciona los picks")
 
@@ -4705,6 +4720,32 @@ def render_vip_page():
                     st.rerun()
                 except Exception as e:
                     st.error(f"❌ Error: {e}")
+
+        # Depósito: se SUMA al bankroll (form propio con clear_on_submit para
+        # evitar sumas dobles al re-enviar; a diferencia de "Inicial" que fija)
+        with st.form("form_deposito", clear_on_submit=True):
+            col_d1, col_d2 = st.columns([3, 1])
+            with col_d1:
+                monto_deposito = st.number_input("💵 Depósito (se suma a tu bankroll actual)", min_value=0.0, step=10.0)
+            with col_d2:
+                st.markdown("&nbsp;")
+                depositar = st.form_submit_button("💵 Depositar", use_container_width=True)
+            if depositar:
+                if monto_deposito <= 0:
+                    st.warning("Ingresa un monto mayor a 0")
+                else:
+                    try:
+                        resp_dep = client.table('user_stats').select('bankroll_inicial').eq('usuario', usuario_id).execute()
+                        actual_dep = float(resp_dep.data[0].get('bankroll_inicial', 1000.0)) if resp_dep.data else 1000.0
+                        nuevo_total = actual_dep + float(monto_deposito)
+                        client.table('user_stats').upsert({
+                            'usuario': usuario_id,
+                            'bankroll_inicial': nuevo_total,
+                        }, on_conflict='usuario').execute()
+                        st.success(f"✅ Depósito de {format_money(monto_deposito, simbolo)} → Bankroll: {format_money(nuevo_total, simbolo)}")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Error: {e}")
 
         st.markdown("---")
 
