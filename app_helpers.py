@@ -172,6 +172,103 @@ def calcular_value(prob_modelo, cuota):
     value = prob_modelo * cuota - 100
     return value, prob_implicita
 
+# ══════════════════════════════════════════════════════════
+# 🎯 VALUE BETS AUTOMATICOS (helpers puros, testeables)
+# Detecta value bets comparando probabilidad del modelo vs cuota.
+# Solo los 3 mercados de goles (1X2, O/U, BTTS) - corners/tarjetas
+# requieren mas datos del modelo y son menos fiables aqui.
+# ══════════════════════════════════════════════════════════
+
+# clave interna -> (columna 'acertado_*' en picks, tipo_apuesta en tabla cuotas)
+MERCADOS_EVAL = {
+    '1X2': {'acertado': 'acertado_1x2', 'tipo_cuota': 'Match Winner'},
+    'O/U': {'acertado': 'acertado_ou', 'tipo_cuota': 'Over/Under'},
+    'BTTS': {'acertado': 'acertado_btts', 'tipo_cuota': 'Both Teams To Score'},
+}
+
+UMBRAL_VALUE_MIN = 30.0
+
+
+def mercado_mas_acertado(picks):
+    """Devuelve el mercado con mayor % de acierto en picks resueltos.
+    Solo considera mercados con al menos 5 picks evaluados para que la
+    estadistica tenga sentido. Si ninguno califica, retorna '1X2'."""
+    mejor, mejor_pct = '1X2', -1.0
+    for mercado, conf in MERCADOS_EVAL.items():
+        col = conf['acertado']
+        evaluados = [p for p in picks if p.get(col) is not None]
+        n = len(evaluados)
+        if n < 5:
+            continue
+        pct = sum(1 for p in evaluados if p.get(col)) / n * 100
+        if pct > mejor_pct:
+            mejor, mejor_pct = mercado, pct
+    return mejor
+
+
+def filtrar_value_bets_cuotas(cuotas, prob_1, prob_x, prob_2, prob_ou, prob_btts,
+                               mercado, umbral=UMBRAL_VALUE_MIN):
+    """Dada una lista de cuotas de un fixture, devuelve los value bets del
+    `mercado` que superen `umbral`. Para cada opcion toma la mejor cuota
+    (maxima) entre bookmakers.
+
+    Retorna lista de dicts: {opcion, detalle, cuota, prob_modelo, prob_implicita,
+                             value, bookie}
+    """
+    tipo_cuota = MERCADOS_EVAL[mercado]['tipo_cuota']
+    mejores = {}
+    for c in cuotas:
+        if c.get('tipo_apuesta') != tipo_cuota:
+            continue
+        opcion = (c.get('opcion') or '').strip()
+        try:
+            valor = float(c.get('cuota') or 0)
+        except (ValueError, TypeError):
+            continue
+        if valor <= 1.0:
+            continue
+
+        if mercado == '1X2':
+            if 'Home' in opcion or opcion == '1':
+                prob = prob_1; detalle = 'Local'
+            elif 'Draw' in opcion or opcion == 'X':
+                prob = prob_x; detalle = 'Empate'
+            elif 'Away' in opcion or opcion == '2':
+                prob = prob_2; detalle = 'Visitante'
+            else:
+                continue
+        elif mercado == 'O/U':
+            if opcion not in ('Over 2.5', 'Under 2.5'):
+                continue
+            prob = prob_ou if opcion == 'Over 2.5' else (100 - prob_ou)
+            detalle = opcion
+        else:  # BTTS
+            if 'Yes' in opcion:
+                prob = prob_btts; detalle = 'Sí'
+            elif 'No' in opcion:
+                prob = 100 - prob_btts; detalle = 'No'
+            else:
+                continue
+
+        if opcion not in mejores or valor > mejores[opcion]['cuota']:
+            mejores[opcion] = {'cuota': valor, 'prob': prob, 'detalle': detalle,
+                               'bookie': c.get('bookmaker', '')}
+
+    nuevos = []
+    for opcion, d in mejores.items():
+        value, prob_imp = calcular_value(d['prob'], d['cuota'])
+        if value < umbral:
+            continue
+        nuevos.append({
+            'opcion': opcion, 'detalle': d['detalle'], 'cuota': d['cuota'],
+            'prob_modelo': round(d['prob'], 2),
+            'prob_implicita': round(prob_imp, 2),
+            'value': round(value, 2),
+            'bookie': d['bookie'],
+        })
+    return nuevos
+
+
 
 def format_money(valor, simbolo):
     return f"{simbolo}{valor:,.2f}"

@@ -579,6 +579,52 @@ def test_normalizar_mercados_vacio():
     assert normalizar_mercados_para_capital(set()) == set()
 
 
+def test_mercado_mas_acertado_con_stats():
+    """Elige el mercado con mayor % de acierto entre los que tienen >=5 evaluados."""
+    from app_helpers import mercado_mas_acertado
+
+    # 1X2: 3/5 (60%), BTTS: 5/5 (100%), OU: 4/5 (80%) -> BTTS gana
+    picks = [
+        {'acertado_1x2': True, 'acertado_ou': True, 'acertado_btts': True},
+        {'acertado_1x2': True, 'acertado_ou': True, 'acertado_btts': True},
+        {'acertado_1x2': True, 'acertado_ou': True, 'acertado_btts': True},
+        {'acertado_1x2': False, 'acertado_ou': True, 'acertado_btts': True},
+        {'acertado_1x2': False, 'acertado_ou': False, 'acertado_btts': True},
+    ]
+    assert mercado_mas_acertado(picks) == 'BTTS'
+
+
+def test_mercado_mas_acertado_sin_datos():
+    """Sin picks evaluados en ningun mercado, retorna 1X2 por defecto."""
+    from app_helpers import mercado_mas_acertado
+    assert mercado_mas_acertado([]) == '1X2'
+
+
+def test_filtrar_value_bets_cuotas_filtra_por_umbral():
+    """Solo devuelve value bets que superan el umbral (30% por defecto)."""
+    from app_helpers import filtrar_value_bets_cuotas
+
+    cuotas = [
+        {'tipo_apuesta': 'Match Winner', 'opcion': 'Home', 'cuota': 5.0, 'bookmaker': 'B1'},
+        {'tipo_apuesta': 'Match Winner', 'opcion': 'Draw', 'cuota': 3.5, 'bookmaker': 'B1'},
+        {'tipo_apuesta': 'Over/Under', 'opcion': 'Over 2.5', 'cuota': 2.0, 'bookmaker': 'B1'},
+    ]
+    # p1=80% vs cuota 5.0 -> value = 80*5-100 = 300% (supera 30%)
+    # px=15% vs cuota 3.5 -> value = 15*3.5-100 = -47.5% (no supera)
+    resultado = filtrar_value_bets_cuotas(cuotas, 80.0, 15.0, 5.0, 50, 50, '1X2', umbral=30.0)
+    assert len(resultado) == 1
+    assert resultado[0]['detalle'] == 'Local'
+    assert resultado[0]['value'] >= 30.0
+
+
+def test_filtrar_value_bets_cuotas_sin_cuotas():
+    """Sin cuotas del mercado objetivo, no devuelve nada."""
+    from app_helpers import filtrar_value_bets_cuotas
+    cuotas = [{'tipo_apuesta': 'Over/Under', 'opcion': 'Over 2.5', 'cuota': 2.0, 'bookmaker': 'B1'}]
+    resultado = filtrar_value_bets_cuotas(cuotas, 50, 25, 25, 50, 50, '1X2')
+    assert resultado == []
+
+
 # ============================================================================
 # RUNNER (para ejecutar sin pytest)
 # ============================================================================
@@ -650,6 +696,11 @@ if __name__ == '__main__':
         test_normalizar_mercados_ignora_no_soportados,
         test_normalizar_mercados_mixto,
         test_normalizar_mercados_vacio,
+        # value bets automaticos
+        test_mercado_mas_acertado_con_stats,
+        test_mercado_mas_acertado_sin_datos,
+        test_filtrar_value_bets_cuotas_filtra_por_umbral,
+        test_filtrar_value_bets_cuotas_sin_cuotas,
     ]
 
     passed = 0

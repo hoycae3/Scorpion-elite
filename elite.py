@@ -1808,6 +1808,22 @@ def render_partidos_page():
                             if cuotas_total == 0 and primer_mensaje:
                                 resumen += f"\n\n🔍 **DIAGNÓSTICO** (primer partido):"
                             st.success(resumen)
+
+                            # ── Detectar value bets automaticamente ──
+                            # Solo sobre los partidos que recibieron cuotas nuevas
+                            # (los ya cargados anteriormente ya se analizaron).
+                            if cuotas_total > 0:
+                                usuario_actual = st.session_state.get('usuario_id', 'default')
+                                mercado_objetivo = _mercado_mas_acertado(client, usuario_actual)
+                                con_cuotas = [p for p in a_cargar if p.get('fixture_id')]
+                                status_text.info(f"🎯 Analizando value bets en mercado **{mercado_objetivo}**...")
+                                total_vb, n_con_vb = analizar_value_bets_batch(
+                                    client, usuario_actual, con_cuotas, mercado_objetivo)
+                                status_text.empty()
+                                if total_vb > 0:
+                                    st.success(f"🎯 **{total_vb} value bet(s)** detectados en {n_con_vb} partido(s) (mercado {mercado_objetivo}, umbral ≥30%) — revisa la pestaña 🎯 Value Bets")
+                                else:
+                                    st.info(f"🔽 Ningún value bet ≥30% en el mercado {mercado_objetivo} para estos partidos.")
                             # Mostrar el dump crudo en un code block separado para que sea legible
                             if cuotas_total == 0 and primer_mensaje:
                                 st.warning("⚠️ Estructura cruda de la API (primer partido):")
@@ -2187,6 +2203,113 @@ def render_cuotas_mercado(r):
             """, unsafe_allow_html=True)
     else:
         st.info("🔽 Sin value bets en este momento — las casas cobran lo justo o de más.")
+
+# ══════════════════════════════════════════════════════════
+# 🎯 VALUE BETS AUTOMATICOS
+# Logica pura en app_helpers (testeable). Aqui solo la capa DB.
+# Detecta value bets durante "Cargar Cuotas" usando el mercado
+# con mejor acierto historico del usuario (>=5 picks resueltos).
+# Umbral minimo: 30%. Solo evalua 1X2, O/U, BTTS.
+# ══════════════════════════════════════════════════════════
+
+from app_helpers import MERCADOS_EVAL, UMBRAL_VALUE_MIN, mercado_mas_acertado, filtrar_value_bets_cuotas
+
+
+def _mercado_mas_acertado(client, usuario_id):
+    """Lee picks del usuario y delega en helper puro mercado_mas_acertado."""
+    try:
+        resp = client.table('picks').select('acertado_1x2, acertado_ou, acertado_btts').eq(
+            'usuario', usuario_id).execute()
+        picks = resp.data or []
+    except Exception as e:
+        logger.warning(f"_mercado_mas_acertado fallo: {e}")
+        return '1X2'
+    return mercado_mas_acertado(picks)
+
+
+def detectar_value_bets_para_fixture(client, usuario_id, fixture_id, fecha, liga,
+                                      equipo_local, equipo_visitante, mercado, umbral=UMBRAL_VALUE_MIN):
+    """Analiza cuotas de un fixture y guarda los value bets del `mercado`
+    que superen `umbral`. Retorna lista de dicts insertados."""
+    try:
+        cuotas_resp = client.table('cuotas').select('*').eq('fixture_id', fixture_id).execute()
+        cuotas = cuotas_resp.data or []
+    except Exception as e:
+        logger.warning(f"detectar_value_bets: cuotas fallo para {fixture_id}: {e}")
+        return []
+    if not cuotas:
+        return []
+
+    # Probabilidades del modelo (ligero: solo lambdas)
+    try:
+        resp_loc = client.table('equipos_stats').select('lambda_local').ilike('equipo', f'%{equipo_local}%').limit(1).execute()
+        resp_vis = client.table('equipos_stats').select('lambda_visitante').ilike('equipo', f'%{equipo_visitante}%').limit(1).execute()
+        lam_loc = (resp_loc.data[0].get('lambda_local') or 1.3) if resp_loc.data else 1.3
+        lam_vis = (resp_vis.data[0].get('lambda_visitante') or 1.1) if resp_vis.data else 1.1
+    except Exception as e:
+        logger.warning(f"detectar_value_bets: lambdas fallo para {fixture_id}: {e}")
+        return []
+
+    from analysis_models import calcular
+    try:
+        r = calcular(lam_loc, lam_vis)
+    except Exception as e:
+        logger.warning(f"detectar_value_bets: calcular fallo para {fixture_id}: {e}")
+        return []
+
+    encontrados = filtrar_value_bets_cuotas(
+        cuotas,
+        r.get('p1', 0), r.get('px', 0), r.get('p2', 0),
+        r.get('prob_over_under', 50), r.get('btts_yes', 50),
+        mercado, umbral)
+
+    if not encontrados:
+        return []
+
+    # Preparar filas para DB
+    nuevos = [{
+        'usuario_id': usuario_id, 'fixture_id': fixture_id,
+        'fecha': fecha, 'liga': liga,
+        'equipo_local': equipo_local, 'equipo_visitante': equipo_visitante,
+        'prob_modelo': e['prob_modelo'],
+        'cuota_mercado': e['cuota'],
+        'prob_implicita': e['prob_implicita'],
+        'value': e['value'],
+        'tipo': mercado, 'detalle': e['detalle'],
+        'recomendado': True,
+    } for e in encontrados]
+
+    # Borrar viejos del fixture (por si cambian cuotas en re-carga)
+    try:
+        client.table('value_bets').delete().eq('fixture_id', fixture_id).eq('usuario_id', usuario_id).execute()
+    except Exception as e:
+        logger.warning(f"detectar_value_bets: delete fallo para {fixture_id}: {e}")
+
+    try:
+        client.table('value_bets').insert(nuevos).execute()
+        return nuevos
+    except Exception as e:
+        logger.warning(f"detectar_value_bets: insert fallo para {fixture_id}: {e}")
+        return []
+
+
+def analizar_value_bets_batch(client, usuario_id, partidos, mercado, umbral=UMBRAL_VALUE_MIN):
+    """Analiza una lista de partidos y guarda sus value bets.
+    Retorna (n_value_bets, n_partidos_con_value)."""
+    total_vb = 0
+    partidos_con_vb = 0
+    for p in partidos:
+        insertados = detectar_value_bets_para_fixture(
+            client, usuario_id,
+            p.get('fixture_id'), p.get('fecha'), p.get('liga', ''),
+            p.get('equipo_local', ''), p.get('equipo_visitante', ''),
+            mercado, umbral)
+        if insertados:
+            total_vb += len(insertados)
+            partidos_con_vb += 1
+    return total_vb, partidos_con_vb
+
+
 
 
 # Mercado -> campos de prediccion en picks. 'pick' (legado) NO se filtra:
