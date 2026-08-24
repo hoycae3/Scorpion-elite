@@ -4262,11 +4262,15 @@ def render_vip_page():
             ganancias_tot = sum(a.get('ganancia', 0) or 0 for a in apuestas)
             # Bankroll nunca negativo: no se puede perder mas de lo depositado
             bankroll_total = max(0.0, bankroll_guardado + ganancias_tot - total_retirado_guardado)
-            st.markdown(f"""
-            💵 **Depositado:** {format_money(bankroll_guardado, simbolo)} 
-            | 💸 **Retirado:** {format_money(total_retirado_guardado, simbolo)}
-            | 📊 **Actual:** {format_money(bankroll_total, simbolo)}
-            """)
+            # Chips en 3 columnas para que los labels no se corten (antes
+            # markdown inline se partia y no se leian completos)
+            col_d, col_r, col_t = st.columns(3)
+            with col_d:
+                st.markdown(f"<div style='background:rgba(74,222,128,0.1);border:1px solid #4ade80;border-radius:8px;padding:8px 12px;color:#4ade80;font-size:0.85rem;'>💵 Depositado<br><span style='font-size:1.1rem;font-weight:700;'>{format_money(bankroll_guardado, simbolo)}</span></div>", unsafe_allow_html=True)
+            with col_r:
+                st.markdown(f"<div style='background:rgba(248,113,113,0.1);border:1px solid #f87171;border-radius:8px;padding:8px 12px;color:#f87171;font-size:0.85rem;'>💸 Retirado<br><span style='font-size:1.1rem;font-weight:700;'>{format_money(total_retirado_guardado, simbolo)}</span></div>", unsafe_allow_html=True)
+            with col_t:
+                st.markdown(f"<div style='background:rgba(147,197,253,0.1);border:1px solid #93c5fd;border-radius:8px;padding:8px 12px;color:#93c5fd;font-size:0.85rem;'>📊 Actual<br><span style='font-size:1.1rem;font-weight:700;'>{format_money(bankroll_total, simbolo)}</span></div>", unsafe_allow_html=True)
             st.markdown("_💡 Para depositar, cambiar moneda o hacer retiros, ve a **⚙️ Config**_")
 
             if apuestas:
@@ -4297,6 +4301,15 @@ def render_vip_page():
                 """, unsafe_allow_html=True)
 
                 col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+                st.markdown("""
+                <style>
+                /* Agrandar labels de metricas para legibilidad */
+                div[data-testid="stMetric"] label p {
+                    font-size: 1rem !important;
+                    font-weight: 600 !important;
+                }
+                </style>
+                """, unsafe_allow_html=True)
                 with col_m1:
                     st.metric("📈 ROI", f"{'+' if roi >= 0 else ''}{roi:.1f}%")
                 with col_m2:
@@ -4693,12 +4706,22 @@ def render_vip_page():
         # 'Inicial' que fijaba un valor fue reemplazado: confundia y
         # permitia sobrescribir depositos acumulados por accidente.
         # En DB se guarda en 'bankroll_inicial' (misma columna de siempre).
+        st.markdown("""
+        <style>
+        /* Agrandar labels del formulario Deposito/Retiro para evitar que
+           se corten por su corto texto */
+        div[data-testid="stForm"] label p {
+            font-size: 1rem !important;
+            font-weight: 600 !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
         with st.form("form_cash", clear_on_submit=True):
             col_c1, col_c2, col_c3 = st.columns([2, 2, 1])
             with col_c1:
-                accion = st.selectbox("Acción", ["💵 Depositar", "💸 Retirar"])
+                accion = st.selectbox("Acción (Depositar o Retirar)", ["💵 Depositar", "💸 Retirar"])
             with col_c2:
-                monto = st.number_input("Monto", min_value=0.0, step=10.0)
+                monto = st.number_input("Monto a mover", min_value=0.0, step=10.0)
             with col_c3:
                 st.markdown("&nbsp;")
                 ejecutar = st.form_submit_button("💾 Ejecutar", use_container_width=True)
