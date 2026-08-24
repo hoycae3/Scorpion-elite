@@ -4621,8 +4621,8 @@ def render_vip_page():
         except Exception as e:
             bankroll_actual_db = 1000.0
 
-        # Moneda: ancho ~33% y alto compacto (antes 50% / 2.5rem)
-        col_mon, _ = st.columns([1, 2])
+        # Moneda: ancho ~15% (usuario lo pidio explicito)
+        col_mon, _ = st.columns([0.15, 0.85])
         with col_mon:
             st.markdown("""
             <style>
