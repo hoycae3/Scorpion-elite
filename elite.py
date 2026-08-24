@@ -4621,31 +4621,31 @@ def render_vip_page():
         except Exception as e:
             bankroll_actual_db = 1000.0
 
-        # Moneda: ancho de ~50% (antes ocupaba toda la fila)
-        col_mon, _ = st.columns([1, 1])
+        # Moneda: ancho ~33% y alto compacto (antes 50% / 2.5rem)
+        col_mon, _ = st.columns([1, 2])
         with col_mon:
             st.markdown("""
             <style>
-            /* Selector de moneda más compacto (antes ~4.5rem de alto) */
+            /* Selector de moneda muy compacto */
             div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) > div {
-                min-height: 2.5rem !important;
+                min-height: 2rem !important;
             }
             div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) .react-aria-ComboBox {
-                min-height: 2.5rem !important;
+                min-height: 2rem !important;
             }
             div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) .react-aria-ComboBox [role="combobox"] {
-                font-size: 1.1rem !important;
-                min-height: 2.2rem !important;
-                padding: 0.3rem 0.8rem !important;
-                line-height: 1.2rem !important;
+                font-size: 0.95rem !important;
+                min-height: 1.8rem !important;
+                padding: 0.15rem 0.6rem !important;
+                line-height: 1.1rem !important;
             }
             div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) .react-aria-ComboBox button[aria-label="Open"] {
-                min-height: 2.2rem !important;
-                height: 2.2rem !important;
-                width: 2rem !important;
+                min-height: 1.8rem !important;
+                height: 1.8rem !important;
+                width: 1.6rem !important;
             }
             div[data-testid="stSelectbox"]:has(input[aria-label="💰 Moneda"]) [data-testid="stWidgetLabel"] p {
-                font-size: 0.95rem !important;
+                font-size: 0.85rem !important;
                 font-weight: 600 !important;
             }
             </style>
@@ -4653,7 +4653,7 @@ def render_vip_page():
             moneda_select = st.selectbox(
                 "💰 Moneda",
                 options=list(MONEDAS.keys()),
-                format_func=lambda x: f"{MONEDAS[x]['simbolo']} {MONEDAS[x]['nombre']} ({x})",
+                format_func=lambda x: f"{MONEDAS[x]['simbolo']} {x}",
                 index=0,
                 key="moneda_config"
             )
