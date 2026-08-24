@@ -4458,6 +4458,19 @@ def render_vip_page():
             with col_d:
                 st.markdown(f"<div style='background:rgba(74,222,128,0.08);border:1px solid #4ade80;border-radius:8px;padding:8px 12px;color:#4ade80;font-size:0.85rem;'>✅ Disponible<br><span style='font-size:1.1rem;font-weight:700;'>{format_money(disponible, simbolo)}</span></div>", unsafe_allow_html=True)
 
+            # Detalle de apuestas pendientes (las que faltan por terminar)
+            if en_juego > 0:
+                with st.expander(f"⏳ Ver {format_money(en_juego, simbolo)} en juego ({sum(1 for a in apuestas if a.get('resultado') is None)} apuestas pendientes)", expanded=False):
+                    for a in apuestas:
+                        if a.get('resultado') is None:
+                            st.markdown(f"""
+                            <div style="background:rgba(251,146,60,0.08);border-left:3px solid #fb923c;border-radius:6px;padding:10px 14px;margin:6px 0;color:#cbd5e1;">
+                                <strong>{a.get('equipo', 'N/A')}</strong><br>
+                                <span style="font-size:0.85rem;color:#9ca3af;">{a.get('mercado', '')}</span><br>
+                                <span style="font-size:0.9rem;">{format_money(a.get('cantidad', 0), simbolo)} @ {a.get('cuota', 0)}</span>
+                            </div>
+                            """, unsafe_allow_html=True)
+
             if disponible <= 0:
                 st.error(f"💀 Sin saldo disponible ({format_money(disponible, simbolo)}). Deposita en ⚙️ Config para seguir apostando.")
 
