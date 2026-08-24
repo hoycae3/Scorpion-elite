@@ -4250,24 +4250,26 @@ def render_vip_page():
             except Exception as e:
                 retiros = []
 
-            # Info de bankroll (moneda por defecto)
+            # Info de bankroll (moneda por defecto). Se calcula ANTES del
+            # encabezado porque tambien se usa en Agregar y el encabezado.
             simbolo = "$"
+            ganancias_tot = sum(a.get('ganancia', 0) or 0 for a in apuestas)
+            # Bankroll nunca negativo: no se puede perder mas de lo depositado
+            bankroll_total = max(0.0, bankroll_guardado + ganancias_tot - total_retirado_guardado)
             st.markdown(f"""
             💵 **Depositado:** {format_money(bankroll_guardado, simbolo)} 
             | 💸 **Retirado:** {format_money(total_retirado_guardado, simbolo)}
-            | 📊 **Actual:** {format_money(bankroll_actual if apuestas else max(0.0, bankroll_guardado - total_retirado_guardado), simbolo)}
+            | 📊 **Actual:** {format_money(bankroll_total, simbolo)}
             """)
             st.markdown("_💡 Para depositar, cambiar moneda o hacer retiros, ve a **⚙️ Config**_")
 
             if apuestas:
                 total_apostado = sum(a.get('cantidad', 0) for a in apuestas)
                 ganancias = sum(a.get('ganancia', 0) for a in apuestas)
-                # Bankroll real = Inicial + Ganancias - Retirado
-                # Nunca negativo: no se puede perder mas de lo depositado.
                 # ganancia_efectiva = la ganancia vista desde el bolsillo del
                 # usuario (tope de perdida = lo que deposito), usada para
                 # mostrar. 'ganancias' cruda se conserva para el ROI real.
-                bankroll_actual = max(0.0, bankroll_guardado + ganancias - total_retirado_guardado)
+                bankroll_actual = bankroll_total
                 ganancia_efectiva = bankroll_actual - bankroll_guardado
                 roi = ((bankroll_actual - bankroll_guardado) / bankroll_guardado * 100) if bankroll_guardado > 0 else 0
                 apuestas_ganadas = len([a for a in apuestas if a.get('ganancia', 0) > 0])
@@ -4341,8 +4343,7 @@ def render_vip_page():
 
             # Saldo disponible = bankroll - lo ya comprometido en apuestas
             # pendientes. Regla: nunca se puede apostar mas de lo que hay.
-            ganancias_tot = sum(a.get('ganancia', 0) or 0 for a in apuestas)
-            bankroll_total = max(0.0, bankroll_guardado + ganancias_tot - total_retirado_guardado)
+            # bankroll_total ya viene calculado del Dashboard (piso en 0).
             en_juego = sum(a.get('cantidad', 0) or 0 for a in apuestas if a.get('resultado') is None)
             disponible = max(0.0, bankroll_total - en_juego)
             st.markdown(f"💰 **Bankroll:** {format_money(bankroll_total, simbolo)}  |  ⏳ **En juego:** {format_money(en_juego, simbolo)}  |  ✅ **Disponible:** {format_money(disponible, simbolo)}")
