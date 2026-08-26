@@ -268,6 +268,31 @@ def filtrar_value_bets_cuotas(cuotas, prob_1, prob_x, prob_2, prob_ou, prob_btts
         })
     return nuevos
 
+def aplicar_override_1x2(pick_modelo, p1, px, p2, seleccion_usuario):
+    """Aplica la eleccion manual del usuario al pick 1X2.
+
+    seleccion_usuario: set de mercados marcados en el Analizador
+    (puede contener 'Local', 'Empate', 'Visitante' entre otros).
+
+    Retorna (prediccion, prob, es_override):
+    - Si el usuario marco exactamente UNA opcion de 1X2 distinta a la del
+      modelo: (eleccion_usuario, prob_de_esa_opcion, True)
+    - En cualquier otro caso: (pick_modelo, prob_del_modelo, False)
+
+    Las elecciones se traducen al formato interno: Local='1', Empate='X',
+    Visitante='2' (mismo formato que calcular_resultados_partido)."""
+    mapa = {'Local': ('1', p1), 'Empate': ('X', px), 'Visitante': ('2', p2)}
+    elegidas = [m for m in ('Local', 'Empate', 'Visitante') if m in (seleccion_usuario or set())]
+    if len(elegidas) == 1:
+        prediccion, prob = mapa[elegidas[0]]
+        if prediccion != pick_modelo:
+            return prediccion, prob, True
+        prob_modelo = {'1': p1, 'X': px, '2': p2}.get(pick_modelo, 0)
+        return pick_modelo, prob_modelo, False
+    prob_modelo = {'1': p1, 'X': px, '2': p2}.get(pick_modelo, 0)
+    return pick_modelo, prob_modelo, False
+
+
 
 
 def format_money(valor, simbolo):

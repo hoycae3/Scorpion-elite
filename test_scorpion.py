@@ -625,6 +625,47 @@ def test_filtrar_value_bets_cuotas_sin_cuotas():
     assert resultado == []
 
 
+def test_override_1x2_usuario_elige_visitante():
+    """Usuario marca Visitante (modelo dice Local) -> guarda '2' con prob p2."""
+    from app_helpers import aplicar_override_1x2
+    prediccion, prob, es_override = aplicar_override_1x2('1', 60.0, 17.0, 23.0, {'Visitante'})
+    assert prediccion == '2'
+    assert prob == 23.0
+    assert es_override is True
+
+
+def test_override_1x2_usuario_coincide_con_modelo():
+    """Usuario marca Local y el modelo dice Local -> sin override."""
+    from app_helpers import aplicar_override_1x2
+    prediccion, prob, es_override = aplicar_override_1x2('1', 60.0, 17.0, 23.0, {'Local'})
+    assert prediccion == '1'
+    assert prob == 60.0
+    assert es_override is False
+
+
+def test_override_1x2_sin_seleccion_usa_modelo():
+    """Sin seleccion de 1X2 (o varias marcadas), se usa el pick del modelo."""
+    from app_helpers import aplicar_override_1x2
+    # Sin seleccion
+    prediccion, prob, es_override = aplicar_override_1x2('X', 30.0, 40.0, 30.0, None)
+    assert prediccion == 'X' and prob == 40.0 and es_override is False
+    # Varias marcadas (no se puede decidir) -> modelo
+    prediccion, prob, es_override = aplicar_override_1x2('X', 30.0, 40.0, 30.0, {'Local', 'Empate'})
+    assert prediccion == 'X' and prob == 40.0 and es_override is False
+    # Otros mercados sin 1X2 -> modelo
+    prediccion, prob, es_override = aplicar_override_1x2('1', 60.0, 17.0, 23.0, {'O/U', 'BTTS'})
+    assert prediccion == '1' and prob == 60.0 and es_override is False
+
+
+def test_override_1x2_empate():
+    """Usuario marca Empate (modelo dice Local) -> guarda 'X' con prob px."""
+    from app_helpers import aplicar_override_1x2
+    prediccion, prob, es_override = aplicar_override_1x2('1', 60.0, 17.0, 23.0, {'Empate'})
+    assert prediccion == 'X'
+    assert prob == 17.0
+    assert es_override is True
+
+
 # ============================================================================
 # RUNNER (para ejecutar sin pytest)
 # ============================================================================
@@ -701,6 +742,11 @@ if __name__ == '__main__':
         test_mercado_mas_acertado_sin_datos,
         test_filtrar_value_bets_cuotas_filtra_por_umbral,
         test_filtrar_value_bets_cuotas_sin_cuotas,
+        # override 1X2 del usuario
+        test_override_1x2_usuario_elige_visitante,
+        test_override_1x2_usuario_coincide_con_modelo,
+        test_override_1x2_sin_seleccion_usa_modelo,
+        test_override_1x2_empate,
     ]
 
     passed = 0

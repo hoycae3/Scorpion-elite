@@ -33,6 +33,7 @@ from app_helpers import (
     calcular_value,
     format_money,
     sanitizar_input,
+    aplicar_override_1x2,
     normalizar_mercados_para_capital,
 )
 from bet_logic import (
@@ -1333,8 +1334,13 @@ def sincronizar_partidos():
                                                 lambda_l = pick.get('lambda_local_predicha')
                                                 lambda_v = pick.get('lambda_visitante_predicha')
                                                 if lambda_l and lambda_v:
+                                                    # 1X2 usa 'pick' (prediccion del
+                                                    # modelo), NO prediccion_1x2 que
+                                                    # puede ser override del usuario:
+                                                    # la calibracion debe evaluar al
+                                                    # modelo, no las elecciones manuales.
                                                     predicciones = {
-                                                        '1x2': {'pick': pick.get('prediccion_1x2', '')},
+                                                        '1x2': {'pick': pick.get('pick') or pick.get('prediccion_1x2', '')},
                                                         'over_under': {'pick': pick.get('prediccion_ou', '')},
                                                         'btts': {'pick': pick.get('prediccion_btts', '')},
                                                         'corners': {'pick': pick.get('prediccion_corners', '')},
@@ -2330,19 +2336,29 @@ def _construir_pick_data(r, home, away, stats_local, mercados_seleccionados=None
 
     mercados_seleccionados: set opcional. Si se pasa, los campos de los
     mercados no incluidos se omiten (quedan NULL en DB) para guardar solo
-    los mercados marcados por el usuario."""
+    los mercados marcados por el usuario.
+
+    Override 1X2: si el usuario marco exactamente UNA opcion de 1X2
+    (Local/Empate/Visitante) distinta a la del modelo, `prediccion_1x2`
+    guarda la eleccion del usuario (para SU roi/bankroll) mientras `pick`
+    conserva la del modelo (para la calibracion automatica)."""
     usuario_id = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
     fixture_id = st.session_state.get('selected_fixture_id', 0)
+    pick_modelo = r.get('pick_1x2', '1')
+    prediccion_1x2, prob_1x2, _es_override = aplicar_override_1x2(
+        pick_modelo,
+        float(r.get('p1', 33)), float(r.get('px', 33)), float(r.get('p2', 33)),
+        mercados_seleccionados)
     pick_data_base = {
         'fecha': str(datetime.now(timezone(timedelta(hours=-5))).date()),
         'usuario': usuario_id,
         'fixture_id': fixture_id,
-        'pick': r.get('pick_1x2', '1'),
+        'pick': pick_modelo,  # pick del modelo: alimenta la calibracion
         'liga': stats_local.get('liga', 'Desconocida') if stats_local else 'N/A',
         'equipo_local': home,
         'equipo_visitante': away,
-        'prediccion_1x2': r.get('pick_1x2', '1'),
-        'prob_1x2': float(r.get('prob_1x2', 50)),
+        'prediccion_1x2': prediccion_1x2,  # eleccion del usuario (o del modelo)
+        'prob_1x2': float(prob_1x2),
         'p1': float(r.get('p1', 33)),
         'px': float(r.get('px', 33)),
         'p2': float(r.get('p2', 33)),
@@ -3384,6 +3400,17 @@ button[kind="secondary"].sel-pred.active:hover {
 
         # --- Botones guardar ---
         n_sel = len(sel)
+
+        # Aviso si el usuario eligio una opcion 1X2 distinta a la del modelo
+        pick_modelo_actual = r.get('pick_1x2', '')
+        nombres_1x2 = {'1': 'Local', 'X': 'Empate', '2': 'Visitante'}
+        elegidas_1x2 = [m for m in ('Local', 'Empate', 'Visitante') if m in sel]
+        if len(elegidas_1x2) == 1 and elegidas_1x2[0] != nombres_1x2.get(pick_modelo_actual, ''):
+            st.warning(
+                f"⚠️ Elegiste **{elegidas_1x2[0]}** pero el modelo recomienda "
+                f"**{nombres_1x2.get(pick_modelo_actual, '?')}**. Se guardará TU elección "
+                f"(el modelo seguirá calibrándose con su propia predicción).")
+
         col_b1, col_b2 = st.columns(2)
         with col_b1:
             btn_pick = st.button(f"💾 Guardar Pick(s)  ({n_sel})", type="primary", use_container_width=True)
@@ -4520,7 +4547,8 @@ def render_vip_page():
                     match_key = f"{local} vs {visitante}"
 
                     if p.get('prediccion_1x2'):
-                        opciones.append({'pick': p, 'display': f"{match_key} - 1X2: {p.get('prediccion_1x2')}", 'tipo': '1X2', 'cuota': float(p.get('cuota_1x2') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_1x2', 50)})
+                        nombre_1x2 = {'1': 'Local', 'X': 'Empate', '2': 'Visitante'}.get(p.get('prediccion_1x2'), p.get('prediccion_1x2'))
+                        opciones.append({'pick': p, 'display': f"{match_key} - 1X2: {nombre_1x2}", 'tipo': '1X2', 'cuota': float(p.get('cuota_1x2') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_1x2', 50)})
                     if p.get('prediccion_ou'):
                         opciones.append({'pick': p, 'display': f"{match_key} - O/U: {p.get('prediccion_ou')}", 'tipo': 'O/U', 'cuota': float(p.get('cuota_ou') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_ou', 50)})
                     if p.get('prediccion_btts'):
