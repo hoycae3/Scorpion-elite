@@ -4494,6 +4494,20 @@ def render_vip_page():
             # picks con resultado_1x2 ya calculado (arriba).
 
             # 🔍 Diagnóstico colapsado: ver picks en DB
+            picks_fantasma = [p for p in picks_disponibles if not any(p.get(c) for m in _MERCADO_CAMPOS.values() for c in m)]
+            if picks_fantasma:
+                col_a, col_b = st.columns([3, 1])
+                with col_a:
+                    st.warning(f"⚠️ Tienes {len(picks_fantasma)} pick(s) fantasma (sin mercados) que no aparecen en Agregar.")
+                with col_b:
+                    if st.button(f"🗑️ Borrar {len(picks_fantasma)} fantasma", key="btn_borrar_fantasma", type="secondary"):
+                        try:
+                            ids_fantasma = [p.get('id') for p in picks_fantasma]
+                            client.table('picks').delete().in_('id', ids_fantasma).execute()
+                            st.success(f"✅ {len(ids_fantasma)} fantasma borrados")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Error: {e}")
             with st.expander(f"🔍 Mis picks en DB ({len(picks_disponibles)} totales, {len(picks_sin)} pendientes)", expanded=False):
                 for p in picks_disponibles[-15:]:
                     estado = "⏳ Pendiente" if p.get('resultado_1x2') is None else "✅ Resuelto"
