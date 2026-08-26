@@ -3421,6 +3421,33 @@ button[kind="secondary"].sel-pred.active:hover {
             btn_todo = st.button("📋 Guardar Todo", use_container_width=True)
 
         if btn_pick or btn_todo:
+            # No permitir guardar sin mercados marcados: eso creaba
+            # picks fantasma con todos los campos NULL (nunca aparecen
+            # en Agregar porque no hay ningun mercado que ofrecer).
+            if btn_pick and not sel:
+                st.warning("⚠️ Marca al menos una casilla (ej: Visitante, O/U 2.5, BTTS) antes de usar '💾 Guardar Pick(s)'. Usa '📋 Guardar Todo' si quieres todos los mercados del modelo.")
+                st.stop()
+            # Deduplicar: mismo partido + mismos mercados ya guardado -> no
+            # insertar de nuevo (el usuario tenia 6 duplicados Lyon-Fenerbahce
+            # porque clicaba sin darse cuenta de que ya existia).
+            mercados_norm_check = normalizar_mercados_para_capital(sel if btn_pick else {'1X2','O/U','BTTS','Corners','Tarjetas','Remates','Tiros Arco'})
+            dupe = None
+            try:
+                client = get_client()
+                existentes = client.table('picks').select('id, prediccion_1x2, prediccion_ou, prediccion_btts, prediccion_corners, prediccion_tarjetas, prediccion_remates, prediccion_arco').eq('usuario', usuario_id := (st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default')).eq('fixture_id', st.session_state.get('selected_fixture_id', 0)).is_('resultado_1x2', 'null').execute()
+                for p in (existentes.data or []):
+                    tiene_alguno = any([
+                        p.get('prediccion_1x2'), p.get('prediccion_ou'), p.get('prediccion_btts'),
+                        p.get('prediccion_corners'), p.get('prediccion_tarjetas'),
+                        p.get('prediccion_remates'), p.get('prediccion_arco')])
+                    if tiene_alguno:
+                        dupe = p.get('id')
+                        break
+            except Exception:
+                pass
+            if dupe:
+                st.warning(f"⚠️ Ya guardaste este partido (pick #{dupe}). Bórralo en '🗑️ Borrar Picks' si quieres cambiar tu elección.")
+                st.stop()
             try:
                 client = get_client()
                 # Guardar Pick(s): solo mercados marcados; Guardar Todo: todos (None)
@@ -3440,12 +3467,11 @@ button[kind="secondary"].sel-pred.active:hover {
                     st.success(f"✅ Análisis completo guardado: {home} vs {away} — 7 mercados enviados a Capital")
                 else:
                     # Guardar Pick(s): solo los mercados marcados por el usuario
-                    mercados_norm = normalizar_mercados_para_capital(sel)
-                    if mercados_norm:
+                    if mercados_norm_check:
                         pendientes = st.session_state.get('apuestas_pendientes_analizador', {})
-                        pendientes[pick_id] = mercados_norm
+                        pendientes[pick_id] = mercados_norm_check
                         st.session_state.apuestas_pendientes_analizador = pendientes
-                        st.success(f"✅ {len(mercados_norm)} pick(s) guardado(s): {home} vs {away} — enviado a Capital")
+                        st.success(f"✅ {len(mercados_norm_check)} pick(s) guardado(s): {home} vs {away} — enviado a Capital")
                     else:
                         st.success(f"✅ Pick guardado: {home} vs {away} (sin mercados para Capital)")
                 st.session_state.sel_apuestas = set()
