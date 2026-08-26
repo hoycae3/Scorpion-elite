@@ -3402,14 +3402,17 @@ button[kind="secondary"].sel-pred.active:hover {
         n_sel = len(sel)
 
         # Aviso si el usuario eligio una opcion 1X2 distinta a la del modelo
+        # (usar markdown simple, no st.warning dinamico, para evitar
+        # removeChild de React)
         pick_modelo_actual = r.get('pick_1x2', '')
         nombres_1x2 = {'1': 'Local', 'X': 'Empate', '2': 'Visitante'}
         elegidas_1x2 = [m for m in ('Local', 'Empate', 'Visitante') if m in sel]
-        if len(elegidas_1x2) == 1 and elegidas_1x2[0] != nombres_1x2.get(pick_modelo_actual, ''):
-            st.warning(
-                f"⚠️ Elegiste **{elegidas_1x2[0]}** pero el modelo recomienda "
-                f"**{nombres_1x2.get(pick_modelo_actual, '?')}**. Se guardará TU elección "
-                f"(el modelo seguirá calibrándose con su propia predicción).")
+        es_override = (len(elegidas_1x2) == 1 and
+                       elegidas_1x2[0] != nombres_1x2.get(pick_modelo_actual, ''))
+        if es_override:
+            st.markdown(
+                f"<span style='color:#f59e0b;font-size:0.85rem;'>⚠️ Elegiste **{elegidas_1x2[0]}** pero el modelo recomienda **{nombres_1x2.get(pick_modelo_actual, '?')}**. Se guardará TU elección.</span>",
+                unsafe_allow_html=True)
 
         col_b1, col_b2 = st.columns(2)
         with col_b1:
