@@ -2383,9 +2383,13 @@ def _construir_pick_data(r, home, away, stats_local, mercados_seleccionados=None
 
     pick_data = pick_data_base
     if mercados_seleccionados is not None:
+        # sel trae nombres de UI ('Visitante', 'O/U'...) pero _MERCADO_CAMPOS
+        # usa nombres internos ('1X2', ...). Hay que normalizar antes de
+        # filtrar o se quitaban TODOS los campos (pick fantasma invisible).
+        mercados_norm = normalizar_mercados_para_capital(mercados_seleccionados)
         campos_a_quitar = [
             campo for mercado, campos in _MERCADO_CAMPOS.items()
-            if mercado not in mercados_seleccionados
+            if mercado not in mercados_norm
             for campo in campos
         ]
         pick_data = {k: v for k, v in pick_data_base.items()
@@ -3421,8 +3425,6 @@ button[kind="secondary"].sel-pred.active:hover {
             btn_todo = st.button("📋 Guardar Todo", use_container_width=True)
 
         if btn_pick or btn_todo:
-            # DEBUG: muestra qué mercados se van a guardar
-            st.markdown(f"<span style='color:#64748b;font-size:0.75rem;'>🐛 Marcados: {sorted(sel)} → {len(sel)}</span>", unsafe_allow_html=True)
             # No permitir guardar sin mercados marcados: eso creaba
             # picks fantasma con todos los campos NULL (nunca aparecen
             # en Agregar porque no hay ningun mercado que ofrecer).
@@ -4491,11 +4493,8 @@ def render_vip_page():
             # aun sin resolver si la sync marcaba FT por error. Solo se filtran
             # picks con resultado_1x2 ya calculado (arriba).
 
-            # 🔍 Diagnóstico: muestra qué picks hay en tu DB y por qué no aparecen
-            picks_fantasma = [p for p in picks_disponibles if not any(p.get(c) for m in _MERCADO_CAMPOS.values() for c in m)]
-            if picks_fantasma:
-                st.warning(f"⚠️ Tienes {len(picks_fantasma)} pick(s) fantasma (sin mercados) que no aparecen en Agregar. Bórralos abajo.")
-            with st.expander(f"🔍 Diagnóstico (mis picks en DB) - {len(picks_disponibles)} totales, {len(picks_sin)} pendientes, {len(picks_fantasma)} fantasma", expanded=False):
+            # 🔍 Diagnóstico colapsado: ver picks en DB
+            with st.expander(f"🔍 Mis picks en DB ({len(picks_disponibles)} totales, {len(picks_sin)} pendientes)", expanded=False):
                 for p in picks_disponibles[-15:]:
                     estado = "⏳ Pendiente" if p.get('resultado_1x2') is None else "✅ Resuelto"
                     mercados = [m for m, campos in _MERCADO_CAMPOS.items()
