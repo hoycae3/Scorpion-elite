@@ -3421,6 +3421,8 @@ button[kind="secondary"].sel-pred.active:hover {
             btn_todo = st.button("📋 Guardar Todo", use_container_width=True)
 
         if btn_pick or btn_todo:
+            # DEBUG: muestra qué mercados se van a guardar
+            st.markdown(f"<span style='color:#64748b;font-size:0.75rem;'>🐛 Marcados: {sorted(sel)} → {len(sel)}</span>", unsafe_allow_html=True)
             # No permitir guardar sin mercados marcados: eso creaba
             # picks fantasma con todos los campos NULL (nunca aparecen
             # en Agregar porque no hay ningun mercado que ofrecer).
@@ -4490,9 +4492,11 @@ def render_vip_page():
             # picks con resultado_1x2 ya calculado (arriba).
 
             # 🔍 Diagnóstico: muestra qué picks hay en tu DB y por qué no aparecen
-            with st.expander("🔍 Diagnóstico (mis picks en DB)", expanded=False):
-                st.markdown(f"**{len(picks_disponibles)}** pick(s) en DB · **{len(picks_sin)}** pendiente(s) de apostar")
-                for p in picks_disponibles[-8:]:
+            picks_fantasma = [p for p in picks_disponibles if not any(p.get(c) for m in _MERCADO_CAMPOS.values() for c in m)]
+            if picks_fantasma:
+                st.warning(f"⚠️ Tienes {len(picks_fantasma)} pick(s) fantasma (sin mercados) que no aparecen en Agregar. Bórralos abajo.")
+            with st.expander(f"🔍 Diagnóstico (mis picks en DB) - {len(picks_disponibles)} totales, {len(picks_sin)} pendientes, {len(picks_fantasma)} fantasma", expanded=False):
+                for p in picks_disponibles[-15:]:
                     estado = "⏳ Pendiente" if p.get('resultado_1x2') is None else "✅ Resuelto"
                     mercados = [m for m, campos in _MERCADO_CAMPOS.items()
                                 if any(p.get(c) for c in campos)]
@@ -4564,11 +4568,11 @@ def render_vip_page():
                             if st.button("🗑️ Borrar seleccionados", type="secondary", key="btn_borrar_picks"):
                                 try:
                                     ids_borrar = [opciones_borrar[s] for s in seleccion_borrar]
-                                    client.table('picks').delete().in_('id', ids_borrar).execute()
-                                    st.success(f"✅ {len(ids_borrar)} pick(s) borrado(s)")
+                                    resp = client.table('picks').delete().in_('id', ids_borrar).execute()
+                                    st.success(f"✅ {len(ids_borrar)} pick(s) borrado(s): {', '.join(seleccion_borrar)}")
                                     st.rerun()
                                 except Exception as e:
-                                    st.error(f"Error al borrar: {e}")
+                                    st.error(f"❌ Error al borrar: {e}")
                     else:
                         st.info("No hay picks para borrar")
 
