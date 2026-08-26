@@ -4463,6 +4463,19 @@ def render_vip_page():
             # aun sin resolver si la sync marcaba FT por error. Solo se filtran
             # picks con resultado_1x2 ya calculado (arriba).
 
+            # 🔍 Diagnóstico: muestra qué picks hay en tu DB y por qué no aparecen
+            with st.expander("🔍 Diagnóstico (mis picks en DB)", expanded=False):
+                st.markdown(f"**{len(picks_disponibles)}** pick(s) en DB · **{len(picks_sin)}** pendiente(s) de apostar")
+                for p in picks_disponibles[-8:]:
+                    estado = "⏳ Pendiente" if p.get('resultado_1x2') is None else "✅ Resuelto"
+                    mercados = [m for m, campos in _MERCADO_CAMPOS.items()
+                                if any(p.get(c) for c in campos)]
+                    st.markdown(
+                        f"`#{p.get('id')}` {p.get('equipo_local','?')} vs {p.get('equipo_visitante','?')} "
+                        f"— {estado} — 1X2: **{p.get('prediccion_1x2') or '—'}** — modelo: {p.get('pick') or '—'} "
+                        f"— mercados: {', '.join(mercados) if mercados else 'ninguno'}"
+                    )
+
             # Saldo disponible = bankroll - lo ya comprometido en apuestas
             # pendientes. Regla: nunca se puede apostar mas de lo que hay.
             # bankroll_total ya viene calculado del Dashboard (piso en 0).
