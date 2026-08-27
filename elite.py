@@ -2313,9 +2313,9 @@ def detectar_value_bets_para_fixture(client, usuario_id, fixture_id, fecha, liga
     if not encontrados:
         return []
 
-    # Preparar filas para DB
+    # Preparar filas para DB (la tabla value_bets usa 'usuario', no 'usuario_id')
     nuevos = [{
-        'usuario_id': usuario_id, 'fixture_id': fixture_id,
+        'usuario': usuario_id, 'fixture_id': fixture_id,
         'fecha': fecha, 'liga': liga,
         'equipo_local': equipo_local, 'equipo_visitante': equipo_visitante,
         'prob_modelo': e['prob_modelo'],
@@ -2328,7 +2328,7 @@ def detectar_value_bets_para_fixture(client, usuario_id, fixture_id, fecha, liga
 
     # Borrar viejos del fixture (por si cambian cuotas en re-carga)
     try:
-        client.table('value_bets').delete().eq('fixture_id', fixture_id).eq('usuario_id', usuario_id).execute()
+        client.table('value_bets').delete().eq('fixture_id', fixture_id).eq('usuario', usuario_id).execute()
     except Exception as e:
         logger.warning(f"detectar_value_bets: delete fallo para {fixture_id}: {e}")
 
@@ -3680,18 +3680,18 @@ def render_vip_value_bets(client, usuario_id):
 
     # Limpiar value bets de partidos ya finalizados para no acumular basura
     try:
-        resp = client.table('value_bets').select('fixture_id').eq('usuario_id', usuario_id).execute()
+        resp = client.table('value_bets').select('fixture_id').eq('usuario', usuario_id).execute()
         fix_ids = [r['fixture_id'] for r in (resp.data or []) if r.get('fixture_id')]
         if fix_ids:
             partidos = client.table('partidos').select('fixture_id').in_('fixture_id', fix_ids).eq('estado', 'FT').execute()
             finalizados = [p['fixture_id'] for p in (partidos.data or [])]
             if finalizados:
-                client.table('value_bets').delete().eq('usuario_id', usuario_id).in_('fixture_id', finalizados).execute()
+                client.table('value_bets').delete().eq('usuario', usuario_id).in_('fixture_id', finalizados).execute()
     except Exception as e:
         logger.warning(f"render_vip_value_bets: limpieza FT fallo: {e}")
 
     try:
-        vb_response = client.table('value_bets').select('*').eq('usuario_id', usuario_id).order('value', desc=True).limit(20).execute()
+        vb_response = client.table('value_bets').select('*').eq('usuario', usuario_id).order('value', desc=True).limit(20).execute()
         value_bets = vb_response.data if vb_response.data else []
 
         if value_bets:
@@ -3749,7 +3749,7 @@ def render_vip_alertas(client, usuario_id):
     st.markdown("#### 🎯 Alertas Recientes")
 
     try:
-        alertas_response = client.table('alertas').select('*').eq('usuario_id', usuario_id).order('creado_en', desc=True).limit(20).execute()
+        alertas_response = client.table('alertas').select('*').eq('usuario', usuario_id).order('creado_en', desc=True).limit(20).execute()
         alertas = alertas_response.data if alertas_response.data else []
 
         if alertas:
@@ -3910,7 +3910,7 @@ def render_vip_export(client, usuario_id, picks=None):
                 df_export['% Acierto'] = (df_export['Aciertos'] / df_export['Total'] * 100).round(1)
             elif tipo_reporte == "Bankroll History":
                 try:
-                    bh_response = client.table('bankroll_history').select('*').eq('usuario_id', usuario_id).execute()
+                    bh_response = client.table('bankroll_history').select('*').eq('usuario', usuario_id).execute()
                     bh = bh_response.data if bh_response.data else []
                     df_export = pd.DataFrame(bh)
                 except Exception as e:
@@ -3918,7 +3918,7 @@ def render_vip_export(client, usuario_id, picks=None):
                     df_export = pd.DataFrame()
             else:  # Value Bets
                 try:
-                    vb_response = client.table('value_bets').select('*').eq('usuario_id', usuario_id).execute()
+                    vb_response = client.table('value_bets').select('*').eq('usuario', usuario_id).execute()
                     vb = vb_response.data if vb_response.data else []
                     df_export = pd.DataFrame(vb)
                 except Exception as e:
