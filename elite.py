@@ -1860,7 +1860,7 @@ def render_partidos_page():
                             # Solo sobre los partidos que recibieron cuotas nuevas
                             # (los ya cargados anteriormente ya se analizaron).
                             if cuotas_total > 0:
-                                usuario_actual = st.session_state.get('usuario_id', 'default')
+                                usuario_actual = st.session_state.user_data.get('nombre', 'default') if st.session_state.user_data else 'default'
                                 mercado_objetivo = _mercado_mas_acertado(client, usuario_actual)
                                 con_cuotas = [p for p in a_cargar if p.get('fixture_id')]
                                 status_text.info(f"🎯 Analizando value bets en mercado **{mercado_objetivo}**...")
@@ -3712,7 +3712,7 @@ def render_vip_value_bets(client, usuario_id):
             st.info("⚽ Sin value bets detectados. Usa **💰 Cargar Cuotas** en la pestaña Partidos para buscar oportunidades.")
     except Exception as e:
         logger.warning(f"render_vip_value_bets falló: {e}")
-        st.info("⚽ Conecta a Supabase para ver value bets guardados.")
+        st.error(f"⚠️ Error consultando value bets: {e}. Revisa tu conexión a Supabase.")
 
 
 def render_vip_alertas(client, usuario_id):
