@@ -1576,7 +1576,7 @@ def sincronizar_partidos():
                     # ★ ACUMULACIÓN: traer últimos 5 FT desde la API
                     # excluir_fixture_ids evita re-descargar stats de los ya guardados.
                     try:
-                        # max_partidos=3 (no 5) + descanso para no matar Render
+                        # max_partidos=5 (no 5) + descanso para no matar Render
                         partidos_recientes = obtener_ultimos_partidos_equipo(
                             team_id=team_id,
                             team_name=team_name,
@@ -1584,7 +1584,7 @@ def sincronizar_partidos():
                             season=equipo['season'],
                             headers=headers,
                             API_URL=API_URL,
-                            max_partidos=3,
+                            max_partidos=5,
                             excluir_fixture_ids=fixtures_guardados
                         )
 
