@@ -1261,6 +1261,47 @@ def sincronizar_partidos():
                                     # 📊 Obtener stats totales del partido (córners, tarjetas, remates)
                                     stats_reales = obtener_stats_totales_partido(fix_id, headers, API_URL)
 
+                                    # 🧠 CALIBRACIÓN GLOBAL (con TODOS los partidos FT, no solo picks):
+                                    # usa las lambdas actuales del equipo para aprender de cada FT
+                                    try:
+                                        lambda_l = None
+                                        lambda_v = None
+                                        try:
+                                            eq_l = client.table('equipos_stats').select('lambda_local').eq('equipo', equipo_local).execute()
+                                            eq_v = client.table('equipos_stats').select('lambda_visitante').eq('equipo', equipo_visitante).execute()
+                                            if eq_l.data and eq_v.data:
+                                                lambda_l = eq_l.data[0].get('lambda_local')
+                                                lambda_v = eq_v.data[0].get('lambda_visitante')
+                                        except Exception:
+                                            pass
+
+                                        if lambda_l and lambda_v:
+                                            # Para calibrar, usar las predicciones del modelo
+                                            # (calculadas directamente, no del pick del usuario)
+                                            pred_1x2 = '1' if float(lambda_l) > float(lambda_v) else ('2' if float(lambda_v) > float(lambda_l) else 'X')
+                                            # Calcular probabilidad simple para coherencia
+                                            total = float(lambda_l) + float(lambda_v)
+                                            prob_l = (float(lambda_l) / total) * 100 if total > 0 else 33
+                                            prob_v = (float(lambda_v) / total) * 100 if total > 0 else 33
+                                            prob_x = 100 - prob_l - prob_v
+                                            predicciones_global = {
+                                                '1x2': {'pick': pred_1x2},
+                                                'over_under': {'pick': 'Over' if (float(lambda_l) + float(lambda_v)) > 2.5 else 'Under'},
+                                                'btts': {'pick': 'Si'},  # por defecto
+                                                'corners': {'pick': ''},
+                                            }
+                                            registrar_resultado(
+                                                equipo_local, equipo_visitante,
+                                                float(lambda_l), float(lambda_v),
+                                                score_local, score_visitante,
+                                                predicciones_global,
+                                                resultado_real=resultado_real,
+                                                marcador=f"{score_local}-{score_visitante}",
+                                                confianza=0, rango='D',
+                                            )
+                                    except Exception as e:
+                                        logger.warning(f"Error en calibración global fixture {fix_id}: {e}")
+
                                     # Buscar picks pendientes para este partido (por fixture_id O por nombres de equipos)
                                     picks_existentes = client.table('picks').select('*').is_('resultado_1x2', None).execute()
 
