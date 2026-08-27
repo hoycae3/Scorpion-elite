@@ -4513,13 +4513,40 @@ def render_vip_page():
                     st.warning(f"⚠️ En pérdida")
 
                 if len(apuestas) > 1:
-                    evolucion = []
-                    b = bankroll_guardado
-                    for a in sorted(apuestas, key=lambda x: x.get('fecha', '')):
-                        b = max(0.0, b + (a.get('ganancia', 0) or 0))
-                        evolucion.append({'Fecha': str(a.get('fecha', ''))[:10], 'Bankroll': b})
-                    st.markdown("#### 📈 Evolución")
-                    st.line_chart(pd.DataFrame(evolucion).set_index('Fecha'))
+                    # Agrupar ganancia por día (no por apuesta individual)
+                    ganancia_por_dia = {}
+                    for a in apuestas:
+                        fecha = str(a.get('fecha', ''))[:10]
+                        if fecha not in ganancia_por_dia:
+                            ganancia_por_dia[fecha] = 0
+                        ganancia_por_dia[fecha] += a.get('ganancia', 0) or 0
+                    
+                    # Ordenar por fecha y crear DataFrame
+                    fechas_ordenadas = sorted(ganancia_por_dia.keys())
+                    datos_barras = []
+                    for f in fechas_ordenadas:
+                        ganancia = ganancia_por_dia[f]
+                        datos_barras.append({
+                            'Fecha': f,
+                            'Ganancia': ganancia,
+                            'Color': 'Ganancia' if ganancia >= 0 else 'Pérdida'
+                        })
+                    
+                    df_barras = pd.DataFrame(datos_barras)
+                    st.markdown("#### 📊 Ganancia/Pérdida por Día")
+                    st.bar_chart(df_barras.set_index('Fecha')['Ganancia'], color="#4ade80" if len(df_barras) > 0 and df_barras['Ganancia'].iloc[-1] >= 0 else "#f87171")
+                    
+                    # Resumen debajo de la gráfica
+                    col_res1, col_res2, col_res3 = st.columns(3)
+                    with col_res1:
+                        dias_ganados = sum(1 for g in ganancia_por_dia.values() if g > 0)
+                        st.metric("📅 Días ganados", dias_ganados)
+                    with col_res2:
+                        dias_perdidos = sum(1 for g in ganancia_por_dia.values() if g < 0)
+                        st.metric("📅 Días perdidos", dias_perdidos)
+                    with col_res3:
+                        mejor_dia = max(ganancia_por_dia.values()) if ganancia_por_dia else 0
+                        st.metric("🏆 Mejor día", format_money(mejor_dia, simbolo))
             else:
                 st.info("⚽ No tienes apuestas aún. Ve a 'Agregar' para empezar.")
 
