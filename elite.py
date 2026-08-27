@@ -1565,17 +1565,16 @@ def sincronizar_partidos():
                         ]
                         api_calls_ahorradas += (antes - len(ft_en_ventana))
 
-                    # ★ Solo buscar más FT vía API si hay FT pendientes en la ventana
-                    # (evita 575 llamadas API innecesarias que causan timeout en Render)
-                    if not ft_en_ventana:
-                        # No hay FT pendientes en la ventana → saltar este equipo (0 API calls)
-                        continue
+                    # ★ FIX: traer últimos 5 FT SIEMPRE si el historial es corto.
+                    # Antes se saltaba equipos sin FT en la ventana estrecha -> nunca
+                    # recuperaban su historial (por eso Real Madrid tenia solo 2).
+                    # Solo se salta (0 API calls) si ya tiene historial completo.
+                    historial_corto = len(fixtures_guardados) < 5
+                    if not ft_en_ventana and not historial_corto:
+                        continue  # historial completo y sin FT pendiente -> saltar
 
-                    # ★ ACUMULACIÓN: para equipos CON FT pendiente, traer sus últimos 5
-                    # FT desde la API y guardar TODOS los faltantes (recupera días
-                    # perdidos). excluir_fixture_ids evita re-descargar stats de los
-                    # ya guardados. max_partidos=5 (era 10) para evitar timeout de Render
-                    # (~10s por stats × 5 = ~50s por equipo máximo).
+                    # ★ ACUMULACIÓN: traer últimos 5 FT desde la API
+                    # excluir_fixture_ids evita re-descargar stats de los ya guardados.
                     try:
                         partidos_recientes = obtener_ultimos_partidos_equipo(
                             team_id=team_id,
@@ -1597,7 +1596,6 @@ def sincronizar_partidos():
                             # Recalcular lambda con el historial actualizado
                             recalcular_lambda_equipo(client, team_id)
                         else:
-                            # ⚠️ La API nos devolvió vacío. Log para el usuario.
                             logger.warning(f"obtener_ultimos_partidos devolvio vacio para {team_name}")
                     except Exception as e:
                         st.warning(f"⚠️ Error acumulando partidos de {team_name}: {e}")
