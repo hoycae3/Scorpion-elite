@@ -1596,6 +1596,9 @@ def sincronizar_partidos():
                                 stats_ft_nuevos += count
                             # Recalcular lambda con el historial actualizado
                             recalcular_lambda_equipo(client, team_id)
+                        else:
+                            # ⚠️ La API nos devolvió vacío. Log para el usuario.
+                            logger.warning(f"obtener_ultimos_partidos devolvio vacio para {team_name}")
                     except Exception as e:
                         st.warning(f"⚠️ Error acumulando partidos de {team_name}: {e}")
 
