@@ -158,8 +158,14 @@ def obtener_ultimos_partidos_equipo(team_id, team_name, league_id, season, heade
         if not fixtures:
             return []
         
-        # Tomar solo los últimos N partidos
-        fixtures = fixtures[:max_partidos]
+        # ⚠️ La API devuelve cronológico (antiguos primero). Para "últimos N",
+        # ordenar por fecha descendente y tomar los N más recientes.
+        fixtures_sorted = sorted(
+            fixtures,
+            key=lambda x: x.get('fixture', {}).get('date', ''),
+            reverse=True
+        )
+        fixtures = fixtures_sorted[:max_partidos]
 
         # ★ Saltar partidos ya guardados en DB: no se procesan ni se descargan
         # sus stats (ahorro de llamadas) y no se sobreescriben con ceros.
