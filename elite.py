@@ -4513,7 +4513,7 @@ def render_vip_page():
                     st.warning(f"⚠️ En pérdida")
 
                 if len(apuestas) > 1:
-                    # Agrupar ganancia por día (no por apuesta individual)
+                    # Resumen sin gráficas (el usuario no quiere ver gráficos)
                     ganancia_por_dia = {}
                     for a in apuestas:
                         fecha = str(a.get('fecha', ''))[:10]
@@ -4521,22 +4521,6 @@ def render_vip_page():
                             ganancia_por_dia[fecha] = 0
                         ganancia_por_dia[fecha] += a.get('ganancia', 0) or 0
                     
-                    # Ordenar por fecha y crear DataFrame
-                    fechas_ordenadas = sorted(ganancia_por_dia.keys())
-                    datos_barras = []
-                    for f in fechas_ordenadas:
-                        ganancia = ganancia_por_dia[f]
-                        datos_barras.append({
-                            'Fecha': f,
-                            'Ganancia': ganancia,
-                            'Color': 'Ganancia' if ganancia >= 0 else 'Pérdida'
-                        })
-                    
-                    df_barras = pd.DataFrame(datos_barras)
-                    st.markdown("#### 📊 Ganancia/Pérdida por Día")
-                    st.bar_chart(df_barras.set_index('Fecha')['Ganancia'], color="#4ade80" if len(df_barras) > 0 and df_barras['Ganancia'].iloc[-1] >= 0 else "#f87171")
-                    
-                    # Resumen debajo de la gráfica
                     col_res1, col_res2, col_res3 = st.columns(3)
                     with col_res1:
                         dias_ganados = sum(1 for g in ganancia_por_dia.values() if g > 0)
