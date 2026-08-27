@@ -1565,13 +1565,12 @@ def sincronizar_partidos():
                         ]
                         api_calls_ahorradas += (antes - len(ft_en_ventana))
 
-                    # ★ FIX: traer últimos 5 FT SIEMPRE si el historial es corto.
-                    # Antes se saltaba equipos sin FT en la ventana estrecha -> nunca
-                    # recuperaban su historial (los equipos con historial corto se saltaban).
-                    # Solo se salta (0 API calls) si ya tiene historial completo.
+                    # ★ FIX: historial corto: traer siempre si menos de 3
                     historial_corto = len(fixtures_guardados) < 3
                     if not ft_en_ventana and not historial_corto:
-                        continue  # historial completo y sin FT pendiente -> saltar
+                        continue
+                    elif not ft_en_ventana and historial_corto:
+                        logger.info(f"CASO B historial corto para {team_name}: trae API")
 
                     # ★ ACUMULACIÓN: traer últimos 5 FT desde la API
                     # excluir_fixture_ids evita re-descargar stats de los ya guardados.
