@@ -3737,56 +3737,6 @@ def render_vip_value_bets(client, usuario_id):
             for vb in value_bets
         ])
         st.dataframe(df_vb, use_container_width=True, hide_index=True)
-
-        # ── Apostar directo desde Value Bets ──
-        st.markdown("#### 💰 Apostar Value Bet")
-        st.caption("Selecciona un value bet y apuéstalo directo a tu Capital.")
-        for vb in value_bets[:10]:
-            vb_id = vb.get('id', 0)
-            vb_equipo = f"{vb.get('equipo_local', '')} vs {vb.get('equipo_visitante', '')}"
-            vb_detalle = vb.get('detalle', '')
-            vb_tipo = vb.get('tipo', '')
-            vb_cuota = float(vb.get('cuota_mercado', 2.0) or 2.0)
-            vb_value = _get_value(vb)
-            # Buscar el pick asociado para obtener pick_id (opcional)
-            pick_id = None
-            try:
-                pick_resp = client.table('picks').select('id').eq('usuario', usuario_id).eq('fixture_id', vb.get('fixture_id', 0)).limit(1).execute()
-                if pick_resp.data:
-                    pick_id = pick_resp.data[0].get('id')
-            except Exception:
-                pass
-
-            with st.expander(f"🎯 {vb_equipo} — {vb_tipo}: {vb_detalle} (+{vb_value:.1f}% value)"):
-                col_form1, col_form2, col_form3 = st.columns([2, 1, 1])
-                with col_form1:
-                    st.markdown(f"**Mercado:** {vb_tipo} — {vb_detalle}")
-                    st.markdown(f"**Value:** +{vb_value:.1f}%")
-                with col_form2:
-                    cantidad_vb = st.number_input("💵 Cantidad ($)", value=25.0, min_value=1.0, step=5.0, key=f"cant_vb_{vb_id}")
-                with col_form3:
-                    ganancia_vb = cantidad_vb * (vb_cuota - 1)
-                    st.metric("📈 Ganancia", format_money(ganancia_vb, "$"))
-
-                if st.button(f"✅ Apostar {vb_tipo}: {vb_detalle}", key=f"apostar_vb_{vb_id}", type="primary"):
-                    fecha_hoy = str(datetime.now(timezone(timedelta(hours=-5))).date())
-                    try:
-                        client.table('bankroll_apuestas').insert({
-                            'usuario': usuario_id,
-                            'fecha': fecha_hoy,
-                            'fixture_id': vb.get('fixture_id', 0),
-                            'equipo': vb_equipo,
-                            'cuota': vb_cuota,
-                            'cantidad': float(cantidad_vb),
-                            'mercado': vb_tipo,
-                            'pick_id': pick_id,
-                            'ganancia': 0,
-                            'resultado': None
-                        }).execute()
-                        st.success(f"✅ Apuesta creada: {vb_equipo} — {vb_tipo}: {vb_detalle} @ {vb_cuota:.2f}")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error: {e}")
     else:
         st.info("⚽ Sin value bets detectados. Usa **💰 Cargar Cuotas** en la pestaña Partidos para buscar oportunidades.")
 
