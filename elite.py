@@ -1871,6 +1871,8 @@ def render_partidos_page():
                                     st.success(f"🎯 **{total_vb} value bet(s)** detectados en {n_con_vb} partido(s) (mercado {mercado_objetivo}, umbral ≥30%) — revisa la pestaña 🎯 Value Bets")
                                 else:
                                     st.info(f"🔽 Ningún value bet ≥30% en el mercado {mercado_objetivo} para estos partidos.")
+                                # Diagnóstico: cuántos partidos se analizaron
+                                st.caption(f"🔍 Analizados {len(con_cuotas)} partidos con cuotas nuevas")
                             # Mostrar el dump crudo en un code block separado para que sea legible
                             if cuotas_total == 0 and primer_mensaje:
                                 st.warning("⚠️ Estructura cruda de la API (primer partido):")
@@ -2346,6 +2348,8 @@ def detectar_value_bets_para_fixture(client, usuario_id, fixture_id, fecha, liga
             return [{'value': e['value']} for e in encontrados]
         except Exception as e2:
             logger.warning(f"detectar_value_bets: insert fallo para {fixture_id}: {e1} / {e2}")
+            # Diagnóstico visible para el usuario
+            st.warning(f"⚠️ No se pudo guardar value bet de {equipo_local} vs {equipo_visitante}: {e2}")
             return []
 
 
