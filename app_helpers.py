@@ -186,7 +186,7 @@ MERCADOS_EVAL = {
     'BTTS': {'acertado': 'acertado_btts', 'tipo_cuota': 'Both Teams To Score'},
 }
 
-UMBRAL_VALUE_MIN = 30.0
+UMBRAL_VALUE_MIN = 3.0
 
 
 def mercado_mas_acertado(picks):

@@ -1868,9 +1868,9 @@ def render_partidos_page():
                                     client, usuario_actual, con_cuotas, mercado_objetivo)
                                 status_text.empty()
                                 if total_vb > 0:
-                                    st.success(f"🎯 **{total_vb} value bet(s)** detectados en {n_con_vb} partido(s) (mercado {mercado_objetivo}, umbral ≥30%) — revisa la pestaña 🎯 Value Bets")
+                                    st.success(f"🎯 **{total_vb} value bet(s)** detectados en {n_con_vb} partido(s) (mercado {mercado_objetivo}, umbral ≥3%) — revisa la pestaña 🎯 Value Bets")
                                 else:
-                                    st.info(f"🔽 Ningún value bet ≥30% en el mercado {mercado_objetivo} para estos partidos.")
+                                    st.info(f"🔽 Ningún value bet ≥3% en el mercado {mercado_objetivo} para estos partidos.")
                                 # Diagnóstico: cuántos partidos se analizaron
                                 st.caption(f"🔍 Analizados {len(con_cuotas)} partidos con cuotas nuevas")
                             # Mostrar el dump crudo en un code block separado para que sea legible
@@ -2258,7 +2258,7 @@ def render_cuotas_mercado(r):
 # Logica pura en app_helpers (testeable). Aqui solo la capa DB.
 # Detecta value bets durante "Cargar Cuotas" usando el mercado
 # con mejor acierto historico del usuario (>=5 picks resueltos).
-# Umbral minimo: 30%. Solo evalua 1X2, O/U, BTTS.
+# Umbral minimo: 3%. Solo evalua 1X2, O/U, BTTS.
 # ══════════════════════════════════════════════════════════
 
 from app_helpers import MERCADOS_EVAL, UMBRAL_VALUE_MIN, mercado_mas_acertado, filtrar_value_bets_cuotas
@@ -3687,9 +3687,9 @@ def render_claves_page():
 
 def render_vip_value_bets(client, usuario_id):
     """Tab Value Bets: lista las oportunidades detectadas automaticamente
-    durante '💰 Cargar Cuotas' (umbral >=30%, mercado mas acertado del usuario)."""
+    durante '💰 Cargar Cuotas' (umbral >=3%, mercado mas acertado del usuario)."""
     st.markdown("### 🎯 Value Bets Detectados")
-    st.markdown("_Detectados automáticamente al cargar cuotas. Solo muestra apuestas con ≥30% de value en tu mercado más acertado._")
+    st.markdown("_Detectados automáticamente al cargar cuotas. Solo muestra apuestas con ≥3% de value en tu mercado más acertado._")
 
     # Limpiar value bets de partidos ya finalizados para no acumular basura
     try:
