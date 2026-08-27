@@ -1165,28 +1165,27 @@ def sincronizar_partidos():
                         if not es_partido_nuevo:
                             fixtures_duplicados += 1  # ★ Diagnóstico
 
-                        # ★ Solo agregar equipos a equipos_unicos si:
-                        # - El partido es nuevo (necesita stats para el analizador), O
-                        # - El partido terminó FT (necesita procesar resultado para CASO B)
-                        # Esto evita descargar stats de equipos de partidos que ya existen sin FT
-                        if es_partido_nuevo or estado == 'FT':
-                            if team_id_local:
-                                equipos_unicos[team_id_local] = {
-                                    'team_id': team_id_local,
-                                    'team_name': equipo_local,
-                                    'league_id': liga_id,
-                                    'league_name': liga_nombre,
-                                    'season': season_stats
-                                }
+                        # ★ QUITAR filtro que impedia entrar al CASO B. Si el partido
+                        # ya existe y no es FT, el equipo no entraba a equipos_unicos
+                        # y nunca se recuperaba su historial (por eso Real Madrid
+                        # siempre tenia 2). Ahora TODOS los partidos mandan sus equipos.
+                        if team_id_local:
+                            equipos_unicos[team_id_local] = {
+                                'team_id': team_id_local,
+                                'team_name': equipo_local,
+                                'league_id': liga_id,
+                                'league_name': liga_nombre,
+                                'season': season_stats
+                            }
 
-                            if team_id_visitante:
-                                equipos_unicos[team_id_visitante] = {
-                                    'team_id': team_id_visitante,
-                                    'team_name': equipo_visitante,
-                                    'league_id': liga_id,
-                                    'league_name': liga_nombre,
-                                    'season': season_stats
-                                }
+                        if team_id_visitante:
+                            equipos_unicos[team_id_visitante] = {
+                                'team_id': team_id_visitante,
+                                'team_name': equipo_visitante,
+                                'league_id': liga_id,
+                                'league_name': liga_nombre,
+                                'season': season_stats
+                            }
 
                         # ★ NUEVO: Rastrear partidos FT (terminados) para sincronización incremental
                         if estado == 'FT' and fix_id:
