@@ -3699,23 +3699,27 @@ def render_vip_value_bets(client, usuario_id):
     except Exception as e:
         logger.warning(f"render_vip_value_bets: limpieza FT fallo: {e}")
 
+    # SELECT sin ORDER BY: nunca falla por columna inexistente.
+    # Ordenamos en Python por el campo que exista (value/valor).
     try:
-        # La columna de value puede llamarse 'value' o 'valor' en la DB real
-        vb_response = client.table('value_bets').select('*').eq('usuario', usuario_id).order('value', desc=True).limit(20).execute()
+        vb_response = client.table('value_bets').select('*').eq('usuario', usuario_id).limit(50).execute()
         value_bets = vb_response.data if vb_response.data else []
-    except Exception:
-        try:
-            vb_response = client.table('value_bets').select('*').eq('usuario', usuario_id).order('valor', desc=True).limit(20).execute()
-            value_bets = vb_response.data if vb_response.data else []
-        except Exception as e:
-            logger.warning(f"render_vip_value_bets falló: {e}")
-            st.error(f"⚠️ Error consultando value bets: {e}. Revisa tu conexión a Supabase.")
-            return
+    except Exception as e:
+        logger.warning(f"render_vip_value_bets falló: {e}")
+        st.error(f"⚠️ Error consultando value bets: {e}. Revisa tu conexión a Supabase.")
+        return
 
     if value_bets:
-        # Normalizar: la columna puede ser 'value' o 'valor'
+        # Diagnóstico: mostrar las columnas reales de la tabla (una sola vez)
+        st.caption(f"🔍 Columnas reales en tu tabla: {', '.join(sorted(value_bets[0].keys()))}")
+        # Normalizar: la columna de value puede tener cualquier nombre
         def _get_value(vb):
-            return vb.get('value') or vb.get('valor') or 0
+            for k in ('value', 'valor', 'value_pct', 'edge'):
+                if vb.get(k) is not None:
+                    return vb.get(k)
+            return 0
+        value_bets.sort(key=_get_value, reverse=True)
+        value_bets = value_bets[:20]
         df_vb = pd.DataFrame([
             {
                 "Fecha": vb.get('fecha', ''),
