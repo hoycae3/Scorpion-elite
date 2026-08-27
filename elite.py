@@ -2313,18 +2313,23 @@ def detectar_value_bets_para_fixture(client, usuario_id, fixture_id, fecha, liga
     if not encontrados:
         return []
 
-    # Preparar filas para DB (la tabla value_bets usa 'usuario', no 'usuario_id')
-    nuevos = [{
-        'usuario': usuario_id, 'fixture_id': fixture_id,
-        'fecha': fecha, 'liga': liga,
-        'equipo_local': equipo_local, 'equipo_visitante': equipo_visitante,
-        'prob_modelo': e['prob_modelo'],
-        'cuota_mercado': e['cuota'],
-        'prob_implicita': e['prob_implicita'],
-        'value': e['value'],
-        'tipo': mercado, 'detalle': e['detalle'],
-        'recomendado': True,
-    } for e in encontrados]
+    # Preparar filas para DB. La tabla value_bets fue creada con nombres
+    # distintos al schema: usuario (no usuario_id). La columna de value
+    # puede llamarse 'value', 'valor' o 'value_pct'. Intentamos insertar
+    # con 'value' y si falla, reintentamos con 'valor'.
+    def _intentar_insert(col_value):
+        filas = [{
+            'usuario': usuario_id, 'fixture_id': fixture_id,
+            'fecha': fecha, 'liga': liga,
+            'equipo_local': equipo_local, 'equipo_visitante': equipo_visitante,
+            'prob_modelo': e['prob_modelo'],
+            'cuota_mercado': e['cuota'],
+            'prob_implicita': e['prob_implicita'],
+            col_value: e['value'],
+            'tipo': mercado, 'detalle': e['detalle'],
+            'recomendado': True,
+        } for e in encontrados]
+        return client.table('value_bets').insert(filas).execute()
 
     # Borrar viejos del fixture (por si cambian cuotas en re-carga)
     try:
@@ -2333,11 +2338,15 @@ def detectar_value_bets_para_fixture(client, usuario_id, fixture_id, fecha, liga
         logger.warning(f"detectar_value_bets: delete fallo para {fixture_id}: {e}")
 
     try:
-        client.table('value_bets').insert(nuevos).execute()
-        return nuevos
-    except Exception as e:
-        logger.warning(f"detectar_value_bets: insert fallo para {fixture_id}: {e}")
-        return []
+        _intentar_insert('value')
+        return [{'value': e['value']} for e in encontrados]
+    except Exception as e1:
+        try:
+            _intentar_insert('valor')
+            return [{'value': e['value']} for e in encontrados]
+        except Exception as e2:
+            logger.warning(f"detectar_value_bets: insert fallo para {fixture_id}: {e1} / {e2}")
+            return []
 
 
 def analizar_value_bets_batch(client, usuario_id, partidos, mercado, umbral=UMBRAL_VALUE_MIN):
@@ -3691,28 +3700,37 @@ def render_vip_value_bets(client, usuario_id):
         logger.warning(f"render_vip_value_bets: limpieza FT fallo: {e}")
 
     try:
+        # La columna de value puede llamarse 'value' o 'valor' en la DB real
         vb_response = client.table('value_bets').select('*').eq('usuario', usuario_id).order('value', desc=True).limit(20).execute()
         value_bets = vb_response.data if vb_response.data else []
+    except Exception:
+        try:
+            vb_response = client.table('value_bets').select('*').eq('usuario', usuario_id).order('valor', desc=True).limit(20).execute()
+            value_bets = vb_response.data if vb_response.data else []
+        except Exception as e:
+            logger.warning(f"render_vip_value_bets falló: {e}")
+            st.error(f"⚠️ Error consultando value bets: {e}. Revisa tu conexión a Supabase.")
+            return
 
-        if value_bets:
-            df_vb = pd.DataFrame([
-                {
-                    "Fecha": vb.get('fecha', ''),
-                    "Partido": f"{vb.get('equipo_local', '')} vs {vb.get('equipo_visitante', '')}",
-                    "Tipo": vb.get('tipo', ''),
-                    "Apuesta": vb.get('detalle', ''),
-                    "Prob Modelo": f"{vb.get('prob_modelo', 0):.1f}%",
-                    "Cuota": f"{vb.get('cuota_mercado', 0):.2f}",
-                    "Value": f"+{vb.get('value', 0):.1f}%",
-                }
-                for vb in value_bets
-            ])
-            st.dataframe(df_vb, use_container_width=True, hide_index=True)
-        else:
-            st.info("⚽ Sin value bets detectados. Usa **💰 Cargar Cuotas** en la pestaña Partidos para buscar oportunidades.")
-    except Exception as e:
-        logger.warning(f"render_vip_value_bets falló: {e}")
-        st.error(f"⚠️ Error consultando value bets: {e}. Revisa tu conexión a Supabase.")
+    if value_bets:
+        # Normalizar: la columna puede ser 'value' o 'valor'
+        def _get_value(vb):
+            return vb.get('value') or vb.get('valor') or 0
+        df_vb = pd.DataFrame([
+            {
+                "Fecha": vb.get('fecha', ''),
+                "Partido": f"{vb.get('equipo_local', '')} vs {vb.get('equipo_visitante', '')}",
+                "Tipo": vb.get('tipo', ''),
+                "Apuesta": vb.get('detalle', ''),
+                "Prob Modelo": f"{vb.get('prob_modelo', 0):.1f}%",
+                "Cuota": f"{vb.get('cuota_mercado', 0):.2f}",
+                "Value": f"+{_get_value(vb):.1f}%",
+            }
+            for vb in value_bets
+        ])
+        st.dataframe(df_vb, use_container_width=True, hide_index=True)
+    else:
+        st.info("⚽ Sin value bets detectados. Usa **💰 Cargar Cuotas** en la pestaña Partidos para buscar oportunidades.")
 
 
 def render_vip_alertas(client, usuario_id):
