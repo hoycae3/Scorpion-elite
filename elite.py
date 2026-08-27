@@ -1567,9 +1567,9 @@ def sincronizar_partidos():
 
                     # ★ FIX: traer últimos 5 FT SIEMPRE si el historial es corto.
                     # Antes se saltaba equipos sin FT en la ventana estrecha -> nunca
-                    # recuperaban su historial (por eso Real Madrid tenia solo 2).
+                    # recuperaban su historial (los equipos con historial corto se saltaban).
                     # Solo se salta (0 API calls) si ya tiene historial completo.
-                    historial_corto = len(fixtures_guardados) < 5
+                    historial_corto = len(fixtures_guardados) < 3
                     if not ft_en_ventana and not historial_corto:
                         continue  # historial completo y sin FT pendiente -> saltar
 
