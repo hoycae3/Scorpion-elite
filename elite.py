@@ -4652,17 +4652,32 @@ def render_vip_page():
                         nombre_1x2 = {'1': 'Local', 'X': 'Empate', '2': 'Visitante'}.get(p.get('prediccion_1x2'), p.get('prediccion_1x2'))
                         opciones.append({'pick': p, 'display': f"{match_key} - 1X2: {nombre_1x2}", 'tipo': '1X2', 'cuota': float(p.get('cuota_1x2') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_1x2', 50)})
                     if p.get('prediccion_ou'):
-                        opciones.append({'pick': p, 'display': f"{match_key} - O/U: {p.get('prediccion_ou')}", 'tipo': 'O/U', 'cuota': float(p.get('cuota_ou') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_ou', 50)})
+                        opciones.append({'pick': p, 'display': f"{match_key} - O/U: {p.get('prediccion_ou')} 2.5", 'tipo': 'O/U', 'cuota': float(p.get('cuota_ou') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_ou', 50)})
                     if p.get('prediccion_btts'):
-                        opciones.append({'pick': p, 'display': f"{match_key} - BTTS", 'tipo': 'BTTS', 'cuota': float(p.get('cuota_btts') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_btts', 50)})
+                        # prediccion_btts = 'Si'/'No'; la prob guardada (btts_yes)
+                        # es la del SI: si el pick es No, la prob es el complemento
+                        btts_pred = p.get('prediccion_btts')
+                        btts_prob = float(p.get('btts_yes') or 50)
+                        if str(btts_pred).lower().startswith('no'):
+                            btts_prob = 100 - btts_prob
+                        opciones.append({'pick': p, 'display': f"{match_key} - BTTS: {btts_pred}", 'tipo': 'BTTS', 'cuota': float(p.get('cuota_btts') or 2.0), 'conf': p.get('confianza', 70), 'prob': btts_prob})
                     if p.get('prediccion_corners'):
-                        opciones.append({'pick': p, 'display': f"{match_key} - Corners", 'tipo': 'Corners', 'cuota': float(p.get('cuota_corners') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_corners', 50)})
+                        # No hay prob guardada, solo total estimado -> mostrar estimado
+                        est_c = p.get('corners_total_estimado')
+                        det_c = f" (est. {est_c:.0f})" if est_c else ""
+                        opciones.append({'pick': p, 'display': f"{match_key} - Corners: {p.get('prediccion_corners')} 9.5{det_c}", 'tipo': 'Corners', 'cuota': float(p.get('cuota_corners') or 2.0), 'conf': p.get('confianza', 70), 'prob': None})
                     if p.get('prediccion_tarjetas'):
-                        opciones.append({'pick': p, 'display': f"{match_key} - Tarjetas", 'tipo': 'Tarjetas', 'cuota': float(p.get('cuota_tarjetas') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_tarjetas', 50)})
+                        est_t = p.get('tarjetas_total_estimado')
+                        det_t = f" (est. {est_t:.0f})" if est_t else ""
+                        opciones.append({'pick': p, 'display': f"{match_key} - Tarjetas: {p.get('prediccion_tarjetas')} 6{det_t}", 'tipo': 'Tarjetas', 'cuota': float(p.get('cuota_tarjetas') or 2.0), 'conf': p.get('confianza', 70), 'prob': None})
                     if p.get('prediccion_remates'):
-                        opciones.append({'pick': p, 'display': f"{match_key} - Remates: {p.get('prediccion_remates')}", 'tipo': 'Remates', 'cuota': float(p.get('cuota_remates') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_remates', 50)})
+                        est_r = p.get('remates_total_estimado')
+                        det_r = f" (est. {est_r:.0f})" if est_r else ""
+                        opciones.append({'pick': p, 'display': f"{match_key} - Remates: {p.get('prediccion_remates')} 24{det_r}", 'tipo': 'Remates', 'cuota': float(p.get('cuota_remates') or 2.0), 'conf': p.get('confianza', 70), 'prob': None})
                     if p.get('prediccion_arco'):
-                        opciones.append({'pick': p, 'display': f"{match_key} - Tiros Arco: {p.get('prediccion_arco')}", 'tipo': 'Tiros Arco', 'cuota': float(p.get('cuota_arco') or 2.0), 'conf': p.get('confianza', 70), 'prob': p.get('prob_arco', 50)})
+                        est_a = p.get('arco_total_estimado')
+                        det_a = f" (est. {est_a:.0f})" if est_a else ""
+                        opciones.append({'pick': p, 'display': f"{match_key} - Tiros Arco: {p.get('prediccion_arco')} 8{det_a}", 'tipo': 'Tiros Arco', 'cuota': float(p.get('cuota_arco') or 2.0), 'conf': p.get('confianza', 70), 'prob': None})
 
                 st.markdown("#### 📋 Selecciona Picks (ingresa cuota)")
                 seleccionados = []
@@ -4682,7 +4697,8 @@ def render_vip_page():
                         if sel:
                             seleccionados.append(i)
                     with cols[1]:
-                        st.markdown(f"**{opt['display']}** <span style='color:#94a3b8;font-size:0.8rem'> | {opt['tipo']} | {(opt.get('prob') or 0):.0f}%</span>", unsafe_allow_html=True)
+                        prob_txt = f" | {(opt.get('prob')):.0f}%" if opt.get('prob') is not None else ""
+                        st.markdown(f"**{opt['display']}** <span style='color:#94a3b8;font-size:0.8rem'> | {opt['tipo']}{prob_txt}</span>", unsafe_allow_html=True)
                     with cols[2]:
                         cantidad_input = st.number_input("💰 Cuota", value=float(opt['cuota']), min_value=1.01, max_value=100.0, step=0.05, key=f"cuota_{i}")
                         cantidades_dict[i] = cantidad_input
