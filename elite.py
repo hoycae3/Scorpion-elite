@@ -976,55 +976,14 @@ def sincronizar_partidos():
         except Exception as e:
             logger.warning(f"Error en linea 1024: {e}")
 
-        # ⚽ LÓGICA INTELIGENTE:
-        # 1. Base vacía: Descargar HOY a HOY+6
-        # 2. Base con datos: Descargar HOY-1 (resultados) + siguiente día de última fecha FUTURA
+        # ⚽ VENTANA FIJA: siempre descargar resultados de ayer (para liquidar
+        # picks/bankroll)) + próximos 7 días (hoy → hoy+6).
+        # Así la DB SIEMPRE tiene la misma ventana (~8 días) y no avanza
+        # un día por cada sync ni acumula partidos indefinidamente.
+        fecha_inicio = ayer
+        fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
+        modo_sync = f"☕ Ventana fija (ayer → +6 días)"
 
-        try:
-            # Obtener fechas futuras + ayer (filtrar evita el límite de 1000 filas de Supabase)
-            # NOTA: la fecha se guarda en hora Colombia; un partido a las 23:00 UTC-5 del
-            # día 30 puede caer como 30 o 31 según hora; por eso usamos rango amplio
-            # desde ayer-3 para no perder ninguna fecha reciente de la ventana de sync.
-            resp_fechas = client.table('partidos').select('fecha').gte('fecha', (hoy - timedelta(days=4)).strftime('%Y-%m-%d')).execute()
-
-            if not resp_fechas.data:
-                # Base vacía → descargar ventana completa
-                fecha_inicio = hoy_str
-                fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
-                modo_sync = "☕ Completa (base vacía)"
-            else:
-                # Analizar fechas existentes
-                fechas_futuras = []
-                for p in resp_fechas.data:
-                    try:
-                        f = datetime.strptime(str(p['fecha'])[:10], '%Y-%m-%d').date()
-                        if f >= hoy:
-                            fechas_futuras.append(f)
-                    except Exception as e:
-                        logger.warning(f"Error en linea 1051: {e}")
-
-                # Siempre descargar resultados de ayer
-                fecha_inicio = ayer
-
-                if fechas_futuras:
-                    # Ya hay fechas futuras → buscar la última y descargar el siguiente día
-                    ultima_futura = max(fechas_futuras)
-                    siguiente_dia = (ultima_futura + timedelta(days=1)).strftime('%Y-%m-%d')
-                    fecha_fin = siguiente_dia
-                    modo_sync = f"☔ Incremental (última futura: {ultima_futura.strftime('%d/%m')})"
-                else:
-                    # No hay fechas futuras → descargar HOY+1
-                    fecha_fin = (hoy + timedelta(days=1)).strftime('%Y-%m-%d')
-                    modo_sync = "☔ Actualizar"
-
-        except Exception as e:
-            # Si hay error, descargar ventana completa por seguridad
-            fecha_inicio = hoy_str
-            fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
-            modo_sync = "☕ Completa (fallback)"
-            st.warning(f"⚽ Error: {e}")
-
-        st.markdown(f"{modo_sync} ⚽ Rango: **{fecha_inicio}** al **{fecha_fin}**")
 
         # ✅ MODO PRODUCCIÓN - Todas las ligas
         LIGAS = [
@@ -1650,6 +1609,8 @@ def sincronizar_partidos():
         status_text.info("📋 Generando resumen...")
 
         st.session_state.sincronizacion_ok = True
+        # ★ Activar limpieza automática de ventana (borrar partidos >7 días)
+        st.session_state.partidos_nuevos_guardados = partidos_guardados
 
         # Completar barra de progreso
         progress_bar.progress(100)
@@ -1930,20 +1891,23 @@ def render_partidos_page():
                     logger.warning(f"Error en cargar cuotas: {e}")
 
     # ═══════════════════════════════════════════════════════════════
-    # LIMPIEZA: Eliminar partidos de más de 1 año SOLO si hay partidos nuevos
+    # ═══════════════════════════════════════════════════════════════
+    # LIMPIEZA: Mantener solo la ventana de ~7 días (borrar partidos
+    # con fecha anterior a ayer, que ya fueron liquidados)
     # ═══════════════════════════════════════════════════════════════
     if st.session_state.get('sincronizacion_ok') and st.session_state.get('partidos_nuevos_guardados', 0) > 0:
         st.session_state.sincronizacion_ok = False
         st.session_state.partidos_nuevos_guardados = 0
         try:
             client = get_client()
-            fecha_limite = (datetime.now(timezone(timedelta(hours=-5))) - timedelta(days=365)).strftime('%Y-%m-%d')
-            resp_del = client.table('partidos').delete().lt('fecha', fecha_limite).execute()
+            ayer_limpieza = (datetime.now(timezone(timedelta(hours=-5))) - timedelta(days=1)).strftime('%Y-%m-%d')
+            resp_del = client.table('partidos').delete().lt('fecha', ayer_limpieza).execute()
             eliminados = len(resp_del.data) if resp_del.data else 0
             if eliminados > 0:
-                st.info(f"🗑️ {eliminados} partidos de más de 1 año eliminados")
+                st.info(f"🗑️ {eliminados} partidos anteriores a ayer eliminados (ventana de ~7 días)")
         except Exception as e:
-            logger.warning(f"Error en linea 1680: {e}")
+            logger.warning(f"Error en limpieza ventana: {e}")
+
 
     with col_info:
         st.markdown(f"📅 {datetime.now(timezone(timedelta(hours=-5))).date().strftime('%d/%m/%Y')} | 🔻 Requests: {st.session_state.api_requests_today}/999")
