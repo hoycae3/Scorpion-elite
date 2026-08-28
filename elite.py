@@ -949,12 +949,19 @@ def sincronizar_partidos():
         # ═══════════════════════════════════════════════════════════════
         # PASO 1: DESCARGAR PARTIDOS (SIN ESTADÍSTICAS DE EQUIPOS)
         # ═══════════════════════════════════════════════════════════════
+        # Siempre descargar resultados de ayer
+        ayer_date = hoy - timedelta(days=1)
+        ayer = ayer_date.strftime('%Y-%m-%d')
+
         # Obtener partidos existentes para evitar duplicados
         partidos_existentes = set()
         partidos_existentes_fechas = {}  # ★ fixture_id → fecha (para detectar reprogramados)
         fecha_max_db = None
+        # Filtrar desde ayer: evita el límite de 1000 filas de Supabase que truncaba
+        # la detección de duplicados y hacía calcular mal ultima_futura (re-descargaba
+        # fechas que ya estaban en la DB)
         try:
-            resp_ex = client.table('partidos').select('fixture_id,fecha,estado').execute()
+            resp_ex = client.table('partidos').select('fixture_id,fecha,estado').gte('fecha', ayer).execute()
             if resp_ex.data:
                 partidos_existentes = {p['fixture_id'] for p in resp_ex.data}
                 # ★ Guardar fecha+estado de cada partido existente
@@ -973,12 +980,12 @@ def sincronizar_partidos():
         # 1. Base vacía: Descargar HOY a HOY+6
         # 2. Base con datos: Descargar HOY-1 (resultados) + siguiente día de última fecha FUTURA
 
-        ayer_date = hoy - timedelta(days=1)
-        ayer = ayer_date.strftime('%Y-%m-%d')
-
         try:
-            # Obtener todas las fechas únicas en la base
-            resp_fechas = client.table('partidos').select('fecha').execute()
+            # Obtener fechas futuras + ayer (filtrar evita el límite de 1000 filas de Supabase)
+            # NOTA: la fecha se guarda en hora Colombia; un partido a las 23:00 UTC-5 del
+            # día 30 puede caer como 30 o 31 según hora; por eso usamos rango amplio
+            # desde ayer-3 para no perder ninguna fecha reciente de la ventana de sync.
+            resp_fechas = client.table('partidos').select('fecha').gte('fecha', (hoy - timedelta(days=4)).strftime('%Y-%m-%d')).execute()
 
             if not resp_fechas.data:
                 # Base vacía → descargar ventana completa
