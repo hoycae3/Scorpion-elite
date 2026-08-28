@@ -352,19 +352,18 @@ Ahora: 868 partidos (1 al 18 de agosto), 14 guardados, 5 equipos nuevos
 - `867a4d8`: fix: actualizar partidos reprogramados (mismo fixture_id, fecha distinta)
 - `d04457e`: diag: añadir contador de partidos actualizados (reprogramados)
 
-### Logica de ventana de sync (NO CAMBIAR sin confirmar)
+### Logica de ventana de sync (ACTUALIZADA 2026-08-28: ventana fija)
 ```
-fecha_inicio = ayer (siempre, para resultados del dia anterior)
-fecha_fin = ultima_futura + 1 dia (incremental)
+fecha_inicio = ayer (siempre, para liquidar picks/bankroll del dia anterior)
+fecha_fin = hoy + 6 dias (proximos 7 dias)
 ```
-Usuario confirmo: esta logica es correcta. NO cambiar a +7 dias.
+- La sync SIEMPRE descarga el mismo rango fijo (ayer → hoy+6).Ya NO
+  avanza "un dia por cada sync" ni acumula partidos indefinidamente.
 
-### LIMITACION conocida (no es bug)
-Si el dia siguiente a ultima_futura no tiene partidos, la sync no
-avanza (ultima_futura no cambia). Ej: si ultima_futura=16 y el 17 no
-tiene partidos, cada sync busca el 17 y no encuentra nada nuevo.
-Solucion propuesta (pendiente de aprobacion): buscar hasta hoy+6 en
-vez de ultima_futura+1.
+- **Limpieza automatica**: al terminar la sync, borra partidos con fecha
+  anterior a ayer (que ya fueron liquidados). La DB se mantiene en ~8 dias maximo.
+
+
 
 ### DB confirmada
 - Tabla `partidos`: fixture_id UNIQUE NOT NULL (no permite duplicados)
