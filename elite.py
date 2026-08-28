@@ -1445,21 +1445,40 @@ def sincronizar_partidos():
         partidos_iniciales_cargados = 0
         api_calls_ahorradas = 0  # ★ API calls evitadas por filtrado de FT ya guardados
 
+        equipos_q_quedan = 0  # ★ Equipos pendientes para la proxima sync
+        if len(equipos_unicos) > 60:
+            st.info(f"⚡ {len(equipos_unicos)} equipos detectados. Se procesan 60 por corrida para no saturar la API-pulsa sincronizar de nuevo para continuar.")
         if equipos_unicos:
 
             # Paso 2a: Identificar equipos existentes en DB (tabla principal equipos_stats)
+            # ★ FIX: consultar por lotes con .in_ para no tropezar con el límite de 1000 filas
+            # de Supabase. Antes, >1000 equipos truncaba la consulta y equipos ya
+            # existentes se veían como "nuevos" → re-descarga masiva → crash de Render.
             equipos_existentes_ids = set()
             try:
-                # Obtener todos los team_ids que ya tienen stats en equipos_stats
-                resp_existing = client.table('equipos_stats').select('team_id').execute()
-                if resp_existing.data:
-                    equipos_existentes_ids = {p['team_id'] for p in resp_existing.data if p.get('team_id')}
+                team_ids_unicos = list(equipos_unicos.keys())
+                for i in range(0, len(team_ids_unicos), 400):
+                    batch = team_ids_unicos[i:i+400]
+                    if not batch:
+                        continue
+                    resp_existing = client.table('equipos_stats').select('team_id').in_('team_id', batch).execute()
+                    if resp_existing.data:
+                        equipos_existentes_ids.update(p['team_id'] for p in resp_existing.data if p.get('team_id'))
             except Exception as e:
                 logger.warning(f"Error identificando equipos existentes: {e}")
                 equipos_existentes_ids = set()
 
             # Paso 2b: Para cada equipo, determinar si es nuevo o existente
-            for idx, (tid, equipo) in enumerate(equipos_unicos.items()):
+            # ★ FIX: limitar equipos procesados por corrida para no matar Render.
+            # Los 55 ligas pueden traer ~400 equipos por cada sync; procesarlos todos,
+            # con cientos de llamadas API-Football + upserts por equipo, mata Render free tier.
+            # Ahora se procesan maximo 60 equipos por corrida; el resto continua en la proxima sync.
+            MAX_EQUIPOS_POR_CORRIDA = 60
+            total_equipos_a_procesar = min(len(equipos_unicos), MAX_EQUIPOS_POR_CORRIDA)
+            equipos_q_quedan = len(equipos_unicos) - total_equipos_a_procesar
+            for idx, (tid, equipo)in enumerate(equipos_unicos.items()):
+                if idx >= total_equipos_a_procesar:
+                    break
                 team_id = equipo['team_id']
                 team_name = equipo['team_name']
                 league_id = equipo['league_id']
@@ -1644,6 +1663,7 @@ def sincronizar_partidos():
         | ♻️ **Equipos existentes** | {equipos_existentes} |
         | 📥 **Stats equipos descargadas** | {equipos_stats_descargados} |
         | 📲 **Stats partidos nuevos** | {partidos_iniciales_cargados} |
+        | ⏳ **Equipos pendientes (prox. sync)** | {equipos_q_quedan} |
         | 📊 **Stats FT incrementales** | {stats_ft_nuevos} |
         | 💰 **API calls ahorradas** | {api_calls_ahorradas} |
         | 🎯 **Picks actualizados** | {picks_actualizados_auto} |
