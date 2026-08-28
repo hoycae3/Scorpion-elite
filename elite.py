@@ -976,13 +976,36 @@ def sincronizar_partidos():
         except Exception as e:
             logger.warning(f"Error en linea 1024: {e}")
 
-        # ⚽ VENTANA FIJA: siempre descargar resultados de ayer (para liquidar
-        # picks/bankroll)) + próximos 7 días (hoy → hoy+6).
-        # Así la DB SIEMPRE tiene la misma ventana (~8 días) y no avanza
-        # un día por cada sync ni acumula partidos indefinidamente.
+        # ⚽ VENTANA CONGELADA: siempre descargar resultados de ayer(para liquidar
+        # picks/bankroll)y SOLO hasta la última fecha futura que ya exista en DB..
+        # Si mañana se sincroniza otra vez,NO avanza al día siguiente: el tope
+        # superior queda congelado hasta que la fecha real alcance la ventana.y
         fecha_inicio = ayer
-        fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
-        modo_sync = f"☕ Ventana fija (ayer → +6 días)"
+        try:
+            resp_fechas = client.table('partidos').select('fecha').gte('fecha', (hoy - timedelta(days=4)).strftime('%Y-%m-%d')).execute()
+            fechas_futuras = []
+            for p in (resp_fechas.data or []):
+                try:
+                    f = datetime.strptime(str(p['fecha'])[:10], '%Y-%m-%d').date()
+                    if f >= hoy:
+                        fechas_futuras.append(f)
+                except Exception:
+                    continue
+            if fechas_futuras:
+                # Tope CONGELADO: la última fecha futura existente, SIN +1 día
+                ultima_futura = max(fechas_futuras)
+                fecha_fin = ultima_futura.strftime('%Y-%m-%d')
+                modo_sync = f"☕ Tope congelado (última futura: {ultima_futura.strftime('%d/%m')})"
+            else:
+                # Sin fechas futuras → ventana inicial completa de 7 días
+                fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
+                modo_sync = "☕ Completa (hoy → +6 días)"
+        except Exception as e:
+            # Fallback seguro
+            fecha_fin = (hoy + timedelta(days=6)).strftime('%Y-%m-%d')
+            modo_sync = "☕ Completa (fallback)"
+            logger.warning(f"Error calculando tope ventana: {e}")
+
 
 
         # ✅ MODO PRODUCCIÓN - Todas las ligas
@@ -1609,8 +1632,6 @@ def sincronizar_partidos():
         status_text.info("📋 Generando resumen...")
 
         st.session_state.sincronizacion_ok = True
-        # ★ Activar limpieza automática de ventana (borrar partidos >7 días)
-        st.session_state.partidos_nuevos_guardados = partidos_guardados
 
         # Completar barra de progreso
         progress_bar.progress(100)
@@ -1889,24 +1910,6 @@ def render_partidos_page():
                 except Exception as e:
                     st.error(f"❌ Error cargando cuotas: {e}")
                     logger.warning(f"Error en cargar cuotas: {e}")
-
-    # ═══════════════════════════════════════════════════════════════
-    # ═══════════════════════════════════════════════════════════════
-    # LIMPIEZA: Mantener solo la ventana de ~7 días (borrar partidos
-    # con fecha anterior a ayer, que ya fueron liquidados)
-    # ═══════════════════════════════════════════════════════════════
-    if st.session_state.get('sincronizacion_ok') and st.session_state.get('partidos_nuevos_guardados', 0) > 0:
-        st.session_state.sincronizacion_ok = False
-        st.session_state.partidos_nuevos_guardados = 0
-        try:
-            client = get_client()
-            ayer_limpieza = (datetime.now(timezone(timedelta(hours=-5))) - timedelta(days=1)).strftime('%Y-%m-%d')
-            resp_del = client.table('partidos').delete().lt('fecha', ayer_limpieza).execute()
-            eliminados = len(resp_del.data) if resp_del.data else 0
-            if eliminados > 0:
-                st.info(f"🗑️ {eliminados} partidos anteriores a ayer eliminados (ventana de ~7 días)")
-        except Exception as e:
-            logger.warning(f"Error en limpieza ventana: {e}")
 
 
     with col_info:

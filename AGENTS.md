@@ -352,16 +352,21 @@ Ahora: 868 partidos (1 al 18 de agosto), 14 guardados, 5 equipos nuevos
 - `867a4d8`: fix: actualizar partidos reprogramados (mismo fixture_id, fecha distinta)
 - `d04457e`: diag: añadir contador de partidos actualizados (reprogramados)
 
-### Logica de ventana de sync (ACTUALIZADA 2026-08-28: ventana fija)
+### Logica de ventana de sync (ACTUALIZADA 2026-08-28: tope congelado)
 ```
 fecha_inicio = ayer (siempre, para liquidar picks/bankroll del dia anterior)
-fecha_fin = hoy + 6 dias (proximos 7 dias)
+fecha_fin = ultima fecha futura existente en DB (SIN +1 dia) 
+   = si no hay futuras: hoy + 6 dias (primer fill)
 ```
-- La sync SIEMPRE descarga el mismo rango fijo (ayer → hoy+6).Ya NO
-  avanza "un dia por cada sync" ni acumula partidos indefinidamente.
+- **NO se borra nada.**
+- La sync descarga SOLO hasta la última fecha futura que ya existe en DB..
+  Si hoy es 28/08 y en DB hay hasta 3/09, sincronizar de nuevo NO
+  buscará el 4/09: el tope queda CONGELADO en 3/09 hasta que la fecha
+  real avance y la ventana se vaya consumiendo..
+- Ejemplo: primer sync (base vacia) descarga hoy → hoy+6. Al otro dia
+  (si no se consume nada) sincronizar NO avanza: queda el mismo tope
 
-- **Limpieza automatica**: al terminar la sync, borra partidos con fecha
-  anterior a ayer (que ya fueron liquidados). La DB se mantiene en ~8 dias maximo.
+
 
 
 
