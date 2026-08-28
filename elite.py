@@ -1445,9 +1445,13 @@ def sincronizar_partidos():
         partidos_iniciales_cargados = 0
         api_calls_ahorradas = 0  # ★ API calls evitadas por filtrado de FT ya guardados
 
-        equipos_q_quedan = 0  # ★ Equipos pendientes para la proxima sync
+        equipos_procesados = st.session_state.get('equipos_procesados_sync', set())
+        # ★ Progreso persistente entre corridas: procesa 60 equipos NUEVOS por sync,
+        # así el contador de pendientes BAJA de verdad en vez de quedarse fijo.,
+
         if len(equipos_unicos) > 60:
-            st.info(f"⚡ {len(equipos_unicos)} equipos detectados. Se procesan 60 por corrida para no saturar la API-pulsa sincronizar de nuevo para continuar.")
+            pendientes_ahora = max(0, len(equipos_unicos) - len(equipos_procesados) - 60)
+            st.info(f"⚡ {len(equipos_unicos)} equipos detectados. Se procesan 60 por corridda para no saturar la API. Quedan ~{pendientes_ahora} por procesar. Pulsa sincronizar de nuevo para continuar.")
         if equipos_unicos:
 
             # Paso 2a: Identificar equipos existentes en DB (tabla principal equipos_stats)
@@ -1474,12 +1478,19 @@ def sincronizar_partidos():
             # con cientos de llamadas API-Football + upserts por equipo, mata Render free tier.
             # Ahora se procesan maximo 60 equipos por corrida; el resto continua en la proxima sync.
             MAX_EQUIPOS_POR_CORRIDA = 60
-            total_equipos_a_procesar = min(len(equipos_unicos), MAX_EQUIPOS_POR_CORRIDA)
-            equipos_q_quedan = len(equipos_unicos) - total_equipos_a_procesar
-            for idx, (tid, equipo)in enumerate(equipos_unicos.items()):
-                if idx >= total_equipos_a_procesar:
-                    break
-                team_id = equipo['team_id']
+            # ★ Filtrar equipos ya procesados en corridas anteriores: así los 60 de cada
+            # sync son siempre distintos y el contador de pendientes BAJA de verdad..
+            equipos_por_procesar = {
+                tid: equipo for tid, equipo in equipos_unicos.items() if tid not in equipos_procesados
+            }
+            pendientes_reales = len(equipos_por_procesar)
+            total_equipos_a_procesar = min(pendientes_reales, MAX_EQUIPOS_POR_CORRIDA)
+
+            equipos_q_quedan = pendientes_reales - total_equipos_a_procesar
+            equipos_q_quedan = max(0, equipos_q_quedan)
+            for tid, equipo in list(equipos_por_procesar.items())[:total_equipos_a_procesar]:
+                equipos_procesados.add(tid)
+                team_id = tid
                 team_name = equipo['team_name']
                 league_id = equipo['league_id']
                 season_eq = equipo['season']
@@ -1627,6 +1638,12 @@ def sincronizar_partidos():
                         time.sleep(0.3)  # descanso para no saturar API
                     except Exception as e:
                         st.warning(f"⚠️ Error en {team_name}: {e}")
+
+            # ★ Persistir progreso para la próxima corrida..
+            st.session_state.equipos_procesados_sync = equipos_procesados
+            if not equipos_por_procesar:
+                st.session_state.equipos_procesados_sync = set()
+                logger.info(f"✅ Todos los {len(equipos_unicos)} equipos detectados ya fueron procesados. La próxima sync empezará de cero.")
 
         # Actualizar progreso antes del resumen (70-90%)
         progress_bar.progress(90)
