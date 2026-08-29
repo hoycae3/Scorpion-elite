@@ -1932,15 +1932,22 @@ def render_partidos_page():
         st.markdown("⚽ **No hay partidos.** Clic en 🔄 🔄 Sincronizar para obtener partidos.")
         partidos = []
 
-    # Filtro por calendario
+    # Filtro por calendario: opción por defecto = "Todos los días" para que se
+    # vean TODOS los partidos que hay en DB (el filtro por fecha ocultaba los de
+    # otros días y daba la impresión de que faltaban partidos)
+    fechas_disponibles = sorted({str(p.get('fecha', ''))[:10] for p in partidos if p.get('fecha')}, reverse=False)
+    opciones_fecha = ["📅 Todos los días"] + [datetime.strptime(fdat, '%Y-%m-%d').strftime('%d/%m/%Y') for fdat in fechas_disponibles]
+    if not fechas_disponibles:
+        opciones_fecha = ["📅 Todos los días"]
+
     col_f1, col_f2 = st.columns([1, 3])
     with col_f1:
-        hoy = datetime.now(timezone(timedelta(hours=-5))).date()
-        fecha_seleccionada = st.date_input("📅 Fecha", value=hoy, format="DD/MM/YYYY")
+        seleccion_fecha = st.selectbox("📅 Filtrar por fecha", opciones_fecha, index=0, key="filtro_fecha_partidos")
 
-    # Filtrar por fecha seleccionada
-    if fecha_seleccionada:
-        fecha_str = fecha_seleccionada.strftime('%Y-%m-%d')
+    # Aplicar filtro: si no es "Todos los días", filtrar por la fecha elegida
+    if seleccion_fecha != "📅 Todos los días":
+        fecha_obj = datetime.strptime(seleccion_fecha, '%d/%m/%Y').date()
+        fecha_str = fecha_obj.strftime('%Y-%m-%d')
         partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] == fecha_str]
 
     # Procesar partidos (la hora ya viene en zona horaria de Colombia desde la sync)
@@ -4639,6 +4646,21 @@ def render_vip_page():
                                 <span style="font-size:0.9rem;">{format_money(a.get('cantidad', 0), simbolo)} @ {a.get('cuota', 0)}</span>
                             </div>
                             """, unsafe_allow_html=True)
+
+                    # ↩️ Devolver dinero: cancelar SOLO las pendientes (no toca ganadas/perdidas)
+                    st.markdown("---")
+                    if st.button("↩️ Cancelar apuestas pendientes (devolver dinero)", help="Elimina solo las apuestas NO liquidadas. El importe vuelve a tu saldo disponible de inmediato."):
+                        try:
+                            resp_c = client.table('bankroll_apuestas').select('id', count='exact').eq('usuario', usuario_id).is_('resultado', None).execute()
+                            num_c = resp_c.count if hasattr(resp_c, 'count') else len(resp_c.data) if resp_c.data else 0
+                            if num_c > 0:
+                                client.table('bankroll_apuestas').delete().eq('usuario', usuario_id).is_('resultado', None).execute()
+                                st.success(f"✅ {format_money(en_juego, simbolo)} devueltos a tu saldo ({num_c} apuestas canceladas)")
+                                st.rerun()
+                            else:
+                                st.info("No hay apuestas pendientes para cancelar")
+                        except Exception as e:
+                            st.error(f"Error cancelando apuestas: {e}")
 
             if disponible <= 0:
                 st.error(f"💀 Sin saldo disponible ({format_money(disponible, simbolo)}). Deposita en ⚙️ Config para seguir apostando.")
