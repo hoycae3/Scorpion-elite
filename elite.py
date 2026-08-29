@@ -1920,7 +1920,13 @@ def render_partidos_page():
     # ═══════════════════════════════════════════════════════════════
     try:
         client = get_client()
-        response = client.table('partidos').select('*').execute()
+        # ★ FIX: filtrar en la BD desde ayer + ordenar por fecha DESC para evitar
+        # el límite de 1000 filas de Supabase: sin filtro, la tabla acumulada
+        # (>1000 filas de syncs viejas) devolvía solo las primeras 1000 (las
+        # más antiguas) y los partidos de HOY se quedaban fuera del resultado.
+
+        ayer_q = (datetime.now(timezone(timedelta(hours=-5)))).date() - timedelta(days=1)
+        response = client.table('partidos').select('*').gte('fecha', ayer_q.strftime('%Y-%m-%d')).order('fecha', desc=True).execute()
         partidos_db = response.data if response.data else []
     except Exception as e:
         partidos_db = []
@@ -1932,22 +1938,15 @@ def render_partidos_page():
         st.markdown("⚽ **No hay partidos.** Clic en 🔄 🔄 Sincronizar para obtener partidos.")
         partidos = []
 
-    # Filtro por calendario: opción por defecto = "Todos los días" para que se
-    # vean TODOS los partidos que hay en DB (el filtro por fecha ocultaba los de
-    # otros días y daba la impresión de que faltaban partidos)
-    fechas_disponibles = sorted({str(p.get('fecha', ''))[:10] for p in partidos if p.get('fecha')}, reverse=False)
-    opciones_fecha = ["📅 Todos los días"] + [datetime.strptime(fdat, '%Y-%m-%d').strftime('%d/%m/%Y') for fdat in fechas_disponibles]
-    if not fechas_disponibles:
-        opciones_fecha = ["📅 Todos los días"]
-
+# Filtro por calendario
     col_f1, col_f2 = st.columns([1, 3])
     with col_f1:
-        seleccion_fecha = st.selectbox("📅 Filtrar por fecha", opciones_fecha, index=0, key="filtro_fecha_partidos")
+        hoy = datetime.now(timezone(timedelta(hours=-5))).date()
+        fecha_seleccionada = st.date_input("📅 Fecha", value=hoy, format="DD/MM/YYYY")
 
-    # Aplicar filtro: si no es "Todos los días", filtrar por la fecha elegida
-    if seleccion_fecha != "📅 Todos los días":
-        fecha_obj = datetime.strptime(seleccion_fecha, '%d/%m/%Y').date()
-        fecha_str = fecha_obj.strftime('%Y-%m-%d')
+    # Filtrar por fecha seleccionada
+    if fecha_seleccionada:
+        fecha_str = fecha_seleccionada.strftime('%Y-%m-%d')
         partidos = [p for p in partidos if str(p.get('fecha', ''))[:10] == fecha_str]
 
     # Procesar partidos (la hora ya viene en zona horaria de Colombia desde la sync)
