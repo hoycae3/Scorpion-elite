@@ -1104,6 +1104,16 @@ def sincronizar_partidos():
 
                 if resp.status_code == 200:
                     data = resp.json()
+                    # ★ FIX: API-Football devuelve HTTP 200 incluso cuando hay error
+                    # (API key inválida, cuota agotada, season no encontrada): el error
+                    # viaja en el body `{"errors": {...}, "response": []}`. Antes esto se
+                    # ignoraba y parecía que la API devolvía vacío "silenciosamente".
+                    api_errors = data.get('errors') or {}
+                    if api_errors:
+                        errores_api += 1
+                        if primer_error_api is None:
+                            primer_error_api = "; ".join(f"{k}: {v}" for k, v in api_errors.items())
+                        continue
                     fixtures = data.get('response', []) or []
                     ligas_procesadas += 1
                     fixtures_totales += len(fixtures)  # ★ Diagnóstico
