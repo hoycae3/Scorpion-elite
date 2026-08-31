@@ -1426,6 +1426,7 @@ def sincronizar_partidos():
         errores_equipos = 0
         partidos_iniciales_cargados = 0
         api_calls_ahorradas = 0  # ★ API calls evitadas por filtrado de FT ya guardados
+        equipos_q_quedan = 0  # ★ inicializado aquí (resumen final lo usa fuera del if)
 
         equipos_procesados = st.session_state.get('equipos_procesados_sync', set())
         # ★ Progreso persistente entre corridas: procesa 60 equipos NUEVOS por sync,
